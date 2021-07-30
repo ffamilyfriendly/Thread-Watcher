@@ -93,7 +93,6 @@ client.on("ready", () => {
     })
 
     client.ws.on("INTERACTION_CREATE", async data => {
-
         const respond = (title,content, color = "#008000") => {
             const embed = new Discord.MessageEmbed()
                 .setColor(color)
@@ -111,6 +110,9 @@ client.on("ready", () => {
                 }
             })
         }
+        // check if user has MANAGE_THREADS or ADMINISTRATOR
+        const hasPerms = ((data.member.permissions & 0x0400000000) === 0x0400000000) || ((data.member.permissions & 0x0000000008) === 0x0000000008)
+        if(!hasPerms) return
 
         const thread = data.data.resolved.channels[Object.keys(data.data.resolved.channels)[0]]
         if(thread.type != 11) return respond("❌ Issue", "The attatched channel is not a thread.", "#ff0000")
