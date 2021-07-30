@@ -2,7 +2,8 @@
 discord bot that automatically un-arhives threads. No additional fuss
 
 ## Usage
-**/watch #thread** toggles automatic un-archiving of linked thread. 
+* **/watch #thread** `toggles automatic un-archiving of linked thread. `
+
 */watch is the sole command of this bot. This is no multi purpose bot*
 
 ## Privacy
