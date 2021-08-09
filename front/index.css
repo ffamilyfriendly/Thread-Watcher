@@ -1,0 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;700&display=swap');
+
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+a, b {
+    color: rgb(226, 43, 43);
+}
+
+body {
+    background-color: black;
+    color: white;
+    font-family: 'IBM Plex Sans', sans-serif;
+}
+
+#stats {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+}
+
+#buttons {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+#content {
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    min-height: calc(100vh - 4rem);
+}
+
+.btn {
+    text-align: center;
+    background-color: #5865F2;
+    color: white;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    margin: 0.3rem;
+    display: inline-block;
+    text-decoration: none;
+    width: 50%;
+}
+
+.dbl {
+    background-color: #5865F2;
+}
+
+#stats div {
+    background-color: rgb(61, 60, 60);
+    padding: 1rem;
+    border-radius: 0.7rem;
+}
+
+#stats div p {
+    font-size: larger;
+    text-align: center;
+}
+
+#content {
+    width: 100%;
+}
+
+#footer {
+    width: 100%;
+    height: 3rem;
+    background-color: rgb(36, 36, 36);
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-content: space-between;
+    flex: 1;
+}
+
+@media only screen and (min-width: 600px) {
+    #footer {
+        padding-left: 10%;
+        padding-right: 10%;
+    }
+
+    #content {
+        padding-left: 10%;
+        padding-right: 10%;
+    }
+}
