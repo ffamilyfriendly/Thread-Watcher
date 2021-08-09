@@ -1,6 +1,6 @@
 const Discord = require("discord.js"),
     config = require("./config"),
-    client = new Discord.Client(),
+    client = new Discord.Client({ intents: Discord.Intents.FLAGS.GUILDS }),
     fs = require("fs"),
     sql = require("better-sqlite3"),
     db = sql("./data.db"),
@@ -14,7 +14,6 @@ const getThreads = () => {
     for(thread in data) {
         const t = data[thread]
         _t.set(t.id, { threadID: t.id, serverID: t.server })
-        console.log(t)
     }
 
     return _t
@@ -22,7 +21,10 @@ const getThreads = () => {
 
 let threads = new Map()
 
-
+const removeThread = (id) => {
+    db.prepare("DELETE FROM threads WHERE id = ?").run(id)
+    threads.delete(thread.id)
+}
 
 const init = () => {
 
@@ -89,12 +91,7 @@ const doUnArchive = (id) => {
             remaining: res.headers.get('x-ratelimit-remaining'),
             limit: res.headers.get('x-ratelimit-limit')
         }
-        return res.json()
     } )
-    .then(json => {
-        console.log(json)
-        console.log(ratelimits)
-    })
 }
 
 const handleQueue = () => {
@@ -125,6 +122,7 @@ const checkThread = (id) => {
         method: "GET"
     }).then(res => res.json())
     .then(thread => {
+        if(thread.message && thread?.code == 10003) return removeThread(id)
         if(thread.thread_metadata.archived) unArchive(id)
     })
 }
@@ -132,6 +130,15 @@ const checkThread = (id) => {
 client.on("ready", () => {
     init()
     console.log(`Bot running on ${client.guilds.cache.size} guilds and keeping ${threads.size} threads active.`)
+    
+    client.user.setStatus('available')
+    client.user.setPresence({
+        game: {
+            name: 'with 🧵 | familyfriendly.xyz/thread',
+            type: "PLAYING"
+        }
+    });
+
     threads.forEach(t => {
         checkThread(t.threadID)
     })
@@ -162,8 +169,7 @@ client.on("ready", () => {
         if(thread.type != 11) return respond("❌ Issue", "The attatched channel is not a thread.", "#ff0000")
         if(threads.has(thread.id)) { 
             try {
-                db.prepare("DELETE FROM threads WHERE id = ?").run(thread.id)
-                threads.delete(thread.id)
+                removeThread(thread.id)
                 respond("👌 Done", `bot will no longer keep <#${thread.id}> un-archived`)
             } catch(err) {
                 respond("❌ Issue", "Bot failed to remove thread from database. Sorry about that")
@@ -178,15 +184,31 @@ client.on("ready", () => {
             }
         }
     })
-    
-    client.ws.on("THREAD_UPDATE", async data => {
-        console.log(data)
-    })
-    
-    client.ws.on("THREAD_CREATE", async data => {
-        console.log(data)
-    })
+})
+
+client.on("threadUpdate", (oldThread, newThread) => {
+    if(newThread.archived || newThread.archiveTimestamp < Date.now() / 1000) checkThread(newThread.id)
+})
+
+client.on("threadDelete", (thread) => {
+    removeThread(thread.id)
 })
 
 client.login(config.token)
-//test
+
+// bot stats
+const http = require("http")
+const reqListener = (req,res) => {
+    if(!req.url || !req.url.endsWith("/stats")) {
+        res.writeHead(404)
+        return res.end("the only path is /stats... how did you manage to mess that up?")
+    }
+    res.writeHead(200)
+    res.end(JSON.stringify({
+        guilds: client.guilds.cache.size,
+        threads: threads.size
+    }))
+}
+
+const server = http.createServer(reqListener)
+server.listen(3000)
