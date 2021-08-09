@@ -54,7 +54,24 @@ const init = () => {
     fs.writeFileSync("./.commands","command have been added")
 }
 
-const unArchive = (id) => {
+/*
+    Trying to implement ratelimiting.
+    we have 3 interesting headers, namely "x-ratelimit-limit", "x-ratelimit-remaining", and "x-ratelimit-reset"
+    we need to make sure not to exceed x-ratelimit-limit within the alloted limit set in "x-ratelimit-limit".
+    for now it should be fine to just have a queue of sorts with unarchive requests as I do not expect this bot
+    to grow too quickly. If I am wrong in this assesment I will suffer in debug hell but it is what it isssssss
+*/
+
+let ratelimits = {
+    resets: null,
+    remaining: 10,
+    limit: null
+}
+
+const unArchiveRequests = []
+
+// moved code from unArchive to this function. unArchive now only appends the request to the queue whilst doUnArchhive does the actual reqeust
+const doUnArchive = (id) => {
     fetch(`https://discord.com/api/v9/channels/${id}`, {
         headers: [
             ["Authorization", `Bot ${config.token}`],
@@ -66,12 +83,39 @@ const unArchive = (id) => {
         body: JSON.stringify({
             archived: false
         })
-    }).then(res => res.json())
+    }).then(res =>  {
+        ratelimits = {
+            resets: res.headers.get('x-ratelimit-reset'),
+            remaining: res.headers.get('x-ratelimit-remaining'),
+            limit: res.headers.get('x-ratelimit-limit')
+        }
+        return res.json()
+    } )
     .then(json => {
         console.log(json)
+        console.log(ratelimits)
     })
 }
 
+const handleQueue = () => {
+    const thread = unArchiveRequests.shift()
+    if(!thread) return
+    if(ratelimits.remaining >= 1) { doUnArchive(thread); handleQueue() }
+    else {
+        setTimeout(() => {
+            doUnArchive(thread)
+            handleQueue()
+        }, (ratelimits.resets - Date.now() / 1000) + 500)
+    }
+    console.log(`un-archiving ${thread}`)
+}
+
+const unArchive = (id) => {
+    unArchiveRequests.push(id)
+    if(unArchiveRequests.length === 1) handleQueue()
+}
+
+// seems checking threads is fine for the time being, no ratelimits need to be considered
 const checkThread = (id) => {
     fetch(`https://discord.com/api/v9/channels/${id}`,{
         headers: [
