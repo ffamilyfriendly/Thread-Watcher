@@ -37,7 +37,7 @@ const init = () => {
     // makes sure command is only registered once
     if(fs.existsSync("./.commands")) return
 
-    client.api.applications(client.user.id).guilds("687411800261918892").commands.post({
+    client.api.applications(client.user.id).commands.post({
         data: {
             name:"watch",
             description: "toggles auto-unarchive on this thread",
