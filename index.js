@@ -91,7 +91,7 @@ client.on("ready", () => {
     threads.forEach(t => {
         checkThread(t.threadID)
     })
-
+    // test
     client.ws.on("INTERACTION_CREATE", async data => {
         const respond = (title,content, color = "#008000") => {
             const embed = new Discord.MessageEmbed()
