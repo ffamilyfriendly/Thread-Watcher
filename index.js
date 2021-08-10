@@ -131,13 +131,7 @@ client.on("ready", () => {
     init()
     console.log(`Bot running on ${client.guilds.cache.size} guilds and keeping ${threads.size} threads active.`)
     
-    client.user.setPresence({
-        status: "online",  
-        game: {
-            name: "with 🧵 | familyfriendly.xyz/thread",  
-            type: "PLAYING"
-        }
-    });
+    client.user.setPresence({ activities: [{ name: 'with 🧵 | familyfriendly.xyz/thread', type: "PLAYING" }], status: 'online' });
 
     threads.forEach(t => {
         checkThread(t.threadID)
