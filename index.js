@@ -131,10 +131,10 @@ client.on("ready", () => {
     init()
     console.log(`Bot running on ${client.guilds.cache.size} guilds and keeping ${threads.size} threads active.`)
     
-    client.user.setStatus('available')
     client.user.setPresence({
+        status: "online",  
         game: {
-            name: 'with 🧵 | familyfriendly.xyz/thread',
+            name: "with 🧵 | familyfriendly.xyz/thread",  
             type: "PLAYING"
         }
     });
@@ -142,7 +142,7 @@ client.on("ready", () => {
     threads.forEach(t => {
         checkThread(t.threadID)
     })
-    // test
+
     client.ws.on("INTERACTION_CREATE", async data => {
         const respond = (title,content, color = "#008000") => {
             const embed = new Discord.MessageEmbed()
@@ -196,19 +196,22 @@ client.on("threadDelete", (thread) => {
 
 client.login(config.token)
 
-// bot stats
-const http = require("http")
-const reqListener = (req,res) => {
-    if(!req.url || !req.url.endsWith("/stats")) {
-        res.writeHead(404)
-        return res.end("the only path is /stats... how did you manage to mess that up?")
+if(config.stats && config.stats.enabled) {
+    // bot stats
+    const http = require("http")
+    const reqListener = (req,res) => {
+        if(!req.url || !req.url.endsWith("/stats")) {
+            res.writeHead(404)
+            return res.end("the only path is /stats... how did you manage to mess that up?")
+        }
+        res.writeHead(200)
+        res.end(JSON.stringify({
+            guilds: client.guilds.cache.size,
+            threads: threads.size
+        }))
     }
-    res.writeHead(200)
-    res.end(JSON.stringify({
-        guilds: client.guilds.cache.size,
-        threads: threads.size
-    }))
+
+    const server = http.createServer(reqListener)
+    server.listen(config.stats.port)
 }
 
-const server = http.createServer(reqListener)
-server.listen(3000)
