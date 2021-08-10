@@ -1,5 +1,6 @@
 # Thread-Watcher
 discord bot that automatically un-arhives threads. No additional fuss
+https://familyfriendly.xyz/thread
 
 ## Usage
 * **/watch #thread** `toggles automatic un-archiving of linked thread. `
