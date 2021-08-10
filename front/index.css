@@ -52,6 +52,10 @@ body {
     background-color: #5865F2;
 }
 
+.area {
+    margin: 2rem 0rem 2rem 0rem;
+}
+
 #stats div {
     background-color: rgb(61, 60, 60);
     padding: 1rem;
@@ -77,6 +81,10 @@ body {
     gap: 1rem;
     justify-content: space-between;
     flex: 1;
+}
+
+ul {
+    margin: 1rem;
 }
 
 @media only screen and (min-width: 600px) {
