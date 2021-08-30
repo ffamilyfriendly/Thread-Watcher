@@ -181,6 +181,7 @@ client.on("ready", () => {
 })
 
 client.on("threadUpdate", (oldThread, newThread) => {
+    if(!threads.has(newThread.id)) return
     if(newThread.archived || newThread.archiveTimestamp < Date.now() / 1000) checkThread(newThread.id)
 })
 
