@@ -1,6 +1,3 @@
-const { match } = require("assert/strict")
-const { isFunction } = require("util")
-
 const Discord = require("discord.js"),
     config = require("./config"),
     client = new Discord.Client({ intents: Discord.Intents.FLAGS.GUILDS }),
