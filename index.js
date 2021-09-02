@@ -1,3 +1,5 @@
+const { match } = require("assert/strict")
+
 const Discord = require("discord.js"),
     config = require("./config"),
     client = new Discord.Client({ intents: Discord.Intents.FLAGS.GUILDS }),
@@ -21,9 +23,15 @@ const getThreads = () => {
 
 let threads = new Map()
 
+const addThread = ( threadid, guildid ) => {
+    if(threads.has(threadid)) return
+    db.prepare("INSERT INTO threads VALUES(?,?)").run(threadid,guildid)
+    threads.set(threadid, { threadID: threadid, serverID: guildid })
+}
+
 const removeThread = (id) => {
     db.prepare("DELETE FROM threads WHERE id = ?").run(id)
-    threads.delete(thread.id)
+    threads.delete(id)
 }
 
 const init = () => {
@@ -37,6 +45,7 @@ const init = () => {
     // makes sure command is only registered once
     if(fs.existsSync("./.commands")) return
 
+    
     client.api.applications(client.user.id).commands.post({
         data: {
             name:"watch",
@@ -47,6 +56,49 @@ const init = () => {
                     description: "Thread to toggle auto-unarchive on",
                     required: true,
                     type: 7
+                }
+            ]
+        }
+    })
+
+    client.api.applications(client.user.id).commands.post({
+        data: {
+            name:"threads",
+            description: "lists all threads in your server that the bot is watching"
+        }
+    })
+
+    client.api.applications(client.user.id).commands.post({
+        data: {
+            name:"batch",
+            description: "batch add/remove threads to watch",
+            options: [
+                {
+                    name: "action",
+                    description: "what action to apply to the threads",
+                    required: true,
+                    type: 3,
+                    choices: [
+                        {
+                            name: "watch",
+                            value: "watch"
+                        },
+                        {
+                            name: "un-watch",
+                            value: "unwatch"
+                        }
+                    ]
+                },
+                {
+                    name: "parent",
+                    description: "The parent channel or category whose threads you want to apply an action to",
+                    type: 7,
+                    required: true
+                },
+                {
+                    name: "pattern",
+                    description: "specify which channels by name to apply an action to. Check website for more info",
+                    type: 3
                 }
             ]
         }
@@ -72,6 +124,10 @@ let ratelimits = {
 
 const unArchiveRequests = []
 
+const checkIfBotCanManageThread = (sid) => {
+    return client.guilds.cache.get(sid)?.me.permissions.has("MANAGE_THREADS")
+}
+
 // moved code from unArchive to this function. unArchive now only appends the request to the queue whilst doUnArchhive does the actual reqeust
 const doUnArchive = (id) => {
     fetch(`https://discord.com/api/v9/channels/${id}`, {
@@ -86,6 +142,7 @@ const doUnArchive = (id) => {
             archived: false
         })
     }).then(res =>  {
+        if(res?.status == 403) console.warn(`could not un-archive ${id}`)
         ratelimits = {
             resets: res.headers.get('x-ratelimit-reset'),
             remaining: res.headers.get('x-ratelimit-remaining'),
@@ -122,8 +179,28 @@ const checkThread = (id) => {
         method: "GET"
     }).then(res => res.json())
     .then(thread => {
-        if(thread.message && thread?.code == 10003) return removeThread(id)
-        if(thread.thread_metadata.archived) unArchive(id)
+        if(thread.message && (thread?.code == 10003 || thread?.code == 50001)) return removeThread(id)
+        if(thread.thread_metadata.archived && checkIfBotCanManageThread(thread.guild_id)) unArchive(id)
+    })
+}
+
+/**
+ * 
+ * @param {Discord.TextChannel} channel 
+ * @param {string} action 
+ * @param {RegExp} pattern 
+ */
+const batchInChannel = async (channel, action, pattern = null ) => {
+    // make sure all threads are in cache
+    await channel.threads.fetchActive()
+    await channel.threads.fetchArchived()
+
+    const [ reg, blacklist ] = pattern
+    channel.threads.cache.each(t => {
+        const name = t.name
+        const id = t.id
+        if(t.parentId != channel.id || ( threads.has(id) && action == "watch" ) || reg ? blacklist ? name.match(reg) : !name.match(reg) : false) return
+        action == "watch" ? addThread(id, channel.guildId) : removeThread(id)
     })
 }
 
@@ -155,34 +232,61 @@ client.on("ready", () => {
                 }
             })
         }
+
         // check if user has MANAGE_THREADS or ADMINISTRATOR
         const hasPerms = ((data.member.permissions & 0x0400000000) === 0x0400000000) || ((data.member.permissions & 0x0000000008) === 0x0000000008)
         if(!hasPerms) return
 
-        const thread = data.data.resolved.channels[Object.keys(data.data.resolved.channels)[0]]
-        if(thread.type != 11) return respond("❌ Issue", "The attatched channel is not a thread.", "#ff0000")
-        if(threads.has(thread.id)) { 
-            try {
-                removeThread(thread.id)
-                respond("👌 Done", `bot will no longer keep <#${thread.id}> un-archived`)
-            } catch(err) {
-                respond("❌ Issue", "Bot failed to remove thread from database. Sorry about that")
-            }
-        } else {
-            try {
-                db.prepare("INSERT INTO threads VALUES(?,?)").run(thread.id,data.guild_id)
-                threads.set(thread.id, { threadID: thread.id, serverID: data.guild_id })
-                respond("👌 Done", `Bot will make sure <#${thread.id}> is un-archived`)
-            } catch(err) {
-                respond("❌ Issue", "Bot failed to add thread to watchlist. Sorry about that")
-            }
+        if(!checkIfBotCanManageThread(data.guild_id)) return respond("❌ Issue", "bot requires manage threads permission to function!", "#ff0000")
+
+        // I would write an actual command handler but I cannot be bothered rn
+        switch(data.data.name) {
+            case "threads":
+                let threadsList = db.prepare("SELECT * FROM threads WHERE server = ?").all(data.guild_id)
+                respond("Threads the bot is watching", `${threadsList.map(t => `<#${t.id}>`).join(", ")}`.substr(0, 2000) || "no threads are being watched", "#008000")
+            break;
+            case "watch":
+                const thread = data.data.resolved.channels[Object.keys(data.data.resolved.channels)[0]]
+                if(thread.type != 11) return respond("❌ Issue", "The attatched channel is not a thread.", "#ff0000")
+                if(threads.has(thread.id)) { 
+                    try {
+                        removeThread(thread.id)
+                        respond("👌 Done", `bot will no longer keep <#${thread.id}> un-archived`)
+                    } catch(err) {
+                        respond("❌ Issue", "Bot failed to remove thread from database. Sorry about that")
+                    }
+                } else {
+                    try {
+                        addThread(thread.id, data.guild_id)
+                        respond("👌 Done", `Bot will make sure <#${thread.id}> is un-archived`)
+                    } catch(err) {
+                        respond("❌ Issue", "Bot failed to add thread to watchlist. Sorry about that")
+                    }
+                }
+            break;
+            case "batch":
+                const parent = data.data.resolved.channels[Object.keys(data.data.resolved.channels)[0]]
+                if([11, 12, 13, 6, 2, 1].includes(parent.type)) return respond("❌ Issue", "that channel type cannot hold threads", "#ff0000")
+                let [ action, _p, pattern ] = data.data.options.map(o => o.value)
+                const pChannel = client.channels.cache.get(_p)
+                let blacklist = false
+                if(pattern?.startsWith("!")) { blacklist = true; pattern = pattern.substr(1) }
+                if(pattern) {
+                    if(pattern.match(/^[a-zA-Z0-9_\*!]{0,100}$/gm)) pattern = RegExp(pattern.replace("*", "\\w*"))
+                    else return respond("❌ Issue", `your pattern "${pattern}" includes forbidden characters`)
+                }
+
+                if(pChannel.type == "GUILD_CATEGORY") {
+                    pChannel.children.forEach( child => batchInChannel(child, action, [ pattern, blacklist ]))
+                } else batchInChannel(pChannel, action, [ pattern, blacklist ])
+                respond("👌 Done", "bot used batch action")
+            break;
         }
     })
 })
 
 client.on("threadUpdate", (oldThread, newThread) => {
-    if(!threads.has(newThread.id)) return
-    if(newThread.archived || newThread.archiveTimestamp < Date.now() / 1000) checkThread(newThread.id)
+    if(newThread.archived || newThread.archiveTimestamp < Date.now() / 1000 || checkIfBotCanManageThread(newThread.guildId)) checkThread(newThread.id)
 })
 
 client.on("threadDelete", (thread) => {
