@@ -286,7 +286,8 @@ client.on("ready", () => {
 })
 
 client.on("threadUpdate", (oldThread, newThread) => {
-    if(newThread.archived || newThread.archiveTimestamp < Date.now() / 1000 || checkIfBotCanManageThread(newThread.guildId)) checkThread(newThread.id)
+    if(!threads.has(newThread.id)) return
+    if((newThread.archived || newThread.archiveTimestamp < Date.now() / 1000) &&  checkIfBotCanManageThread(newThread.guildId)) checkThread(newThread.id)
 })
 
 client.on("threadDelete", (thread) => {
