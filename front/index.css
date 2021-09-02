@@ -87,6 +87,56 @@ ul {
     margin: 1rem;
 }
 
+#infoContainer {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.informational {
+    --ico-color: white;
+    border: 3px solid white;
+    width: 100%;
+    display: flex;
+    padding: 1em;
+    margin-bottom: 0.5rem;
+}
+
+button {
+    border: 0;
+    background-color: transparent;
+    color: white;
+    font-size: large;
+    cursor: pointer;
+}
+
+.informational.error {
+    --ico-color: red;
+    border-color: red;
+    border-width: 5px;
+}
+
+.informational.warning {
+    --ico-color: orange;
+    border-color: orange;
+    border-width: 5px;
+}
+
+.informational.info {
+    --ico-color: rgb(0, 132, 255);
+    border-color: rgb(0, 132, 255);
+    border-width: 5px;
+}
+
+.ico-container {
+    padding-right: 0.5rem;
+}
+
+.ico-container path {
+    fill: var(--ico-color);
+}
+
 @media only screen and (min-width: 600px) {
     #footer {
         padding-left: 10%;

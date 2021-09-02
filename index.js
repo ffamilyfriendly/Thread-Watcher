@@ -45,8 +45,8 @@ const init = () => {
     // makes sure command is only registered once
     if(fs.existsSync("./.commands")) return
 
-    /*
-    client.api.applications(client.user.id).guilds("874566459429355581").commands.post({
+    
+    client.api.applications(client.user.id).commands.post({
         data: {
             name:"watch",
             description: "toggles auto-unarchive on this thread",
@@ -61,14 +61,14 @@ const init = () => {
         }
     })
 
-    client.api.applications(client.user.id).guilds("874566459429355581").commands.post({
+    client.api.applications(client.user.id).commands.post({
         data: {
             name:"threads",
             description: "lists all threads in your server that the bot is watching"
         }
-    })*/
+    })
 
-    client.api.applications(client.user.id).guilds("874566459429355581").commands.post({
+    client.api.applications(client.user.id).commands.post({
         data: {
             name:"batch",
             description: "batch add/remove threads to watch",
