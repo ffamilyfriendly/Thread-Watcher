@@ -201,7 +201,10 @@ const batchInChannel = async (channel, action, pattern = null ) => {
         const name = t.name
         const id = t.id
         if(t.parentId != channel.id || ( threads.has(id) && action == "watch" ) || reg ? blacklist ? name.match(reg) : !name.match(reg) : false) return
-        action == "watch" ? addThread(id, channel.guildId) : removeThread(id)
+        if(action == "watch") {
+            addThread(id, channel.guildId)
+            if(t.archived) checkThread(t.id)
+        } removeThread(id)
     })
 }
 
