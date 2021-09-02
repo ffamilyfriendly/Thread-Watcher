@@ -1,5 +1,3 @@
-const { match } = require("assert/strict")
-
 const Discord = require("discord.js"),
     config = require("./config"),
     client = new Discord.Client({ intents: Discord.Intents.FLAGS.GUILDS }),
@@ -200,7 +198,10 @@ const batchInChannel = async (channel, action, pattern = null ) => {
         const name = t.name
         const id = t.id
         if(t.parentId != channel.id || ( threads.has(id) && action == "watch" ) || reg ? blacklist ? name.match(reg) : !name.match(reg) : false) return
-        action == "watch" ? addThread(id, channel.guildId) : removeThread(id)
+        if(action == "watch") {
+            addThread(id, channel.guildId)
+            if(t.archived) checkThread(t.id)
+        } removeThread(id)
     })
 }
 
@@ -287,7 +288,7 @@ client.on("ready", () => {
 
 client.on("threadUpdate", (oldThread, newThread) => {
     if(!threads.has(newThread.id)) return
-    if((newThread.archived || newThread.archiveTimestamp < Date.now() / 1000) &&  checkIfBotCanManageThread(newThread.guildId)) checkThread(newThread.id)
+    if((newThread.archived || newThread.archiveTimestamp < Date.now() / 1000) && checkIfBotCanManageThread(newThread.guildId)) checkThread(newThread.id)
 })
 
 client.on("threadDelete", (thread) => {
