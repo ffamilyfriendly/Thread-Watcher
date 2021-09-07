@@ -141,6 +141,7 @@ const doUnArchive = (id) => {
         })
     }).then(res =>  {
         if(res?.status == 403) console.warn(`could not un-archive ${id}`)
+        if(res?.status == 429) console.warn("!!RATELIMITS!!", res)
         ratelimits = {
             resets: res.headers.get('x-ratelimit-reset'),
             remaining: res.headers.get('x-ratelimit-remaining'),
@@ -159,7 +160,8 @@ const handleQueue = () => {
             handleQueue()
         }, (ratelimits.resets - Date.now() / 1000) + 500)
     }
-    console.log(`un-archiving ${thread}`)
+    const now = new Date()
+    console.log(`[${now.toDateString()}] un-archiving ${thread}`)
 }
 
 const unArchive = (id) => {
@@ -177,7 +179,7 @@ const checkThread = (id) => {
         method: "GET"
     }).then(res => res.json())
     .then(thread => {
-        if(thread.message && (thread?.code == 10003 || thread?.code == 50001)) return removeThread(id)
+        if(!thread?.thread_metadata) return console.warn(`error with thread`, thread)
         if(thread.thread_metadata.archived && checkIfBotCanManageThread(thread.guild_id)) unArchive(id)
     })
 }
@@ -216,7 +218,7 @@ client.on("ready", () => {
     })
 
     client.ws.on("INTERACTION_CREATE", async data => {
-        const respond = (title,content, color = "#008000") => {
+        const respond = (title,content, color = "#008000", private = false) => {
             const embed = new Discord.MessageEmbed()
                 .setColor(color)
                 .setTitle("Thread Watcher")
@@ -228,15 +230,15 @@ client.on("ready", () => {
                 data: {
                     type: 4,
                     data: {
-                        embeds: [embed]
+                        embeds: [embed],
+                        flags: private ? 1 << 6 : 0
                     }
                 }
             })
         }
-
         // check if user has MANAGE_THREADS or ADMINISTRATOR
-        const hasPerms = ((data.member.permissions & 0x0400000000) === 0x0400000000) || ((data.member.permissions & 0x0000000008) === 0x0000000008)
-        if(!hasPerms) return
+        const hasPerms = ((data.member.permissions & 0x0400000000) === 0x0400000000) ||((data.member.permissions & (1 << 4)) === (1 << 4)) || ((data.member.permissions & (1 << 13)) === (1 << 13)) || ((data.member.permissions & 0x0000000008) === 0x0000000008)
+        if(!hasPerms) return respond("❌ Permissions", "you need to have either administrator, manage channels, or manage messages permissions to run this command. Sorry!", "#ff0000", true)
 
         if(!checkIfBotCanManageThread(data.guild_id)) return respond("❌ Issue", "bot requires manage threads permission to function!", "#ff0000")
 
