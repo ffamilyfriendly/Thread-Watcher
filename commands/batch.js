@@ -12,19 +12,28 @@ const batchInChannel = async (channel, action, pattern = null ) => {
     await channel.threads.fetchActive()
     await channel.threads.fetchArchived()
 
-    const [ reg, blacklist ] = pattern
-    channel.threads.cache.each(t => {
-        const name = t.name
-        const id = t.id
-        if(t.parentId != channel.id || ( threads.has(id) && action == "watch" ) || reg ? blacklist ? name.match(reg) : !name.match(reg) : false) return
-        if(action == "watch") {
-            addThread(id, channel.guildId)
-            if(t.archived) t.setArchived(false, "automatic")
-        } removeThread(id)
+    return new Promise((resolve, reject) => {
+        let rv = { succeeded: 0, failed: 0 }
+        const [ reg, blacklist ] = pattern
+        channel.threads.cache.each(t => {
+            try {
+                const name = t.name
+                const id = t.id
+                if(t.parentId != channel.id || ( threads.has(id) && action == "watch" ) || reg ? (blacklist ? name.match(reg) : !name.match(reg)) : false) return
+                if(action == "watch") {
+                    addThread(id, channel.guildId)
+                    if(t.archived) t.setArchived(false, "automatic")
+                } else removeThread(id)
+                rv.succeeded++
+            } catch(err) {
+                rv.failed++
+            }
+        })
+        resolve(rv)
     })
 }
 
-const run = (client, data, respond) => {
+const run = async (client, data, respond) => {
     const parent = data.data.resolved.channels[Object.keys(data.data.resolved.channels)[0]]
     if([11, 12, 13, 6, 2, 1].includes(parent.type)) return respond("❌ Issue", "that channel type cannot hold threads", "#ff0000")
     let [ action, _p, pattern ] = data.data.options.map(o => o.value)
@@ -36,10 +45,17 @@ const run = (client, data, respond) => {
         else return respond("❌ Issue", `your pattern "${pattern}" includes forbidden characters`, "#ff0000")
     }
 
+    let actions = { succeeded: 0, failed: 0 }
+
     if(pChannel.type == "GUILD_CATEGORY") {
-        pChannel.children.forEach( child => batchInChannel(child, action, [ pattern, blacklist ]))
-    } else batchInChannel(pChannel, action, [ pattern, blacklist ])
-    respond("👌 Done", "bot used batch action")
+
+        for(let [key, child] of pChannel.children) {
+            const a = await batchInChannel(child, action, [ pattern, blacklist ])
+            actions.succeeded += a.succeeded
+            actions.failed += a.failed
+        }
+    } else actions = await batchInChannel(pChannel, action, [ pattern, blacklist ])
+    respond("👌 Done", `🟢 ${actions.succeeded} succeeded. 🔴 ${actions.failed} failed`)
 }
 
 module.exports = { run }

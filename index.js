@@ -3,28 +3,23 @@ const Discord = require("discord.js"),
     client = new Discord.Client({ intents: Discord.Intents.FLAGS.GUILDS }),
     fs = require("fs"),
     sql = require("better-sqlite3"),
-    db = sql("./data.db"),
-    fetch = require("node-fetch")
+    db = sql("./data.db")
 
 let threads = new Map()
 
 const getThreads = (map) => {
     const data = db.prepare("SELECT * FROM threads").all()
-
     for(thread in data) {
         const t = data[thread]
         map.set(t.id, { threadID: t.id, serverID: t.server })
     }
-
-    return map
 }
 
 const init = () => {
 
     // create table where thread id is primary key and server id is a property.
     db.prepare("CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT)").run()
-    threads = getThreads(threads)
-
+    getThreads(threads)
 
     // this is lazy, but should work
     // makes sure command is only registered once
@@ -93,100 +88,24 @@ const init = () => {
     fs.writeFileSync("./.commands","command have been added")
 }
 
-/*
-    Trying to implement ratelimiting.
-    we have 3 interesting headers, namely "x-ratelimit-limit", "x-ratelimit-remaining", and "x-ratelimit-reset"
-    we need to make sure not to exceed x-ratelimit-limit within the alloted limit set in "x-ratelimit-limit".
-    for now it should be fine to just have a queue of sorts with unarchive requests as I do not expect this bot
-    to grow too quickly. If I am wrong in this assesment I will suffer in debug hell but it is what it isssssss
-
-    Edit from 200+ threads: f*ck you, above me
-*/
-
-let ratelimits = {
-    resets: null,
-    remaining: 10,
-    limit: null
-}
-
-const unArchiveRequests = []
-
 const checkIfBotCanManageThread = (sid) => {
     return client.guilds.cache.get(sid)?.me.permissions.has("MANAGE_THREADS")
 }
 
-// moved code from unArchive to this function. unArchive now only appends the request to the queue whilst doUnArchhive does the actual reqeust
-const doUnArchive = (id) => {
-    client.api.application(client.user.id).channels(id).post()
-    fetch(`https://discord.com/api/v9/channels/${id}`, {
-        headers: [
-            ["Authorization", `Bot ${config.token}`],
-            ["User-Agent", "DiscordBot (discord.js,@latest)"],
-            ["X-Audit-Log-Reason", "(automatic) un-archive"],
-            ["Content-Type", "application/json"]
-        ],
-        method: "PATCH",
-        body: JSON.stringify({
-            archived: false
-        })
-    }).then(res =>  {
-        if(res?.status == 403) console.warn(`could not un-archive ${id}`)
-        if(res?.status == 429) console.warn("!!RATELIMITS!!", res)
-        ratelimits = {
-            resets: res.headers.get('x-ratelimit-reset'),
-            remaining: res.headers.get('x-ratelimit-remaining'),
-            limit: res.headers.get('x-ratelimit-limit')
-        }
-    } )
-}
-
-const handleQueue = () => {
-    const thread = unArchiveRequests.shift()
-    if(!thread) return
-    if(ratelimits.remaining >= 1) { doUnArchive(thread); handleQueue() }
-    else {
-        setTimeout(() => {
-            doUnArchive(thread)
-            handleQueue()
-        }, (ratelimits.resets - Date.now() / 1000) + 500)
-    }
-    const now = new Date()
-    console.log(`[${now.toDateString()}] un-archiving ${thread}`)
-}
-
-const unArchive = (id) => {
-    unArchiveRequests.push(id)
-    if(unArchiveRequests.length === 1) handleQueue()
-}
-
-// seems checking threads is fine for the time being, no ratelimits need to be considered
-const checkThread = (id) => {
-    fetch(`https://discord.com/api/v9/channels/${id}`,{
-        headers: [
-            ["Authorization", `Bot ${config.token}`],
-            ["User-Agent", "DiscordBot (discord.js,@latest)"]
-        ],
-        method: "GET"
-    }).then(res => res.json())
-    .then(thread => {
-        if(!thread?.thread_metadata) return console.warn(`error with thread`, thread)
-        if(thread.thread_metadata.archived && checkIfBotCanManageThread(thread.guild_id)) unArchive(id)
-    })
-}
-
-module.exports = { db, client, threads }
+module.exports = { db, client, threads, checkIfBotCanManageThread }
 const commands = new Map(fs.readdirSync("./commands").filter(f => f.endsWith(".js")).map(f => [f.split(".js")[0],require(`./commands/${f}`)]))
 const { removeThread } = require("./commands/utils/threadActions")
 
+const checkAll = require("./routines/checkAllThreads").run
+
 client.on("ready", () => {
     init()
+    checkAll(threads)
     console.log(`Bot running on ${client.guilds.cache.size} guilds and keeping ${threads.size} threads active.`)
     
     client.user.setPresence({ activities: [{ name: 'with 🧵 | familyfriendly.xyz/thread', type: "PLAYING" }], status: 'online' });
 
-    threads.forEach(t => {
-        checkThread(t.threadID)
-    })
+    
 
     client.ws.on("INTERACTION_CREATE", async data => {
         const respond = (title,content, color = "#008000", private = false) => {
