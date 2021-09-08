@@ -73,39 +73,40 @@ const getThread = (id) => {
     })
 }
 
-const sleep = (ms) => {
-    return new Promise((resolve, reject) => {
-        setTimeout(resolve, ms)
-    })
+const unArchive = (id) => {
+    unArchiveRequests.push(id)
+    if(unArchiveRequests.length === 1) handleQueue()
 }
 
 /**
- * This is verrrry slow, I could get the actual time the request took and subtract that from the sleep freq but cba
- * that is a problem for another day ;)
- * 
- * that day is tommorow. getThread cannot be async at all that is dumb. We need to be able to have many requests going on at once but still not 
- * going above 50/s. Anyhow that is for tomorrow
- * 
  * @param {Map} map
  * @returns {Promise}
  */
 const getAllArchivedThreads = (map) => {
-    const rv = new Map()
     // 1000 represents a second, 30 represents how many requests we want to do in that time. I set it as 30 instead of 50 to give some leeway
-    const freq = 1000 / 35
+    const freq = 1000 / 30
+    let i = 0
     return new Promise(async (resolve, reject) => {
         for(let [key, value] of map) {
             try {
-                console.time(key)
-                const t = await getThread(value.threadID)
-                if(t.thread_metadata.archived) rv.set(key, value)
-                console.timeEnd(key)
+                setTimeout(() => {
+                    getThread(value.threadID)
+                    .then(t => {
+                        if(t.thread_metadata.archived && checkIfBotCanManageThread(t.guild_id)) unArchive(t.id)
+                    })
+                    .catch(e => {
+                        console.error(`issue with thread ${key}`, e)
+                    })
+                }, freq * i)
+                if(i == map.size - 1) {
+                    resolve()
+                }
+                i++
             } catch(err) {
                 c.log(`issue with thread "${key}": ${err}`)
             }
             
         }
-        resolve(rv)
     })
 }
 
@@ -113,15 +114,12 @@ const getAllArchivedThreads = (map) => {
  * 
  * @param {Map} map 
  */
-const run = async ( map ) => {
-    console.time("threads")
+const run = ( map ) => {
     c.log(`Starting check all threads routine\ntotal threads: ${map.size}`)
-    const archived = await getAllArchivedThreads(map)
-    c.log(`got ${archived.size} archived threads. ${archived.size >= 1 ? "Unarchiving..." : "nice!"}`,"checkAllThreads")
-    for(let [key, value] of archived)
-        if(checkIfBotCanManageThread(value.serverID)) unArchiveRequests.push(key)
-    handleQueue()
-    console.timeEnd("threads")
+    getAllArchivedThreads(map)
+    .then(() => {
+        c.log(`Thread routine done!`)
+    })
 }
 
 module.exports = { run }
