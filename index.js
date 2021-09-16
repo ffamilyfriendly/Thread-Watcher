@@ -31,7 +31,7 @@ const init = () => {
     // makes sure command is only registered once
     if(fs.existsSync("./.commands")) return
 
-    client.api.applications(client.user.id).guilds("874566459429355581").commands.post({
+    client.api.applications(client.user.id).commands.post({
         data: {
             name:"auto",
             description: "automatically watch all threads made in a selected channel",
@@ -45,7 +45,7 @@ const init = () => {
             ]
         }
     })
-    /*
+    
     client.api.applications(client.user.id).commands.post({
         data: {
             name:"watch",
@@ -102,7 +102,7 @@ const init = () => {
                 }
             ]
         }
-    })*/
+    })
 
     // write file keeping command from being registered every time bot starts
     fs.writeFileSync("./.commands","command have been added")
