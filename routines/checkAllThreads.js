@@ -1,7 +1,8 @@
 const c = require("../commands/utils/clog"),
     fetch = require("node-fetch"),
     config = require("../config"),
-    { checkIfBotCanManageThread } = require("../index")
+    { checkIfBotCanManageThread } = require("../index"),
+    { removeThread } = require("../commands/utils/threadActions")
 
 /*
     Trying to implement ratelimiting.
@@ -67,7 +68,7 @@ const getThread = (id) => {
             method: "GET"
         }).then(res => res.json())
         .then(thread => {
-            if(!thread?.thread_metadata) reject(thread)
+            if(!thread?.thread_metadata) { removeThread(id); reject(thread) }
             else resolve(thread)
         })
     })

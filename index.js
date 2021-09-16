@@ -6,9 +6,10 @@ const Discord = require("discord.js"),
     db = sql("./data.db")
 
 let threads = new Map()
+let channels = new Map()
 
-const getThreads = (map) => {
-    const data = db.prepare("SELECT * FROM threads").all()
+const getThreads = (map, name) => {
+    const data = db.prepare(`SELECT * FROM ${name}`).all()
     for(thread in data) {
         const t = data[thread]
         map.set(t.id, { threadID: t.id, serverID: t.server })
@@ -19,13 +20,32 @@ const init = () => {
 
     // create table where thread id is primary key and server id is a property.
     db.prepare("CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT)").run()
-    getThreads(threads)
+
+    // channels for auto-watch threads
+    db.prepare("CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT)").run()
+
+    getThreads(threads, "threads")
+    getThreads(channels, "channels")
 
     // this is lazy, but should work
     // makes sure command is only registered once
     if(fs.existsSync("./.commands")) return
 
-    
+    client.api.applications(client.user.id).guilds("874566459429355581").commands.post({
+        data: {
+            name:"auto",
+            description: "automatically watch all threads made in a selected channel",
+            options: [
+                {
+                    name: "channel",
+                    description: "the channel to toggle",
+                    required: true,
+                    type: 7
+                }
+            ]
+        }
+    })
+    /*
     client.api.applications(client.user.id).commands.post({
         data: {
             name:"watch",
@@ -82,7 +102,7 @@ const init = () => {
                 }
             ]
         }
-    })
+    })*/
 
     // write file keeping command from being registered every time bot starts
     fs.writeFileSync("./.commands","command have been added")
@@ -92,9 +112,9 @@ const checkIfBotCanManageThread = (sid) => {
     return client.guilds.cache.get(sid)?.me.permissions.has("MANAGE_THREADS")
 }
 
-module.exports = { db, client, threads, checkIfBotCanManageThread }
+module.exports = { db, client, threads, channels, checkIfBotCanManageThread }
 const commands = new Map(fs.readdirSync("./commands").filter(f => f.endsWith(".js")).map(f => [f.split(".js")[0],require(`./commands/${f}`)]))
-const { removeThread } = require("./commands/utils/threadActions")
+const { removeThread, addThread } = require("./commands/utils/threadActions")
 
 const checkAll = require("./routines/checkAllThreads").run
 
@@ -146,11 +166,19 @@ client.on("ready", () => {
 
 client.on("threadUpdate", (oldThread, newThread) => {
     if(!threads.has(newThread.id)) return
-    if((newThread.archived || newThread.archiveTimestamp < Date.now() / 1000) && checkIfBotCanManageThread(newThread.guildId)) newThread.setArchived(false, "automatic")
+    const diff = ( ( newThread.archivedAt - oldThread.archivedAt ) / 1000 ) / 60
+    if(diff > 2 && (diff + 10) < oldThread.autoArchiveDuration) {
+        return removeThread(newThread.id)
+    }
+    if((newThread.archived) && checkIfBotCanManageThread(newThread.guildId)) newThread.setArchived(false, "automatic")
 })
 
 client.on("threadDelete", (thread) => {
     removeThread(thread.id)
+})
+
+client.on("threadCreate", (thread) => {
+    if(channels.has(thread.parentId)) addThread(thread.id, thread.guildId, "threads")
 })
 
 client.login(config.token)

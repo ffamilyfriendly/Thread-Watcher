@@ -3,9 +3,7 @@ discord bot that automatically un-archives threads. No additional fuss
 https://familyfriendly.xyz/thread
 
 ## Usage
-* **/watch #thread** `toggles automatic un-archiving of linked thread. `
-
-*/watch is the sole command of this bot. This is no multi purpose bot*
+check [commands](https://familyfriendly.xyz/thread)
 
 ## Privacy
 The bot keeps the thread id and the connected server id in its database. This is required for the bot to work and the data is removed once watch of a channel is toggled off
