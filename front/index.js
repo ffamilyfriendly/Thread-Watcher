@@ -37,9 +37,31 @@ const handleInfo = (data, dismissable) => {
 document.addEventListener("DOMContentLoaded", () => {
     fetch("https://familyfriendly.xyz/stats").then( res => res.json() )
     .then(data => {
+        console.log(data)
         if(!data) return
-        document.getElementById("servers").innerText = data.guilds
-        document.getElementById("threads").innerText = data.threads
+        document.getElementById("servers").innerText = data.main.guilds
+        document.getElementById("threads").innerText = data.main.threads
+        if(data.main.guilds >= 100) {
+            const table = document.getElementById("table")
+            const invbtn = document.getElementById("invite")
+            invbtn.onclick = (e) => {
+                e.preventDefault()
+                alert("bot is above 100 servers and cannot be added to more servers until verified. Check list for availible bots")
+            }
+
+            for(const bot of Object.values(data.alternative)) {
+                const tr = document.createElement("tr")
+                const [ icon, servers, invite ] = [ document.createElement("td"), document.createElement("td"), document.createElement("td") ]
+                
+                icon.innerHTML = ` <img src="${bot.image}"> `
+                servers.innerText = bot.guilds
+                invite.innerHTML = `
+                <a class="btn" href="${bot.invite}">invite</a>
+                `
+                tr.append(icon, servers, invite)
+                table.appendChild(tr)
+            }
+        }
     })
 
     fetch(`./updates.json?v=${Date.now()}`).then( res => res.json())

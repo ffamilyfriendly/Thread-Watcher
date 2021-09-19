@@ -184,21 +184,71 @@ client.on("threadCreate", (thread) => {
 client.login(config.token)
 
 if(config.stats && config.stats.enabled) {
-    // bot stats
     const http = require("http")
-    const reqListener = (req,res) => {
-        if(!req.url || !req.url.endsWith("/stats")) {
-            res.writeHead(404)
-            return res.end("the only path is /stats... how did you manage to mess that up?")
-        }
-        res.writeHead(200)
-        res.end(JSON.stringify({
-            guilds: client.guilds.cache.size,
-            threads: threads.size
-        }))
-    }
+    if(!config.stats.host) {
+        setInterval(() => {
+            console.log("writing")
+            try {
+                const data = new TextEncoder().encode(
+                    JSON.stringify({
+                        guilds: client.guilds.cache.size,
+                        threads: threads.size,
+                        invite: config.invite,
+                        applicationId: config.applicationId,
+                        image: config.image
+                    })
+                )
+    
+                const options = {
+                    hostname: "localhost",
+                    port: config.stats.port,
+                    path: `/${config.stats.postPath}`,
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Content-Length': data.length
+                    }
+                }
+    
+                const req = http.request(options)
+                req.write(data)
+            } catch(err) {
+                console.log("[STATS] could not push stats", err)
+            }
+        }, 1000 * 60)
+    } else {
+        let stats = { }
+        // bot stats
+        const reqListener = (req,res) => {
+            if(req.url.endsWith(config.stats.postPath)) {
+                let d = ""
+                req.on("data", (data) => {
+                    d += data
+                })
 
-    const server = http.createServer(reqListener)
-    server.listen(config.stats.port)
+                req.on("end", () => {
+                    const parsed = JSON.parse(d)
+                    stats[parsed.applicationId] = parsed
+                    return res.end("ok")
+                })
+            }
+
+            if(!req.url || !req.url.endsWith("/stats")) {
+                res.writeHead(404)
+                return res.end("the only path is /stats... how did you manage to mess that up?")
+            }
+            res.writeHead(200)
+            res.end(JSON.stringify({
+                main: {
+                    guilds: client.guilds.cache.size,
+                    threads: threads.size
+                },
+                alternative: stats
+            }))
+        }
+
+        const server = http.createServer(reqListener)
+        server.listen(config.stats.port)
+    }
 }
 

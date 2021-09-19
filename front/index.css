@@ -137,6 +137,22 @@ button {
     fill: var(--ico-color);
 }
 
+table {
+    width: 100%;
+}
+
+.icon-table {
+    width: 50px;
+}
+
+table img {
+    height: 50px;
+}
+
+td {
+    text-align: center;
+}
+
 @media only screen and (min-width: 600px) {
     #footer {
         padding-left: 10%;
