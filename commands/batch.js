@@ -8,6 +8,7 @@ const { threads } = require("../index"),
  * @param {RegExp} pattern 
  */
 const batchInChannel = async (channel, action, pattern = null ) => {
+    if(!(channel.guild.me.permissionsIn(channel).has("MANAGE_THREADS") && channel.guild.me.permissionsIn(channel).has("VIEW_CHANNEL"))) return { succeeded: 0, failed: 1 };
     // make sure all threads are in cache
     await channel.threads.fetchActive()
     await channel.threads.fetchArchived()
