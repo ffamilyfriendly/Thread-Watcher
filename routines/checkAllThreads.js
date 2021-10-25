@@ -84,8 +84,8 @@ const unArchive = (id) => {
  * @returns {Promise}
  */
 const getAllArchivedThreads = (map) => {
-    // 1000 represents a second, 30 represents how many requests we want to do in that time. I set it as 30 instead of 50 to give some leeway
-    const freq = 1000 / 30
+    // 1000 represents a second, 30 represents how many requests we want to do in that time. I set it as 25 instead of 50 to give some leeway
+    const freq = 1000 / 25
     let i = 0
     return new Promise(async (resolve, reject) => {
         for(let [key, value] of map) {

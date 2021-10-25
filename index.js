@@ -1,9 +1,12 @@
 const Discord = require("discord.js"),
     config = require("./config"),
     client = new Discord.Client({ intents: Discord.Intents.FLAGS.GUILDS }),
+    { AutoPoster } = require("topgg-autoposter"),
     fs = require("fs"),
     sql = require("better-sqlite3"),
     db = sql("./data.db")
+
+if(config.topggToken) AutoPoster(config.topggToken, client)
 
 let threads = new Map()
 let channels = new Map()
@@ -122,20 +125,37 @@ client.on("ready", () => {
     init()
     checkAll(threads)
     console.log(`Bot running on ${client.guilds.cache.size} guilds and keeping ${threads.size} threads active.`)
-    
     client.user.setPresence({ activities: [{ name: 'with 🧵 | familyfriendly.xyz/thread', type: "PLAYING" }], status: 'online' });
-
-    
-
     client.ws.on("INTERACTION_CREATE", async data => {
         const respond = (title,content, color = "#008000", private = false) => {
             const embed = new Discord.MessageEmbed()
                 .setColor(color)
                 .setTitle("Thread Watcher")
-                .addFields(
+                .setFooter('Bot by Family friendly#6191, https://familyfriendly.xyz');
+
+                if(content.length >= 1900) {
+                    const fieldArr = content.match(/.{1,1900}/gi)
+                    for(let i = 0; i < fieldArr.length; i++) {
+                        // lazy but will work
+                        if(!fieldArr[i]) continue;
+                        if(content.includes(", ")) {
+                            if(![">"," ", ","].includes(fieldArr[i][fieldArr[i].length - 1])) {
+                                let l = fieldArr[i+1].indexOf(">")
+                                console.log(l)
+                                fieldArr[i] += fieldArr[i+1].substr(0, l + 1)
+                                fieldArr[i+1] = fieldArr[i+1].substr(l + 1)
+                            }
+                        }
+                        embed.addFields({ name: `(#${i+1}) ${title}`, value: fieldArr[i] })
+                    }
+                } else {
+                    embed.addFields({ name: title, value: content })
+                }
+                /*
+                                    .addFields(
                     { name: title, value: content }
                 )
-                .setFooter('Bot by Family friendly#6191, https://familyfriendly.xyz');
+                */
             client.api.interactions(data.id, data.token).callback.post({
                 data: {
                     type: 4,
