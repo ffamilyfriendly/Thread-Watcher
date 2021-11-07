@@ -43,7 +43,8 @@ const init = () => {
                     name: "channel",
                     description: "the channel to toggle",
                     required: true,
-                    type: 7
+                    type: 7,
+                    channel_types: [0, 5]
                 }
             ]
         }
@@ -58,7 +59,8 @@ const init = () => {
                     name: "thread",
                     description: "Thread to toggle auto-unarchive on",
                     required: true,
-                    type: 7
+                    type: 7,
+                    channel_types: [10, 11, 12]
                 }
             ]
         }
@@ -96,7 +98,8 @@ const init = () => {
                     name: "parent",
                     description: "The parent channel or category whose threads you want to apply an action to",
                     type: 7,
-                    required: true
+                    required: true,
+                    channel_types: [0, 4, 5]
                 },
                 {
                     name: "pattern",
