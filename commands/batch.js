@@ -36,7 +36,7 @@ const batchInChannel = async (channel, action, pattern = null ) => {
 
 const run = async (client, data, respond) => {
     const parent = data.data.resolved.channels[Object.keys(data.data.resolved.channels)[0]]
-    if([11, 12, 13, 6, 2, 1].includes(parent.type)) return respond("❌ Issue", "that channel type cannot hold threads", "#ff0000")
+
     let [ action, _p, pattern ] = data.data.options.map(o => o.value)
     const pChannel = client.channels.cache.get(_p)
     let blacklist = false
