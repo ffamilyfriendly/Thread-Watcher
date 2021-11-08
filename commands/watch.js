@@ -3,7 +3,7 @@ const threads = require("../index").threads,
 
 const run = (client, data, respond) => {
     const thread = data.data.resolved.channels[Object.keys(data.data.resolved.channels)[0]]
-    if(![10,11,12].includes(thread.type)) return respond("❌ Issue", "The attatched channel is not a thread.", "#ff0000")
+
     if(threads.has(thread.id)) { 
         try {
             removeThread(thread.id)
