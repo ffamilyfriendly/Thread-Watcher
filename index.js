@@ -170,8 +170,8 @@ client.on("ready", () => {
             })
         }
         // check if user has perms
-        const hasPerms = ((data.member.permissions & 0x0400000000) === 0x0400000000) ||((data.member.permissions & (1 << 4)) === (1 << 4)) || ((data.member.permissions & (1 << 13)) === (1 << 13)) || ((data.member.permissions & 0x0000000008) === 0x0000000008)
-        if(!hasPerms) return respond("❌ Permissions", "you need to have either administrator, manage channels, or manage messages permissions to run this command. Sorry!", "#ff0000", true)
+        const hasPerms = ((data.member.permissions & 0x0400000000) === 0x0400000000) || ((data.member.permissions & (1 << 4)) === (1 << 4)) || ((data.member.permissions & (1 << 5)) === (1 << 5)) || ((data.member.permissions & 0x0000000008) === 0x0000000008)
+        if(!hasPerms) return respond("❌ Permissions", "you need to have manage channels or manage server permissions to run this command. Sorry!", "#ff0000", true)
 
         if(!checkIfBotCanManageThread(data.guild_id)) return respond("❌ Issue", "bot requires manage threads permission to function!", "#ff0000")
 
