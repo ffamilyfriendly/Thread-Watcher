@@ -5,7 +5,7 @@ const run = (client, data, respond) => {
   const permissions = data.member.permissions;
 
   // Manage Channels or Manage Server
-  if (permissions & (1 << 4) === (1 << 4) || permissions & (1 << 5) === (1 << 5)) {
+  if (!(permissions & (1 << 4) === (1 << 4) || permissions & (1 << 5) === (1 << 5))) {
     respond('You do not have permission to use /watch command.', 'You need Manage Channels or Manage Server permission to use it.', '#ff0000', true);
     return;
   }
