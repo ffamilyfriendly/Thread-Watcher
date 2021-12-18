@@ -7,6 +7,7 @@ const run = (client, data, respond) => {
   // Manage Channels or Manage Server
   if (permissions & (1 << 4) === (1 << 4) || permissions & (1 << 5) === (1 << 5)) {
     respond('You do not have permission to use /auto command.', 'You need Manage Channels or Manage Server permission to use it.', '#ff0000', true);
+    return;
   }
 
   const thread = data.data.resolved.channels[Object.keys(data.data.resolved.channels)[0]];
@@ -30,6 +31,6 @@ const run = (client, data, respond) => {
       respond('❌ Issue', 'Bot failed to add channel to watchlist. Sorry about that', '#ff0000', true);
     }
   }
-}
+};
 
 module.exports = { run };
