@@ -47,10 +47,10 @@ const batchInChannel = async (channel, action, pattern = null ) => {
           removeThread(id);
         }
 
-        rv.succeeded++
+        rv.succeeded++;
       }
       catch(err) {
-        rv.failed++
+        rv.failed++;
       }
     });
 
@@ -64,6 +64,7 @@ const run = async (client, data, respond) => {
   // Manage Channels or Manage Server
   if (permissions & (1 << 4) === (1 << 4) || permissions & (1 << 5) === (1 << 5)) {
     respond('You do not have permission to use /batch command.', 'You need Manage Channels or Manage Server permission to use it.', '#ff0000', true);
+    return;
   }
 
   const parent = data.data.resolved.channels[Object.keys(data.data.resolved.channels)[0]];
@@ -92,7 +93,7 @@ const run = async (client, data, respond) => {
     failed: 0
   };
 
-  if (pChannel.type == 'GUILD_CATEGORY') {
+  if (pChannel.type === 'GUILD_CATEGORY') {
     for (let [key, child] of pChannel.children) {
       const a = await batchInChannel(child, action, [ pattern, blacklist ]);
       actions.succeeded += a.succeeded;
