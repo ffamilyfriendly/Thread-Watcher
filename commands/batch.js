@@ -63,7 +63,7 @@ const run = async (client, data, respond) => {
 
   // Manage Channels or Manage Server
   if (permissions & (1 << 4) === (1 << 4) || permissions & (1 << 5) === (1 << 5)) {
-    respond('You do not have permission to use /batch command.', 'You need Manage Channels or Manage Server permission to use it.', '#ff0000', false);
+    respond('You do not have permission to use /batch command.', 'You need Manage Channels or Manage Server permission to use it.', '#ff0000', true);
   }
 
   const parent = data.data.resolved.channels[Object.keys(data.data.resolved.channels)[0]];
