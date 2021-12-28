@@ -1,12 +1,12 @@
 const channels = require('../index').channels,
-  { addThread, removeThread } = require('./utils/threadActions');
+  { addThread, removeThread } = require('./utils/threadActions'),
+  { Permissions } = require('discord.js');
 
 const run = (client, data, respond) => {
-  const permissions = data.member.permissions;
+  const user_permissions = new Permissions(BigInt(data.member.permissions));
 
-  // Manage Channels or Manage Server
-  if (!((permissions & (1 << 4)) === (1 << 4) || (permissions & (1 << 5)) === (1 << 5))) {
-    respond('You do not have permission to use /auto command.', 'You need Manage Channels or Manage Server permission to use it.', '#ff0000', true);
+  if (!user_permissions.has(Permissions.FLAGS.MANAGE_THREADS)) {
+    respond('You do not have permission to use /auto command.', 'You need Manage Threads permission to use it.', '#ff0000', true);
     return;
   }
 
