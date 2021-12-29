@@ -1,166 +1,146 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Oswald:wght@700&display=swap');
 
 * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #121212;
+    font-family: 'Atkinson Hyperlegible', sans-serif;
+    color: white;
+}
+
+.title {
+    font-family: 'Oswald', sans-serif;
+    display: inline;
+    font-size: 1.7rem;
+}
+
+.padding {
+    padding: 0.5rem 11% 0 11%;
+}
+
+.navbar {
+    padding: 0rem 10% 0rem 10%;
+    width: 100%;
+    background-color: #1f1f1f;
+    display: flex;
+    justify-content: space-between;
+    height: 5rem;
+}
+
+.navbar img {
+    width: 70px;
+    border-radius: 2rem;
+    height: 4rem;
+}
+
+.logo {
+    margin: 0.5rem;
+    gap: 0.3rem;
+    display: flex;
+    align-items: center;
+}
+
+.links {
+    height: 4rem;
+}
+
+.links ul {
+    display: flex;
+    list-style: none;
     padding: 0;
     margin: 0;
-    box-sizing: border-box;
+}
+
+.links .first {
+    width: 1rem;
+    border-radius: 5rem 0 0 5rem;
+}
+
+.links .last {
+    width: 1rem;
+    border-radius: 0 5rem 5rem 0;
+}
+
+.first:hover, .last:hover {
+    background-color: #2b2b2b !important;
+}
+
+.links li {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    height: 5rem;
+    width: 5rem;
+    background-color: #2b2b2b;
+    transition: .2s;
+}
+
+.links li:hover {
+    background-color: #3d3d3d;
+}
+
+.links a {
+    color: inherit;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.big-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 3rem;
 }
 
 a, b {
     color: rgb(226, 43, 43);
 }
 
-body {
-    background-color: black;
-    color: white;
-    font-family: 'IBM Plex Sans', sans-serif;
-}
-
-#stats {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 1rem;
-}
-
-#buttons {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-}
-
-#content {
-    padding: 0.5rem;
-    margin-bottom: 1rem;
-    min-height: calc(100vh - 4rem);
-}
-
-.btn {
-    text-align: center;
-    background-color: #5865F2;
-    color: white;
-    padding: 0.5rem;
-    border-radius: 0.5rem;
-    margin: 0.3rem;
-    display: inline-block;
-    text-decoration: none;
-    width: 50%;
-}
-
-.dbl {
-    background-color: #5865F2;
-}
-
-.area {
-    margin: 2rem 0rem 2rem 0rem;
-}
-
-#stats div {
-    background-color: rgb(61, 60, 60);
-    padding: 1rem;
-    border-radius: 0.7rem;
-}
-
-#stats div p {
-    font-size: larger;
-    text-align: center;
-}
-
-#content {
-    width: 100%;
-}
-
-#footer {
-    width: 100%;
-    height: 3rem;
-    background-color: rgb(36, 36, 36);
-    padding: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    justify-content: space-between;
-    flex: 1;
+.section {
+    padding-bottom: 1rem;
+    font-size: 1.2rem;
 }
 
 ul {
+    margin-left: 1rem;
+}
+
+small {
+    color: lightgray;
+}
+
+#repo {
+    position: fixed;
+    bottom: 0;
+    right: 0;
     margin: 1rem;
 }
 
-#infoContainer {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.informational {
-    --ico-color: white;
-    border: 3px solid white;
-    width: 100%;
-    display: flex;
-    padding: 1em;
-    margin-bottom: 0.5rem;
-}
-
-button {
-    border: 0;
-    background-color: transparent;
-    color: white;
-    font-size: large;
-    cursor: pointer;
-}
-
-.informational.error {
-    --ico-color: red;
-    border-color: red;
-    border-width: 5px;
-}
-
-.informational.warning {
-    --ico-color: orange;
-    border-color: orange;
-    border-width: 5px;
-}
-
-.informational.info {
-    --ico-color: rgb(0, 132, 255);
-    border-color: rgb(0, 132, 255);
-    border-width: 5px;
-}
-
-.ico-container {
-    padding-right: 0.5rem;
-}
-
-.ico-container path {
-    fill: var(--ico-color);
-}
-
-table {
-    width: 100%;
-}
-
-.icon-table {
+#repo svg {
     width: 50px;
 }
 
-table img {
-    height: 50px;
+#repo path {
+    width: 50px;
+    fill: white;
 }
 
-td {
-    text-align: center;
-}
-
-@media only screen and (min-width: 600px) {
-    #footer {
-        padding-left: 10%;
-        padding-right: 10%;
+@media only screen and (max-width: 700px) {
+    .navbar .title {
+        display: none;
     }
 
-    #content {
-        padding-left: 10%;
-        padding-right: 10%;
+    .navbar {
+        padding: 0 0.5rem 0 0.5rem;
+    }
+
+    .padding {
+        padding: 0 0.5rem 0 0.5rem;
+    }
+
+    .section {
+        font-size: 1.1rem;
     }
 }
