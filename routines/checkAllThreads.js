@@ -14,6 +14,10 @@ const c = require("../commands/utils/clog"),
     Edit from 200+ threads: f*ck you, above me
 */
 
+/*
+    I might port this over to discord.js. Not sure
+*/
+
 let ratelimits = {
     resets: null,
     remaining: 10,

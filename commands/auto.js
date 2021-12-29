@@ -1,16 +1,16 @@
 const channels = require('../index').channels,
   { addThread, removeThread } = require('./utils/threadActions'),
-  { Permissions } = require('discord.js');
+  { Permissions, CommandInteraction } = require('discord.js');
 
-const run = (client, data, respond) => {
-  const user_permissions = new Permissions(BigInt(data.member.permissions));
-
-  if (!user_permissions.has(Permissions.FLAGS.MANAGE_THREADS)) {
-    respond('You do not have permission to use /auto command.', 'You need Manage Threads permission to use it.', '#ff0000', true);
-    return;
-  }
-
-  const thread = data.data.resolved.channels[Object.keys(data.data.resolved.channels)[0]];
+/**
+ * 
+ * @param {*} client 
+ * @param {CommandInteraction} interaction 
+ * @param {*} respond 
+ * @returns 
+ */
+const run = (client, interaction, respond) => {
+  const thread = interaction.options.getChannel("channel")
 
   if (channels.has(thread.id)) {
     try {
@@ -23,7 +23,7 @@ const run = (client, data, respond) => {
   }
   else {
     try {
-      addThread(thread.id, data.guild_id, 'channels');
+      addThread(thread.id, thread.guildId, 'channels');
       respond('👌 Done', `Bot will make sure all threads in <#${thread.id}> are un-archived`);
     }
     catch(err) {

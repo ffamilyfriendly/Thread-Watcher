@@ -124,64 +124,67 @@ const { removeThread, addThread } = require("./commands/utils/threadActions")
 
 const checkAll = require("./routines/checkAllThreads").run
 
+client.on("interactionCreate", interaction => {
+    if(!interaction.isCommand()) return
+    const respond = (title,content, color = "#008000", private = false) => {
+        const embed = new Discord.MessageEmbed()
+            .setColor(color)
+            .setTitle("Thread Watcher")
+            .setFooter('Bot by Family friendly#6191, https://familyfriendly.xyz')
+            .addFields({ name: title, value: content })
+
+            /*
+            if(content.length >= 1900) {
+                const fieldArr = content.match(/.{1,1900}/gi)
+                for(let i = 0; i < fieldArr.length; i++) {
+                    // lazy but will work
+                    if(!fieldArr[i]) continue;
+                    if(content.includes(", ")) {
+                        if(![">"," ", ","].includes(fieldArr[i][fieldArr[i].length - 1])) {
+                            let l = fieldArr[i+1].indexOf(">")
+                            console.log(l)
+                            fieldArr[i] += fieldArr[i+1].substr(0, l + 1)
+                            fieldArr[i+1] = fieldArr[i+1].substr(l + 1)
+                        }
+                    }
+                    embed.addFields({ name: `(#${i+1}) ${title}`, value: fieldArr[i] })
+                }
+            } else {
+                embed.addFields({ name: title, value: content })
+            } */
+            
+            /*
+                TODO: fix above!! its absolutely horrible
+            */
+
+        if(interaction.deferred) interaction.editReply({ embeds: [embed] })
+        else interaction.reply({ embeds: [embed], ephemeral: private })
+    }
+
+
+    if(["auto", "batch", "watch"].includes(interaction.commandName)) {
+        if(!checkIfBotCanManageThread(interaction.guildId)) return respond("❌ Issue", "bot requires manage threads permission to function!", "#ff0000")
+        else if(!interaction.memberPermissions.has(Discord.Permissions.FLAGS.MANAGE_THREADS)) return respond(`You do not have permission to use /${interaction.commandName} command.`, 'You need Manage Threads permission to use it.', '#ff0000', true);
+    } 
+    if(!commands.has(interaction.commandName)) return respond("❌ Issue", "bot does not have that command registered. Contact bot host", "#ff0000", true)
+    
+    const cmd = commands.get(interaction.commandName)
+    try {
+        cmd.run(client, interaction, respond)
+    } catch(err) {
+        console.warn(err)
+        respond("❌ Internal error", "something went wrong that probably wasnt your fault", "#ff0000", true)
+    }
+})
+
 client.on("ready", () => {
     init()
     checkAll(threads)
     console.log(`Bot running on ${client.guilds.cache.size} guilds and keeping ${threads.size} threads active.`)
+
+    // set status every hour as it seems to go away after a while
     client.user.setPresence({ activities: [{ name: 'with 🧵 | familyfriendly.xyz/thread', type: "PLAYING" }], status: 'online' });
-    client.ws.on("INTERACTION_CREATE", async data => {
-        const respond = (title,content, color = "#008000", private = false) => {
-            const embed = new Discord.MessageEmbed()
-                .setColor(color)
-                .setTitle("Thread Watcher")
-                .setFooter('Bot by Family friendly#6191, https://familyfriendly.xyz');
-
-                if(content.length >= 1900) {
-                    const fieldArr = content.match(/.{1,1900}/gi)
-                    for(let i = 0; i < fieldArr.length; i++) {
-                        // lazy but will work
-                        if(!fieldArr[i]) continue;
-                        if(content.includes(", ")) {
-                            if(![">"," ", ","].includes(fieldArr[i][fieldArr[i].length - 1])) {
-                                let l = fieldArr[i+1].indexOf(">")
-                                console.log(l)
-                                fieldArr[i] += fieldArr[i+1].substr(0, l + 1)
-                                fieldArr[i+1] = fieldArr[i+1].substr(l + 1)
-                            }
-                        }
-                        embed.addFields({ name: `(#${i+1}) ${title}`, value: fieldArr[i] })
-                    }
-                } else {
-                    embed.addFields({ name: title, value: content })
-                }
-                /*
-                                    .addFields(
-                    { name: title, value: content }
-                )
-                */
-            client.api.interactions(data.id, data.token).callback.post({
-                data: {
-                    type: 4,
-                    data: {
-                        embeds: [embed],
-                        flags: private ? 1 << 6 : 0
-                    }
-                }
-            })
-        }
-
-        if(!checkIfBotCanManageThread(data.guild_id)) return respond("❌ Issue", "bot requires manage threads permission to function!", "#ff0000")
-
-        if(!commands.has(data.data.name)) return respond("❌ Issue", "bot does not have that command registered. Contact bot host", "#ff0000", true)
-        const cmd = commands.get(data.data.name)
-        
-        try {
-            cmd.run(client, data, respond)
-        } catch(err) {
-            console.warn(err)
-            respond("❌ Internal error", "something went wrong that probably wasnt your fault", "#ff0000")
-        }
-    })
+    setInterval(() => { client.user.setPresence({ activities: [{ name: 'with 🧵 | familyfriendly.xyz/thread', type: "PLAYING" }], status: 'online' }); }, 1000 * 60 * 60)
 })
 
 client.on("threadUpdate", (oldThread, newThread) => {
@@ -203,72 +206,21 @@ client.on("threadCreate", (thread) => {
 
 client.login(config.token)
 
-if(config.stats && config.stats.enabled) {
+
+if(config.stats.enabled) {
     const http = require("http")
-    if(!config.stats.host) {
-        setInterval(() => {
-            console.log("writing")
-            try {
-                const data = new TextEncoder().encode(
-                    JSON.stringify({
-                        guilds: client.guilds.cache.size,
-                        threads: threads.size,
-                        invite: config.invite,
-                        applicationId: config.applicationId,
-                        image: config.image
-                    })
-                )
-    
-                const options = {
-                    hostname: "localhost",
-                    port: config.stats.port,
-                    path: `/${config.stats.postPath}`,
-                    method: "POST",
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Content-Length': data.length
-                    }
-                }
-    
-                const req = http.request(options)
-                req.write(data)
-            } catch(err) {
-                console.log("[STATS] could not push stats", err)
-            }
-        }, 1000 * 60)
-    } else {
-        let stats = { }
-        // bot stats
-        const reqListener = (req,res) => {
-            if(req.url.endsWith(config.stats.postPath)) {
-                let d = ""
-                req.on("data", (data) => {
-                    d += data
-                })
-
-                req.on("end", () => {
-                    const parsed = JSON.parse(d)
-                    stats[parsed.applicationId] = parsed
-                    return res.end("ok")
-                })
-            }
-
-            if(!req.url || !req.url.endsWith("/stats")) {
-                res.writeHead(404)
-                return res.end("the only path is /stats... how did you manage to mess that up?")
-            }
-            res.writeHead(200)
-            res.end(JSON.stringify({
-                main: {
-                    guilds: client.guilds.cache.size,
-                    threads: threads.size
-                },
-                alternative: stats
-            }))
+    const reqListener = (req,res) => {
+        if(!req.url || !req.url.endsWith("/stats")) {
+            res.writeHead(404)
+            return res.end("the only path is /stats... how did you manage to mess that up?")
         }
-
-        const server = http.createServer(reqListener)
-        server.listen(config.stats.port)
+        res.writeHead(200)
+        res.end(JSON.stringify({
+            guilds: client.guilds.cache.size,
+            threads: threads.size
+        }))
     }
+    
+    const server = http.createServer(reqListener)
+    server.listen(config.stats.port)
 }
-
