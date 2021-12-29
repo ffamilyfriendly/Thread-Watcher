@@ -39,8 +39,8 @@ document.addEventListener("DOMContentLoaded", () => {
     .then(data => {
         console.log(data)
         if(!data) return
-        document.getElementById("servers").innerText = data.guilds
-        document.getElementById("threads").innerText = data.threads
+        document.getElementById("SERVERS").innerText = data.guilds
+        document.getElementById("THREADS").innerText = data.threads
     })
 
     fetch(`./updates.json?v=${Date.now()}`).then( res => res.json())

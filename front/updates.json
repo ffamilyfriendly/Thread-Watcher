@@ -1,9 +1,0 @@
-{
-    "info": {
-       "type": "info",
-        "title": "Update",
-        "content": "Bot has been updated to <b>1.1.0!</b> Check what's new below!",
-        "version": 1
-    },
-    "important": null
-}
