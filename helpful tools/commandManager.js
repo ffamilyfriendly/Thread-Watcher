@@ -1,4 +1,4 @@
-const config = require("./config.js"),
+const config = require("../config.js"),
     fetch = require("node-fetch"),
     readline = require("readline")
 

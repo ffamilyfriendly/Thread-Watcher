@@ -119,7 +119,7 @@ const run = async (client, interaction, respond) => {
   .then(_d => {
     doBatchThing()
     .then(_res => {
-      respond('👌 Done', `🟢 ${actions.succeeded} succeeded. 🔴 ${actions.failed} failed`);
+      respond('👌 Done', `🟢 ${actions.succeeded} succeeded. 🔴 ${actions.failed} failed`, "#008000", true);
     })
   })
 };

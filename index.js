@@ -133,30 +133,6 @@ client.on("interactionCreate", interaction => {
             .setFooter('Bot by Family friendly#6191, https://familyfriendly.xyz')
             .addFields({ name: title, value: content })
 
-            /*
-            if(content.length >= 1900) {
-                const fieldArr = content.match(/.{1,1900}/gi)
-                for(let i = 0; i < fieldArr.length; i++) {
-                    // lazy but will work
-                    if(!fieldArr[i]) continue;
-                    if(content.includes(", ")) {
-                        if(![">"," ", ","].includes(fieldArr[i][fieldArr[i].length - 1])) {
-                            let l = fieldArr[i+1].indexOf(">")
-                            console.log(l)
-                            fieldArr[i] += fieldArr[i+1].substr(0, l + 1)
-                            fieldArr[i+1] = fieldArr[i+1].substr(l + 1)
-                        }
-                    }
-                    embed.addFields({ name: `(#${i+1}) ${title}`, value: fieldArr[i] })
-                }
-            } else {
-                embed.addFields({ name: title, value: content })
-            } */
-            
-            /*
-                TODO: fix above!! its absolutely horrible
-            */
-
         if(interaction.deferred) interaction.editReply({ embeds: [embed] })
         else interaction.reply({ embeds: [embed], ephemeral: private })
     }
