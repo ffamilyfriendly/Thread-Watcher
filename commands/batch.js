@@ -124,4 +124,39 @@ const run = async (client, interaction, respond) => {
   })
 };
 
-module.exports = { run };
+const data = {
+  name:"batch",
+  description: "batch add/remove threads to watch",
+  options: [
+      {
+          name: "action",
+          description: "what action to apply to the threads",
+          required: true,
+          type: 3,
+          choices: [
+              {
+                  name: "watch",
+                  value: "watch"
+              },
+              {
+                  name: "un-watch",
+                  value: "unwatch"
+              }
+          ]
+      },
+      {
+          name: "parent",
+          description: "The parent channel or category whose threads you want to apply an action to",
+          type: 7,
+          required: true,
+          channel_types: [0, 4, 5]
+      },
+      {
+          name: "pattern",
+          description: "specify which channels by name to apply an action to. Check website for more info",
+          type: 3
+      }
+  ]
+}
+
+module.exports = { run, data };

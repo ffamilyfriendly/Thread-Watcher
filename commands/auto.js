@@ -33,4 +33,18 @@ const run = (client, interaction, respond) => {
   }
 };
 
-module.exports = { run };
+const data = {
+  name:"auto",
+  description: "automatically watch all threads made in a selected channel",
+  options: [
+      {
+          name: "channel",
+          description: "the channel to toggle",
+          required: true,
+          type: 7,
+          channel_types: [0, 5]
+      }
+  ]
+}
+
+module.exports = { run, data };

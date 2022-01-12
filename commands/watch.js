@@ -32,4 +32,18 @@ const run = (client, interaction, respond) => {
   }
 };
 
-module.exports = { run };
+const data = {
+  name:"watch",
+  description: "toggles auto-unarchive on this thread",
+  options: [
+      {
+          name: "thread",
+          description: "Thread to toggle auto-unarchive on",
+          required: true,
+          type: 7,
+          channel_types: [10, 11, 12]
+      }
+  ]
+}
+
+module.exports = { run, data };

@@ -31,4 +31,9 @@ const run = (client, interaction, respond) => {
   interaction.reply({ embeds: [ embed ], ephemeral: true })
 }
 
-module.exports = { run };
+const data = {
+  name:"threads",
+  description: "lists all threads in your server that the bot is watching"
+}
+
+module.exports = { run, data };

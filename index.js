@@ -19,6 +19,24 @@ const getThreads = (map, name) => {
     }
 }
 
+const checkIfBotCanManageThread = (sid) => {
+    return client.guilds.cache.get(sid)?.me.permissions.has("MANAGE_THREADS")
+}
+
+const loadCommands = (clearcache) => {
+    if(clearcache) {
+        for(let cmd of client.commands) {
+            cmd = cmd[0]
+            delete require.cache[require.resolve(`./commands/${cmd}.js`)]
+        }
+    }
+    client.commands = new Map(fs.readdirSync("./commands").filter(f => f.endsWith(".js")).map(f => [f.split(".js")[0],require(`./commands/${f}`)]))
+}
+
+module.exports = { db, client, threads, channels, checkIfBotCanManageThread, loadCommands }
+
+loadCommands()
+
 const init = () => {
 
     // create table where thread id is primary key and server id is a property.
@@ -34,92 +52,16 @@ const init = () => {
     // makes sure command is only registered once
     if(fs.existsSync("./.commands")) return
 
-    client.api.applications(client.user.id).commands.post({
-        data: {
-            name:"auto",
-            description: "automatically watch all threads made in a selected channel",
-            options: [
-                {
-                    name: "channel",
-                    description: "the channel to toggle",
-                    required: true,
-                    type: 7,
-                    channel_types: [0, 5]
-                }
-            ]
-        }
-    })
-    
-    client.api.applications(client.user.id).commands.post({
-        data: {
-            name:"watch",
-            description: "toggles auto-unarchive on this thread",
-            options: [
-                {
-                    name: "thread",
-                    description: "Thread to toggle auto-unarchive on",
-                    required: true,
-                    type: 7,
-                    channel_types: [10, 11, 12]
-                }
-            ]
-        }
-    })
-
-    client.api.applications(client.user.id).commands.post({
-        data: {
-            name:"threads",
-            description: "lists all threads in your server that the bot is watching"
-        }
-    })
-
-    client.api.applications(client.user.id).commands.post({
-        data: {
-            name:"batch",
-            description: "batch add/remove threads to watch",
-            options: [
-                {
-                    name: "action",
-                    description: "what action to apply to the threads",
-                    required: true,
-                    type: 3,
-                    choices: [
-                        {
-                            name: "watch",
-                            value: "watch"
-                        },
-                        {
-                            name: "un-watch",
-                            value: "unwatch"
-                        }
-                    ]
-                },
-                {
-                    name: "parent",
-                    description: "The parent channel or category whose threads you want to apply an action to",
-                    type: 7,
-                    required: true,
-                    channel_types: [0, 4, 5]
-                },
-                {
-                    name: "pattern",
-                    description: "specify which channels by name to apply an action to. Check website for more info",
-                    type: 3
-                }
-            ]
-        }
-    })
+    for(let command of client.commands) {
+        command = command[1]
+        if(command.allowedGuild) client.api.applications(client.user.id).guilds(command.allowedGuild).commands.post({ data: command.data })
+        else client.api.applications(client.user.id).commands.post({ data: command.data })
+    }
 
     // write file keeping command from being registered every time bot starts
     fs.writeFileSync("./.commands","command have been added")
 }
 
-const checkIfBotCanManageThread = (sid) => {
-    return client.guilds.cache.get(sid)?.me.permissions.has("MANAGE_THREADS")
-}
-
-module.exports = { db, client, threads, channels, checkIfBotCanManageThread }
-const commands = new Map(fs.readdirSync("./commands").filter(f => f.endsWith(".js")).map(f => [f.split(".js")[0],require(`./commands/${f}`)]))
 const { removeThread, addThread } = require("./commands/utils/threadActions")
 
 const checkAll = require("./routines/checkAllThreads").run
@@ -142,9 +84,9 @@ client.on("interactionCreate", interaction => {
         if(!checkIfBotCanManageThread(interaction.guildId)) return respond("❌ Issue", "bot requires manage threads permission to function!", "#ff0000")
         else if(!interaction.memberPermissions.has(Discord.Permissions.FLAGS.MANAGE_THREADS)) return respond(`You do not have permission to use /${interaction.commandName} command.`, 'You need Manage Threads permission to use it.', '#ff0000', true);
     } 
-    if(!commands.has(interaction.commandName)) return respond("❌ Issue", "bot does not have that command registered. Contact bot host", "#ff0000", true)
+    if(!client.commands.has(interaction.commandName)) return respond("❌ Issue", "bot does not have that command registered. Contact bot host", "#ff0000", true)
     
-    const cmd = commands.get(interaction.commandName)
+    const cmd = client.commands.get(interaction.commandName)
     try {
         cmd.run(client, interaction, respond)
     } catch(err) {
