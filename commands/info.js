@@ -76,7 +76,7 @@ const run = (client, interaction, respond) => {
     kofi.setURL("https://ko-fi.com/ffamilyfriendly")
     
     components.addComponents(invite, support, website, kofi)
-    interaction.reply({ embeds: [ pages[page]() ], components: [components] })
+    interaction.reply({ embeds: [ pages[page]() ], components: [components], ephemeral: true })
 }
 
 const data = {
