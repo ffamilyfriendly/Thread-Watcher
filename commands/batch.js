@@ -63,7 +63,7 @@ const batchInChannel = async (channel, action, pattern = null ) => {
  * @param {*} respond 
  * @returns 
  */
-const run = async (client, interaction, respond) => {
+const run = async (client, interaction, respond, l) => {
   const action = interaction.options.getString("action")
   const parent = interaction.options.getChannel("parent")
   const pattern = interaction.options.getString("pattern")
@@ -79,7 +79,7 @@ const run = async (client, interaction, respond) => {
       pattern = RegExp(pattern.replace('*', '\\w*'));
     }
     else {
-      respond('❌ Issue', `your pattern "${pattern}" includes forbidden characters`, '#ff0000', true);
+      respond('❌ Issue', l("batch_forbidden_characters", { pattern }), '#ff0000', true);
       return;
     }
   }
@@ -119,7 +119,8 @@ const run = async (client, interaction, respond) => {
   .then(_d => {
     doBatchThing()
     .then(_res => {
-      respond('👌 Done', `🟢 ${actions.succeeded} succeeded. 🔴 ${actions.failed} failed`, '#008000');
+      //`🟢 ${actions.succeeded} succeeded. 🔴 ${actions.failed} failed`
+      respond(`👌 ${l("done")}`, l("batch_result", { succeeded: actions.succeeded, failed: actions.failed }), '#008000');
     })
   })
 };

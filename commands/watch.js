@@ -1,6 +1,7 @@
 const threads = require('../index').threads,
   { addThread, removeThread } = require('./utils/threadActions'),
-  { CommandInteraction } = require('discord.js');
+  { CommandInteraction } = require('discord.js'),
+  getText = require("./utils/getText")
 
 /**
  * 
@@ -14,20 +15,21 @@ const run = (client, interaction, respond) => {
   if (threads.has(thread.id)) {
     try {
       removeThread(thread.id);
-      respond('👌 Done', `bot will no longer keep <#${thread.id}> un-archived`);
+      // `getText("watch_off", interaction.locale, { id: thread.id })`
+      respond(`👌 ${getText("done", interaction.locale)}`, getText("watch_off", interaction.locale, { id: thread.id }));
     }
     catch(err) {
-      respond('❌ Issue', 'Bot failed to remove thread from database. Sorry about that', '#ff0000', true);
+      respond(`❌ ${getText("issue", interaction.locale)}`, getText("watch_issue_remove", interaction.locale), '#ff0000', true);
     }
   }
   else {
     try {
       addThread(thread.id, interaction.guildId);
-      respond('👌 Done', `Bot will make sure <#${thread.id}> is un-archived`);
+      respond(`👌 ${getText("done", interaction.locale)}`, getText("watch_on", interaction.locale, { id: thread.id }));
     }
     catch(err) {
       console.error(err);
-      respond('❌ Issue', 'Bot failed to add thread to watchlist. Sorry about that', '#ff0000', true);
+      respond(`❌ ${getText("issue", interaction.locale)}`, getText("watch_issue_add", interaction.locale), '#ff0000', true);
     }
   }
 };

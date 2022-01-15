@@ -1,0 +1,73 @@
+{
+    "__DOCUMENTATION__": {
+        "sorry": "json has no native documentation formatting. This will do",
+        "locales": "https://discord.com/developers/docs/dispatch/field-values#predefined-field-values-accepted-locales",
+        "formatting": {
+            "keeping tidy": "please prefix command specific strings with COMMANDNAME_ as this getting collisions.",
+            "grouping": "please keep any general strings (not bound to a specific command) at the top",
+            "inline variables": "you can include variables by enclosing their name in {NAME}. You can see which variables are availible for which command by checking where the label is used"
+        }
+    },
+
+
+    "done" : {
+        "en-GB": "done",
+        "sv-SE": "klart"
+    },
+    "issue": {
+        "en-GB": "issue",
+        "sv-SE": "problem"
+    },
+    "command_broke": {
+        "en-GB": "something went wrong and it probably wasnt your fault",
+        "sv-SE": "något gick paj och det var inte ditt fel"
+    },
+    "needs_manage_threads": {
+        "en-GB": "bot needs `MANAGE_THREADS` for this command",
+        "sv-SE": "botten behöver `MANAGE_THREADS` för detta kommando"
+    },
+    "user_needs_manage_threads": {
+        "en-GB": "you need `MANAGE_THREADS` to use it.",
+        "sv-SE": "du behöver `MANAGE_THREADS` för att använda det."
+    },
+    "no_perms_for_command": {
+        "en-GB": "You do not have permission to use /{command} command.",
+        "sv-SE": "Du har inte tillåtelse att använda /${command} kommandot."
+    },
+    "bot_by": {
+        "en-GB": "Bot by Family friendly#6191",
+        "sv-SE": "Bot skapad av Family friendly#6191"
+    },
+    "watch_on": {
+        "en-GB": "bot will make sure <#{id}> is un-archived",
+        "sv-SE": "botten kommer se till att <#{id}> är o-arkiverad"
+    },
+    "watch_off": {
+        "en-GB": "bot will no longer keep <#{id}> un-archived",
+        "sv-SE": "botten kommer ej längre hålla <#{id}> o-arkiverad"
+    },
+    "watch_issue_add": {
+        "en-GB": "bot failed to add thread to watchlist. Sorry about that",
+        "sv-SE": "botten misslyckades att lägga till tråden till listan. Ber om ursäkt"
+    },
+    "watch_issue_remove": {
+        "en-GB": "bot failed to remove thread from database. Sorry about that",
+        "sv-SE": "botten misslyckades att ta bort tråden från listan. Ber om ursäkt"
+    },
+    "threads_is_watching": {
+        "en-GB": "thread-watcher is watching {amount} thread(s) in this server!",
+        "sv-SE": "thread-watcher håller koll på {amount} tråd(ar) i denna server!"
+    },
+    "threads_none_watched": {
+        "en-GB": "no threads are being watched!",
+        "sv-SE": "inga trådar hålls o-arkiverade!"
+    },
+    "batch_forbidden_characters": {
+        "en-GB": "your pattern \"{pattern}\" includes forbidden characters",
+        "sv-SE": "ditt text-mönster \"{pattern}\" innehåller förbjudna tecken"
+    },
+    "batch_result": {
+        "en-GB": "🟢 {succeeded} succeeded. 🔴 {failed} failed",
+        "sv-SE": "🟢 {succeeded} lyckades. 🔴 {failed} misslyckades"
+    }
+}

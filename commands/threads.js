@@ -1,5 +1,5 @@
 const db = require('../index').db;
-const { CommandInteraction, MessageEmbed } = require('discord.js');
+const { CommandInteraction, MessageEmbed } = require('discord.js')
 
 /**
  * 
@@ -7,13 +7,14 @@ const { CommandInteraction, MessageEmbed } = require('discord.js');
  * @param {CommandInteraction} interaction 
  * @param {*} respond 
  */
-const run = (client, interaction, respond) => {
+const run = (client, interaction, respond, l) => {
   let threadsList = db.prepare('SELECT * FROM threads WHERE server = ?').all(interaction.guildId);
   const embed = new MessageEmbed()
-  .setDescription(`thead-watcher is watching ${threadsList.length} threads in your server! ${threadsList.length > 40 && Math.random() > 0.9 ? "(that is a lot)" : ""}`)
+  // `thread-watcher is watching ${threadsList.length} threads in your server!`
+  .setDescription(l("threads_is_watching", { amount: threadsList.length }))
   .setColor("#008000")
   .setTitle("Thread Watcher")
-  .setFooter("beep boop! familyfriendly.xyz/threads")
+  .setFooter({ text: "beep boop! familyfriendly.xyz/threads" })
 
   // this code is so dumb. If anyone actually smort is reading this code (bless your soul) pls fix
   let buf = ""
@@ -26,7 +27,7 @@ const run = (client, interaction, respond) => {
       page++
     } else buf = tmp
   }
-  embed.addField(`Page #${page}`, buf || "no threads are being watched!")
+  embed.addField(`Page #${page}`, buf || l("threads_none_watched"))
 
   interaction.reply({ embeds: [ embed ], ephemeral: true })
 }

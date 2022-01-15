@@ -4,7 +4,8 @@ const Discord = require("discord.js"),
     { AutoPoster } = require("topgg-autoposter"),
     fs = require("fs"),
     sql = require("better-sqlite3"),
-    db = sql("./data.db")
+    db = sql("./data.db"),
+    getText = require("./commands/utils/getText")
 
 if(config.topggToken) AutoPoster(config.topggToken, client)
 
@@ -72,7 +73,7 @@ client.on("interactionCreate", interaction => {
         const embed = new Discord.MessageEmbed()
             .setColor(color)
             .setTitle("Thread Watcher")
-            .setFooter('Bot by Family friendly#6191, https://familyfriendly.xyz')
+            .setFooter({ text: `${getText("bot_by", interaction.locale)}, https://familyfriendly.xyz` })
             .addFields({ name: title, value: content })
 
         if(interaction.deferred) interaction.editReply({ embeds: [embed] })
@@ -81,17 +82,21 @@ client.on("interactionCreate", interaction => {
 
 
     if(["auto", "batch", "watch"].includes(interaction.commandName)) {
-        if(!checkIfBotCanManageThread(interaction.guildId)) return respond("❌ Issue", "bot requires manage threads permission to function!", "#ff0000")
-        else if(!interaction.memberPermissions.has(Discord.Permissions.FLAGS.MANAGE_THREADS)) return respond(`You do not have permission to use /${interaction.commandName} command.`, 'You need Manage Threads permission to use it.', '#ff0000', true);
+        if(!checkIfBotCanManageThread(interaction.guildId)) return respond(`❌ ${getText("issue", interaction.locale)}`, getText("needs_manage_threads", interaction.locale), "#ff0000")
+        else if(!interaction.memberPermissions.has(Discord.Permissions.FLAGS.MANAGE_THREADS)) return respond(getText("no_perms_for_command", interaction.locale, { command: interaction.commandName }), getText("user_needs_manage_threads", interaction.locale), '#ff0000', true);
     } 
-    if(!client.commands.has(interaction.commandName)) return respond("❌ Issue", "bot does not have that command registered. Contact bot host", "#ff0000", true)
+    if(!client.commands.has(interaction.commandName)) return respond(`❌ ${getText("issue", interaction.locale)}`, "bot does not have that command registered. Contact bot host", "#ff0000", true)
     
+    const l = (label, obj) => {
+        return getText(label, interaction.locale, obj)
+    }
+
     const cmd = client.commands.get(interaction.commandName)
     try {
-        cmd.run(client, interaction, respond)
+        cmd.run(client, interaction, respond, l)
     } catch(err) {
         console.warn(err)
-        respond("❌ Internal error", "something went wrong that probably wasnt your fault", "#ff0000", true)
+        respond(`❌ ${getText("issue", interaction.locale)}`, getText("command_broke", interaction.locale), "#ff0000", true)
     }
 })
 

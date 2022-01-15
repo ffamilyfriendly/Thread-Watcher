@@ -9,26 +9,26 @@ const channels = require('../index').channels,
  * @param {*} respond 
  * @returns 
  */
-const run = (client, interaction, respond) => {
+const run = (client, interaction, respond, l) => {
   const thread = interaction.options.getChannel("channel")
 
   if (channels.has(thread.id)) {
     try {
       removeThread(thread.id, 'channels');
-      respond('👌 Done', `bot will no longer keep all threads in <#${thread.id}> un-archived`);
+      respond(`👌 ${l("done")}`, l("watch_off", { id: thread.id }));
     }
     catch(err) {
-      respond('❌ Issue', 'Bot failed to remove channel from database. Sorry about that', '#ff0000', true);
+      respond(`❌ ${l("issue")}`, l("watch_issue_remove"), '#ff0000', true);
     }
   }
   else {
     try {
       addThread(thread.id, thread.guildId, 'channels');
-      respond('👌 Done', `Bot will make sure all threads in <#${thread.id}> are un-archived`);
+      respond(`👌 ${l("done")}`, l("watch_on", { id: thread.id }));
     }
     catch(err) {
       console.error(err);
-      respond('❌ Issue', 'Bot failed to add channel to watchlist. Sorry about that', '#ff0000', true);
+      respond(`❌ ${l("issue")}`, l("watch_issue_add"), '#ff0000', true);
     }
   }
 };
