@@ -27,24 +27,12 @@ const checkIfBotCanManageThread = (sid) => {
     return client.guilds.cache.get(sid)?.me.permissions.has("MANAGE_THREADS")
 }
 
-const loadCommands = (clearcache) => {
-    if(clearcache) {
-        for(let cmd of client.commands) {
-            cmd = cmd[0]
-            delete require.cache[require.resolve(`./commands/${cmd}.js`)]
-        }
-    }
-    client.commands = new Map(fs.readdirSync("./commands").filter(f => f.endsWith(".js")).map(f => [f.split(".js")[0],require(`./commands/${f}`)]))
-}
-
 const init = async () => {
 
     await db.createTables()
 
-    threads = asMap(await db.getThreads())
-    channels = asMap(await db.getChannels())
-
-    loadCommands()
+    asMap(await db.getThreads()).forEach((v, k) => threads.set(k, v))
+    asMap(await db.getChannels()).forEach((v, k) => channels.set(k, v))
 
     // this is lazy, but should work
     // makes sure command is only registered once
@@ -62,7 +50,19 @@ const init = async () => {
 
 init()
 
+const loadCommands = (clearcache) => {
+    if(clearcache) {
+        for(let cmd of client.commands) {
+            cmd = cmd[0]
+            delete require.cache[require.resolve(`./commands/${cmd}.js`)]
+        }
+    }
+    client.commands = new Map(fs.readdirSync("./commands").filter(f => f.endsWith(".js")).map(f => [f.split(".js")[0],require(`./commands/${f}`)]))
+}
+
 module.exports = { db, client, checkIfBotCanManageThread, loadCommands, threads, channels }
+
+loadCommands()
 
 const { removeThread, addThread } = require("./utils/threadActions.js")
 
@@ -73,8 +73,9 @@ client.on("interactionCreate", interaction => {
     const respond = (title,content, color = "#008000", private = false) => {
         const embed = new Discord.MessageEmbed()
             .setColor(color)
-            .setTitle("Thread Watcher")
-            .setFooter({ text: `${getText("bot_by", interaction.locale)}, https://familyfriendly.xyz` })
+            .setAuthor({ iconURL: interaction.user.displayAvatarURL(), name: interaction.user.tag  })
+            .setFooter({ text: "Thread-Watcher", iconURL: client.user.avatarURL() })
+            .setTimestamp()
             .addFields({ name: title, value: content })
 
         if(interaction.deferred) interaction.editReply({ embeds: [embed] })
@@ -114,6 +115,7 @@ client.on("threadUpdate", (oldThread, newThread) => {
     if(!threads.has(newThread.id)) return
     const diff = ( ( newThread.archivedAt - oldThread.archivedAt ) / 1000 ) / 60
     if(diff > 2 && (diff + 10) < oldThread.autoArchiveDuration) {
+        logger.info(`manually removed thread ${newThread.id}`)
         return removeThread(newThread.id)
     }
     if((newThread.archived) && checkIfBotCanManageThread(newThread.guildId)) newThread.setArchived(false, "automatic")
