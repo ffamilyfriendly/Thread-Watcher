@@ -1,8 +1,21 @@
-const c = require("../commands/utils/clog"),
+const c = require("../utils/clog.js"),
     fetch = require("node-fetch"),
     config = require("../config"),
     { checkIfBotCanManageThread } = require("../index"),
-    { removeThread } = require("../commands/utils/threadActions")
+    { removeThread } = require("../utils/threadActions.js"),
+    { logger } = require("../utils/clog.js")
+
+const logOpts = {
+    total: 0,
+    done: 0
+}
+
+const incr = () => {
+    logOpts.done++
+    const logEvery = 30
+    // status for every nth thread. Would get cluttery if we logged every thread
+    if(logOpts.done % logEvery === 0) logger.info(`checking threads | ${logOpts.done}/${logOpts.total} | ${Math.floor(logOpts.done/logOpts.total) * 100}% done`)
+}
 
 /*
     Trying to implement ratelimiting.
@@ -37,6 +50,7 @@ const doUnArchive = (id) => {
             archived: false
         })
     }).then(res =>  {
+        incr()
         if(res?.status == 403) console.warn(`could not un-archive ${id}`)
         if(res?.status == 429) console.warn("!!RATELIMITS!!", res)
         ratelimits = {
@@ -95,12 +109,14 @@ const getAllArchivedThreads = (map) => {
         for(let [key, value] of map) {
             try {
                 setTimeout(() => {
-                    getThread(value.threadID)
+                    getThread(key)
                     .then(t => {
                         if(t.thread_metadata.archived && checkIfBotCanManageThread(t.guild_id)) unArchive(t.id)
+                        else incr()
                     })
                     .catch(e => {
-                        console.error(`issue with thread ${key}`, e)
+                        logger.error(`issue with thread ${key}: ${JSON.stringify(e)}}`)
+                        incr()
                     })
                 }, freq * i)
                 if(i == map.size - 1) {
@@ -108,7 +124,7 @@ const getAllArchivedThreads = (map) => {
                 }
                 i++
             } catch(err) {
-                c.log(`issue with thread "${key}": ${err}`)
+                logger.error(`issue with thread ${key}: ${JSON.stringify(err)}`)
             }
             
         }
@@ -121,6 +137,7 @@ const getAllArchivedThreads = (map) => {
  */
 const run = ( map ) => {
     c.log(`Starting check all threads routine\ntotal threads: ${map.size}`)
+    logOpts.total = map.size
     getAllArchivedThreads(map)
     .then(() => {
         c.log(`Thread routine done!`)

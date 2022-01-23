@@ -3,21 +3,24 @@ const Discord = require("discord.js"),
     client = new Discord.Client({ intents: Discord.Intents.FLAGS.GUILDS }),
     { AutoPoster } = require("topgg-autoposter"),
     fs = require("fs"),
-    sql = require("better-sqlite3"),
-    db = sql("./data.db"),
-    getText = require("./commands/utils/getText")
+    db = require("./utils/db/getDatabase")(config.database.connectionOptions),
+    getText = require("./utils/getText.js"),
+    { logger } = require("./utils/clog")
 
 if(config.topggToken) AutoPoster(config.topggToken, client)
 
 let threads = new Map()
 let channels = new Map()
 
-const getThreads = (map, name) => {
-    const data = db.prepare(`SELECT * FROM ${name}`).all()
-    for(thread in data) {
-        const t = data[thread]
-        map.set(t.id, { threadID: t.id, serverID: t.server })
-    }
+/**
+ * 
+ * @param {Map} map 
+ */
+const asMap = ( data ) => {
+    const m = new Map()
+    for(let thing of data)
+        m.set(thing.id, { threadID: thing.id, serverID: thing.server })
+    return m
 }
 
 const checkIfBotCanManageThread = (sid) => {
@@ -34,20 +37,14 @@ const loadCommands = (clearcache) => {
     client.commands = new Map(fs.readdirSync("./commands").filter(f => f.endsWith(".js")).map(f => [f.split(".js")[0],require(`./commands/${f}`)]))
 }
 
-module.exports = { db, client, threads, channels, checkIfBotCanManageThread, loadCommands }
+const init = async () => {
 
-loadCommands()
+    await db.createTables()
 
-const init = () => {
+    threads = asMap(await db.getThreads())
+    channels = asMap(await db.getChannels())
 
-    // create table where thread id is primary key and server id is a property.
-    db.prepare("CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT)").run()
-
-    // channels for auto-watch threads
-    db.prepare("CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT)").run()
-
-    getThreads(threads, "threads")
-    getThreads(channels, "channels")
+    loadCommands()
 
     // this is lazy, but should work
     // makes sure command is only registered once
@@ -63,7 +60,11 @@ const init = () => {
     fs.writeFileSync("./.commands","command have been added")
 }
 
-const { removeThread, addThread } = require("./commands/utils/threadActions")
+init()
+
+module.exports = { db, client, checkIfBotCanManageThread, loadCommands, threads, channels }
+
+const { removeThread, addThread } = require("./utils/threadActions.js")
 
 const checkAll = require("./routines/checkAllThreads").run
 
@@ -95,15 +96,14 @@ client.on("interactionCreate", interaction => {
     try {
         cmd.run(client, interaction, respond, l)
     } catch(err) {
-        console.warn(err)
+        logger.warn(JSON.stringify(err))
         respond(`❌ ${getText("issue", interaction.locale)}`, getText("command_broke", interaction.locale), "#ff0000", true)
     }
 })
 
-client.on("ready", () => {
-    init()
+client.on("ready", async () => {
     checkAll(threads)
-    console.log(`Bot running on ${client.guilds.cache.size} guilds and keeping ${threads.size} threads active.`)
+    logger.done(`Bot running on ${client.guilds.cache.size} guilds and keeping ${threads.size} threads active.`)
 
     // set status every hour as it seems to go away after a while
     client.user.setPresence({ activities: [{ name: 'with 🧵 | familyfriendly.xyz/thread', type: "PLAYING" }], status: 'online' });
@@ -128,7 +128,6 @@ client.on("threadCreate", (thread) => {
 })
 
 client.login(config.token)
-
 
 if(config.stats.enabled) {
     const http = require("http")

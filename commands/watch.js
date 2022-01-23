@@ -1,7 +1,7 @@
 const threads = require('../index').threads,
-  { addThread, removeThread } = require('./utils/threadActions'),
+  { addThread, removeThread } = require('../utils/threadActions.js'),
   { CommandInteraction } = require('discord.js'),
-  getText = require("./utils/getText")
+  getText = require("../utils/getText")
 
 /**
  * 

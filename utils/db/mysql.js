@@ -1,0 +1,94 @@
+const mysql = require("mysql"),
+    { logger } = require("../clog.js")
+
+module.exports = class DatabaseExample {
+    /**
+     * 
+     * @param {Object} options the options defined in config.js for the database
+     */
+    constructor(options) {
+        this.db = mysql.createConnection(options)
+        this.db.connect((err) => {
+            if(err) {
+                logger.error(`could not connect do mysql database: ${err.toString()}`)
+                process.exit(1)
+            }
+        })
+    }
+
+    createTables() {
+        return new Promise((resolve, reject) => {
+            // generate the required threads and channels tables
+            // table structure: 
+            //  - thread: CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT)
+            //  - channel: CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT)
+            // where id is the id of the channel/thread and server is the id of the guild associated to the thread/channel
+
+            logger.info("Ensuring required tables exist...")
+            this.db.query("CREATE TABLE IF NOT EXISTS `threadwatcher`.`threads` (`id` VARCHAR(20) NOT NULL, `server` VARCHAR(20) NOT NULL, PRIMARY KEY (`id`));", (err) => {
+                if(err) {
+                    logger.error(`could not create table threads: ${err.toString()}`)
+                    process.exit(1)
+                }
+
+                this.db.query("CREATE TABLE IF NOT EXISTS `threadwatcher`.`channels` (`id` VARCHAR(20) NOT NULL, `server` VARCHAR(20) NOT NULL, PRIMARY KEY (`id`));", (err, e) => {
+                    if(err) {
+                        logger.error(`could not create table channels: ${err.toString()}`)
+                        process.exit(1)
+                    }
+                    logger.done("tables ensured!")
+                    resolve()
+                })
+            })
+        })
+    }
+
+    insertChannel(id, guildid) {
+        // insert a channel into the channels table
+        this.db.query("INSERT INTO channels VALUES(?,?)", [ id, guildid ])
+    }
+
+    insertThread(id, guildid) {
+        // insert a thread into the threads ctable
+        this.db.query("INSERT INTO threads VALUES(?,?)", [ id, guildid ])
+    }
+
+    getChannels() {
+        // get all channels
+        return new Promise((resolve, reject) => {
+            this.db.query("SELECT * FROM channels", (err, res) => {
+                if(err) reject(err)
+                return resolve(res)
+            })
+        })
+    }
+
+    getThreads() {
+        // get all threads
+        return new Promise((resolve, reject) => {
+            this.db.query("SELECT * FROM threads", (err, res) => {
+                if(err) reject(err)
+                return resolve(res)
+            })
+        })
+    }
+
+    getThreadsInGuild(id) {
+        return new Promise((resolve, reject) => {
+            this.db.query("SELECT * FROM threads WHERE server = ?", [id], (err, res) => {
+                if(err) reject(err)
+                return resolve(res)
+            })
+        })
+    }
+
+    deleteThread(id) {
+        // delete thread from the threads table
+        this.db.query("DELETE FROM threads WHERE id = ?", [id])
+    }
+
+    deleteChannel(id) {
+        // delete channel from the channels table
+        this.db.query("DELETE FROM channels WHERE id = ?", [id])(id)
+    }
+}
