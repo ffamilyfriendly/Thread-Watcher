@@ -7,8 +7,8 @@ const { CommandInteraction, MessageEmbed } = require('discord.js')
  * @param {CommandInteraction} interaction 
  * @param {*} respond 
  */
-const run = (client, interaction, respond, l) => {
-  let threadsList = db.prepare('SELECT * FROM threads WHERE server = ?').all(interaction.guildId);
+const run = async (client, interaction, respond, l) => {
+  let threadsList = await db.getThreadsInGuild(interaction.guildId);
   const embed = new MessageEmbed()
   // `thread-watcher is watching ${threadsList.length} threads in your server!`
   .setDescription(l("threads_is_watching", { amount: threadsList.length }))

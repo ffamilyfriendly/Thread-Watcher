@@ -1,4 +1,3 @@
-const db = require('../index').db;
 const { CommandInteraction, MessageEmbed, MessageActionRow, MessageButton } = require('discord.js');
 
 const ge = () => {

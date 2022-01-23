@@ -1,5 +1,5 @@
 const { threads } = require('../index'),
-  { addThread, removeThread } = require('./utils/threadActions'),
+  { addThread, removeThread } = require('../utils/threadActions.js'),
   { CommandInteraction, TextChannel } = require('discord.js');
 
 /**

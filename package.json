@@ -1,7 +1,10 @@
 {
   "dependencies": {
     "better-sqlite3": "^7.4.4",
+    "cli-progress": "^3.10.0",
     "discord.js": "^13.2.0",
+    "log75": "^2.2.0",
+    "mysql": "^2.18.1",
     "topgg-autoposter": "^2.0.0"
   }
 }
