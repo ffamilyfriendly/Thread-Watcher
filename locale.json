@@ -38,13 +38,21 @@
         "en-GB": "Bot by Family friendly#6191",
         "sv-SE": "Bot skapad av Family friendly#6191"
     },
+    "watch_watch" : {
+        "en-GB": "Thread was watched.",
+        "sv-SE": "Tråden tillagd."
+    },
+    "watch_unwatch" : {
+        "en-GB": "Thread was unwatched.",
+        "sv-SE": "Tråden borttagen från listan."
+    },
     "watch_on": {
-        "en-GB": "bot **will make sure** <#{id}> is un-archived",
-        "sv-SE": "botten **kommer se till att** <#{id}> är o-arkiverad"
+        "en-GB": "Thread-Watcher will keep <#{id}> active",
+        "sv-SE": "Thread-Watcher kommer se till att <#{id}> är aktivd"
     },
     "watch_off": {
-        "en-GB": "bot **will no longer keep** <#{id}> un-archived",
-        "sv-SE": "botten **kommer ej längre hålla** <#{id}> o-arkiverad"
+        "en-GB": "Thread-Watcher will no longer keep <#{id}> active",
+        "sv-SE": "Thread-Watcher kommer ej längre hålla <#{id}> aktiv"
     },
     "watch_issue_add": {
         "en-GB": "bot failed to add thread to watchlist. Sorry about that",
@@ -69,5 +77,13 @@
     "batch_result": {
         "en-GB": "🟢 {succeeded} succeeded. 🔴 {failed} failed",
         "sv-SE": "🟢 {succeeded} lyckades. 🔴 {failed} misslyckades"
+    },
+    "batch_watch" : {
+        "en-GB": "Threads were watched.",
+        "sv-SE": "Trådarna tillagda."
+    },
+    "batch_unwatch" : {
+        "en-GB": "Threads were unwatched.",
+        "sv-SE": "Trådenarna borttagna från listan."
     }
 }

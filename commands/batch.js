@@ -120,7 +120,7 @@ const run = async (client, interaction, respond, l) => {
     doBatchThing()
     .then(_res => {
       //`🟢 ${actions.succeeded} succeeded. 🔴 ${actions.failed} failed`
-      respond(`👌 ${l("done")}`, l("batch_result", { succeeded: actions.succeeded, failed: actions.failed }), '#008000');
+      respond(l(`batch_${action.replace("_","")}`), l("batch_result", { succeeded: actions.succeeded, failed: actions.failed }), '#008000');
     })
   })
 };

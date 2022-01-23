@@ -16,7 +16,7 @@ const run = (client, interaction, respond) => {
     try {
       removeThread(thread.id);
       // `getText("watch_off", interaction.locale, { id: thread.id })`
-      respond(`👌 ${getText("done", interaction.locale)}`, getText("watch_off", interaction.locale, { id: thread.id }));
+      respond(getText("watch_unwatch", interaction.locale), getText("watch_off", interaction.locale, { id: thread.id }), "RED");
     }
     catch(err) {
       respond(`❌ ${getText("issue", interaction.locale)}`, getText("watch_issue_remove", interaction.locale), '#ff0000', true);
@@ -25,7 +25,7 @@ const run = (client, interaction, respond) => {
   else {
     try {
       addThread(thread.id, interaction.guildId);
-      respond(`👌 ${getText("done", interaction.locale)}`, getText("watch_on", interaction.locale, { id: thread.id }));
+      respond(getText("watch_watch", interaction.locale), getText("watch_on", interaction.locale, { id: thread.id }));
     }
     catch(err) {
       console.error(err);
