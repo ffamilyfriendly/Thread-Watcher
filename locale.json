@@ -39,11 +39,11 @@
         "sv-SE": "Bot skapad av Family friendly#6191"
     },
     "watch_on": {
-        "en-GB": "bot will make sure <#{id}> is un-archived",
+        "en-GB": "bot **will make sure** <#{id}> is un-archived",
         "sv-SE": "botten kommer se till att <#{id}> är o-arkiverad"
     },
     "watch_off": {
-        "en-GB": "bot will no longer keep <#{id}> un-archived",
+        "en-GB": "bot **will no longer keep** <#{id}> un-archived",
         "sv-SE": "botten kommer ej längre hålla <#{id}> o-arkiverad"
     },
     "watch_issue_add": {
