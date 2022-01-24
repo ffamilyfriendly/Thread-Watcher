@@ -7,14 +7,15 @@ const c = require("../utils/clog.js"),
 
 const logOpts = {
     total: 0,
-    done: 0
+    done: 0,
+    freq: 0
 }
 
 const incr = () => {
     logOpts.done++
     const logEvery = 30
     // status for every nth thread. Would get cluttery if we logged every thread
-    if(logOpts.done % logEvery === 0) logger.info(`checking threads | ${logOpts.done}/${logOpts.total} | ${Math.floor(logOpts.done/logOpts.total) * 100}% done`)
+    if(logOpts.done % logEvery === 0) logger.info(`checking threads | ${logOpts.done}/${logOpts.total} | ETA: ${((logOpts.total * logOpts.freq) / 1000 - (logOpts.done * logOpts.freq) / 1000).toFixed(2)}s | ${(logOpts.done/logOpts.total * 100).toFixed(1)}% done`)
 }
 
 /*
@@ -25,6 +26,7 @@ const incr = () => {
     to grow too quickly. If I am wrong in this assesment I will suffer in debug hell but it is what it isssssss
 
     Edit from 200+ threads: f*ck you, above me
+    Edit from 5000+ threads: thanks above me
 */
 
 /*
@@ -102,8 +104,9 @@ const unArchive = (id) => {
  * @returns {Promise}
  */
 const getAllArchivedThreads = (map) => {
-    // 1000 represents a second, 30 represents how many requests we want to do in that time. I set it as 25 instead of 50 to give some leeway
-    const freq = 1000 / 25
+    // 1000 represents a second, 20 represents how many requests we want to do in that time. I set it as 20 instead of 50 to give some leeway
+    const freq = 1000 / 20
+    logOpts.freq = freq
     let i = 0
     return new Promise(async (resolve, reject) => {
         for(let [key, value] of map) {
