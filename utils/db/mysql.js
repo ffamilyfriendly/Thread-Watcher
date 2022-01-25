@@ -25,7 +25,7 @@ module.exports = class DatabaseExample {
             // where id is the id of the channel/thread and server is the id of the guild associated to the thread/channel
 
             logger.info("Ensuring required tables exist...")
-            this.db.query("CREATE TABLE IF NOT EXISTS `threadwatcher`.`threads` (`id` VARCHAR(20) NOT NULL, `server` VARCHAR(20) NOT NULL, `dueArchive` TIMESTAMP NOT NULL, PRIMARY KEY (`id`));", (err) => {
+            this.db.query("CREATE TABLE IF NOT EXISTS `threadwatcher`.`threads` (`id` VARCHAR(20) NOT NULL, `server` VARCHAR(20) NOT NULL, `dueArchive` INT NOT NULL, PRIMARY KEY (`id`));", (err) => {
                 if(err) {
                     logger.error(`could not create table threads: ${err.toString()}`)
                     process.exit(1)
@@ -50,7 +50,7 @@ module.exports = class DatabaseExample {
 
     insertThread(id, guildid, dueArchive) {
         // insert a thread into the threads ctable
-        this.db.query("INSERT INTO threads VALUES(?,?,?)", [ id, guildid, dueArchive ])
+        this.db.query("INSERT INTO threads VALUES(?,?,?)", [ id, guildid, Math.floor(dueArchive) ])
     }
 
     getChannels() {
