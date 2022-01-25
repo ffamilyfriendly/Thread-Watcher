@@ -1,9 +1,9 @@
 const { threads, channels, db } = require("../index.js")
 
-const addThread = ( threadid, guildid, table = "threads" ) => {
+const addThread = ( threadid, guildid, table = "channel" ) => {
     if(threads.has(threadid)) return
-    if(table === "threads"){
-        db.insertThread(threadid, guildid)
+    if(typeof table === "number"){
+        db.insertThread(threadid, guildid, table)
         threads.set(threadid, { threadID: threadid, serverID: guildid })
     }
     else {

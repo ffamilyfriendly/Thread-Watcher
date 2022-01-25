@@ -34,7 +34,7 @@ const batchInChannel = async (channel, action, pattern = null ) => {
           }
 
           if (action === 'watch') {
-            addThread(id, channel.guildId);
+            addThread(id, channel.guildId, (Date.now() / 60) + (channel.autoArchiveDuration * 60));
 
             if (t.archived) {
               t.setArchived(false, 'automatic');

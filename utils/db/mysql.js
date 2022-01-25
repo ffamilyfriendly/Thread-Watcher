@@ -25,7 +25,7 @@ module.exports = class DatabaseExample {
             // where id is the id of the channel/thread and server is the id of the guild associated to the thread/channel
 
             logger.info("Ensuring required tables exist...")
-            this.db.query("CREATE TABLE IF NOT EXISTS `threadwatcher`.`threads` (`id` VARCHAR(20) NOT NULL, `server` VARCHAR(20) NOT NULL, PRIMARY KEY (`id`));", (err) => {
+            this.db.query("CREATE TABLE IF NOT EXISTS `threadwatcher`.`threads` (`id` VARCHAR(20) NOT NULL, `server` VARCHAR(20) NOT NULL, `dueArchive` TIMESTAMP NOT NULL, PRIMARY KEY (`id`));", (err) => {
                 if(err) {
                     logger.error(`could not create table threads: ${err.toString()}`)
                     process.exit(1)
@@ -48,9 +48,9 @@ module.exports = class DatabaseExample {
         this.db.query("INSERT INTO channels VALUES(?,?)", [ id, guildid ])
     }
 
-    insertThread(id, guildid) {
+    insertThread(id, guildid, dueArchive) {
         // insert a thread into the threads ctable
-        this.db.query("INSERT INTO threads VALUES(?,?)", [ id, guildid ])
+        this.db.query("INSERT INTO threads VALUES(?,?,?)", [ id, guildid, dueArchive ])
     }
 
     getChannels() {
@@ -90,5 +90,21 @@ module.exports = class DatabaseExample {
     deleteChannel(id) {
         // delete channel from the channels table
         this.db.query("DELETE FROM channels WHERE id = ?", [id])(id)
+    }
+
+    updateArchiveTimes(id, time) {
+        // update a threads dueArchive property to the new archive time
+        this.db.query("UPDATE threads SET dueArchive = ? WHERE id = ?", [time, id])
+    }
+
+    getArchivedThreads() {
+        // search the database for threads whose dueArchive timestamp has passed
+        // also return timestamps which are null since I initialy messed up when altering the table
+        return new Promise((resolve, reject) => {
+            this.db.query("SELECT * FROM threads WHERE dueArchive IS NULL OR dueArchive < UNIX_TIMESTAMP()", (err, res) => {
+                if(err) reject(err)
+                return resolve(res)
+            })
+        })
     }
 }

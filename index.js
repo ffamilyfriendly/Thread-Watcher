@@ -103,7 +103,7 @@ client.on("interactionCreate", interaction => {
 })
 
 client.on("ready", async () => {
-    checkAll(threads)
+    checkAll(asMap(await db.getArchivedThreads()))
     logger.done(`Bot running on ${client.guilds.cache.size} guilds and keeping ${threads.size} threads active.`)
 
     // set status every hour as it seems to go away after a while
@@ -118,7 +118,10 @@ client.on("threadUpdate", (oldThread, newThread) => {
         logger.info(`manually removed thread ${newThread.id}`)
         return removeThread(newThread.id)
     }
-    if((newThread.archived) && checkIfBotCanManageThread(newThread.guildId)) newThread.setArchived(false, "automatic")
+    if((newThread.archived) && checkIfBotCanManageThread(newThread.guildId)) {
+        newThread.setArchived(false, "automatic")
+        db.updateArchiveTimes(newThread.id, (Date.now() / 60) + (newThread.autoArchiveDuration * 60))
+    }
 })
 
 client.on("threadDelete", (thread) => {
@@ -126,7 +129,7 @@ client.on("threadDelete", (thread) => {
 })
 
 client.on("threadCreate", (thread) => {
-    if(channels.has(thread.parentId)) addThread(thread.id, thread.guildId, "threads")
+    if(channels.has(thread.parentId)) addThread(thread.id, thread.guildId, (Date.now() / 60) + (thread.autoArchiveDuration * 60))
 })
 
 client.login(config.token)

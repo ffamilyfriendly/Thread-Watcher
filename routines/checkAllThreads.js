@@ -75,7 +75,6 @@ const handleQueue = () => {
             handleQueue()
         }, (ratelimits.resets - Date.now() / 1000) + 500)
     }
-    c.log(`un-archiving ${thread}`)
 }
 
 const getThread = (id) => {

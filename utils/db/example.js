@@ -21,9 +21,17 @@ module.exports = class DatabaseExample {
         // return nothing
     }
 
-    insertThread(id, guildid) {
+    insertThread(id, guildid, dueArhive) {
         // insert a thread into the threads ctable
         // return nothing
+    }
+
+    updateArchiveTimes(id, time) {
+        // update a threads dueArchive property to the new archive time
+    }
+
+    getArchivedThreads() {
+        // search the database for threads whose dueArchive timestamp has passed
     }
 
     getChannels() {
