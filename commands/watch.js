@@ -24,7 +24,7 @@ const run = (client, interaction, respond) => {
   }
   else {
     try {
-      addThread(thread.id, interaction.guildId, (Date.now() / 60) + (thread.autoArchiveDuration * 60));
+      addThread(thread.id, interaction.guildId, (Date.now() / 1000) + (thread.autoArchiveDuration * 60));
       respond(getText("watch_watch", interaction.locale), getText("watch_on", interaction.locale, { id: thread.id }));
     }
     catch(err) {

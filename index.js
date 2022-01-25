@@ -120,7 +120,7 @@ client.on("threadUpdate", (oldThread, newThread) => {
     }
     if((newThread.archived) && checkIfBotCanManageThread(newThread.guildId)) {
         newThread.setArchived(false, "automatic")
-        db.updateArchiveTimes(newThread.id, (Date.now() / 60) + (newThread.autoArchiveDuration * 60))
+        db.updateArchiveTimes(newThread.id, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60))
     }
 })
 

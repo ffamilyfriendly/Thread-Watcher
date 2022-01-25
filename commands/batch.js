@@ -1,6 +1,6 @@
 const { threads } = require('../index'),
   { addThread, removeThread } = require('../utils/threadActions.js'),
-  { CommandInteraction, TextChannel } = require('discord.js');
+  { CommandInteraction, TextChannel, Permissions } = require('discord.js');
 
 /**
  * 
@@ -10,8 +10,10 @@ const { threads } = require('../index'),
  */
 const batchInChannel = async (channel, action, pattern = null ) => {
   // make sure all threads are in cache
-  await channel.threads.fetchActive();
-  await channel.threads.fetchArchived();
+  if(channel.permissionsFor(channel.members.get(channel.client.user.id))?.has(Permissions.FLAGS.READ_MESSAGE_HISTORY))  {
+    await channel.threads.fetchActive();
+    await channel.threads.fetchArchived();
+  }
 
   return new Promise((resolve, reject) => {
     let rv = {
@@ -34,7 +36,7 @@ const batchInChannel = async (channel, action, pattern = null ) => {
           }
 
           if (action === 'watch') {
-            addThread(id, channel.guildId, (Date.now() / 60) + (channel.autoArchiveDuration * 60));
+            addThread(id, channel.guildId, (Date.now() / 1000) + (t.autoArchiveDuration * 60));
 
             if (t.archived) {
               t.setArchived(false, 'automatic');
