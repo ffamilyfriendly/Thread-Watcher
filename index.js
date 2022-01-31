@@ -48,8 +48,6 @@ const init = async () => {
     fs.writeFileSync("./.commands","command have been added")
 }
 
-init()
-
 const loadCommands = (clearcache) => {
     if(clearcache) {
         for(let cmd of client.commands) {
@@ -103,6 +101,7 @@ client.on("interactionCreate", interaction => {
 })
 
 client.on("ready", async () => {
+    init()
     checkAll(asMap(await db.getArchivedThreads()))
     logger.done(`Bot running on ${client.guilds.cache.size} guilds and keeping ${threads.size} threads active.`)
 
