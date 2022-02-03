@@ -89,7 +89,7 @@ module.exports = class DatabaseExample {
 
     deleteChannel(id) {
         // delete channel from the channels table
-        this.db.query("DELETE FROM channels WHERE id = ?", [id])(id)
+        this.db.query("DELETE FROM channels WHERE id = ?", [id])
     }
 
     updateArchiveTimes(id, time) {

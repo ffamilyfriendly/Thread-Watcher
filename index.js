@@ -23,8 +23,10 @@ const asMap = ( data ) => {
     return m
 }
 
-const checkIfBotCanManageThread = (sid) => {
-    return client.guilds.cache.get(sid)?.me.permissions.has("MANAGE_THREADS")
+const checkIfBotCanManageThread = (sid, cid) => {
+    const guild = client.guilds.cache.get(sid)
+    if(!guild) return false
+    return guild.channels.cache.get(cid)?.permissionsFor(guild.me).has(Discord.Permissions.FLAGS.MANAGE_THREADS)
 }
 
 const init = async () => {
@@ -82,7 +84,7 @@ client.on("interactionCreate", interaction => {
 
 
     if(["auto", "batch", "watch"].includes(interaction.commandName)) {
-        if(!checkIfBotCanManageThread(interaction.guildId)) return respond(`❌ ${getText("issue", interaction.locale)}`, getText("needs_manage_threads", interaction.locale), "#ff0000")
+        if(!checkIfBotCanManageThread(interaction.guildId, interaction.channelId)) return respond(`❌ ${getText("issue", interaction.locale)}`, getText("needs_manage_threads", interaction.locale), "#ff0000")
         else if(!interaction.memberPermissions.has(Discord.Permissions.FLAGS.MANAGE_THREADS)) return respond(getText("no_perms_for_command", interaction.locale, { command: interaction.commandName }), getText("user_needs_manage_threads", interaction.locale), '#ff0000', true);
     } 
     if(!client.commands.has(interaction.commandName)) return respond(`❌ ${getText("issue", interaction.locale)}`, "bot does not have that command registered. Contact bot host", "#ff0000", true)
@@ -112,12 +114,7 @@ client.on("ready", async () => {
 
 client.on("threadUpdate", (oldThread, newThread) => {
     if(!threads.has(newThread.id)) return
-    const diff = ( ( newThread.archivedAt - oldThread.archivedAt ) / 1000 ) / 60
-    if(diff > 2 && (diff + 10) < oldThread.autoArchiveDuration) {
-        logger.info(`manually removed thread ${newThread.id}`)
-        return removeThread(newThread.id)
-    }
-    if((newThread.archived) && checkIfBotCanManageThread(newThread.guildId)) {
+    if((newThread.archived) && checkIfBotCanManageThread(newThread.guildId, newThread.parentId)) {
         newThread.setArchived(false, "automatic")
         db.updateArchiveTimes(newThread.id, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60))
     }
@@ -128,7 +125,7 @@ client.on("threadDelete", (thread) => {
 })
 
 client.on("threadCreate", (thread) => {
-    if(channels.has(thread.parentId)) addThread(thread.id, thread.guildId, (Date.now() / 60) + (thread.autoArchiveDuration * 60))
+    if(channels.has(thread.parentId)) addThread(thread.id, thread.guildId, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60))
 })
 
 client.login(config.token)
