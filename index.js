@@ -125,7 +125,7 @@ client.on("threadDelete", (thread) => {
 })
 
 client.on("threadCreate", (thread) => {
-    if(channels.has(thread.parentId)) addThread(thread.id, thread.guildId, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60))
+    if(channels.has(thread.parentId)) addThread(thread.id, thread.guildId, (Date.now() / 1000) + (thread.autoArchiveDuration * 60))
 })
 
 client.login(config.token)
