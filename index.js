@@ -134,12 +134,12 @@ client.on('threadUpdate', (oldThread, newThread) => {
   // This should be !newThread.unarchivable && newThread.locked once discordjs/discord.js#7406 is merged.
   if (!(newThread.archived && newThread.sendable) || newThread.locked) {
     logger.warn(`[auto] Skipped ${newThread.id} in ${newThread.guildId}. (archived: ${newThread.archived}, bot has permissions: ${checkIfBotCanManageThread(newThread.guildId, newThread.parentId)})`);
-    return;
+    return
+  } else {
+    newThread.setArchived(false, 'Keeping the thread active');
+    logger.done(`[auto] Unarchived ${newThread.id} in ${newThread.guildId}`);
+    db.updateArchiveTimes(newThread.id, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60));
   }
-
-  newThread.setArchived(false, 'Keeping the thread active');
-  logger.done(`[auto] Unarchived ${newThread.id} in ${newThread.guildId}`);
-  db.updateArchiveTimes(newThread.id, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60));
 
   if(!ratelimits[oldThread.guildId]) ratelimits[oldThread.guildId] = 0
   ratelimits[oldThread.guildId]++
