@@ -118,7 +118,7 @@ client.on('threadUpdate', (oldThread, newThread) => {
   }
 
   // This should be !newThread.unarchivable && newThread.locked once discordjs/discord.js#7406 is merged.
-  if (!(newThread.archived || newThread.sendable) || newThread.locked) {
+  if (!(newThread.archived && newThread.sendable) || newThread.locked) {
     logger.warn(`[auto] Skipped ${newThread.id} in ${newThread.guildId}. (archived: ${newThread.archived}, bot has permissions: ${checkIfBotCanManageThread(newThread.guildId, newThread.parentId)})`);
     return;
   }
