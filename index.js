@@ -113,10 +113,13 @@ client.on("ready", async () => {
 })
 
 client.on("threadUpdate", (oldThread, newThread) => {
-    if(!threads.has(newThread.id)) return
-    if((newThread.archived) && checkIfBotCanManageThread(newThread.guildId, newThread.parentId)) {
+    if(!threads.has(oldThread.id)) return
+    if((newThread.archived) && checkIfBotCanManageThread(oldThread.guildId, oldThread.parentId)) {
+        logger.done(`[auto] unarchived ${oldThread.id} in ${oldThread.guildId}`)
         newThread.setArchived(false, "automatic")
-        db.updateArchiveTimes(newThread.id, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60))
+        db.updateArchiveTimes(oldThread.id, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60))
+    } else {
+        logger.warn(`[auto] did not unarchive ${oldThread.id} in ${oldThread.guildId}. Archived: ${newThread.archived} has perms: ${checkIfBotCanManageThread(oldThread.guildId, oldThread.parentId)}`)
     }
 })
 
