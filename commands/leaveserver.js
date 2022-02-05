@@ -14,18 +14,16 @@ const run = async (client, interaction, respond) => {
     }
 
     const guildID = interaction.options.getString("guild")
-    const guild = await client.guilds.fetch(guildID)
+    const guild = await client.guilds.cache.get(guildID)
 
     if(!guild) {
         return interaction.reply( { content:`could not fetch guild with id ${guildID}.`, ephemeral: true } )
     }
 
     const e = new MessageEmbed()
-    e.title(`Guild ${guild.name}`)
+        e.setTitle(`Guild ${guild.name}`)
         e.addField("Owner", guild.ownerId)
-        e.setField("Created at", guild.createdAt)
-        e.setField("tw joined at", guild.joinedAt)
-        e.setField("server id", guild.id)
+        e.addField("server id", guild.id)
         e.setColor("RED")
         e.setTimestamp()
         
@@ -56,8 +54,8 @@ const run = async (client, interaction, respond) => {
 };
 
 const data = {
-  name:"eval",
-  description: "evaluate code as the bot (owner only)",
+  name:"leaveserver",
+  description: "leave a server",
   options: [
       {
           name: "guild",
