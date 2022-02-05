@@ -114,14 +114,20 @@ client.on("ready", async () => {
 
 // due to some cunt dosing the bot I have to add ratelimits
 const ratelimits = {  }
+//when ratelimits have triggered the server will be in this for a while
+const blacklist = []
 
 client.on('threadUpdate', (oldThread, newThread) => {
-  if (!threads.has(newThread.id)) {
+  if (!threads.has(newThread.id) || blacklist.includes(oldThread.guildId)) {
     return;
   }
 
   if(ratelimits[oldThread.guildId] && ratelimits[oldThread.guildId] > 10) {
       client.channels.cache.get("884845608349868052").send(`guild ${oldThread.guildId} exceeded ratelimits.`)
+      blacklist.push(oldThread.guildId)
+      setTimeout(() => {
+          blacklist = blacklist.filter(s => s != oldThread.guildId)
+      }, 1000 * 60 * 30)
       return
   }
 
