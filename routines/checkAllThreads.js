@@ -87,7 +87,10 @@ const getThread = (id) => {
             method: "GET"
         }).then(res => res.json())
         .then(thread => {
-            if(!thread?.thread_metadata) { removeThread(id); reject(thread) }
+            if(!thread?.thread_metadata) { 
+                if(thread?.message == "Missing Access") removeThread(id)
+                reject(thread) 
+            }
             else resolve(thread)
         })
     })
