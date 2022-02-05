@@ -112,16 +112,21 @@ client.on("ready", async () => {
     setInterval(() => { client.user.setPresence({ activities: [{ name: 'with 🧵 | familyfriendly.xyz/thread', type: "PLAYING" }], status: 'online' }); }, 1000 * 60 * 60)
 })
 
-client.on("threadUpdate", (oldThread, newThread) => {
-    if(!threads.has(oldThread.id)) return
-    if((newThread.archived) && checkIfBotCanManageThread(oldThread.guildId, oldThread.parentId)) {
-        logger.done(`[auto] unarchived ${oldThread.id} in ${oldThread.guildId}`)
-        newThread.setArchived(false, "automatic")
-        db.updateArchiveTimes(oldThread.id, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60))
-    } else {
-        logger.warn(`[auto] did not unarchive ${oldThread.id} in ${oldThread.guildId}. Archived: ${newThread.archived} has perms: ${checkIfBotCanManageThread(oldThread.guildId, oldThread.parentId)}`)
-    }
-})
+client.on('threadUpdate', (oldThread, newThread) => {
+  if (!threads.has(newThread.id)) {
+    return;
+  }
+
+  // This should be newThread.unarchivable && !newThread.locked once discordjs/discord.js#7406 is merged.
+  if (newThread.archived && newThread.sendable && !newThread.locked) {
+    logger.warn(`[auto] Skipped ${newThread.id} in ${newThread.guildId}. (archived: ${newThread.archived}, bot has permissions: ${checkIfBotCanManageThread(newThread.guildId, newThread.parentId)})`);
+    return;
+  }
+
+  newThread.setArchived(false, 'Keeping the thread active');
+  logger.done(`[auto] Unarchived ${newThread.id} in ${newThread.guildId}`);
+  db.updateArchiveTimes(newThread.id, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60));
+});
 
 client.on("threadDelete", (thread) => {
     removeThread(thread.id)
