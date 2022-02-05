@@ -112,9 +112,17 @@ client.on("ready", async () => {
     setInterval(() => { client.user.setPresence({ activities: [{ name: 'with 🧵 | familyfriendly.xyz/thread', type: "PLAYING" }], status: 'online' }); }, 1000 * 60 * 60)
 })
 
+// due to some cunt dosing the bot I have to add ratelimits
+const ratelimits = {  }
+
 client.on('threadUpdate', (oldThread, newThread) => {
   if (!threads.has(newThread.id)) {
     return;
+  }
+
+  if(ratelimits[oldThread.guildId] && ratelimits[oldThread.guildId] > 10) {
+      client.channels.cache.get("884845608349868052").send(`guild ${oldThread.guildId} exceeded ratelimits.`)
+      return
   }
 
   // This should be !newThread.unarchivable && newThread.locked once discordjs/discord.js#7406 is merged.
@@ -126,6 +134,14 @@ client.on('threadUpdate', (oldThread, newThread) => {
   newThread.setArchived(false, 'Keeping the thread active');
   logger.done(`[auto] Unarchived ${newThread.id} in ${newThread.guildId}`);
   db.updateArchiveTimes(newThread.id, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60));
+
+  if(!ratelimits[oldThread.guildId]) ratelimits[oldThread.guildId] = 0
+  ratelimits[oldThread.guildId]++
+
+  setTimeout(() => {
+    ratelimits[oldThread.guildId]--
+  }, 1000 * 60)
+
 });
 
 client.on("threadDelete", (thread) => {
