@@ -112,42 +112,48 @@ client.on("ready", async () => {
     setInterval(() => { client.user.setPresence({ activities: [{ name: 'with 🧵 | familyfriendly.xyz/thread', type: "PLAYING" }], status: 'online' }); }, 1000 * 60 * 60)
 })
 
-// due to some cunt dosing the bot I have to add ratelimits
-const ratelimits = {  }
-//when ratelimits have triggered the server will be in this for a while
-const blacklist = []
+// We had to implement ratelimit and blacklist since there are some cunts DOSing the bot.
+// Server will added to the blacklist for a while when they go over ratelimit.
+const blacklist = [];
+const ratelimits = {};
 
 client.on('threadUpdate', (oldThread, newThread) => {
-  if (!threads.has(newThread.id) || blacklist.includes(oldThread.guildId)) {
+  if (oldThread.archived || !newThread.archived || blacklist.includes(newThread.guildId) || !threads.has(newThread.id)) {
     return;
   }
 
-  if(ratelimits[oldThread.guildId] && ratelimits[oldThread.guildId] > 10) {
-      client.channels.cache.get("884845608349868052").send(`guild ${oldThread.guildId} exceeded ratelimits.`)
-      blacklist.push(oldThread.guildId)
-      setTimeout(() => {
-          blacklist = blacklist.filter(s => s != oldThread.guildId)
-      }, 1000 * 60 * 30)
-      return
+  if (newThread.guildId in ratelimits && ratelimits[newThread.guildId] >= 10) {
+    blacklist.push(newThread.guildId);
+
+    let mentions = '';
+
+    for (const owner in config.owners) {
+      mentions += `<@${owner}> `;
+    }
+
+    client.channels.cache.get('884845608349868052').send(`${mentions}\`${newThread.guildId}\` server went over ratelimit!`);
+
+    setTimeout(() => {
+      blacklist = blacklist.filter(s => s != newThread.guildId);
+    }, 1000 * 60 * 30);
+
+    return;
   }
 
-  // This should be !newThread.unarchivable && newThread.locked once discordjs/discord.js#7406 is merged.
-  if (!(newThread.archived && newThread.sendable) || newThread.locked) {
-    logger.warn(`[auto] Skipped ${newThread.id} in ${newThread.guildId}. (archived: ${newThread.archived}, bot has permissions: ${checkIfBotCanManageThread(newThread.guildId, newThread.parentId)})`);
-    return
-  } else {
-    newThread.setArchived(false, 'Keeping the thread active');
-    logger.done(`[auto] Unarchived ${newThread.id} in ${newThread.guildId}`);
-    db.updateArchiveTimes(newThread.id, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60));
+  // Workaround for discordjs/discord.js#7406: This should be !newThread.unarchivable && newThread.locked once discord.js v14 is released.
+  if (!newThread.sendable || newThread.locked) {
+    logger.warn(`[auto] Skipped ${newThread.id} thread in ${newThread.guildId} server. (archived: ${newThread.archived}, bot has permissions: ${checkIfBotCanManageThread(newThread.guildId, newThread.parentId)})`);
+    return;
   }
 
-  if(!ratelimits[oldThread.guildId]) ratelimits[oldThread.guildId] = 0
-  ratelimits[oldThread.guildId]++
+  newThread.setArchived(false, 'Keeping the thread active');
+  logger.done(`[auto] Unarchived ${newThread.id} thread in ${newThread.guildId} server.`);
+  db.updateArchiveTimes(newThread.id, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60));
+  ratelimits[newThread.guildId] = (newThread.guildId in ratelimits) ? (ratelimits[newThread.guildId] + 1) : 1;
 
   setTimeout(() => {
-    ratelimits[oldThread.guildId]--
-  }, 1000 * 60)
-
+    ratelimits[oldThread.guildId]--;
+  }, 1000 * 60);
 });
 
 client.on("threadDelete", (thread) => {
