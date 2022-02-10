@@ -117,12 +117,17 @@ const ratelimits = {  }
 //when ratelimits have triggered the server will be in this for a while
 const blacklist = []
 
+const getDate = () => {
+    const now = new Date()
+    return `${now.toDateString()} ${now.getHours()}h${now.getMinutes()}m${now.getSeconds()}s`
+}
+
 client.on('threadUpdate', (oldThread, newThread) => {
   if (!threads.has(newThread.id) || blacklist.includes(oldThread.guildId)) {
     return;
   }
 
-  if(ratelimits[oldThread.guildId] && ratelimits[oldThread.guildId] > 10) {
+  if(ratelimits[oldThread.guildId] && ratelimits[oldThread.guildId] > 20) {
       client.channels.cache.get("884845608349868052").send(`guild ${oldThread.guildId} exceeded ratelimits.`)
       blacklist.push(oldThread.guildId)
       setTimeout(() => {
@@ -132,12 +137,12 @@ client.on('threadUpdate', (oldThread, newThread) => {
   }
 
   // This should be !newThread.unarchivable && newThread.locked once discordjs/discord.js#7406 is merged.
-  if (!(newThread.archived && newThread.sendable) || newThread.locked) {
-    logger.warn(`[auto] Skipped ${newThread.id} in ${newThread.guildId}. (archived: ${newThread.archived}, bot has permissions: ${checkIfBotCanManageThread(newThread.guildId, newThread.parentId)})`);
+  if (!(newThread.archived && checkIfBotCanManageThread(newThread.guildId, newThread.parentId)) || newThread.locked) {
+    logger.warn(`[auto] (${getDate()}) Skipped ${newThread.id} in ${newThread.guildId}. (archived: ${newThread.archived}, bot has permissions: ${checkIfBotCanManageThread(newThread.guildId, newThread.parentId)})`);
     return
   } else {
     newThread.setArchived(false, 'Keeping the thread active');
-    logger.done(`[auto] Unarchived ${newThread.id} in ${newThread.guildId}`);
+    logger.done(`[auto] (${getDate()}) Unarchived ${newThread.id} in ${newThread.guildId}`);
     db.updateArchiveTimes(newThread.id, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60));
   }
 
