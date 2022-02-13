@@ -9,93 +9,115 @@
 
   "error-occurred": {
     "en-US": "An error occurred.",
-    "ko": "오류가 발생했습니다."
+    "ko": "오류가 발생했습니다.",
+    "sv-SE": "Ett fel uppstod."
   },
   "user-access-denied": {
     "en-US": "You do not have permission to do this.",
-    "ko": "해당 명령을 수행할 권한이 없습니다."
+    "ko": "해당 명령을 수행할 권한이 없습니다.",
+    "sv-SE": "Du har ej behörighet att göra detta."
   },
 
   "auto-register-bot-access-denied-description": {
     "en-US": "Bot needs View Channel and Send Message in Threads permission in specified channel.\nIf you want to watch private threads in it as well, they also need Manage Threads permission.",
-    "ko": "봇이 해당 채널에서 View Channel과 Send Message in Threads 권한이 필요합니다.\n해당 채널 내 비공개 스레드도 주시하고 싶다면 Manage Threads 권한도 필요합니다."
+    "ko": "봇이 해당 채널에서 View Channel과 Send Message in Threads 권한이 필요합니다.\n해당 채널 내 비공개 스레드도 주시하고 싶다면 Manage Threads 권한도 필요합니다.",
+    "sv-SE": "Botten behöver Visa Kanal och Skicka Meddelanden i trådar för den valda kanalen.\nom du vill lägga till en privat tråd så behövs även hantera trådar."
   },
   "auto-register-bot-access-denied-title": {
     "en-US": "Bot does not have permission to register the channel.",
-    "ko": "봇이 채널을 등록할 권한이 없습니다."
+    "ko": "봇이 채널을 등록할 권한이 없습니다.",
+    "sv-SE": "Botten har inte behörighet att registrera den kanalen."
   },
   "auto-register-error": {
     "en-US": "Cannot register the channel.",
-    "ko": "채널을 등록할 수 없습니다."
+    "ko": "채널을 등록할 수 없습니다.",
+    "sv-SE": "kunde inte registrera kanalen."
   },
   "auto-register-ok-description": {
     "en-US": "Bot will watch new threads in <#{id}> channel.\nThis does not watch existing threads.",
-    "ko": "봇이 <#{id}> 채널 내의 새로운 스레드를 주시할 것입니다.\n기존 스레드를 주시하지는 않습니다."
+    "ko": "봇이 <#{id}> 채널 내의 새로운 스레드를 주시할 것입니다.\n기존 스레드를 주시하지는 않습니다.",
+    "sv-SE": "Botten kommer hålla trådar skapade i <#{id}> öppna. Detta oarkiverar inte redan skapade trådar."
   },
   "auto-register-ok-title": {
     "en-US": "Registered the channel.",
-    "ko": "채널을 등록했습니다."
+    "ko": "채널을 등록했습니다.",
+    "sv-SE": "Registrerade kanelen."
   },
   "auto-unregister-error": {
     "en-US": "Cannot unregister the channel.",
-    "ko": "채널을 등록 해제할 수 없습니다."
+    "ko": "채널을 등록 해제할 수 없습니다.",
+    "sv-SE": "kunde inte oregistrera kanelen."
   },
   "auto-unregister-ok-description": {
     "en-US": "Bot will no longer watch new threads in <#{id}> channel.\nThis does not unwatch already watched threads.",
-    "ko": "봇이 더 이상 <#{id}> 채널 내의 새로운 스레드를 주시하지 않습니다.\n이미 주시한 스레드를 주시 해제하지는 않습니다."
+    "ko": "봇이 더 이상 <#{id}> 채널 내의 새로운 스레드를 주시하지 않습니다.\n이미 주시한 스레드를 주시 해제하지는 않습니다.",
+    "sv-SE": "Botten kommer ej längre hålla nya trådar skapade i <#{id}> öppna.\ndetta tar inte bort redan existerande trådar från listan."
   },
   "auto-unregister-ok-title": {
     "en-US": "Unregistered the channel.",
-    "ko": "채널을 등록 해제했습니다."
+    "ko": "채널을 등록 해제했습니다.",
+    "sv-SE": "avregistrerade kanalen."
   },
   "auto-user-access-denied": {
     "en-US": "You need Manage Threads permission in specified channel.",
-    "ko": "해당 채널에서 Manage Threads 권한이 필요합니다."
+    "ko": "해당 채널에서 Manage Threads 권한이 필요합니다.",
+    "sv-SE": "du behöver Hantera Trådar rättigheten i den valda kanalen."
   },
 
   "watch-unwatch-error": {
     "en-US": "Cannot unwatch the thread.",
-    "ko": "스레드를 주시 해제할 수 없습니다."
+    "ko": "스레드를 주시 해제할 수 없습니다.",
+    "sv-SE": "kunde inte avregistrera tråden."
   },
   "watch-unwatch-ok-description": {
     "en-US": "Bot will no longer keep <#{id}> thread active.",
-    "ko": "봇이 더 이상 <#{id}> 스레드를 활성 상태로 유지하지 않습니다."
+    "ko": "봇이 더 이상 <#{id}> 스레드를 활성 상태로 유지하지 않습니다.",
+    "sv-SE": "botten kommer ej längre hålla <#{id}> öppen."
   },
   "watch-unwatch-ok-title": {
     "en-US": "Unwatched the thread.",
-    "ko": "스레드를 주시 해제했습니다."
+    "ko": "스레드를 주시 해제했습니다.",
+    "sv-SE": "avregistrerade tråden."
   },
   "watch-user-access-denied": {
     "en-US": "You need Manage Threads permission in the channel which specified thread is in.",
-    "ko": "해당 스레드가 있는 채널에서 Manage Threads 권한이 필요합니다."
+    "ko": "해당 스레드가 있는 채널에서 Manage Threads 권한이 필요합니다.",
+    "sv-SE": "Du behöver Hantera Trådar rättigheten i den kanal tråden är i."
   },
   "watch-watch-bot-access-denied-description": {
     "en-US": "Bot needs View Channel and Send Message in Threads permission in the channel which specified thread is in.\nIf it is private thread, they also need Manage Threads permission or to be invited to it.",
-    "ko": "봇이 해당 스레드가 있는 채널에서 View Channel과 Send Message in Threads 권한이 필요합니다.\n비공개 스레드인 경우 Manage Threads 권한이나 스레드 초대도 필요합니다."
+    "ko": "봇이 해당 스레드가 있는 채널에서 View Channel과 Send Message in Threads 권한이 필요합니다.\n비공개 스레드인 경우 Manage Threads 권한이나 스레드 초대도 필요합니다.",
+    "sv-SE": "botten behöver rättigheterna Visa Kanal och Skicka Medellanden I trådar i den kanal som tråden är i.\nom det är en privat tråd så behöver botten Hantera Trådar eller en inbjudan till tråden."
   },
   "watch-watch-bot-access-denied-title": {
     "en-US": "Bot cannot unarchive the thread.",
-    "ko": "봇이 스레드를 보관 해제할 수 없습니다."
+    "ko": "봇이 스레드를 보관 해제할 수 없습니다.",
+    "sv-SE": "botten kunde inte avarkivera tråden."
   },
   "watch-watch-error": {
     "en-US": "Cannot watch the thread.",
-    "ko": "스레드를 주시할 수 없습니다."
+    "ko": "스레드를 주시할 수 없습니다.",
+    "sv-SE": "kunde inte registrera tråden."
   },
   "watch-watch-locked-description": {
     "en-US": "Bot does not keep locked threads active. You must unlock the thread to watch it.",
-    "ko": "봇은 잠긴 스레드를 활성 상태로 유지하지 않습니다. 스레드를 주시하려면 잠금을 해제해야 합니다."
+    "ko": "봇은 잠긴 스레드를 활성 상태로 유지하지 않습니다. 스레드를 주시하려면 잠금을 해제해야 합니다.",
+    "sv-SE": "botten håller inte låsta trådar aktiva. Du måste låsa upp tråden för att registrera den."
   },
   "watch-watch-locked-title": {
     "en-US": "Thread is locked.",
-    "ko": "스레드가 잠겼습니다."
+    "ko": "스레드가 잠겼습니다.",
+    "sv-SE": "Tråden är låst."
   },
   "watch-watch-ok-description": {
     "en-US": "Bot will unarchive <#{id}> thread to keep it active.",
-    "ko": "봇이 <#{id}> 스레드를 활성 상태로 유지하기 위해 보관을 해제할 것입니다."
+    "ko": "봇이 <#{id}> 스레드를 활성 상태로 유지하기 위해 보관을 해제할 것입니다.",
+    "sv-SE": "botten kommer oarkivera <#{id}> för att hålla den aktiv."
   },
   "watch-watch-ok-title": {
     "en-US": "Watched the thread.",
-    "ko": "스레드를 주시했습니다."
+    "ko": "스레드를 주시했습니다.",
+    "sv-SE": "Registrerade tråden."
   },
 
   "done": {
