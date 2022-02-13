@@ -23,8 +23,8 @@
         "sv-SE": "något gick paj och det var inte ditt fel"
     },
     "needs_manage_threads": {
-        "en-GB": "bot needs `MANAGE_THREADS` for this command",
-        "sv-SE": "botten behöver `MANAGE_THREADS` för detta kommando"
+        "en-GB": "bot needs `SEND_MESSAGES_IN_THREADS` for this command",
+        "sv-SE": "botten behöver `SEND_MESSAGES_IN_THREADS` för detta kommando"
     },
     "user_needs_manage_threads": {
         "en-GB": "you need `MANAGE_THREADS` to use it.",

@@ -1,3 +1,5 @@
+const { NULL } = require('mysql/lib/protocol/constants/types');
+
 const threads = require('../index').threads,
   { addThread, removeThread } = require('../utils/threadActions.js'),
   { CommandInteraction } = require('discord.js'),
@@ -24,6 +26,7 @@ const run = (client, interaction, respond) => {
   }
   else {
     try {
+      //rememer to remove null below 
       addThread(thread.id, interaction.guildId, (Date.now() / 1000) + (thread.autoArchiveDuration * 60));
       respond(getText("watch_watch", interaction.locale), getText("watch_on", interaction.locale, { id: thread.id }));
     }

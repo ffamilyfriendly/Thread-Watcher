@@ -23,10 +23,11 @@ const asMap = ( data ) => {
     return m
 }
 
+// keeping sid in this function because i'm too lazy to change all refferences to checkIfBotCanManageThread
 const checkIfBotCanManageThread = (sid, cid) => {
-    const guild = client.guilds.cache.get(sid)
-    if(!guild) return false
-    return guild.channels.cache.get(cid)?.permissionsFor(guild.me).has(Discord.Permissions.FLAGS.MANAGE_THREADS)
+    const channel = client.channels.cache.get(cid)
+    if(!channel) return false
+    return ["GUILD_PRIVATE_THREAD", "GUILD_PUBLIC_THREAD"].includes(channel.type) ? channel.sendable : channel.permissionsFor(channel.guild.me).has(Discord.Permissions.FLAGS.SEND_MESSAGES_IN_THREADS)
 }
 
 const init = async () => {
@@ -84,7 +85,8 @@ client.on("interactionCreate", interaction => {
 
 
     if(["auto", "batch", "watch"].includes(interaction.commandName)) {
-        if(!checkIfBotCanManageThread(interaction.guildId, interaction.channelId)) return respond(`❌ ${getText("issue", interaction.locale)}`, getText("needs_manage_threads", interaction.locale), "#ff0000")
+        const channelId = (interaction.options.getChannel("channel") || interaction.options.getChannel("thread") || interaction.options.getChannel("parent"))
+        if(!checkIfBotCanManageThread(interaction.guildId, channelId.id)) return respond(`❌ ${getText("issue", interaction.locale)}`, getText("needs_manage_threads", interaction.locale), "#ff0000")
         else if(!interaction.memberPermissions.has(Discord.Permissions.FLAGS.MANAGE_THREADS)) return respond(getText("no_perms_for_command", interaction.locale, { command: interaction.commandName }), getText("user_needs_manage_threads", interaction.locale), '#ff0000', true);
     } 
     if(!client.commands.has(interaction.commandName)) return respond(`❌ ${getText("issue", interaction.locale)}`, "bot does not have that command registered. Contact bot host", "#ff0000", true)
@@ -103,7 +105,7 @@ client.on("interactionCreate", interaction => {
 })
 
 client.on("ready", async () => {
-    init()
+    await init()
     checkAll(asMap(await db.getArchivedThreads()))
     logger.done(`Bot running on ${client.guilds.cache.size} guilds and keeping ${threads.size} threads active.`)
 
@@ -117,10 +119,7 @@ client.on("ready", async () => {
 const blacklist = [];
 const ratelimits = {};
 
-const getDate = () => {
-    const now = new Date()
-    return `${now.toDateString()} ${now.getHours()}h${now.getMinutes()}m${now.getSeconds()}s`
-}
+const getDate = () => (new Date()).toLocaleString(undefined, { hour12: false })
 
 client.on('threadUpdate', (oldThread, newThread) => {
   if (oldThread.archived || !newThread.archived || blacklist.includes(newThread.guildId) || !threads.has(newThread.id)) {
@@ -132,7 +131,7 @@ client.on('threadUpdate', (oldThread, newThread) => {
 
     let mentions = '';
 
-    for (const owner in config.owners) {
+    for (const owner of config.owners) {
       mentions += `<@${owner}> `;
     }
 
