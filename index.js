@@ -78,18 +78,17 @@ client.on('interactionCreate', (interaction) => {
     return;
   }
 
-  const getBaseEmbed = (title, description, show_enforcer) => {
+  const handleBaseEmbed = (title, description, show_user, color, respond, ephemeral) => {
     const embed = new Discord.MessageEmbed();
+    embed.setTitle(title);
+    embed.setDescription(description);
 
-    if (show_enforcer) {
+    if (show_user) {
       embed.setAuthor({
         iconURL: interaction.user.displayAvatarURL(),
         name: interaction.user.tag
       });
     }
-
-    embed.setTitle(title);
-    embed.setDescription(description);
 
     embed.setFooter({
       iconURL: client.user.displayAvatarURL(),
@@ -97,23 +96,27 @@ client.on('interactionCreate', (interaction) => {
     });
 
     embed.setTimestamp();
+    embed.setColor(color);
+
+    if (respond) {
+      if (interaction.deferred) {
+        interaction.editReply({
+          embeds: [embed]
+        });
+      }
+      else {
+        interaction.reply({
+          embeds: [embed],
+          ephemeral: ephemeral
+        });
+      }
+    }
+
+    return embed;
   };
 
   const respond = (title, description, color = "#008000", ephemeral = false) => {
-    const embed = getBaseEmbed(title, description, true);
-    embed.setColor(color);
-
-    if (interaction.deferred) {
-      interaction.editReply({
-        embeds: [embed]
-      });
-    }
-    else {
-      interaction.reply({
-        embeds: [embed],
-        ephemeral: ephemeral
-      });
-    }
+    handleBaseEmbed(title, description, true, color, true, ephemeral);
   }
 
   if (interaction.commandName === 'batch') {
@@ -134,7 +137,7 @@ client.on('interactionCreate', (interaction) => {
         cmd.run(client, interaction, respond, l);
       }
       else {
-        cmd.run(client, interaction, getBaseEmbed);
+        cmd.run(client, interaction, handleBaseEmbed);
       }
     } catch(err) {
         logger.warn(JSON.stringify(err))
