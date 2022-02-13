@@ -1,9 +1,9 @@
 const { NULL } = require('mysql/lib/protocol/constants/types');
 
 const threads = require('../index').threads,
+  getText = require('../utils/getText'),
   { addThread, removeThread } = require('../utils/threadActions.js'),
-  { CommandInteraction } = require('discord.js'),
-  getText = require("../utils/getText")
+  { CommandInteraction, Permissions } = require('discord.js');
 
 /**
  * 
@@ -11,44 +11,83 @@ const threads = require('../index').threads,
  * @param {CommandInteraction} interaction 
  * @param {*} respond 
  */
-const run = (client, interaction, respond) => {
-  const thread = interaction.options.getChannel("thread")
+const run = (client, interaction, getBaseEmbed) => {
+  let color = '#dd3333';
+  let description;
+  let ephemeral = true;
+  const thread = interaction.options.getChannel('thread');
+  let title;
 
-  if (threads.has(thread.id)) {
+  if (!interaction.member.permissionsIn(thread.parent).has(Permissions.FLAGS.MANAGE_THREADS)) {
+    description = getText('watch-user-access-denied', interaction.locale);
+    title = getText('user-access-denied', interaction.locale);
+  }
+  else if (threads.has(thread.id)) {
     try {
       removeThread(thread.id);
-      // `getText("watch_off", interaction.locale, { id: thread.id })`
-      respond(getText("watch_unwatch", interaction.locale), getText("watch_off", interaction.locale, { id: thread.id }), "RED");
+
+      description = getText('watch-unwatch-ok-description', interaction.locale, {
+        id: thread.id
+      });
+
+      ephemeral = false;
+      title = getText('watch-unwatch-ok-title', interaction.locale);
     }
-    catch(err) {
-      respond(`❌ ${getText("issue", interaction.locale)}`, getText("watch_issue_remove", interaction.locale), '#ff0000', true);
+    catch (err) {
+      console.error(err);
+      description = getText('error-occurred', interaction.locale);
+      title = getText('watch-unwatch-error', interaction.locale);
+    }
+  }
+  else if (thread.locked) {
+    description = getText('watch-watch-locked-description', interaction.locale);
+    title = getText('watch-watch-locked-title', interaction.locale);
+  }
+  else if (thread.sendable) {
+    try {
+      // Rememer to remove null below 
+      addThread(thread.id, interaction.guildId, (Date.now() / 1000) + (thread.autoArchiveDuration * 60));
+      color = '#00af89';
+
+      description = getText('watch-watch-ok-description', interaction.locale, {
+        id: thread.id
+      });
+
+      ephemeral = false;
+      title = getText('watch-watch-ok-title', interaction.locale);
+    }
+    catch (err) {
+      console.error(err);
+      description = getText('error-occurred', interaction.locale);
+      title = getText('watch-watch-error', interaction.locale);
     }
   }
   else {
-    try {
-      //rememer to remove null below 
-      addThread(thread.id, interaction.guildId, (Date.now() / 1000) + (thread.autoArchiveDuration * 60));
-      respond(getText("watch_watch", interaction.locale), getText("watch_on", interaction.locale, { id: thread.id }));
-    }
-    catch(err) {
-      console.error(err);
-      respond(`❌ ${getText("issue", interaction.locale)}`, getText("watch_issue_add", interaction.locale), '#ff0000', true);
-    }
+    description = getText('watch-watch-bot-access-denied-description', interaction.locale);
+    title = getText('watch-watch-bot-access-denied-title', interaction.locale);
   }
+
+  const embed = getBaseEmbed(title, description, !ephemeral);
+  embed.setColor(color);
+
+  interaction.reply({
+    embeds: [ embed ],
+    ephemeral: ephemeral
+  });
 };
 
 const data = {
-  name:"watch",
-  description: "toggles auto-unarchive on this thread",
+  description: 'Watch or unwatch a thread to keep it active.',
+  name: 'watch',
   options: [
-      {
-          name: "thread",
-          description: "Thread to toggle auto-unarchive on",
-          required: true,
-          type: 7,
-          channel_types: [10, 11, 12]
-      }
+    {
+      channel_types: [10, 11, 12],
+      description: 'Thread to watch or unwatch',
+      name: 'thread',
+      required: true,
+      type: 7,
+    }
   ]
-}
+};
 
 module.exports = { run, data };

@@ -24,10 +24,14 @@ const asMap = ( data ) => {
 }
 
 // keeping sid in this function because i'm too lazy to change all refferences to checkIfBotCanManageThread
-const checkIfBotCanManageThread = (sid, cid) => {
-    const channel = client.channels.cache.get(cid)
-    if(!channel) return false
-    return ["GUILD_PRIVATE_THREAD", "GUILD_PUBLIC_THREAD"].includes(channel.type) ? channel.sendable : channel.permissionsFor(channel.guild.me).has(Discord.Permissions.FLAGS.SEND_MESSAGES_IN_THREADS)
+const checkIfBotCanManageThread = (server_id, channel_id) => {
+    const channel = client.channels.cache.get(channel_id);
+
+    if (!channel) {
+      return false;
+    }
+
+    return channel.isThread() ? channel.sendable : channel.permissionsFor(channel.guild.me).has(Discord.Permissions.FLAGS.SEND_MESSAGES_IN_THREADS);
 }
 
 const init = async () => {
@@ -61,7 +65,7 @@ const loadCommands = (clearcache) => {
     client.commands = new Map(fs.readdirSync("./commands").filter(f => f.endsWith(".js")).map(f => [f.split(".js")[0],require(`./commands/${f}`)]))
 }
 
-module.exports = { db, client, checkIfBotCanManageThread, loadCommands, threads, channels }
+module.exports = { db, client, checkIfBotCanManageThread, loadCommands, threads, channels };
 
 loadCommands()
 
@@ -69,40 +73,74 @@ const { removeThread, addThread } = require("./utils/threadActions.js")
 
 const checkAll = require("./routines/checkAllThreads").run
 
-client.on("interactionCreate", interaction => {
-    if(!interaction.isCommand()) return
-    const respond = (title,content, color = "#008000", private = false) => {
-        const embed = new Discord.MessageEmbed()
-            .setColor(color)
-            .setAuthor({ iconURL: interaction.user.displayAvatarURL(), name: interaction.user.tag  })
-            .setFooter({ text: "Thread-Watcher", iconURL: client.user.avatarURL() })
-            .setTimestamp()
-            .addFields({ name: title, value: content })
+client.on('interactionCreate', (interaction) => {
+  if (!interaction.isCommand()) {
+    return;
+  }
 
-        if(interaction.deferred) interaction.editReply({ embeds: [embed] })
-        else interaction.reply({ embeds: [embed], ephemeral: private })
+  const getBaseEmbed = (title, description, show_enforcer) => {
+    const embed = new Discord.MessageEmbed();
+
+    if (show_enforcer) {
+      embed.setAuthor({
+        iconURL: interaction.user.displayAvatarURL(),
+        name: interaction.user.tag
+      });
     }
 
+    embed.setTitle(title);
+    embed.setDescription(description);
 
-    if(["auto", "batch", "watch"].includes(interaction.commandName)) {
+    embed.setFooter({
+      iconURL: client.user.displayAvatarURL(),
+      text: client.user.username
+    });
+
+    embed.setTimestamp();
+  };
+
+  const respond = (title, description, color = "#008000", ephemeral = false) => {
+    const embed = getBaseEmbed(title, description, true);
+    embed.setColor(color);
+
+    if (interaction.deferred) {
+      interaction.editReply({
+        embeds: [embed]
+      });
+    }
+    else {
+      interaction.reply({
+        embeds: [embed],
+        ephemeral: ephemeral
+      });
+    }
+  }
+
+  if (interaction.commandName === 'batch') {
         const channelId = (interaction.options.getChannel("channel") || interaction.options.getChannel("thread") || interaction.options.getChannel("parent"))
-        if(!checkIfBotCanManageThread(interaction.guildId, channelId.id)) return respond(`❌ ${getText("issue", interaction.locale)}`, getText("needs_manage_threads", interaction.locale), "#ff0000")
+        if(!checkIfBotCanManageThread(null, channelId.id)) return respond(`❌ ${getText("issue", interaction.locale)}`, getText("needs_manage_threads", interaction.locale), "#ff0000")
         else if(!interaction.memberPermissions.has(Discord.Permissions.FLAGS.MANAGE_THREADS)) return respond(getText("no_perms_for_command", interaction.locale, { command: interaction.commandName }), getText("user_needs_manage_threads", interaction.locale), '#ff0000', true);
-    } 
+  } 
     if(!client.commands.has(interaction.commandName)) return respond(`❌ ${getText("issue", interaction.locale)}`, "bot does not have that command registered. Contact bot host", "#ff0000", true)
-    
+
     const l = (label, obj) => {
         return getText(label, interaction.locale, obj)
     }
 
     const cmd = client.commands.get(interaction.commandName)
     try {
-        cmd.run(client, interaction, respond, l)
+      // Backward compatibility for /batch, /diagnose and /threads
+      if (['batch', 'diagnose', 'threads'].includes(interaction.commandName)) {
+        cmd.run(client, interaction, respond, l);
+      }
+      else {
+        cmd.run(client, interaction, getBaseEmbed);
+      }
     } catch(err) {
         logger.warn(JSON.stringify(err))
         respond(`❌ ${getText("issue", interaction.locale)}`, getText("command_broke", interaction.locale), "#ff0000", true)
     }
-})
+});
 
 client.on("ready", async () => {
     await init()
@@ -119,7 +157,11 @@ client.on("ready", async () => {
 const blacklist = [];
 const ratelimits = {};
 
-const getDate = () => (new Date()).toLocaleString(undefined, { hour12: false })
+const getDate = () => {
+  return (new Date()).toLocaleString(undefined, {
+    hour12: false
+  });
+};
 
 client.on('threadUpdate', (oldThread, newThread) => {
   if (oldThread.archived || !newThread.archived || blacklist.includes(newThread.guildId) || !threads.has(newThread.id)) {
@@ -145,8 +187,8 @@ client.on('threadUpdate', (oldThread, newThread) => {
   }
 
   // Workaround for discordjs/discord.js#7406: This should be !newThread.unarchivable && newThread.locked once discord.js v14 is released.
-  if (!checkIfBotCanManageThread(newThread.guildId, newThread.parentId) || newThread.locked) {
-    logger.warn(`[auto] (${getDate()}) Skipped ${newThread.id} thread in ${newThread.guildId} server. (archived: ${newThread.archived}, bot has permissions: ${checkIfBotCanManageThread(newThread.guildId, newThread.parentId)})`);
+  if (!newThread.sendable || newThread.locked) {
+    logger.warn(`[auto] (${getDate()}) Skipped ${newThread.id} thread in ${newThread.guildId} server. (archived: ${newThread.archived}, locked: ${newThread.locked}, sendable: ${newThread.sendable})`);
     return;
   }
 

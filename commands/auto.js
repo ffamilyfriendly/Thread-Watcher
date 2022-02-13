@@ -1,6 +1,7 @@
 const channels = require('../index').channels,
+  getText = require('../utils/getText'),
   { addThread, removeThread } = require('../utils/threadActions'),
-  { Permissions, CommandInteraction } = require('discord.js');
+  { CommandInteraction, Permissions } = require('discord.js');
 
 /**
  * 
@@ -9,42 +10,78 @@ const channels = require('../index').channels,
  * @param {*} respond 
  * @returns 
  */
-const run = (client, interaction, respond, l) => {
-  const thread = interaction.options.getChannel("channel")
+const run = (client, interaction, getBaseEmbed) => {
+  const channel = interaction.options.getChannel('channel');
+  let color = '#dd3333';
+  let description;
+  let ephemeral = true;
+  let title;
 
-  if (channels.has(thread.id)) {
+  if (!interaction.member.permissionsIn(channel).has(Permissions.FLAGS.MANAGE_THREADS)) {
+    description = getText('auto-user-access-denied', interaction.locale);
+    title = getText('user-access-denied', interaction.locale);
+  }
+  else if (channels.has(channel.id)) {
     try {
-      removeThread(thread.id, 'channels');
-      respond(`👌 ${l("done")}`, l("watch_off", { id: thread.id }));
+      removeThread(channel.id, 'channels');
+
+      description =  getText('auto-unregister-ok-description', interaction.locale, {
+        id: channel.id
+      });
+
+      ephemeral = false;
+      title = getText('auto-unregister-ok-title', interaction.locale);
     }
-    catch(err) {
-      respond(`❌ ${l("issue")}`, l("watch_issue_remove"), '#ff0000', true);
+    catch (err) {
+      console.error(err);
+      description = getText('error-occurred', interaction.locale);
+      title = getText('auto-unregister-error', interaction.locale);
+    }
+  }
+  else if (interaction.guild.me.permissionsIn(channel).has(Permissions.FLAGS.SEND_MESSAGES_IN_THREADS)) {
+    try {
+      addThread(channel.id, interaction.guildId, 'channels');
+      color = '#00af89';
+
+      description =  getText('auto-register-ok-description', interaction.locale, {
+        id: channel.id
+      });
+
+      ephemeral = false;
+      title = getText('auto-register-ok-title', interaction.locale);
+    }
+    catch (err) {
+      console.error(err);
+      description = getText('error-occurred', interaction.locale);
+      title = getText('auto-register-error', interaction.locale);
     }
   }
   else {
-    try {
-      addThread(thread.id, thread.guildId, 'channels');
-      respond(`👌 ${l("done")}`, l("watch_on", { id: thread.id }));
-    }
-    catch(err) {
-      console.error(err);
-      respond(`❌ ${l("issue")}`, l("watch_issue_add"), '#ff0000', true);
-    }
+    description = getText('auto-register-bot-access-denied-description', interaction.locale);
+    title = getText('auto-register-bot-access-denied-title', interaction.locale);
   }
+
+  const embed = getBaseEmbed(title, description, !ephemeral);
+  embed.setColor(color);
+
+  interaction.reply({
+    embeds: [ embed ],
+    ephemeral: ephemeral
+  });
 };
 
 const data = {
-  name:"auto",
-  description: "automatically watch all threads made in a selected channel",
+  description: 'Register or unregister a channel to automatically watch new threads in it.',
+  name: 'auto',
   options: [
-      {
-          name: "channel",
-          description: "the channel to toggle",
-          required: true,
-          type: 7,
-          channel_types: [0, 5]
-      }
+    {
+      channel_types: [0, 5],
+      description: 'Channel to register or unregister',
+      name: 'channel',
+      required: true,
+      type: 7
+    }
   ]
-}
+};
 
 module.exports = { run, data };
