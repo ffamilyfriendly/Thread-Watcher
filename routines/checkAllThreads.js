@@ -41,8 +41,8 @@ const getAllArchivedThreads = (map) => {
                         .then(thread => {
                             if(thread.sendable && !thread.locked && thread.archived) {
                                 thread.setArchived(false)
-                                incr()
                             }
+                            incr()
                         })
                         .catch(err => {
                             logger.error(`issue with thread ${key}: ${JSON.stringify(err)}}`)
