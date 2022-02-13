@@ -39,7 +39,8 @@ const getAllArchivedThreads = (map) => {
                 setTimeout(() => {
                     client.channels.fetch(key)
                         .then(thread => {
-                            if(thread.sendable && !thread.locked && thread.archived) {
+                            // Workaround for discordjs/discord.js#7406: This should be thread.unarchivable && !thread.locked once discord.js v14 is released.
+                            if(thread.archived && thread.sendable && !thread.locked) {
                                 thread.setArchived(false)
                             }
                             incr()

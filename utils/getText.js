@@ -15,9 +15,9 @@ const loadLocale = () => {
 const getString = (label, loc, p) => {
     loadLocale()
     if(!locale[label]) return Error(`no text registered for label "${label}". Edit locale.json in project root`)
-    // sorry yanks
-    loc = loc == "en-US" ? "en-GB" : loc
-    let text = locale[label][loc] || locale[label]["en-GB"]
+
+    let text = locale[label][loc] ?? locale[label]['en-US'];
+
     text = text.replaceAll(/{.*?}/gi, (a) => {
         a = a.replace(/{|}/gi, "")
         let t = p ? p[a] : null

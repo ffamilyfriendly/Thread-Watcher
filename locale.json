@@ -1,89 +1,153 @@
 {
-    "__DOCUMENTATION__": {
-        "sorry": "json has no native documentation formatting. This will do",
-        "locales": "https://discord.com/developers/docs/dispatch/field-values#predefined-field-values-accepted-locales",
-        "formatting": {
-            "keeping tidy": "please prefix command specific strings with COMMANDNAME_ as this getting collisions.",
-            "grouping": "please keep any general strings (not bound to a specific command) at the top",
-            "inline variables": "you can include variables by enclosing their name in {NAME}. You can see which variables are availible for which command by checking where the label is used"
-        }
-    },
-
-
-    "done" : {
-        "en-GB": "done",
-        "sv-SE": "klart"
-    },
-    "issue": {
-        "en-GB": "issue",
-        "sv-SE": "problem"
-    },
-    "command_broke": {
-        "en-GB": "something went wrong and it probably wasnt your fault",
-        "sv-SE": "något gick paj och det var inte ditt fel"
-    },
-    "needs_manage_threads": {
-        "en-GB": "bot needs `SEND_MESSAGES_IN_THREADS` for this command",
-        "sv-SE": "botten behöver `SEND_MESSAGES_IN_THREADS` för detta kommando"
-    },
-    "user_needs_manage_threads": {
-        "en-GB": "you need `MANAGE_THREADS` to use it.",
-        "sv-SE": "du behöver `MANAGE_THREADS` för att använda det."
-    },
-    "no_perms_for_command": {
-        "en-GB": "You do not have permission to use /{command} command.",
-        "sv-SE": "Du har inte tillåtelse att använda /${command} kommandot."
-    },
-    "bot_by": {
-        "en-GB": "Bot by Family friendly#6191",
-        "sv-SE": "Bot skapad av Family friendly#6191"
-    },
-    "watch_watch" : {
-        "en-GB": "Thread was watched.",
-        "sv-SE": "Tråden tillagd."
-    },
-    "watch_unwatch" : {
-        "en-GB": "Thread was unwatched.",
-        "sv-SE": "Tråden borttagen från listan."
-    },
-    "watch_on": {
-        "en-GB": "Thread-Watcher will keep <#{id}> active",
-        "sv-SE": "Thread-Watcher kommer se till att <#{id}> är aktivd"
-    },
-    "watch_off": {
-        "en-GB": "Thread-Watcher will no longer keep <#{id}> active",
-        "sv-SE": "Thread-Watcher kommer ej längre hålla <#{id}> aktiv"
-    },
-    "watch_issue_add": {
-        "en-GB": "bot failed to add thread to watchlist. Sorry about that",
-        "sv-SE": "botten misslyckades att lägga till tråden till listan. Ber om ursäkt"
-    },
-    "watch_issue_remove": {
-        "en-GB": "bot failed to remove thread from database. Sorry about that",
-        "sv-SE": "botten misslyckades att ta bort tråden från listan. Ber om ursäkt"
-    },
-    "threads_is_watching": {
-        "en-GB": "thread-watcher is watching {amount} thread(s) in this server!",
-        "sv-SE": "thread-watcher håller koll på {amount} tråd(ar) i denna server!"
-    },
-    "threads_none_watched": {
-        "en-GB": "no threads are being watched!",
-        "sv-SE": "inga trådar hålls o-arkiverade!"
-    },
-    "batch_forbidden_characters": {
-        "en-GB": "your pattern \"{pattern}\" includes forbidden characters",
-        "sv-SE": "ditt text-mönster \"{pattern}\" innehåller förbjudna tecken"
-    },
-    "batch_result": {
-        "en-GB": "🟢 {succeeded} succeeded. 🔴 {failed} failed",
-        "sv-SE": "🟢 {succeeded} lyckades. 🔴 {failed} misslyckades"
-    },
-    "batch_watch" : {
-        "en-GB": "Threads were watched.",
-        "sv-SE": "Trådarna tillagda."
-    },
-    "batch_unwatch" : {
-        "en-GB": "Threads were unwatched.",
-        "sv-SE": "Trådenarna borttagna från listan."
+  "_doc": {
+    "sorry": "JSON has no native documentation formatting. This will do.",
+    "locales": "https://discord.com/developers/docs/reference#locales",
+    "formatting": {
+      "inline-variables": "You can include variables by enclosing their name in {NAME}. You can see which variables are availible for which command by checking where the label is used."
     }
+  },
+
+  "error-occurred": {
+    "en-US": "An error occurred.",
+    "ko": "오류가 발생했습니다."
+  },
+  "user-access-denied": {
+    "en-US": "You do not have permission to do this.",
+    "ko": "해당 명령을 수행할 권한이 없습니다."
+  },
+
+  "auto-register-bot-access-denied-description": {
+    "en-US": "Bot needs View Channel and Send Message in Threads permission in specified channel.\nIf you want to watch private threads in it as well, they also need Manage Threads permission.",
+    "ko": "봇이 해당 채널에서 View Channel과 Send Message in Threads 권한이 필요합니다.\n해당 채널 내 비공개 스레드도 주시하고 싶다면 Manage Threads 권한도 필요합니다."
+  },
+  "auto-register-bot-access-denied-title": {
+    "en-US": "Bot does not have permission to register the channel.",
+    "ko": "봇이 채널을 등록할 권한이 없습니다."
+  },
+  "auto-register-error": {
+    "en-US": "Cannot register the channel.",
+    "ko": "채널을 등록할 수 없습니다."
+  },
+  "auto-register-ok-description": {
+    "en-US": "Bot will watch new threads in <#{id}> channel.\nThis does not watch existing threads.",
+    "ko": "봇이 <#{id}> 채널 내의 새로운 스레드를 주시할 것입니다.\n기존 스레드를 주시하지는 않습니다."
+  },
+  "auto-register-ok-title": {
+    "en-US": "Registered the channel.",
+    "ko": "채널을 등록했습니다."
+  },
+  "auto-unregister-error": {
+    "en-US": "Cannot unregister the channel.",
+    "ko": "채널을 등록 해제할 수 없습니다."
+  },
+  "auto-unregister-ok-description": {
+    "en-US": "Bot will no longer watch new threads in <#{id}> channel.\nThis does not unwatch already watched threads.",
+    "ko": "봇이 더 이상 <#{id}> 채널 내의 새로운 스레드를 주시하지 않습니다.\n이미 주시한 스레드를 주시 해제하지는 않습니다."
+  },
+  "auto-unregister-ok-title": {
+    "en-US": "Unregistered the channel.",
+    "ko": "채널을 등록 해제했습니다."
+  },
+  "auto-user-access-denied": {
+    "en-US": "You need Manage Threads permission in specified channel.",
+    "ko": "해당 채널에서 Manage Threads 권한이 필요합니다."
+  },
+
+  "watch-unwatch-error": {
+    "en-US": "Cannot unwatch the thread.",
+    "ko": "스레드를 주시 해제할 수 없습니다."
+  },
+  "watch-unwatch-ok-description": {
+    "en-US": "Bot will no longer keep <#{id}> thread active.",
+    "ko": "봇이 더 이상 <#{id}> 스레드를 활성 상태로 유지하지 않습니다."
+  },
+  "watch-unwatch-ok-title": {
+    "en-US": "Unwatched the thread.",
+    "ko": "스레드를 주시 해제했습니다."
+  },
+  "watch-user-access-denied": {
+    "en-US": "You need Manage Threads permission in the channel which specified thread is in.",
+    "ko": "해당 스레드가 있는 채널에서 Manage Threads 권한이 필요합니다."
+  },
+  "watch-watch-bot-access-denied-description": {
+    "en-US": "Bot needs View Channel and Send Message in Threads permission in the channel which specified thread is in.\nIf it is private thread, they also need Manage Threads permission or to be invited to it.",
+    "ko": "봇이 해당 스레드가 있는 채널에서 View Channel과 Send Message in Threads 권한이 필요합니다.\n비공개 스레드인 경우 Manage Threads 권한이나 스레드 초대도 필요합니다."
+  },
+  "watch-watch-bot-access-denied-title": {
+    "en-US": "Bot cannot unarchive the thread.",
+    "ko": "봇이 스레드를 보관 해제할 수 없습니다."
+  },
+  "watch-watch-error": {
+    "en-US": "Cannot watch the thread.",
+    "ko": "스레드를 주시할 수 없습니다."
+  },
+  "watch-watch-locked-description": {
+    "en-US": "Bot does not keep locked threads active. You must unlock the thread to watch it.",
+    "ko": "봇은 잠긴 스레드를 활성 상태로 유지하지 않습니다. 스레드를 주시하려면 잠금을 해제해야 합니다."
+  },
+  "watch-watch-locked-title": {
+    "en-US": "Thread is locked.",
+    "ko": "스레드가 잠겼습니다."
+  },
+  "watch-watch-ok-description": {
+    "en-US": "Bot will unarchive <#{id}> thread to keep it active.",
+    "ko": "봇이 <#{id}> 스레드를 활성 상태로 유지하기 위해 보관을 해제할 것입니다."
+  },
+  "watch-watch-ok-title": {
+    "en-US": "Watched the thread.",
+    "ko": "스레드를 주시했습니다."
+  },
+
+  "done": {
+    "en-US": "done",
+    "sv-SE": "klart"
+  },
+  "issue": {
+    "en-US": "issue",
+    "sv-SE": "problem"
+  },
+  "command_broke": {
+    "en-US": "something went wrong and it probably wasnt your fault",
+    "sv-SE": "något gick paj och det var inte ditt fel"
+  },
+  "needs_manage_threads": {
+    "en-US": "bot needs `SEND_MESSAGES_IN_THREADS` for this command",
+    "sv-SE": "botten behöver `SEND_MESSAGES_IN_THREADS` för detta kommando"
+  },
+  "user_needs_manage_threads": {
+    "en-US": "you need `MANAGE_THREADS` to use it.",
+    "sv-SE": "du behöver `MANAGE_THREADS` för att använda det."
+  },
+  "no_perms_for_command": {
+    "en-US": "You do not have permission to use /{command} command.",
+    "sv-SE": "Du har inte tillåtelse att använda /${command} kommandot."
+  },
+  "bot_by": {
+    "en-US": "Bot by Family friendly#6191",
+    "sv-SE": "Bot skapad av Family friendly#6191"
+  },
+  "threads_is_watching": {
+    "en-US": "thread-watcher is watching {amount} thread(s) in this server!",
+    "sv-SE": "thread-watcher håller koll på {amount} tråd(ar) i denna server!"
+  },
+  "threads_none_watched": {
+    "en-US": "no threads are being watched!",
+    "sv-SE": "inga trådar hålls o-arkiverade!"
+  },
+  "batch_forbidden_characters": {
+    "en-US": "your pattern \"{pattern}\" includes forbidden characters",
+    "sv-SE": "ditt text-mönster \"{pattern}\" innehåller förbjudna tecken"
+  },
+  "batch_result": {
+    "en-US": "🟢 {succeeded} succeeded. 🔴 {failed} failed",
+    "sv-SE": "🟢 {succeeded} lyckades. 🔴 {failed} misslyckades"
+  },
+  "batch_watch" : {
+    "en-US": "Threads were watched.",
+    "sv-SE": "Trådarna tillagda."
+  },
+  "batch_unwatch" : {
+    "en-US": "Threads were unwatched.",
+    "sv-SE": "Trådenarna borttagna från listan."
+  }
 }
