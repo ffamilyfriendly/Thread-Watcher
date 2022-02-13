@@ -10,64 +10,60 @@ const channels = require('../index').channels,
  * @param {*} respond 
  * @returns 
  */
-const run = (client, interaction, getBaseEmbed) => {
+const run = (client, interaction, handleBaseEmbed) => {
   const channel = interaction.options.getChannel('channel');
-  let color = '#dd3333';
-  let description;
-  let ephemeral = true;
-  let title;
 
   if (!interaction.member.permissionsIn(channel).has(Permissions.FLAGS.MANAGE_THREADS)) {
-    description = getText('auto-user-access-denied', interaction.locale);
-    title = getText('user-access-denied', interaction.locale);
+    const description = getText('auto-user-access-denied', interaction.locale);
+    const title = getText('user-access-denied', interaction.locale);
+    handleBaseEmbed(title, description, false, '#dd3333', true, true);
+    return;
   }
-  else if (channels.has(channel.id)) {
+
+  if (channels.has(channel.id)) {
     try {
       removeThread(channel.id, 'channels');
 
-      description =  getText('auto-unregister-ok-description', interaction.locale, {
+      const description = getText('auto-unregister-ok-description', interaction.locale, {
         id: channel.id
       });
 
-      ephemeral = false;
-      title = getText('auto-unregister-ok-title', interaction.locale);
+      const title = getText('auto-unregister-ok-title', interaction.locale);
+      handleBaseEmbed(title, description, true, '#dd3333', true, false);
     }
     catch (err) {
       console.error(err);
-      description = getText('error-occurred', interaction.locale);
-      title = getText('auto-unregister-error', interaction.locale);
+      const description = getText('error-occurred', interaction.locale);
+      const title = getText('auto-unregister-error', interaction.locale);
+      handleBaseEmbed(title, description, false, '#dd3333', true, false);
     }
-  }
-  else if (interaction.guild.me.permissionsIn(channel).has(Permissions.FLAGS.SEND_MESSAGES_IN_THREADS)) {
-    try {
-      addThread(channel.id, interaction.guildId, 'channels');
-      color = '#00af89';
 
-      description =  getText('auto-register-ok-description', interaction.locale, {
-        id: channel.id
-      });
-
-      ephemeral = false;
-      title = getText('auto-register-ok-title', interaction.locale);
-    }
-    catch (err) {
-      console.error(err);
-      description = getText('error-occurred', interaction.locale);
-      title = getText('auto-register-error', interaction.locale);
-    }
-  }
-  else {
-    description = getText('auto-register-bot-access-denied-description', interaction.locale);
-    title = getText('auto-register-bot-access-denied-title', interaction.locale);
+    return;
   }
 
-  const embed = getBaseEmbed(title, description, !ephemeral);
-  embed.setColor(color);
+  if (!interaction.guild.me.permissionsIn(channel).has(Permissions.FLAGS.SEND_MESSAGES_IN_THREADS)) {
+    const description = getText('auto-register-bot-access-denied-description', interaction.locale);
+    const title = getText('auto-register-bot-access-denied-title', interaction.locale);
+    handleBaseEmbed(title, description, false, '#dd3333', true, true);
+    return;
+  }
 
-  interaction.reply({
-    embeds: [ embed ],
-    ephemeral: ephemeral
-  });
+  try {
+    addThread(channel.id, interaction.guildId, 'channels');
+
+    const description = getText('auto-register-ok-description', interaction.locale, {
+      id: channel.id
+    });
+
+    const title = getText('auto-register-ok-title', interaction.locale);
+    handleBaseEmbed(title, description, true, '#00af89', true, false);
+  }
+  catch (err) {
+    console.error(err);
+    const description = getText('error-occurred', interaction.locale);
+    const title = getText('auto-register-error', interaction.locale);
+    handleBaseEmbed(title, description, false, '#dd3333', true, false);
+  }
 };
 
 const data = {
