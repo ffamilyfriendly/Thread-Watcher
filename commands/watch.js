@@ -1,5 +1,3 @@
-const { NULL } = require('mysql/lib/protocol/constants/types');
-
 const threads = require('../index').threads,
   getText = require('../utils/getText'),
   { addThread, removeThread } = require('../utils/threadActions.js'),
@@ -11,69 +9,67 @@ const threads = require('../index').threads,
  * @param {CommandInteraction} interaction 
  * @param {*} respond 
  */
-const run = (client, interaction, getBaseEmbed) => {
-  let color = '#dd3333';
-  let description;
-  let ephemeral = true;
+const run = (client, interaction, handleBaseEmbed) => {
   const thread = interaction.options.getChannel('thread');
-  let title;
 
   if (!interaction.member.permissionsIn(thread.parent).has(Permissions.FLAGS.MANAGE_THREADS)) {
-    description = getText('watch-user-access-denied', interaction.locale);
-    title = getText('user-access-denied', interaction.locale);
+    const description = getText('watch-user-access-denied', interaction.locale);
+    const title = getText('user-access-denied', interaction.locale);
+    handleBaseEmbed(title, description, false, '#dd3333', true, true);
+    return;
   }
-  else if (threads.has(thread.id)) {
+
+  if (threads.has(thread.id)) {
     try {
       removeThread(thread.id);
 
-      description = getText('watch-unwatch-ok-description', interaction.locale, {
+      const description = getText('watch-unwatch-ok-description', interaction.locale, {
         id: thread.id
       });
 
-      ephemeral = false;
-      title = getText('watch-unwatch-ok-title', interaction.locale);
+      const title = getText('watch-unwatch-ok-title', interaction.locale);
+      handleBaseEmbed(title, description, true, '#dd3333', true, false);
     }
     catch (err) {
       console.error(err);
-      description = getText('error-occurred', interaction.locale);
-      title = getText('watch-unwatch-error', interaction.locale);
+      const description = getText('error-occurred', interaction.locale);
+      const title = getText('watch-unwatch-error', interaction.locale);
+      handleBaseEmbed(title, description, false, '#dd3333', true, false);
     }
-  }
-  else if (thread.locked) {
-    description = getText('watch-watch-locked-description', interaction.locale);
-    title = getText('watch-watch-locked-title', interaction.locale);
-  }
-  else if (thread.sendable) {
-    try {
-      // Rememer to remove null below 
-      addThread(thread.id, interaction.guildId, (Date.now() / 1000) + (thread.autoArchiveDuration * 60));
-      color = '#00af89';
 
-      description = getText('watch-watch-ok-description', interaction.locale, {
-        id: thread.id
-      });
-
-      ephemeral = false;
-      title = getText('watch-watch-ok-title', interaction.locale);
-    }
-    catch (err) {
-      console.error(err);
-      description = getText('error-occurred', interaction.locale);
-      title = getText('watch-watch-error', interaction.locale);
-    }
-  }
-  else {
-    description = getText('watch-watch-bot-access-denied-description', interaction.locale);
-    title = getText('watch-watch-bot-access-denied-title', interaction.locale);
+    return;
   }
 
-  const embed = getBaseEmbed(title, description, !ephemeral);
-  embed.setColor(color);
+  if (thread.locked) {
+    const description = getText('watch-watch-locked-description', interaction.locale);
+    const title = getText('watch-watch-locked-title', interaction.locale);
+    handleBaseEmbed(title, description, false, '#dd3333', true, true);
+    return;
+  }
 
-  interaction.reply({
-    embeds: [ embed ],
-    ephemeral: ephemeral
-  });
+  if (!thread.sendable) {
+    const description = getText('watch-watch-bot-access-denied-description', interaction.locale);
+    const title = getText('watch-watch-bot-access-denied-title', interaction.locale);
+    handleBaseEmbed(title, description, false, '#dd3333', true, true);
+    return;
+  }
+
+  try {
+    addThread(thread.id, interaction.guildId, (Date.now() / 1000) + (thread.autoArchiveDuration * 60));
+
+    const description = getText('watch-watch-ok-description', interaction.locale, {
+      id: thread.id
+    });
+
+    const title = getText('watch-watch-ok-title', interaction.locale);
+    handleBaseEmbed(title, description, true, '#00af89', true, false);
+  }
+  catch (err) {
+    console.error(err);
+    const description = getText('error-occurred', interaction.locale);
+    const title = getText('watch-watch-error', interaction.locale);
+    handleBaseEmbed(title, description, false, '#dd3333', true, false);
+  }
 };
 
 const data = {
