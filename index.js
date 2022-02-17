@@ -74,10 +74,6 @@ const { removeThread, addThread } = require("./utils/threadActions.js")
 const checkAll = require("./routines/checkAllThreads").run
 
 client.on('interactionCreate', (interaction) => {
-  if (!interaction.isCommand()) {
-    return;
-  }
-
   const handleBaseEmbed = (title, description, show_user, color, respond, ephemeral) => {
     const embed = new Discord.MessageEmbed();
     embed.setTitle(title);
@@ -115,34 +111,62 @@ client.on('interactionCreate', (interaction) => {
     return embed;
   };
 
-  const respond = (title, description, color = "#008000", ephemeral = false) => {
+  // Deprecated: Use getText() instead.
+  const l = (label, obj) => {
+    return getText(label, interaction.locale, obj);
+  };
+
+  // Deprecated: Use handleBaseEmbed() instead.
+  const respond = (title, description, color = '#008000', ephemeral = false) => {
     handleBaseEmbed(title, description, true, color, true, ephemeral);
+  };
+
+  if (!interaction.isCommand()) {
+    return;
   }
 
+  if (!client.commands.has(interaction.commandName)) {
+    const description = getText('command-not-properly-registered', interaction.locale, {
+      command: `/${interaction.commandName}`
+    });
+
+    const title = getText('error-occurred', interaction.locale);
+    handleBaseEmbed(title, description, false, '#dd3333', true, true);
+    return;
+  }
+
+  // Backward compatibility for /batch
   if (interaction.commandName === 'batch') {
-        const channelId = (interaction.options.getChannel("channel") || interaction.options.getChannel("thread") || interaction.options.getChannel("parent"))
-        if(!checkIfBotCanManageThread(null, channelId.id)) return respond(`❌ ${getText("issue", interaction.locale)}`, getText("needs_manage_threads", interaction.locale), "#ff0000")
-        else if(!interaction.memberPermissions.has(Discord.Permissions.FLAGS.MANAGE_THREADS)) return respond(getText("no_perms_for_command", interaction.locale, { command: interaction.commandName }), getText("user_needs_manage_threads", interaction.locale), '#ff0000', true);
-  } 
-    if(!client.commands.has(interaction.commandName)) return respond(`❌ ${getText("issue", interaction.locale)}`, "bot does not have that command registered. Contact bot host", "#ff0000", true)
+    const channelId = interaction.options.getChannel('parent');
 
-    const l = (label, obj) => {
-        return getText(label, interaction.locale, obj)
+    if (!checkIfBotCanManageThread(null, channelId.id)) {
+      respond(getText('error-occurred', interaction.locale), getText('needs_manage_threads', interaction.locale), '#dd3333', true);
+      return;
     }
 
-    const cmd = client.commands.get(interaction.commandName)
-    try {
-      // Backward compatibility for /batch, /diagnose and /threads
-      if (['batch', 'diagnose', 'threads'].includes(interaction.commandName)) {
-        cmd.run(client, interaction, respond, l);
-      }
-      else {
-        cmd.run(client, interaction, handleBaseEmbed);
-      }
-    } catch(err) {
-        logger.warn(JSON.stringify(err))
-        respond(`❌ ${getText("issue", interaction.locale)}`, getText("command_broke", interaction.locale), "#ff0000", true)
+    if (!interaction.memberPermissions.has(Discord.Permissions.FLAGS.MANAGE_THREADS)) {
+      respond(getText('user-access-denied', interaction.locale), getText('user_needs_manage_threads', interaction.locale), '#dd3333', true);
+      return;
     }
+  }
+
+  const cmd = client.commands.get(interaction.commandName);
+
+  try {
+    // Backward compatibility for /batch, /diagnose and /threads
+    if (['batch', 'diagnose', 'threads'].includes(interaction.commandName)) {
+      cmd.run(client, interaction, respond, l);
+    }
+    else {
+      cmd.run(client, interaction, handleBaseEmbed);
+    }
+  }
+  catch (err) {
+    logger.warn(JSON.stringify(err));
+    const description = getText('unknown-error-while-interaction', interaction.locale);
+    const title = getText('error-occurred', interaction.locale);
+    handleBaseEmbed(title, description, false, '#dd3333', true, true);
+  }
 });
 
 client.on("ready", async () => {
