@@ -1,18 +1,25 @@
 const threads = require('../index').threads,
   getText = require('../utils/getText'),
-  { addThread, removeThread } = require('../utils/threadActions.js'),
+  { addThread, removeThread } = require('../utils/threadActions'),
   { CommandInteraction, Permissions } = require('discord.js');
 
 /**
- * 
- * @param {*} client 
- * @param {CommandInteraction} interaction 
- * @param {*} respond 
+ * @param {*} client
+ * @param {CommandInteraction} interaction
+ * @param {function} handleBaseEmbed
  */
 const run = (client, interaction, handleBaseEmbed) => {
-  const thread = interaction.options.getChannel('thread');
+  const thread = interaction.options.getChannel('thread') ?? interaction.channel;
 
-  if (!interaction.member.permissionsIn(thread.parent).has(Permissions.FLAGS.MANAGE_THREADS)) {
+  if (!thread.isThread()) {
+    const description = getText('watch-channel-type-not-allowed');
+    const title = getText('channel-type-not-allowed');
+    handleBaseEmbed(title, description, false, '#dd3333', true, true);
+    return;
+  }
+
+  // Users cannot specify a thread they cannot view, so no need to check for VIEW_CHANNEL.
+  if (!interaction.member.permissionsIn(thread).has(Permissions.FLAGS.MANAGE_THREADS)) {
     const description = getText('watch-user-access-denied', interaction.locale);
     const title = getText('user-access-denied', interaction.locale);
     handleBaseEmbed(title, description, false, '#dd3333', true, true);
@@ -24,7 +31,7 @@ const run = (client, interaction, handleBaseEmbed) => {
       removeThread(thread.id);
 
       const description = getText('watch-unwatch-ok-description', interaction.locale, {
-        id: thread.id
+        thread: `<#${thread.id}>`
       });
 
       const title = getText('watch-unwatch-ok-title', interaction.locale);
@@ -34,7 +41,7 @@ const run = (client, interaction, handleBaseEmbed) => {
       console.error(err);
       const description = getText('error-occurred', interaction.locale);
       const title = getText('watch-unwatch-error', interaction.locale);
-      handleBaseEmbed(title, description, false, '#dd3333', true, false);
+      handleBaseEmbed(title, description, false, '#dd3333', true, true);
     }
 
     return;
@@ -47,7 +54,7 @@ const run = (client, interaction, handleBaseEmbed) => {
     return;
   }
 
-  if (!thread.sendable) {
+  if (!(thread.viewable && thread.sendable)) {
     const description = getText('watch-watch-bot-access-denied-description', interaction.locale);
     const title = getText('watch-watch-bot-access-denied-title', interaction.locale);
     handleBaseEmbed(title, description, false, '#dd3333', true, true);
@@ -58,7 +65,7 @@ const run = (client, interaction, handleBaseEmbed) => {
     addThread(thread.id, interaction.guildId, (Date.now() / 1000) + (thread.autoArchiveDuration * 60));
 
     const description = getText('watch-watch-ok-description', interaction.locale, {
-      id: thread.id
+      thread: `<#${thread.id}>`
     });
 
     const title = getText('watch-watch-ok-title', interaction.locale);
@@ -68,7 +75,7 @@ const run = (client, interaction, handleBaseEmbed) => {
     console.error(err);
     const description = getText('error-occurred', interaction.locale);
     const title = getText('watch-watch-error', interaction.locale);
-    handleBaseEmbed(title, description, false, '#dd3333', true, false);
+    handleBaseEmbed(title, description, false, '#dd3333', true, true);
   }
 };
 
@@ -80,7 +87,6 @@ const data = {
       channel_types: [10, 11, 12],
       description: 'Thread to watch or unwatch',
       name: 'thread',
-      required: true,
       type: 7,
     }
   ]

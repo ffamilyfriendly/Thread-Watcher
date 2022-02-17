@@ -7,10 +7,22 @@
     }
   },
 
+  "channel-type-not-allowed": {
+    "en-US": "This type of channel is not allowed.",
+    "ko": "이 유형의 채널은 허용되지 않습니다."
+  },
+  "command-not-properly-registered": {
+    "en-US": "`{command}` command is not properly registered.",
+    "ko": "`{command}` 명령어가 올바르게 등록되지 않았습니다."
+  },
   "error-occurred": {
     "en-US": "An error occurred.",
     "ko": "오류가 발생했습니다.",
     "sv-SE": "Ett fel uppstod."
+  },
+  "unknown-error-while-interaction": {
+    "en-US": "Unknown error occurred while processing the interaction.",
+    "ko": "상호 작용을 처리하는 동안 알 수 없는 오류가 발생했습니다."
   },
   "user-access-denied": {
     "en-US": "You do not have permission to do this.",
@@ -18,9 +30,13 @@
     "sv-SE": "Du har ej behörighet att göra detta."
   },
 
+  "auto-channel-type-not-allowed": {
+    "en-US": "You must specify announcement or text channel or use this command in it.",
+    "ko": "공지 채널이나 텍스트 채널을 지정하거나 그 채널에서 명령어를 사용해야 합니다."
+  },
   "auto-register-bot-access-denied-description": {
-    "en-US": "Bot needs View Channel and Send Message in Threads permission in specified channel.\nIf you want to watch private threads in it as well, they also need Manage Threads permission.",
-    "ko": "봇이 해당 채널에서 View Channel과 Send Message in Threads 권한이 필요합니다.\n해당 채널 내 비공개 스레드도 주시하고 싶다면 Manage Threads 권한도 필요합니다.",
+    "en-US": "Bot needs Send Message in Threads permission in that channel.\nIf you want to watch private threads in it as well, they also need Manage Threads permission.",
+    "ko": "봇이 해당 채널에서 Send Message in Threads 권한이 필요합니다.\n해당 채널 내 비공개 스레드도 주시하고 싶다면 Manage Threads 권한도 필요합니다.",
     "sv-SE": "Botten behöver Visa Kanal och Skicka Meddelanden i trådar för den valda kanalen.\nom du vill lägga till en privat tråd så behövs även hantera trådar."
   },
   "auto-register-bot-access-denied-title": {
@@ -34,9 +50,9 @@
     "sv-SE": "kunde inte registrera kanalen."
   },
   "auto-register-ok-description": {
-    "en-US": "Bot will watch new threads in <#{id}> channel.\nThis does not watch existing threads.",
-    "ko": "봇이 <#{id}> 채널 내의 새로운 스레드를 주시할 것입니다.\n기존 스레드를 주시하지는 않습니다.",
-    "sv-SE": "Botten kommer hålla trådar skapade i <#{id}> öppna. Detta oarkiverar inte redan skapade trådar."
+    "en-US": "Bot will watch new threads in {channel} channel.\nThis does not watch existing threads.",
+    "ko": "봇이 {channel} 채널 내의 새로운 스레드를 주시할 것입니다.\n기존 스레드를 주시하지는 않습니다.",
+    "sv-SE": "Botten kommer hålla trådar skapade i {channel} öppna.\nDetta oarkiverar inte redan skapade trådar."
   },
   "auto-register-ok-title": {
     "en-US": "Registered the channel.",
@@ -49,9 +65,9 @@
     "sv-SE": "kunde inte oregistrera kanelen."
   },
   "auto-unregister-ok-description": {
-    "en-US": "Bot will no longer watch new threads in <#{id}> channel.\nThis does not unwatch already watched threads.",
-    "ko": "봇이 더 이상 <#{id}> 채널 내의 새로운 스레드를 주시하지 않습니다.\n이미 주시한 스레드를 주시 해제하지는 않습니다.",
-    "sv-SE": "Botten kommer ej längre hålla nya trådar skapade i <#{id}> öppna.\ndetta tar inte bort redan existerande trådar från listan."
+    "en-US": "Bot will no longer watch new threads in {channel} channel.\nThis does not unwatch already watched threads.",
+    "ko": "봇이 더 이상 {channel} 채널 내의 새로운 스레드를 주시하지 않습니다.\n이미 주시한 스레드를 주시 해제하지는 않습니다.",
+    "sv-SE": "Botten kommer ej längre hålla nya trådar skapade i {channel} öppna.\ndetta tar inte bort redan existerande trådar från listan."
   },
   "auto-unregister-ok-title": {
     "en-US": "Unregistered the channel.",
@@ -59,20 +75,24 @@
     "sv-SE": "avregistrerade kanalen."
   },
   "auto-user-access-denied": {
-    "en-US": "You need Manage Threads permission in specified channel.",
+    "en-US": "You need Manage Threads permission in that channel.",
     "ko": "해당 채널에서 Manage Threads 권한이 필요합니다.",
     "sv-SE": "du behöver Hantera Trådar rättigheten i den valda kanalen."
   },
 
+  "watch-channel-type-not-allowed": {
+    "en-US": "You must specify a thread or use this command in it.",
+    "ko": "스레드를 지정하거나 스레드에서 명령어를 사용해야 합니다."
+  },
   "watch-unwatch-error": {
     "en-US": "Cannot unwatch the thread.",
     "ko": "스레드를 주시 해제할 수 없습니다.",
     "sv-SE": "kunde inte avregistrera tråden."
   },
   "watch-unwatch-ok-description": {
-    "en-US": "Bot will no longer keep <#{id}> thread active.",
-    "ko": "봇이 더 이상 <#{id}> 스레드를 활성 상태로 유지하지 않습니다.",
-    "sv-SE": "botten kommer ej längre hålla <#{id}> öppen."
+    "en-US": "Bot will no longer keep {thread} thread active.",
+    "ko": "봇이 더 이상 {thread} 스레드를 활성 상태로 유지하지 않습니다.",
+    "sv-SE": "botten kommer ej längre hålla {thread} öppen."
   },
   "watch-unwatch-ok-title": {
     "en-US": "Unwatched the thread.",
@@ -86,7 +106,7 @@
   },
   "watch-watch-bot-access-denied-description": {
     "en-US": "Bot needs View Channel and Send Message in Threads permission in the channel which specified thread is in.\nIf it is private thread, they also need Manage Threads permission or to be invited to it.",
-    "ko": "봇이 해당 스레드가 있는 채널에서 View Channel과 Send Message in Threads 권한이 필요합니다.\n비공개 스레드인 경우 Manage Threads 권한이나 스레드 초대도 필요합니다.",
+    "ko": "봇이 해당 스레드가 있는 채널에서 Send Message in Threads 권한이 필요합니다.\n비공개 스레드인 경우 Manage Threads 권한이나 스레드 초대도 필요합니다.",
     "sv-SE": "botten behöver rättigheterna Visa Kanal och Skicka Medellanden I trådar i den kanal som tråden är i.\nom det är en privat tråd så behöver botten Hantera Trådar eller en inbjudan till tråden."
   },
   "watch-watch-bot-access-denied-title": {
@@ -110,9 +130,9 @@
     "sv-SE": "Tråden är låst."
   },
   "watch-watch-ok-description": {
-    "en-US": "Bot will unarchive <#{id}> thread to keep it active.",
-    "ko": "봇이 <#{id}> 스레드를 활성 상태로 유지하기 위해 보관을 해제할 것입니다.",
-    "sv-SE": "botten kommer oarkivera <#{id}> för att hålla den aktiv."
+    "en-US": "Bot will unarchive {thread} thread to keep it active.",
+    "ko": "봇이 {thread} 스레드를 활성 상태로 유지하기 위해 보관을 해제할 것입니다.",
+    "sv-SE": "botten kommer oarkivera {thread} för att hålla den aktiv."
   },
   "watch-watch-ok-title": {
     "en-US": "Watched the thread.",
@@ -124,14 +144,6 @@
     "en-US": "done",
     "sv-SE": "klart"
   },
-  "issue": {
-    "en-US": "issue",
-    "sv-SE": "problem"
-  },
-  "command_broke": {
-    "en-US": "something went wrong and it probably wasnt your fault",
-    "sv-SE": "något gick paj och det var inte ditt fel"
-  },
   "needs_manage_threads": {
     "en-US": "bot needs `SEND_MESSAGES_IN_THREADS` for this command",
     "sv-SE": "botten behöver `SEND_MESSAGES_IN_THREADS` för detta kommando"
@@ -139,14 +151,6 @@
   "user_needs_manage_threads": {
     "en-US": "you need `MANAGE_THREADS` to use it.",
     "sv-SE": "du behöver `MANAGE_THREADS` för att använda det."
-  },
-  "no_perms_for_command": {
-    "en-US": "You do not have permission to use /{command} command.",
-    "sv-SE": "Du har inte tillåtelse att använda /${command} kommandot."
-  },
-  "bot_by": {
-    "en-US": "Bot by Family friendly#6191",
-    "sv-SE": "Bot skapad av Family friendly#6191"
   },
   "threads_is_watching": {
     "en-US": "thread-watcher is watching {amount} thread(s) in this server!",

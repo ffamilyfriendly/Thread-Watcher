@@ -4,16 +4,24 @@ const channels = require('../index').channels,
   { CommandInteraction, Permissions } = require('discord.js');
 
 /**
- * 
- * @param {*} client 
- * @param {CommandInteraction} interaction 
- * @param {*} respond 
- * @returns 
+ * @param {*} client
+ * @param {CommandInteraction} interaction
+ * @param {function} handleBaseEmbed
  */
 const run = (client, interaction, handleBaseEmbed) => {
-  const channel = interaction.options.getChannel('channel');
+  const channel = interaction.options.getChannel('channel') ?? interaction.channel;
 
-  if (!interaction.member.permissionsIn(channel).has(Permissions.FLAGS.MANAGE_THREADS)) {
+  if (channel.isThread()) {
+    const description = getText('auto-channel-type-not-allowed');
+    const title = getText('channel-type-not-allowed');
+    handleBaseEmbed(title, description, false, '#dd3333', true, true);
+    return;
+  }
+
+  if (!interaction.member.permissionsIn(channel).has([
+    Permissions.FLAGS.MANAGE_THREADS,
+    Permissions.FLAGS.VIEW_CHANNEL
+  ])) {
     const description = getText('auto-user-access-denied', interaction.locale);
     const title = getText('user-access-denied', interaction.locale);
     handleBaseEmbed(title, description, false, '#dd3333', true, true);
@@ -25,7 +33,7 @@ const run = (client, interaction, handleBaseEmbed) => {
       removeThread(channel.id, 'channels');
 
       const description = getText('auto-unregister-ok-description', interaction.locale, {
-        id: channel.id
+        channel: `<#${channel.id}>`
       });
 
       const title = getText('auto-unregister-ok-title', interaction.locale);
@@ -35,13 +43,13 @@ const run = (client, interaction, handleBaseEmbed) => {
       console.error(err);
       const description = getText('error-occurred', interaction.locale);
       const title = getText('auto-unregister-error', interaction.locale);
-      handleBaseEmbed(title, description, false, '#dd3333', true, false);
+      handleBaseEmbed(title, description, false, '#dd3333', true, true);
     }
 
     return;
   }
 
-  if (!interaction.guild.me.permissionsIn(channel).has(Permissions.FLAGS.SEND_MESSAGES_IN_THREADS)) {
+  if (!(channel.viewable && interaction.guild.me.permissionsIn(channel).has(Permissions.FLAGS.SEND_MESSAGES_IN_THREADS))) {
     const description = getText('auto-register-bot-access-denied-description', interaction.locale);
     const title = getText('auto-register-bot-access-denied-title', interaction.locale);
     handleBaseEmbed(title, description, false, '#dd3333', true, true);
@@ -52,7 +60,7 @@ const run = (client, interaction, handleBaseEmbed) => {
     addThread(channel.id, interaction.guildId, 'channels');
 
     const description = getText('auto-register-ok-description', interaction.locale, {
-      id: channel.id
+      channel: `<#${channel.id}>`
     });
 
     const title = getText('auto-register-ok-title', interaction.locale);
@@ -62,7 +70,7 @@ const run = (client, interaction, handleBaseEmbed) => {
     console.error(err);
     const description = getText('error-occurred', interaction.locale);
     const title = getText('auto-register-error', interaction.locale);
-    handleBaseEmbed(title, description, false, '#dd3333', true, false);
+    handleBaseEmbed(title, description, false, '#dd3333', true, true);
   }
 };
 
@@ -74,7 +82,6 @@ const data = {
       channel_types: [0, 5],
       description: 'Channel to register or unregister',
       name: 'channel',
-      required: true,
       type: 7
     }
   ]
