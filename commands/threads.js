@@ -1,40 +1,71 @@
 const db = require('../index').db;
-const { CommandInteraction, MessageEmbed } = require('discord.js')
+const { CommandInteraction, Permissions } = require('discord.js');
 
 /**
- * 
- * @param {*} client 
- * @param {CommandInteraction} interaction 
- * @param {*} respond 
+ * @param {*} client
+ * @param {CommandInteraction} interaction
+ * @param {function} handleBaseEmbed
  */
-const run = async (client, interaction, respond, l) => {
-  let threadsList = await db.getThreadsInGuild(interaction.guildId);
-  const embed = new MessageEmbed()
-  // `thread-watcher is watching ${threadsList.length} threads in your server!`
-  .setDescription(l("threads_is_watching", { amount: threadsList.length }))
-  .setColor("#008000")
-  .setTitle("Thread Watcher")
-  .setFooter({ text: "beep boop! familyfriendly.xyz/threads" })
+const run = async (client, interaction, handleBaseEmbed) => {
+  const db_threads = await db.getThreadsInGuild(interaction.guildId);
 
-  // this code is so dumb. If anyone actually smort is reading this code (bless your soul) pls fix
-  let buf = ""
-  let page = 1;
-  for(let id of threadsList) {
-    let tmp = buf + `<#${id.id}>, `
-    if(tmp.length >= 1024) {
-      embed.addField(`Group #${page}`, buf)
-      buf = `<#${id.id}>`
-      page++
-    } else buf = tmp
+  const description = getText('threads-description', interaction.locale, {
+    'thread-amount': db_threads.length
+  });
+
+  const title = getText('threads-title', interaction.locale);
+
+  if (db_threads.length <= 0) {
+    handleBaseEmbed(title, description, false, '#3366cc', true, true);
+    return;
   }
-  embed.addField(`Page #${page}`, buf || l("threads_none_watched"))
 
-  interaction.reply({ embeds: [ embed ], ephemeral: true })
-}
+  const embed = handleBaseEmbed(title, description, false, '#3366cc', false, null);
+  const field_values = [];
+
+  for (const db_thread of db_threads) {
+    const thread = interaction.channel.threads.cache.get(db_thread.id);
+
+    if (!interaction.member.permissionsIn(thread).has(Permissions.FLAGS.VIEW_CHANNEL)) {
+      continue;
+    }
+
+    const status_locked = getText('threads-status-locked', interaction.locale);
+    const current = thread.locked ? `~~${thread.toString()}~~ (${status_locked})` : thread.toString();
+
+    if (field_values.length <= 0) {
+      field_values.push(current);
+      continue;
+    }
+
+    const index = field_values.length - 1;
+    const list = `${field_values[index]}, ${current}`;
+
+    if (list.length > 1024) {
+      field_values.push(current);
+    }
+    else {
+      field_values[index] = list;
+    }
+  }
+
+  let first_field = true;
+
+  for (const field_value of field_values) {
+    const field_name = first_field ? getText('threads-field-threads', interaction.locale) : '\u200b';
+    first_field = false;
+    embed.addField(field_name, field_value);
+  }
+
+  interaction.reply({
+    embeds: [embed],
+    ephemeral: true
+  });
+};
 
 const data = {
-  name:"threads",
-  description: "lists all threads in your server that the bot is watching"
-}
+  description: 'Show watched threads.',
+  name: 'threads'
+};
 
 module.exports = { run, data };

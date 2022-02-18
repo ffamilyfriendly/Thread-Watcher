@@ -33,7 +33,7 @@ const run = (client, interaction, handleBaseEmbed) => {
       removeThread(channel.id, 'channels');
 
       const description = getText('auto-unregister-ok-description', interaction.locale, {
-        channel: `<#${channel.id}>`
+        channel: channel.toString()
       });
 
       const title = getText('auto-unregister-ok-title', interaction.locale);
@@ -41,7 +41,7 @@ const run = (client, interaction, handleBaseEmbed) => {
     }
     catch (err) {
       console.error(err);
-      const description = getText('error-occurred', interaction.locale);
+      const description = getText('unknown-error-occurred', interaction.locale);
       const title = getText('auto-unregister-error', interaction.locale);
       handleBaseEmbed(title, description, false, '#dd3333', true, true);
     }
@@ -60,7 +60,7 @@ const run = (client, interaction, handleBaseEmbed) => {
     addThread(channel.id, interaction.guildId, 'channels');
 
     const description = getText('auto-register-ok-description', interaction.locale, {
-      channel: `<#${channel.id}>`
+      channel: channel.toString()
     });
 
     const title = getText('auto-register-ok-title', interaction.locale);
@@ -68,7 +68,7 @@ const run = (client, interaction, handleBaseEmbed) => {
   }
   catch (err) {
     console.error(err);
-    const description = getText('error-occurred', interaction.locale);
+    const description = getText('unknown-error-occurred', interaction.locale);
     const title = getText('auto-register-error', interaction.locale);
     handleBaseEmbed(title, description, false, '#dd3333', true, true);
   }

@@ -82,7 +82,7 @@ client.on('interactionCreate', (interaction) => {
     if (show_user) {
       embed.setAuthor({
         iconURL: interaction.user.displayAvatarURL(),
-        name: interaction.user.tag
+        name: (interaction.member.nickname === null) ? interaction.user.tag : `${interaction.member.nickname} (${interaction.user.tag})`
       });
     }
 
@@ -130,7 +130,7 @@ client.on('interactionCreate', (interaction) => {
       command: `/${interaction.commandName}`
     });
 
-    const title = getText('error-occurred', interaction.locale);
+    const title = getText('interaction-error', interaction.locale);
     handleBaseEmbed(title, description, false, '#dd3333', true, true);
     return;
   }
@@ -140,7 +140,7 @@ client.on('interactionCreate', (interaction) => {
     const channelId = interaction.options.getChannel('parent');
 
     if (!checkIfBotCanManageThread(null, channelId.id)) {
-      respond(getText('error-occurred', interaction.locale), getText('needs_manage_threads', interaction.locale), '#dd3333', true);
+      respond(getText('interaction-error', interaction.locale), getText('needs_manage_threads', interaction.locale), '#dd3333', true);
       return;
     }
 
@@ -153,8 +153,8 @@ client.on('interactionCreate', (interaction) => {
   const cmd = client.commands.get(interaction.commandName);
 
   try {
-    // Backward compatibility for /batch, /diagnose and /threads
-    if (['batch', 'diagnose', 'threads'].includes(interaction.commandName)) {
+    // Backward compatibility for /batch and /diagnose
+    if (interaction.commandName === 'batch' || interaction.commandName === 'diagnose') {
       cmd.run(client, interaction, respond, l);
     }
     else {
@@ -163,8 +163,8 @@ client.on('interactionCreate', (interaction) => {
   }
   catch (err) {
     logger.warn(JSON.stringify(err));
-    const description = getText('unknown-error-while-interaction', interaction.locale);
-    const title = getText('error-occurred', interaction.locale);
+    const description = getText('unknown-error-occurred', interaction.locale);
+    const title = getText('interaction-error', interaction.locale);
     handleBaseEmbed(title, description, false, '#dd3333', true, true);
   }
 });
@@ -219,7 +219,8 @@ client.on('threadUpdate', (oldThread, newThread) => {
     return;
   }
 
-  newThread.setArchived(false, 'Keeping the thread active');
+  const unarchive_reason = getText('unarchive-keep-active-reason', newThread.guild.preferredLocale);
+  newThread.setArchived(false, unarchive_reason);
   logger.done(`[auto] (${getDate()}) Unarchived ${newThread.id} thread in ${newThread.guildId} server.`);
   db.updateArchiveTimes(newThread.id, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60));
   ratelimits[newThread.guildId] = (newThread.guildId in ratelimits) ? (ratelimits[newThread.guildId] + 1) : 1;
