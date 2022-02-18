@@ -68,7 +68,7 @@ const batchInChannel = async (channel, action, pattern = null ) => {
 const run = async (client, interaction, respond, l) => {
   const action = interaction.options.getString("action")
   const parent = interaction.options.getChannel("parent")
-  const pattern = interaction.options.getString("pattern")
+  let pattern = interaction.options.getString("pattern")
   let blacklist = false;
 
   if (pattern?.startsWith('!')) {
