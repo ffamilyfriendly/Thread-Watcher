@@ -9,11 +9,13 @@
 
   "channel-type-not-allowed": {
     "en-US": "This type of channel is not allowed.",
-    "ko": "이 유형의 채널은 허용되지 않습니다."
+    "ko": "이 유형의 채널은 허용되지 않습니다.",
+    "sv-SE": "Denna typ av kanal är ej tillåten."
   },
   "command-not-properly-registered": {
     "en-US": "`{command}` command is not properly registered.",
-    "ko": "`{command}` 명령어가 올바르게 등록되지 않았습니다."
+    "ko": "`{command}` 명령어가 올바르게 등록되지 않았습니다.",
+    "sv-SE": "{command} kommandot är inte korrekt registrerat."
   },
   "error-occurred": {
     "en-US": "An error occurred.",
@@ -32,7 +34,8 @@
 
   "auto-channel-type-not-allowed": {
     "en-US": "You must specify announcement or text channel or use this command in it.",
-    "ko": "공지 채널이나 텍스트 채널을 지정하거나 그 채널에서 명령어를 사용해야 합니다."
+    "ko": "공지 채널이나 텍스트 채널을 지정하거나 그 채널에서 명령어를 사용해야 합니다.",
+    "sv-SE": "Du måste ange announcement eller text kanal för att använda detta kommando. Du kan även använda kommandot i kanalen."
   },
   "auto-register-bot-access-denied-description": {
     "en-US": "Bot needs Send Message in Threads permission in that channel.\nIf you want to watch private threads in it as well, they also need Manage Threads permission.",
@@ -82,7 +85,8 @@
 
   "watch-channel-type-not-allowed": {
     "en-US": "You must specify a thread or use this command in it.",
-    "ko": "스레드를 지정하거나 스레드에서 명령어를 사용해야 합니다."
+    "ko": "스레드를 지정하거나 스레드에서 명령어를 사용해야 합니다.",
+    "sv-SE": "du måste välja en tråd eller använda detta kommando i tråden."
   },
   "watch-unwatch-error": {
     "en-US": "Cannot unwatch the thread.",
