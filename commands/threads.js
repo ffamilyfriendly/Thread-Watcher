@@ -16,32 +16,32 @@ const run = async (client, interaction, handleBaseEmbed) => {
 
   const title = getText('threads-title', interaction.locale);
   const embed = handleBaseEmbed(title, description, false, '#3366cc', false, null);
-  const non_thread_channel_lists = [];
+  const channel_lists = [];
   const thread_lists = [];
 
   // This includes future-proofing for adding support to show registered channels.
   for (const i = 1; i <= 1; i++) {
-    const db_channels = (i === 1) ? db_threads : null;
-    const lists = (i === 1) ? thread_lists : non_thread_channel_lists;
+    const db_channel_likes = (i === 1) ? db_threads : null;
+    const lists = (i === 1) ? thread_lists : channel_lists;
 
-    for (const db_channel of db_channels) {
-      const channel = interaction.guild.channels.cache.get(db_channel.id);
-      const user_permissions = interaction.member.permissionsIn(channel);
+    for (const db_channel_like of db_channel_likes) {
+      const channel_like = interaction.guild.channels.cache.get(db_channel_like.id);
+      const user_permissions = interaction.member.permissionsIn(channel_like);
 
       if (!user_permissions.has(Permissions.FLAGS.VIEW_CHANNEL)) {
         continue;
       }
-      else if (channel.type === 'GUILD_PRIVATE_THREAD' && !(channel.members.cache.has(interaction.user.id) || user_permissions.has(Permissions.FLAGS.MANAGE_THREADS))) {
+      else if (channel_like.type === 'GUILD_PRIVATE_THREAD' && !(channel_like.members.cache.has(interaction.user.id) || user_permissions.has(Permissions.FLAGS.MANAGE_THREADS))) {
         continue;
       }
 
       let status = null;
 
-      if (channel.isThread() && channel.locked) {
+      if (channel_like.isThread() && channel_like.locked) {
         status = getText('threads-status-locked', interaction.locale);
       }
-      else if (channel.viewable) {
-        const ok = channel.isThread() ? channel.sendable : interaction.guild.me.permissionsIn(channel).has(Permissions.FLAGS.SEND_MESSAGES_IN_THREADS);
+      else if (channel_like.viewable) {
+        const ok = channel_like.isThread() ? channel_like.sendable : interaction.guild.me.permissionsIn(channel_like).has(Permissions.FLAGS.SEND_MESSAGES_IN_THREADS);
 
         if (!ok) {
           status = getText('threads-status-cannot-unarchive', interaction.locale);
@@ -51,7 +51,7 @@ const run = async (client, interaction, handleBaseEmbed) => {
         status = getText('threads-status-cannot-unarchive', interaction.locale);
       }
 
-      const current = (status === null) ? channel.toString() : `~~${channel.toString()}~~ (${status})`;
+      const current = (status === null) ? channel_like.toString() : `~~${channel_like.toString()}~~ (${status})`;
 
       if (lists.length <= 0) {
         lists.push(current);
