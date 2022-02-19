@@ -1,4 +1,5 @@
 const db = require('../index').db;
+const getText = require('../utils/getText');
 const { CommandInteraction, Permissions } = require('discord.js');
 
 /**
@@ -24,9 +25,13 @@ const run = async (client, interaction, handleBaseEmbed) => {
     const lists = (i === 1) ? thread_lists : non_thread_channel_lists;
 
     for (const db_channel of db_channels) {
-      const channel = (i === 1) ? interaction.guild.channels.cache.get(db_channel.id) : client.channels.cache.get(db_channel.id);
+      const channel = interaction.guild.channels.cache.get(db_channel.id);
+      const user_permissions = interaction.member.permissionsIn(channel);
 
-      if (!interaction.member.permissionsIn(channel).has(Permissions.FLAGS.VIEW_CHANNEL)) {
+      if (!user_permissions.has(Permissions.FLAGS.VIEW_CHANNEL)) {
+        continue;
+      }
+      else if (channel.type === 'GUILD_PRIVATE_THREAD' && !(channel.members.cache.has(interaction.user.id) || user_permissions.has(Permissions.FLAGS.MANAGE_THREADS))) {
         continue;
       }
 
@@ -67,8 +72,8 @@ const run = async (client, interaction, handleBaseEmbed) => {
     let first_field = true;
 
     for (const list of lists) {
-      const field_name_locale_string = (i === 1) ? 'threads-field-threads' : null;
-      const field_name = first_field ? getText(field_name_locale_string, interaction.locale) : '\u200b';
+      const first_field_name_locale_string = (i === 1) ? 'threads-field-threads' : null;
+      const field_name = first_field ? getText(first_field_name_locale_string, interaction.locale) : '\u200b';
       first_field = false;
       embed.addField(field_name, list);
     }
