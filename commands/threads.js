@@ -14,47 +14,64 @@ const run = async (client, interaction, handleBaseEmbed) => {
   });
 
   const title = getText('threads-title', interaction.locale);
-
-  if (db_threads.length <= 0) {
-    handleBaseEmbed(title, description, false, '#3366cc', true, true);
-    return;
-  }
-
   const embed = handleBaseEmbed(title, description, false, '#3366cc', false, null);
-  const field_values = [];
+  const non_thread_channel_lists = [];
+  const thread_lists = [];
 
-  for (const db_thread of db_threads) {
-    const thread = interaction.channel.threads.cache.get(db_thread.id);
+  // This includes future-proofing for adding support to show registered channels.
+  for (const i = 1; i <= 1; i++) {
+    const db_channels = (i === 1) ? db_threads : null;
+    const lists = (i === 1) ? thread_lists : non_thread_channel_lists;
 
-    if (!interaction.member.permissionsIn(thread).has(Permissions.FLAGS.VIEW_CHANNEL)) {
-      continue;
+    for (const db_channel of db_channels) {
+      const channel = (i === 1) ? interaction.guild.channels.cache.get(db_channel.id) : client.channels.cache.get(db_channel.id);
+
+      if (!interaction.member.permissionsIn(channel).has(Permissions.FLAGS.VIEW_CHANNEL)) {
+        continue;
+      }
+
+      let status = null;
+
+      if (channel.isThread() && channel.locked) {
+        status = getText('threads-status-locked', interaction.locale);
+      }
+      else if (channel.viewable) {
+        const ok = channel.isThread() ? channel.sendable : interaction.guild.me.permissionsIn(channel).has(Permissions.FLAGS.SEND_MESSAGES_IN_THREADS);
+
+        if (!ok) {
+          status = getText('threads-status-cannot-unarchive', interaction.locale);
+        }
+      }
+      else {
+        status = getText('threads-status-cannot-unarchive', interaction.locale);
+      }
+
+      const current = (status === null) ? channel.toString() : `~~${channel.toString()}~~ (${status})`;
+
+      if (lists.length <= 0) {
+        lists.push(current);
+        continue;
+      }
+
+      const index = lists.length - 1;
+      const list = `${lists[index]}, ${current}`;
+
+      if (list.length > 1024) {
+        lists.push(current);
+      }
+      else {
+        lists[index] = list;
+      }
     }
 
-    const status_locked = getText('threads-status-locked', interaction.locale);
-    const current = thread.locked ? `~~${thread.toString()}~~ (${status_locked})` : thread.toString();
+    let first_field = true;
 
-    if (field_values.length <= 0) {
-      field_values.push(current);
-      continue;
+    for (const list of lists) {
+      const field_name_locale_string = (i === 1) ? 'threads-field-threads' : null;
+      const field_name = first_field ? getText(field_name_locale_string, interaction.locale) : '\u200b';
+      first_field = false;
+      embed.addField(field_name, list);
     }
-
-    const index = field_values.length - 1;
-    const list = `${field_values[index]}, ${current}`;
-
-    if (list.length > 1024) {
-      field_values.push(current);
-    }
-    else {
-      field_values[index] = list;
-    }
-  }
-
-  let first_field = true;
-
-  for (const field_value of field_values) {
-    const field_name = first_field ? getText('threads-field-threads', interaction.locale) : '\u200b';
-    first_field = false;
-    embed.addField(field_name, field_value);
   }
 
   interaction.reply({
