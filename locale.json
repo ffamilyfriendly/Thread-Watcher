@@ -94,6 +94,10 @@
     "en-US": "Threads",
     "ko": "스레드"
   },
+  "threads-status-cannot-unarchive": {
+    "en-US": "cannot unarchive",
+    "ko": "보관 해제 불가"
+  },
   "threads-status-locked": {
     "en-US": "locked",
     "ko": "잠김"
