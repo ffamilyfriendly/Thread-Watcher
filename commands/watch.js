@@ -31,7 +31,7 @@ const run = (client, interaction, handleBaseEmbed) => {
       removeThread(thread.id);
 
       const description = getText('watch-unwatch-ok-description', interaction.locale, {
-        thread: `<#${thread.id}>`
+        thread: thread.toString()
       });
 
       const title = getText('watch-unwatch-ok-title', interaction.locale);
@@ -39,7 +39,7 @@ const run = (client, interaction, handleBaseEmbed) => {
     }
     catch (err) {
       console.error(err);
-      const description = getText('error-occurred', interaction.locale);
+      const description = getText('unknown-error-occurred', interaction.locale);
       const title = getText('watch-unwatch-error', interaction.locale);
       handleBaseEmbed(title, description, false, '#dd3333', true, true);
     }
@@ -63,9 +63,11 @@ const run = (client, interaction, handleBaseEmbed) => {
 
   try {
     addThread(thread.id, interaction.guildId, (Date.now() / 1000) + (thread.autoArchiveDuration * 60));
+    const unarchive_reason = getText('watch-watch-unarchive-reason', interaction.guildLocale);
+    thread.setArchived(false, unarchive_reason);
 
     const description = getText('watch-watch-ok-description', interaction.locale, {
-      thread: `<#${thread.id}>`
+      thread: thread.toString()
     });
 
     const title = getText('watch-watch-ok-title', interaction.locale);
@@ -73,7 +75,7 @@ const run = (client, interaction, handleBaseEmbed) => {
   }
   catch (err) {
     console.error(err);
-    const description = getText('error-occurred', interaction.locale);
+    const description = getText('unknown-error-occurred', interaction.locale);
     const title = getText('watch-watch-error', interaction.locale);
     handleBaseEmbed(title, description, false, '#dd3333', true, true);
   }
