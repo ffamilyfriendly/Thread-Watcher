@@ -20,12 +20,26 @@ const run = async (client, interaction, handleBaseEmbed) => {
   const thread_lists = [];
 
   // This includes future-proofing for adding support to show registered channels.
-  for (const i = 1; i <= 1; i++) {
+  for (let i = 1; i <= 1; i++) {
     const db_channel_likes = (i === 1) ? db_threads : null;
     const lists = (i === 1) ? thread_lists : channel_lists;
 
+    let channel_like
+
     for (const db_channel_like of db_channel_likes) {
-      const channel_like = interaction.guild.channels.cache.get(db_channel_like.id);
+      for(const [_channelid, channel] of interaction.guild.channels.cache) {
+        if(!channel.threads) continue;
+        for(const [_threadid, thread] of channel.threads.cache) {
+          if(thread.id == db_channel_like.id) {
+            channel_like = thread
+            break;
+          }
+        }
+      }
+
+      if(!channel_like) continue;
+
+      console.log(channel_like)
       const user_permissions = interaction.member.permissionsIn(channel_like);
 
       if (!user_permissions.has(Permissions.FLAGS.VIEW_CHANNEL)) {

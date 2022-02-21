@@ -43,7 +43,7 @@
   "auto-register-bot-access-denied-description": {
     "en-US": "Bot needs Send Messages in Threads permission in that channel.\nIf you want to watch private threads in it as well, they also need Manage Threads permission.",
     "ko": "봇이 해당 채널에서 Send Messages in Threads 권한이 필요합니다.\n해당 채널 내 비공개 스레드도 주시하고 싶다면 Manage Threads 권한도 필요합니다.",
-    "sv-SE": "[Translation outdated] Botten behöver Visa Kanal och Skicka Meddelanden i trådar för den valda kanalen.\nom du vill lägga till en privat tråd så behövs även hantera trådar."
+    "sv-SE": "Botten behöver kunna skicka medelanden i trådar för detta kommando.\nOm du vill bevaka private trådar också så behöver botten hantera trådar rättigheten."
   },
   "auto-register-bot-access-denied-title": {
     "en-US": "Bot does not have permission to register the channel.",
@@ -83,7 +83,7 @@
   "auto-user-access-denied": {
     "en-US": "You need Manage Threads permission in that channel.",
     "ko": "해당 채널에서 Manage Threads 권한이 필요합니다.",
-    "sv-SE": "[Translation outdated] du behöver Hantera Trådar rättigheten i den valda kanalen."
+    "sv-SE": "du behöver Hantera Trådar rättigheten i kanalen."
   },
 
   "threads-description": {
@@ -130,12 +130,12 @@
   "watch-user-access-denied": {
     "en-US": "You need Manage Threads permission in the channel which that thread is in.",
     "ko": "해당 스레드가 있는 채널에서 Manage Threads 권한이 필요합니다.",
-    "sv-SE": "[Translation outdated] Du behöver Hantera Trådar rättigheten i den kanal tråden är i."
+    "sv-SE": "Du behöver hantera trådar rättigheten i kanelen som tråden är i."
   },
   "watch-watch-bot-access-denied-description": {
     "en-US": "Bot needs Send Messages in Threads permission in the channel which specified thread is in.\nIf it is private thread, they also need Manage Threads permission or to be invited to it.",
     "ko": "봇이 해당 스레드가 있는 채널에서 Send Messages in Threads 권한이 필요합니다.\n비공개 스레드인 경우 Manage Threads 권한이나 스레드 초대도 필요합니다.",
-    "sv-SE": "[Translation outdated] botten behöver rättigheterna Visa Kanal och Skicka Medellanden I trådar i den kanal som tråden är i.\nom det är en privat tråd så behöver botten Hantera Trådar eller en inbjudan till tråden."
+    "sv-SE": "Botten behöver kunna skicka medelanden i tråden. Om det är en privat tråd så behöver botten rättigheten att hantera trådar eller en inbjudan till tråden."
   },
   "watch-watch-bot-access-denied-title": {
     "en-US": "Bot cannot unarchive the thread.",
