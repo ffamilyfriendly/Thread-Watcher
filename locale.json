@@ -19,15 +19,18 @@
   },
   "interaction-error": {
     "en-US": "Cannot handle the interaction.",
-    "ko": "상호 작용을 처리할 수 없습니다."
+    "ko": "상호 작용을 처리할 수 없습니다.",
+    "sv-SE": "Kunde inte hantera interaktionen."
   },
   "unarchive-keep-active-reason": {
     "en-US": "Keep the thread active",
-    "ko": "스레드를 활성 상태로 유지"
+    "ko": "스레드를 활성 상태로 유지",
+    "sv-SE": "Håll tråden aktiv."
   },
   "unknown-error-occurred": {
     "en-US": "Unknown error occurred.",
-    "ko": "알 수 없는 오류가 발생했습니다."
+    "ko": "알 수 없는 오류가 발생했습니다.",
+    "sv-SE": "okänt fel inträffade."
   },
   "user-access-denied": {
     "en-US": "You do not have permission to do this.",
@@ -87,24 +90,29 @@
   },
 
   "threads-description": {
-    "en-US": "{thread-amount} threads were watched. Threads you cannot see are not shown.",
-    "ko": "스레드 {thread-amount}개가 주시되었습니다. 볼 수 없는 스레드는 표시되지 않습니다."
+    "en-US": "{thread-amount} threads are watched. Threads you cannot see are not shown.",
+    "ko": "스레드 {thread-amount}개가 주시되었습니다. 볼 수 없는 스레드는 표시되지 않습니다.",
+    "sv-SE": "{thread-amount} trådar är bevakade. Trådar som du inte kan se visas ej."
   },
   "threads-field-threads": {
     "en-US": "Threads",
-    "ko": "스레드"
+    "ko": "스레드",
+    "sv-SE": "trådar."
   },
   "threads-status-cannot-unarchive": {
     "en-US": "cannot unarchive",
-    "ko": "보관 해제 불가"
+    "ko": "보관 해제 불가",
+    "sv-SE": "ken ej av-arkivera."
   },
   "threads-status-locked": {
     "en-US": "locked",
-    "ko": "잠김"
+    "ko": "잠김",
+    "sv-SE": "låst"
   },
   "threads-title": {
     "en-US": "Watched threads",
-    "ko": "주시된 스레드"
+    "ko": "주시된 스레드",
+    "sv-SE": "Bevakade trådar."
   },
 
   "watch-channel-type-not-allowed": {
