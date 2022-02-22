@@ -16,30 +16,40 @@ const run = async (client, interaction, handleBaseEmbed) => {
 
   const title = getText('threads-title', interaction.locale);
   const embed = handleBaseEmbed(title, description, false, '#3366cc', false, null);
-  const channel_lists = [];
-  const thread_lists = [];
 
   // This includes future-proofing for adding support to show registered channels.
   for (let i = 1; i <= 1; i++) {
+    const items = [];
+    const lists = [];
     const db_channel_likes = (i === 1) ? db_threads : null;
-    const lists = (i === 1) ? thread_lists : channel_lists;
-
-    let channel_like
 
     for (const db_channel_like of db_channel_likes) {
-      for(const [_channelid, channel] of interaction.guild.channels.cache) {
-        if(!channel.threads) continue;
-        for(const [_threadid, thread] of channel.threads.cache) {
-          if(thread.id == db_channel_like.id) {
-            channel_like = thread
-            break;
+      let channel_like = null;
+
+      if (i === 1) {
+        for (const [channel_id, channel] of interaction.guild.channels.cache) {
+          if (!('threads' in channel)) {
+            continue;
+          }
+
+          for (const [thread_id, thread] of channel.threads.cache) {
+            if (thread_id === db_channel_like.id) {
+              channel_like = thread;
+              break;
+            }
           }
         }
       }
+      else {
+        channel_like = interaction.guild.channel.cache.get(db_channel_like.id);
+      }
 
-      if(!channel_like) continue;
+      if (channel_like === null) {
+        const status_unknown_thread = getText('threads-status-unknown-thread', interaction.locale);
+        items.push(`\`${db_channel_like.id}\` (${status_unknown_thread})`);
+        continue;
+      }
 
-      console.log(channel_like)
       const user_permissions = interaction.member.permissionsIn(channel_like);
 
       if (!user_permissions.has(Permissions.FLAGS.VIEW_CHANNEL)) {
@@ -49,34 +59,37 @@ const run = async (client, interaction, handleBaseEmbed) => {
         continue;
       }
 
-      let status = null;
+      let channel_like_status = null;
 
       if (channel_like.isThread() && channel_like.locked) {
-        status = getText('threads-status-locked', interaction.locale);
+        channel_like_status = getText('threads-status-locked', interaction.locale);
       }
       else if (channel_like.viewable) {
         const ok = channel_like.isThread() ? channel_like.sendable : interaction.guild.me.permissionsIn(channel_like).has(Permissions.FLAGS.SEND_MESSAGES_IN_THREADS);
 
         if (!ok) {
-          status = getText('threads-status-cannot-unarchive', interaction.locale);
+          channel_like_status = getText('threads-status-cannot-unarchive', interaction.locale);
         }
       }
       else {
-        status = getText('threads-status-cannot-unarchive', interaction.locale);
+        channel_like_status = getText('threads-status-cannot-unarchive', interaction.locale);
       }
 
-      const current = (status === null) ? channel_like.toString() : `~~${channel_like.toString()}~~ (${status})`;
+      const item = (channel_like_status === null) ? channel_like.toString() : `~~${channel_like.toString()}~~ (${channel_like_status})`;
+      items.push(item);
+    }
 
+    for (const item in items) {
       if (lists.length <= 0) {
-        lists.push(current);
+        lists.push(item);
         continue;
       }
 
       const index = lists.length - 1;
-      const list = `${lists[index]}, ${current}`;
+      const list = `${lists[index]}, ${item}`;
 
       if (list.length > 1024) {
-        lists.push(current);
+        lists.push(item);
       }
       else {
         lists[index] = list;
