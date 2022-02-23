@@ -19,9 +19,9 @@ const run = async (client, interaction, handleBaseEmbed) => {
 
   // This includes future-proofing for adding support to show registered channels.
   for (let i = 1; i <= 1; i++) {
+    const db_channel_likes = (i === 1) ? db_threads : null;
     const items = [];
     const lists = [];
-    const db_channel_likes = (i === 1) ? db_threads : null;
 
     for (const db_channel_like of db_channel_likes) {
       let channel_like = null;
