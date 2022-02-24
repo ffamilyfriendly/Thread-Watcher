@@ -79,7 +79,7 @@ const run = async (client, interaction, handleBaseEmbed) => {
       items.push(item);
     }
 
-    for (const item in items) {
+    for (const item of items) {
       if (lists.length <= 0) {
         lists.push(item);
         continue;
