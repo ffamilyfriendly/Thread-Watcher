@@ -9,7 +9,7 @@ check [commands](https://familyfriendly.xyz/thread)
 The bot keeps the thread id and the connected server id in its database. This is required for the bot to work and the data is removed once watch of a channel is toggled off
 
 ## My instance
-you can add my instance of the bot [here](https://discord.com/oauth2/authorize?client_id=870715447136366662&scope=bot%20applications.commands&permissions=122406571008)
+you can add my instance of the bot [here](https://discord.com/oauth2/authorize?client_id=870715447136366662&permissions=274877973504&scope=applications.commands%20bot)
 
 ## Support
 join my discord server for any support or suggestions. [click here](https://discord.gg/793fagUfmr)
