@@ -27,13 +27,13 @@ const run = async (client, interaction, handleBaseEmbed) => {
       let channel_like = null;
 
       if (i === 1) {
-        for (const [channel_id, channel] of interaction.guild.channels.cache) {
+        for (const channel of interaction.guild.channels.cache.values()) {
           if (!('threads' in channel)) {
             continue;
           }
 
-          for (const [thread_id, thread] of channel.threads.cache) {
-            if (thread_id === db_channel_like.id) {
+          for (const thread of channel.threads.cache.values()) {
+            if (thread.id === db_channel_like.id) {
               channel_like = thread;
               break;
             }
