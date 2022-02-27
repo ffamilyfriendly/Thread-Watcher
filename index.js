@@ -111,11 +111,6 @@ client.on('interactionCreate', (interaction) => {
     return embed;
   };
 
-  // Deprecated: Use getText() instead.
-  const l = (label, obj) => {
-    return getText(label, interaction.locale, obj);
-  };
-
   // Deprecated: Use handleBaseEmbed() instead.
   const respond = (title, description, color = '#008000', ephemeral = false) => {
     handleBaseEmbed(title, description, true, color, true, ephemeral);
@@ -135,27 +130,12 @@ client.on('interactionCreate', (interaction) => {
     return;
   }
 
-  // Backward compatibility for /batch
-  if (interaction.commandName === 'batch') {
-    const channelId = interaction.options.getChannel('parent');
-
-    if (!checkIfBotCanManageThread(null, channelId.id)) {
-      respond(getText('interaction-error', interaction.locale), getText('needs_manage_threads', interaction.locale), '#dd3333', true);
-      return;
-    }
-
-    if (!interaction.memberPermissions.has(Discord.Permissions.FLAGS.MANAGE_THREADS)) {
-      respond(getText('user-access-denied', interaction.locale), getText('user_needs_manage_threads', interaction.locale), '#dd3333', true);
-      return;
-    }
-  }
-
   const cmd = client.commands.get(interaction.commandName);
 
   try {
-    // Backward compatibility for /batch and /diagnose
-    if (interaction.commandName === 'batch' || interaction.commandName === 'diagnose') {
-      cmd.run(client, interaction, respond, l);
+    // Backward compatibility for /diagnose
+    if (interaction.commandName === 'diagnose') {
+      cmd.run(client, interaction, respond);
     }
     else {
       cmd.run(client, interaction, handleBaseEmbed);
@@ -219,7 +199,7 @@ client.on('threadUpdate', (oldThread, newThread) => {
     return;
   }
 
-  const unarchive_reason = getText('unarchive-keep-active-reason', newThread.guild.preferredLocale);
+  const unarchive_reason = getText('unarchive-reason-keep-active', newThread.guild.preferredLocale);
   newThread.setArchived(false, unarchive_reason);
   logger.done(`[auto] (${getDate()}) Unarchived ${newThread.id} thread in ${newThread.guildId} server.`);
   db.updateArchiveTimes(newThread.id, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60));
