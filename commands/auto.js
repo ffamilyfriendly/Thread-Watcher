@@ -1,6 +1,6 @@
 const channels = require('../index').channels;
 const getText = require('../utils/getText');
-const { addThread, removeThread } = require('../utils/threadActions'),
+const { addThread, removeThread } = require('../utils/threadActions');
 const { CommandInteraction, Permissions } = require('discord.js');
 
 /**

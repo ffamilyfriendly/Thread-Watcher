@@ -96,67 +96,83 @@
 
   "batch-channel-type-not-allowed": {
     "en-US": "You must specify announcement channel, category or text channel or use this command in it.",
-    "ko": "공지 채널, 카테고리나 텍스트 채널을 지정하거나 그 채널에서 명령어를 사용해야 합니다."
+    "ko": "공지 채널, 카테고리나 텍스트 채널을 지정하거나 그 채널에서 명령어를 사용해야 합니다.",
+    "sv-SE": "Du måste välja en \"announcement\" kanal, kategori, eller text kanal. Du kan även använda detta kommando direkt i den valda kanalen."
   },
   "batch-field-bot-cannot-fetch-name": {
     "en-US": "Bot cannot fetch the list of threads. ({channel-amount} channels)",
-    "ko": "봇이 스레드 목록을 가져올 수 없습니다. (채널 {channel-amount}개)"
+    "ko": "봇이 스레드 목록을 가져올 수 없습니다. (채널 {channel-amount}개)",
+    "sv-SE": "botten kunde inte hämta listan med trådar. ({channel-amount} kanaler)"
   },
   "batch-field-bot-cannot-fetch-value": {
     "en-US": "Bot needs Read Message History permission in those channels.",
-    "ko": "봇이 해당 채널에서 Read Message History 권한이 필요합니다."
+    "ko": "봇이 해당 채널에서 Read Message History 권한이 필요합니다.",
+    "sv-SE": "botten behöver kunna läsa meddelandehistorik i dom kanalerna."
   },
   "batch-field-bot-cannot-unarchive-name": {
     "en-US": "Bot cannot unarchive threads. ({thread-amount} threads)",
-    "ko": "봇이 스레드를 보관 해제할 수 없습니다. (스레드 {thread-amount}개)"
+    "ko": "봇이 스레드를 보관 해제할 수 없습니다. (스레드 {thread-amount}개)",
+    "sv-SE": "botten kunde ej avarkivera trådar. ({thread-amount} trådar)"
   },
   "batch-field-bot-cannot-unarchive-value": {
     "en-US": "Bot needs Send Messages in Threads permission in channels which those threads are in.\nIf you want to watch private threads, they also need Manage Threads permission or to be invited to them.",
-    "ko": "봇이 해당 스레드가 있는 채널에서 Send Messages in Threads 권한이 필요합니다.\n비공개 스레드도 주시하고 싶다면 Manage Threads 권한이나 스레드 초대도 필요합니다."
+    "ko": "봇이 해당 스레드가 있는 채널에서 Send Messages in Threads 권한이 필요합니다.\n비공개 스레드도 주시하고 싶다면 Manage Threads 권한이나 스레드 초대도 필요합니다.",
+    "sv-SE": "botten behöver kunna skicka meddelanden i kanaler dom trådarna är skapade i.\nom du vill bevaka privata trådar behöver botten även rättigheten `Hantera Trådar` eller en inbjudan till trådarna."
   },
   "batch-field-locked-name": {
     "en-US": "Threads are locked. ({thread-amount} threads)",
-    "ko": "스레드가 잠겼습니다. (스레드 {thread-amount}개)"
+    "ko": "스레드가 잠겼습니다. (스레드 {thread-amount}개)",
+    "sv-SE": "Trådar är låsta. ({thread-amount} trådar)"
   },
   "batch-field-locked-value": {
     "en-US": "Bot does not keep locked threads active.",
-    "ko": "봇은 잠긴 스레드를 활성 상태로 유지하지 않습니다."
+    "ko": "봇은 잠긴 스레드를 활성 상태로 유지하지 않습니다.",
+    "sv-SE": "Botten håller inte låsta trådar aktiva."
   },
   "batch-field-user-access-denied-name": {
     "en-US": "You do not have permission to do this. ({thread-amount} threads)",
-    "ko": "해당 명령을 수행할 권한이 없습니다. (스레드 {thread-amount}개)"
+    "ko": "해당 명령을 수행할 권한이 없습니다. (스레드 {thread-amount}개)",
+    "sv-SE": "Du har inte tillåtande att göra detta. ({thread-amount} trådars)"
   },
   "batch-field-user-access-denied-value": {
     "en-US": "You need Manage Threads and Read Message History permissions in channels which those threads are in.",
-    "ko": "해당 스레드가 있는 채널에서 Manage Threads와 Read Message History 권한이 필요합니다."
+    "ko": "해당 스레드가 있는 채널에서 Manage Threads와 Read Message History 권한이 필요합니다.",
+    "sv-SE": "Du behöver rättighet att hantera trådar och läs meddelandehistorik i de kanaler dessa trådar är skapade i."
   },
   "batch-invalid-pattern-description": {
     "en-US": "Only alphanumeric characters, `_`, `!` and `*` are allowed.\nYou cannot use only single `!` without pattern.",
-    "ko": "알파벳, 숫자, `_`, `!`와 `*`만 허용됩니다.\n패턴 없이 `!` 하나만 사용할 수 없습니다."
+    "ko": "알파벳, 숫자, `_`, `!`와 `*`만 허용됩니다.\n패턴 없이 `!` 하나만 사용할 수 없습니다.",
+    "sv-SE": "Bara alfanumeriska karaktärer, '_', '!' och '*' är tillåtna.\nDu kan inte använda enbart ett `!` utan efterföljande mönster."
   },
   "batch-invalid-pattern-title": {
     "en-US": "Pattern is invalid.",
-    "ko": "패턴이 잘못되었습니다."
+    "ko": "패턴이 잘못되었습니다.",
+    "sv-SE": "Mönstret är ogiltigt."
   },
   "batch-results": {
-    "en": "Succeed: {succeed-thread-amount} threads\nFailed: {failed-channel-amount} channels, {failed-thread-amount} threads",
-    "ko": "성공: 스레드 {succeed-thread-amount}개\n실패: 채널 {failed-channel-amount}개, 스레드 {failed-thread-amount}개"
+    "en-US": "**Succeeded:** {succeed-thread-amount} threads\n**Failed:** {failed-channel-amount} channels, {failed-thread-amount} threads",
+    "ko": "성공: 스레드 {succeed-thread-amount}개\n실패: 채널 {failed-channel-amount}개, 스레드 {failed-thread-amount}개",
+    "sv-SE": "**Lyckades:** ${succeed-thread-amount} trådar\n**Misslyckades:** {failed-channel-amount} kanaler, {failed-thread-amount} trådar"
   },
   "batch-unwatch-done": {
     "en-US": "Batch unwatched threads.",
-    "ko": "스레드를 일괄 주시 해제했습니다."
+    "ko": "스레드를 일괄 주시 해제했습니다.",
+    "sv-SE": "Bunt-obevakade trådar."
   },
   "batch-unwatch-field-error": {
     "en-US": "Cannot unwatch threads. ({thread-amount} threads)",
-    "ko": "스레드를 주시 해제할 수 없습니다. (스레드 {thread-amount}개)"
+    "ko": "스레드를 주시 해제할 수 없습니다. (스레드 {thread-amount}개)",
+    "sv-SE": "Kunde ej sluta bevaka trådar. ({thread-amount} trådar)"
   },
   "batch-watch-done": {
     "en-US": "Batch watched threads.",
-    "ko": "스레드를 일괄 주시했습니다."
+    "ko": "스레드를 일괄 주시했습니다.",
+    "sv-SE": "Bunt-bevakade trådar."
   },
   "batch-watch-field-error": {
     "en-US": "Cannot watch threads. ({thread-amount} threads)",
-    "ko": "스레드를 주시할 수 없습니다. (스레드 {thread-amount}개)"
+    "ko": "스레드를 주시할 수 없습니다. (스레드 {thread-amount}개)",
+    "sv-SE": "Kan ej bevaka trådar. ({thread-amount} trådar)"
   },
 
   "threads-description": {
@@ -218,7 +234,7 @@
   "watch-watch-bot-access-denied-description": {
     "en-US": "Bot needs Send Messages in Threads permission in the channel which that thread is in.\nIf it is private thread, they also need Manage Threads permission or to be invited to it.",
     "ko": "봇이 해당 스레드가 있는 채널에서 Send Messages in Threads 권한이 필요합니다.\n비공개 스레드인 경우 Manage Threads 권한이나 스레드 초대도 필요합니다.",
-    "sv-SE": "[Translation outdated] Botten behöver kunna skicka medelanden i tråden. Om det är en privat tråd så behöver botten rättigheten att hantera trådar eller en inbjudan till tråden."
+    "sv-SE": "Botten behöver kunna skicka medelanden i tråden. Om det är en privat tråd så behöver botten rättigheten att hantera trådar eller en inbjudan till tråden."
   },
   "watch-watch-bot-access-denied-title": {
     "en-US": "Bot cannot unarchive the thread.",

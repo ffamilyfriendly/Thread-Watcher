@@ -69,7 +69,7 @@ module.exports = { db, client, checkIfBotCanManageThread, loadCommands, threads,
 
 loadCommands()
 
-const { removeThread, addThread } = require("./utils/threadActions.js")
+const { removeThread, addThread, removeAllFromGuild } = require("./utils/threadActions.js")
 
 const checkAll = require("./routines/checkAllThreads").run
 
@@ -210,12 +210,20 @@ client.on('threadUpdate', (oldThread, newThread) => {
   }, 1000 * 60);
 });
 
+// when a thread is removed, delete it from the database
 client.on("threadDelete", (thread) => {
     removeThread(thread.id)
 })
 
+// add threads made in selected channels to watchlist
 client.on("threadCreate", (thread) => {
     if(channels.has(thread.parentId)) addThread(thread.id, thread.guildId, (Date.now() / 1000) + (thread.autoArchiveDuration * 60))
+})
+
+// Remove all db items linked to a guild the bot left
+client.on("guildDelete", (guild) => {
+  logger.info(`left guild ${guild.name} (${guild.id}). Removing associated entries`)
+  removeAllFromGuild(guild.id)
 })
 
 client.login(config.token)

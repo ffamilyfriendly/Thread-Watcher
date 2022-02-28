@@ -123,7 +123,7 @@ const run = async (client, interaction, handleBaseEmbed) => {
     pattern_inverted = pattern.startsWith('!');
     const parsed_pattern = pattern_inverted ? pattern.replace('!', '') : pattern;
 
-    if (!parsed_pattern.match(/^[\w!*]{0,100}$/gm)) {
+    if (!parsed_pattern.match(/^[\w!\*]{0,100}$/gm)) {
       handleBaseEmbed(invalid_pattern_title, invalid_pattern_description, false, '#dd3333', true, true);
       return;
     }
@@ -133,8 +133,8 @@ const run = async (client, interaction, handleBaseEmbed) => {
 
   await interaction.deferReply();
   const results = await runBatchActions(action, parent, pattern_regex, pattern_inverted, interaction.guild.me, interaction.member, interaction.guildLocale);
-  const failed_channel_amount = 0;
-  const failed_thread_amount = 0;
+  let failed_channel_amount = 0;
+  let failed_thread_amount = 0;
   const fields = [];
   const title_locale_string = (action === 'watch') ? 'batch-watch-done' : 'batch-unwatch-done';
   const title = getText(title_locale_string, interaction.locale);
