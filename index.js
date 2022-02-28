@@ -36,8 +36,10 @@ const checkIfBotCanManageThread = (server_id, channel_id) => {
 
 const init = async () => {
 
+    // wait for the required tables to be created
     await db.createTables()
 
+    // propogate threads map & channels map with their items 
     asMap(await db.getThreads()).forEach((v, k) => threads.set(k, v))
     asMap(await db.getChannels()).forEach((v, k) => channels.set(k, v))
 
@@ -45,10 +47,25 @@ const init = async () => {
     // makes sure command is only registered once
     if(fs.existsSync("./.commands")) return
 
+    logger.info(`\nFirst time running Thread-Watcher?\n\nHello! I hope you will enjoy this bot and that it will help you and your server :)\nif you need any help with self hosting head on over to the discord\n\nGithub: https://github.com/ffamilyfriendly/Thread-Watcher/\nDiscord: discord.gg/793fagUfmr\nWebsite: familyfriendly.xyz/thread\n`)
+
+    logger.info("Registering commands")
     for(let command of client.commands) {
+      try {
         command = command[1]
-        if(command.allowedGuild) client.api.applications(client.user.id).guilds(command.allowedGuild).commands.post({ data: command.data })
+        if(command.allowedGuild) {
+          if(!client.guilds.cache.has(command.allowedGuild)) {
+            logger.warn(`command ${command.data.name} could not be registered. Make sure that "allowedGuild" is a guild your bot is in`)
+            continue;
+          }
+          client.api.applications(client.user.id).guilds(command.allowedGuild).commands.post({ data: command.data })
+        }
         else client.api.applications(client.user.id).commands.post({ data: command.data })
+        logger.done(`Registered ${command.data.name}!`)
+      } catch(err) {
+        logger.error(`failed to register ${command[1].data.name}`)
+        console.error(err)
+      }
     }
 
     // write file keeping command from being registered every time bot starts
