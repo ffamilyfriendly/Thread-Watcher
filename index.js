@@ -36,8 +36,10 @@ const checkIfBotCanManageThread = (server_id, channel_id) => {
 
 const init = async () => {
 
+    // wait for the required tables to be created
     await db.createTables()
 
+    // propogate threads map & channels map with their items 
     asMap(await db.getThreads()).forEach((v, k) => threads.set(k, v))
     asMap(await db.getChannels()).forEach((v, k) => channels.set(k, v))
 
@@ -45,10 +47,25 @@ const init = async () => {
     // makes sure command is only registered once
     if(fs.existsSync("./.commands")) return
 
+    logger.info(`\nFirst time running Thread-Watcher?\n\nHello! I hope you will enjoy this bot and that it will help you and your server :)\nif you need any help with self hosting head on over to the discord\n\nGithub: https://github.com/ffamilyfriendly/Thread-Watcher/\nDiscord: discord.gg/793fagUfmr\nWebsite: familyfriendly.xyz/thread\n`)
+
+    logger.info("Registering commands")
     for(let command of client.commands) {
+      try {
         command = command[1]
-        if(command.allowedGuild) client.api.applications(client.user.id).guilds(command.allowedGuild).commands.post({ data: command.data })
+        if(command.allowedGuild) {
+          if(!client.guilds.cache.has(command.allowedGuild)) {
+            logger.warn(`command ${command.data.name} could not be registered. Make sure that "allowedGuild" is a guild your bot is in`)
+            continue;
+          }
+          client.api.applications(client.user.id).guilds(command.allowedGuild).commands.post({ data: command.data })
+        }
         else client.api.applications(client.user.id).commands.post({ data: command.data })
+        logger.done(`Registered ${command.data.name}!`)
+      } catch(err) {
+        logger.error(`failed to register ${command[1].data.name}`)
+        console.error(err)
+      }
     }
 
     // write file keeping command from being registered every time bot starts
@@ -69,7 +86,7 @@ module.exports = { db, client, checkIfBotCanManageThread, loadCommands, threads,
 
 loadCommands()
 
-const { removeThread, addThread } = require("./utils/threadActions.js")
+const { removeThread, addThread, removeAllFromGuild } = require("./utils/threadActions.js")
 
 const checkAll = require("./routines/checkAllThreads").run
 
@@ -111,11 +128,6 @@ client.on('interactionCreate', (interaction) => {
     return embed;
   };
 
-  // Deprecated: Use getText() instead.
-  const l = (label, obj) => {
-    return getText(label, interaction.locale, obj);
-  };
-
   // Deprecated: Use handleBaseEmbed() instead.
   const respond = (title, description, color = '#008000', ephemeral = false) => {
     handleBaseEmbed(title, description, true, color, true, ephemeral);
@@ -135,27 +147,12 @@ client.on('interactionCreate', (interaction) => {
     return;
   }
 
-  // Backward compatibility for /batch
-  if (interaction.commandName === 'batch') {
-    const channelId = interaction.options.getChannel('parent');
-
-    if (!checkIfBotCanManageThread(null, channelId.id)) {
-      respond(getText('interaction-error', interaction.locale), getText('needs_manage_threads', interaction.locale), '#dd3333', true);
-      return;
-    }
-
-    if (!interaction.memberPermissions.has(Discord.Permissions.FLAGS.MANAGE_THREADS)) {
-      respond(getText('user-access-denied', interaction.locale), getText('user_needs_manage_threads', interaction.locale), '#dd3333', true);
-      return;
-    }
-  }
-
   const cmd = client.commands.get(interaction.commandName);
 
   try {
-    // Backward compatibility for /batch and /diagnose
-    if (interaction.commandName === 'batch' || interaction.commandName === 'diagnose') {
-      cmd.run(client, interaction, respond, l);
+    // Backward compatibility for /diagnose
+    if (interaction.commandName === 'diagnose') {
+      cmd.run(client, interaction, respond);
     }
     else {
       cmd.run(client, interaction, handleBaseEmbed);
@@ -219,7 +216,7 @@ client.on('threadUpdate', (oldThread, newThread) => {
     return;
   }
 
-  const unarchive_reason = getText('unarchive-keep-active-reason', newThread.guild.preferredLocale);
+  const unarchive_reason = getText('unarchive-reason-keep-active', newThread.guild.preferredLocale);
   newThread.setArchived(false, unarchive_reason);
   logger.done(`[auto] (${getDate()}) Unarchived ${newThread.id} thread in ${newThread.guildId} server.`);
   db.updateArchiveTimes(newThread.id, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60));
@@ -230,12 +227,20 @@ client.on('threadUpdate', (oldThread, newThread) => {
   }, 1000 * 60);
 });
 
+// when a thread is removed, delete it from the database
 client.on("threadDelete", (thread) => {
     removeThread(thread.id)
 })
 
+// add threads made in selected channels to watchlist
 client.on("threadCreate", (thread) => {
     if(channels.has(thread.parentId)) addThread(thread.id, thread.guildId, (Date.now() / 1000) + (thread.autoArchiveDuration * 60))
+})
+
+// Remove all db items linked to a guild the bot left
+client.on("guildDelete", (guild) => {
+  logger.info(`left guild ${guild.name} (${guild.id}). Removing associated entries`)
+  removeAllFromGuild(guild.id)
 })
 
 client.login(config.token)

@@ -1,7 +1,7 @@
-const threads = require('../index').threads,
-  getText = require('../utils/getText'),
-  { addThread, removeThread } = require('../utils/threadActions'),
-  { CommandInteraction, Permissions } = require('discord.js');
+const getText = require('../utils/getText');
+const threads = require('../index').threads;
+const { addThread, removeThread } = require('../utils/threadActions');
+const { CommandInteraction, Permissions } = require('discord.js');
 
 /**
  * @param {*} client
@@ -17,16 +17,14 @@ const run = (client, interaction, handleBaseEmbed) => {
     handleBaseEmbed(title, description, false, '#dd3333', true, true);
     return;
   }
-
   // Users cannot specify a thread they cannot view, so no need to check for VIEW_CHANNEL.
-  if (!interaction.member.permissionsIn(thread).has(Permissions.FLAGS.MANAGE_THREADS)) {
+  else if (!interaction.member.permissionsIn(thread).has(Permissions.FLAGS.MANAGE_THREADS)) {
     const description = getText('watch-user-access-denied', interaction.locale);
     const title = getText('user-access-denied', interaction.locale);
     handleBaseEmbed(title, description, false, '#dd3333', true, true);
     return;
   }
-
-  if (threads.has(thread.id)) {
+  else if (threads.has(thread.id)) {
     try {
       removeThread(thread.id);
 
@@ -46,15 +44,13 @@ const run = (client, interaction, handleBaseEmbed) => {
 
     return;
   }
-
-  if (thread.locked) {
+  else if (thread.locked) {
     const description = getText('watch-watch-locked-description', interaction.locale);
     const title = getText('watch-watch-locked-title', interaction.locale);
     handleBaseEmbed(title, description, false, '#dd3333', true, true);
     return;
   }
-
-  if (!(thread.viewable && thread.sendable)) {
+  else if (!(thread.viewable && thread.sendable)) {
     const description = getText('watch-watch-bot-access-denied-description', interaction.locale);
     const title = getText('watch-watch-bot-access-denied-title', interaction.locale);
     handleBaseEmbed(title, description, false, '#dd3333', true, true);
@@ -63,8 +59,11 @@ const run = (client, interaction, handleBaseEmbed) => {
 
   try {
     addThread(thread.id, interaction.guildId, (Date.now() / 1000) + (thread.autoArchiveDuration * 60));
-    const unarchive_reason = getText('watch-watch-unarchive-reason', interaction.guildLocale);
-    thread.setArchived(false, unarchive_reason);
+
+    if (thread.archived) {
+      const unarchive_reason = getText('unarchive-reason-watch-archived', server_locale);
+      thread.setArchived(false, unarchive_reason);
+    }
 
     const description = getText('watch-watch-ok-description', interaction.locale, {
       thread: thread.toString()

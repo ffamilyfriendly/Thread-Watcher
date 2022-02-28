@@ -23,4 +23,14 @@ const removeThread = (id, table = "threads") => {
     }
 }
 
-module.exports = { removeThread, addThread }
+const removeAllFromGuild = (guild) => {
+    for(const thread of threads.values()) {
+        if(thread.serverID === guild) removeThread(thread.threadID)
+    }
+
+    for(const channel of channels.values()) {
+        if(channel.serverID === guild) removeThread(channel.threadID, "channel")
+    }
+}
+
+module.exports = { removeThread, addThread, removeAllFromGuild }
