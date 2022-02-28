@@ -51,7 +51,7 @@ const run = (client, interaction, respond) => {
     invite.setEmoji("🤖")
     invite.setStyle("LINK")
     invite.setLabel("Invite Thread Watcher")
-    invite.setURL("https://discord.com/oauth2/authorize?client_id=870715447136366662&scope=bot%20applications.commands&permissions=122406571008")
+    invite.setURL("https://discord.com/oauth2/authorize?client_id=870715447136366662&permissions=274877973504&scope=applications.commands%20bot")
     
     //support server
     const support = new MessageButton()

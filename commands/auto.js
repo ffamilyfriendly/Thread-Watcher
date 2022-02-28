@@ -1,7 +1,7 @@
-const channels = require('../index').channels,
-  getText = require('../utils/getText'),
-  { addThread, removeThread } = require('../utils/threadActions'),
-  { CommandInteraction, Permissions } = require('discord.js');
+const channels = require('../index').channels;
+const getText = require('../utils/getText');
+const { addThread, removeThread } = require('../utils/threadActions'),
+const { CommandInteraction, Permissions } = require('discord.js');
 
 /**
  * @param {*} client
@@ -17,8 +17,7 @@ const run = (client, interaction, handleBaseEmbed) => {
     handleBaseEmbed(title, description, false, '#dd3333', true, true);
     return;
   }
-
-  if (!interaction.member.permissionsIn(channel).has([
+  else if (!interaction.member.permissionsIn(channel).has([
     Permissions.FLAGS.MANAGE_THREADS,
     Permissions.FLAGS.VIEW_CHANNEL
   ])) {
@@ -27,8 +26,7 @@ const run = (client, interaction, handleBaseEmbed) => {
     handleBaseEmbed(title, description, false, '#dd3333', true, true);
     return;
   }
-
-  if (channels.has(channel.id)) {
+  else if (channels.has(channel.id)) {
     try {
       removeThread(channel.id, 'channels');
 
@@ -48,8 +46,7 @@ const run = (client, interaction, handleBaseEmbed) => {
 
     return;
   }
-
-  if (!(channel.viewable && interaction.guild.me.permissionsIn(channel).has(Permissions.FLAGS.SEND_MESSAGES_IN_THREADS))) {
+  else if (!(channel.viewable && interaction.guild.me.permissionsIn(channel).has(Permissions.FLAGS.SEND_MESSAGES_IN_THREADS))) {
     const description = getText('auto-register-bot-access-denied-description', interaction.locale);
     const title = getText('auto-register-bot-access-denied-title', interaction.locale);
     handleBaseEmbed(title, description, false, '#dd3333', true, true);

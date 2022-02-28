@@ -20,5 +20,5 @@ module.exports = {
     },
     owners: [ "286224826170081290" ],
     applicationId: "592814450084675594",
-    invite: "https://discord.com/oauth2/authorize?client_id=870715447136366662&scope=bot%20applications.commands&permissions=122406571008",
+    invite: "https://discord.com/oauth2/authorize?client_id=870715447136366662&permissions=274877973504&scope=applications.commands%20bot",
 }
