@@ -6,7 +6,7 @@ const { CommandInteraction, Permissions } = require('discord.js');
 /**
  * @param {*} client
  * @param {CommandInteraction} interaction
- * @param {function} handleBaseEmbed
+ * @param {Function} handleBaseEmbed
  */
 const run = (client, interaction, handleBaseEmbed) => {
   const thread = interaction.options.getChannel('thread') ?? interaction.channel;
@@ -61,7 +61,7 @@ const run = (client, interaction, handleBaseEmbed) => {
     addThread(thread.id, interaction.guildId, (Date.now() / 1000) + (thread.autoArchiveDuration * 60));
 
     if (thread.archived) {
-      const unarchive_reason = getText('unarchive-reason-watch-archived', server_locale);
+      const unarchive_reason = getText('unarchive-reason-watch-archived', interaction.guildLocale);
       thread.setArchived(false, unarchive_reason);
     }
 
