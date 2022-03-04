@@ -150,9 +150,9 @@
     "sv-SE": "Mönstret är ogiltigt."
   },
   "batch-results": {
-    "en-US": "**Succeeded:** {succeed-thread-amount} threads\n**Failed:** {failed-channel-amount} channels, {failed-thread-amount} threads",
-    "ko": "성공: 스레드 {succeed-thread-amount}개\n실패: 채널 {failed-channel-amount}개, 스레드 {failed-thread-amount}개",
-    "sv-SE": "**Lyckades:** ${succeed-thread-amount} trådar\n**Misslyckades:** {failed-channel-amount} kanaler, {failed-thread-amount} trådar"
+    "en-US": "**Succeeded**: {succeed-thread-amount} threads\n**Failed**: {failed-channel-amount} channels, {failed-thread-amount} threads",
+    "ko": "**성공**: 스레드 {succeed-thread-amount}개\n**실패**: 채널 {failed-channel-amount}개, 스레드 {failed-thread-amount}개",
+    "sv-SE": "**Lyckades**: ${succeed-thread-amount} trådar\n**Misslyckades**: {failed-channel-amount} kanaler, {failed-thread-amount} trådar"
   },
   "batch-unwatch-done": {
     "en-US": "Batch unwatched threads.",
