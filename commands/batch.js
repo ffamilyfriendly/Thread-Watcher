@@ -6,7 +6,7 @@ const { threads } = require('../index');
 /**
  * @param {string} action
  * @param {*} parent
- * @param {regexp} pattern_regex
+ * @param {RegExp} pattern_regex
  * @param {boolean} pattern_inverted
  * @param {*} bot_member
  * @param {*} user_member
@@ -123,7 +123,7 @@ const run = async (client, interaction, handleBaseEmbed) => {
     pattern_inverted = pattern.startsWith('!');
     const parsed_pattern = pattern_inverted ? pattern.replace('!', '') : pattern;
 
-    if (!parsed_pattern.match(/^[\w!\*]{0,100}$/gm)) {
+    if (!/^[\w!*]{0,100}$/gm.test(parsed_pattern)) {
       handleBaseEmbed(invalid_pattern_title, invalid_pattern_description, false, '#dd3333', true, true);
       return;
     }
