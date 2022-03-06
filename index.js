@@ -23,17 +23,6 @@ const asMap = ( data ) => {
     return m
 }
 
-// keeping sid in this function because i'm too lazy to change all refferences to checkIfBotCanManageThread
-const checkIfBotCanManageThread = (server_id, channel_id) => {
-    const channel = client.channels.cache.get(channel_id);
-
-    if (!channel) {
-      return false;
-    }
-
-    return channel.isThread() ? channel.sendable : channel.permissionsFor(channel.guild.me).has(Discord.Permissions.FLAGS.SEND_MESSAGES_IN_THREADS);
-}
-
 const init = async () => {
 
     // wait for the required tables to be created
@@ -82,7 +71,7 @@ const loadCommands = (clearcache) => {
     client.commands = new Map(fs.readdirSync("./commands").filter(f => f.endsWith(".js")).map(f => [f.split(".js")[0],require(`./commands/${f}`)]))
 }
 
-module.exports = { db, client, checkIfBotCanManageThread, loadCommands, threads, channels };
+module.exports = { db, client, loadCommands, threads, channels };
 
 loadCommands()
 
@@ -128,11 +117,6 @@ client.on('interactionCreate', (interaction) => {
     return embed;
   };
 
-  // Deprecated: Use handleBaseEmbed() instead.
-  const respond = (title, description, color = '#008000', ephemeral = false) => {
-    handleBaseEmbed(title, description, true, color, true, ephemeral);
-  };
-
   if (!interaction.isCommand()) {
     return;
   }
@@ -150,13 +134,7 @@ client.on('interactionCreate', (interaction) => {
   const cmd = client.commands.get(interaction.commandName);
 
   try {
-    // Backward compatibility for /diagnose
-    if (interaction.commandName === 'diagnose') {
-      cmd.run(client, interaction, respond);
-    }
-    else {
-      cmd.run(client, interaction, handleBaseEmbed);
-    }
+    cmd.run(client, interaction, handleBaseEmbed);
   }
   catch (err) {
     logger.warn(JSON.stringify(err));

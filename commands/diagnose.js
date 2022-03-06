@@ -1,18 +1,38 @@
 const { CommandInteraction, MessageEmbed, Client } = require('discord.js'),
-    { db, checkIfBotCanManageThread } = require("../index"),
+    { db } = require("../index"),
     config = require("../config")
 
 /**
  * 
  * @param {Client} client 
  * @param {CommandInteraction} interaction 
- * @param {*} respond 
+ * @param {Function} handleBaseEmbed 
  */
-const run = async (client, interaction, respond) => {
+const run = async (client, interaction, handleBaseEmbed) => {
+  // keeping sid in this function because i'm too lazy to change all refferences to checkIfBotCanManageThread
+  // Hacky fix
+  const checkIfBotCanManageThread = (server_id, channel_id) => {
+    const channel = client.channels.cache.get(channel_id);
+
+    if (!channel) {
+      return false;
+    }
+
+    return channel.isThread() ? channel.sendable : channel.permissionsFor(channel.guild.me).has(Discord.Permissions.FLAGS.SEND_MESSAGES_IN_THREADS);
+  }
+
     await interaction.deferReply({ ephemeral: true })
     const guild = await client.guilds.cache.get(interaction.options.getString("guild"))
-    if(!guild) return respond("Guild not cached", "thread watcher might not be in that guild or that guild has not yet been cached")
-    if(![...config.owners, guild.ownerId].includes(interaction.user.id)) return respond("no can do", "you need to own that guild or own this thread watcher instance to do that", "RED",)
+
+    if (!guild) {
+      handleBaseEmbed('Guild not cached', 'thread watcher might not be in that guild or that guild has not yet been cached', false, '#dd3333', true, true);
+      return;
+    }
+    else if (![...config.owners, guild.ownerId].includes(interaction.user.id)) {
+      handleBaseEmbed('no can do', 'you need to own that guild or own this thread watcher instance to do that', false, '#dd3333', true, true);
+      return;
+    }
+
     const threads = await db.getThreadsInGuild(guild.id)
 
     const embed = new MessageEmbed()
