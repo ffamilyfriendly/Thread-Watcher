@@ -22,4 +22,4 @@ const data = {
   description: "reloads commands"
 }
 
-module.exports = { run, data, allowedGuild: "874566459429355581" };
+module.exports = { run, data, devServerOnly: true };

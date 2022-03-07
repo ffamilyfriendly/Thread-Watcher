@@ -42,12 +42,12 @@ const init = async () => {
     for(let command of client.commands) {
       try {
         command = command[1]
-        if(command.allowedGuild) {
-          if(!client.guilds.cache.has(command.allowedGuild)) {
-            logger.warn(`command ${command.data.name} could not be registered. Make sure that "allowedGuild" is a guild your bot is in`)
+        if(command.devServerOnly) {
+          if(!client.guilds.cache.has(config.devServer)) {
+            logger.warn(`command ${command.data.name} could not be registered. Make sure that "config.js:devServer" is a guild your bot is in`)
             continue;
           }
-          client.api.applications(client.user.id).guilds(command.allowedGuild).commands.post({ data: command.data })
+          client.api.applications(client.user.id).guilds(config.devServer).commands.post({ data: command.data })
         }
         else client.api.applications(client.user.id).commands.post({ data: command.data })
         logger.done(`Registered ${command.data.name}!`)
