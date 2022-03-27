@@ -32,23 +32,28 @@ module.exports = class DatabaseExample {
 
     getArchivedThreads() {
         // search the database for threads whose dueArchive timestamp has passed
+        // return value must be a promise
+        return new Promise()
     }
 
     getChannels() {
         // get all channels
         // return in format [ { id: <id>, server: <server> }, ... ]
         // return value must be a promise
+        return new Promise()
     }
 
     getThreads() {
         // get all threads
         // return in format [ { id: <id>, server: <server> }, ... ]
         // return value must be a promise
+        return new Promise()
     }
 
     getThreadsInGuild(id) {
         // get all threads in a specific server. Same format as above
         // return value must be a promise
+        return new Promise()
     }
 
     deleteThread(id) {
