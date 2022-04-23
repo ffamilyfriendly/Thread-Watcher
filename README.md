@@ -17,11 +17,5 @@ join my discord server for any support or suggestions. [click here](https://disc
 ## License
 this code is licensed under MIT.
 
-# setup
--   download the source code `git clone https://github.com/ffamilyfriendly/Thread-Watcher.git`
--   get your bot token [here](https://discord.com/developers/applications)
--   rename _config.js to config.js
--   add the token to config.js. You might also want to change ownerid to your discord id
--   select a database in config.js. If you want to keep it simple I recomend sticking with sqlite
--   download all required packages with `npm i`
--   run the bot with `node .`
+## setup
+see the [wiki](https://github.com/ffamilyfriendly/Thread-Watcher/wiki/Hosting)
