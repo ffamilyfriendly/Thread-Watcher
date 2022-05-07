@@ -10,7 +10,7 @@ function run(client) {
       const unknownThreadsInServer = cachedUnknownThreads[thread.guildId];
 
       if (unknownThreadsInServer.includes(thread.id)) {
-        unknownThreadsInServer.splice(unknownThreadsInServer.indexOf, 1);
+        unknownThreadsInServer.splice(unknownThreadsInServer.indexOf(thread.id), 1);
       }
     }
   });
