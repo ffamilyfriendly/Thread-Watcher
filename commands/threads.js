@@ -1,7 +1,7 @@
 const { cachedUnknownThreads } = require('../index');
 const DB = require('../index').db;
 const getLocaleString = require('../utils/getText');
-const { Permissions } = require('discord.js');
+const { Permissions, MessageActionRow, MessageButton } = require('discord.js');
 
 /**
  * @param {boolean} thread
@@ -65,6 +65,7 @@ const run = async (client, interaction, handleBaseEmbed) => {
   const title = getLocaleString('threads-title', interaction.locale);
   const embed = handleBaseEmbed(title, description, false, '#3366cc', false, null);
 
+
   // This includes future-proofing for adding support to show registered channels.
   for (let i = 1; i <= 1; i++) {
     const DBChannels = (i === 1) ? watchedThreads : null;
@@ -73,7 +74,6 @@ const run = async (client, interaction, handleBaseEmbed) => {
 
     for (const DBChannel of DBChannels) {
       const channel = await getChannel(DBChannel.id, i === 1, activeFetchedThreads, interaction.guild);
-
       // null or undefined
       if (channel == null) {
         const statusUnknownThread = getLocaleString('threads-status-unknown-thread', interaction.locale);
@@ -82,6 +82,15 @@ const run = async (client, interaction, handleBaseEmbed) => {
       }
 
       const humanPermissions = interaction.member.permissionsIn(channel);
+
+      // handle fucked up d.js cache making humanPermissions null even though channel "exists" (in cache only)
+      if(!humanPermissions) {
+        const statusUnknownThread = getLocaleString('threads-status-unknown-thread', interaction.locale);
+        items.push(`\`${DBChannel.id}\` (${statusUnknownThread})`);
+        // push broken channel to broken channel cache
+        if(!(DBChannel.id in cachedUnknownThreads[interaction.guildId])) cachedUnknownThreads[interaction.guildId].push(DBChannel.id);
+        continue;
+      }
 
       if (!humanPermissions.has(Permissions.FLAGS.VIEW_CHANNEL)) {
         continue;
@@ -138,9 +147,97 @@ const run = async (client, interaction, handleBaseEmbed) => {
     }
   }
 
-  interaction.editReply({
-    embeds: [embed]
-  });
+  // create the button needed for below code
+  const components = new MessageActionRow();
+  const purgeUnknown = new MessageButton()
+  .setStyle("DANGER")
+  .setLabel(getLocaleString("threads-purgeButton", interaction.locale))
+  .setEmoji("⚠️")
+  // the button id will include the id of this interaction to make sure no mistakes are made
+  .setCustomId(`purge-${interaction.id}`)
+  
+  /**
+   * If user has guild wide perm "MANAGE_THREADS" show a button that purges unknown threads from the watchlist.
+   * This is done so the user can easily clean up their /threads list without having to manually unwatch threads
+   */
+  if(interaction.member.permissions.has(Permissions.FLAGS.MANAGE_THREADS) && cachedUnknownThreads[interaction.guildId]?.length > 0) {
+    // add the purge button to the threads embed
+    components.addComponents(purgeUnknown)
+
+    interaction.editReply({
+      embeds: [embed],
+      components: [components]
+    });
+
+    // make sure that the user who called the command is the same clicking the button. Also verify the interaction is the same
+    const filter = (c) => c.customId === `purge-${interaction.id}`;
+    // Initiate the component collector. Collector.once will be used since we only need to catch this event once
+    const collector = interaction.channel.createMessageComponentCollector({ filter, time: 1000 * 10 })
+
+    collector.once("collect", async (col) => {
+      const confirmEmbed = handleBaseEmbed(getLocaleString("threads-purgeButton-confirmPrompt", interaction.locale), getLocaleString("threads-purgeButton-confirm-description", interaction.locale, { number: cachedUnknownThreads[interaction.guildId].length }), false, '#cc9633', false, null)
+      
+      const confirmComponents = new MessageActionRow();
+
+      const confirmButton = new MessageButton()
+      .setStyle("PRIMARY")
+      .setLabel(getLocaleString("threads-purgeButton-confirm", interaction.locale))
+      .setCustomId(`confirm-${interaction.id}`)
+
+      const cancelButton = new MessageButton()
+      .setStyle("SECONDARY")
+      .setLabel(getLocaleString("threads-purgeButton-cancel", interaction.locale))
+      .setCustomId(`cancel-${interaction.id}`)
+
+      // this filter is horrible but works
+      const confirmFilter = (c) => ["confirm", "cancel"].includes(c.customId.split("-")[0]) && c.customId.split("-")[1] === interaction.id;
+      confirmComponents.addComponents(confirmButton, cancelButton)
+      await col.reply({ embeds:[confirmEmbed], components:[confirmComponents] })
+
+      const confirmCollector = interaction.channel.createMessageComponentCollector({ confirmFilter, time: 1000 * 10 })
+      confirmCollector.once("collect", (ans) => {
+        if(ans.customId.startsWith("cancel")) {
+          col.deleteReply()
+          col.replyDeleted = true
+        } else {
+          // unwatch the unknown threads
+          for(let ukThread of cachedUnknownThreads[interaction.guildId]) {
+            DB.deleteThread(ukThread)
+          }
+          // empty the cache for this guild as all entries have been unwatched
+          cachedUnknownThreads[interaction.guildId] = []
+
+          const successEmbed = handleBaseEmbed(getLocaleString("threads-purgeButton-done", interaction.locale), getLocaleString("threads-purgeButton-done-description", interaction.locale), false, '#7CFC00', false, null)
+          confirmButton.setStyle("SUCCESS")
+          confirmButton.setDisabled(true)
+          confirmComponents.setComponents(confirmButton)
+          ans.reply({ embeds:[successEmbed], components:[confirmComponents] })
+          col.deleteReply()
+          col.replyDeleted = true
+        }
+        // Stop the collector on the main purge button. This will make it disabled
+        collector.stop()
+      })
+
+      confirmCollector.once("end", () => {
+        // delete the confirm embed unless it has already been deleted by pressing cancel
+        if(!col.replyDeleted) col.deleteReply()
+      })
+    })
+
+    // handle end of life for purge button. Disable the button and edit the reply
+    collector.once("end", (e) => {
+      purgeUnknown.setDisabled(true)
+      interaction.editReply({
+        embeds: [embed],
+        components: [components]
+      });
+    })
+  } else {
+    interaction.editReply({
+      embeds: [embed]
+    });
+  }
 };
 
 const data = {
