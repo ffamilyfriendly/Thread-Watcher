@@ -10,8 +10,8 @@ const client = new Discord.Client({
 });
 
 const DB = require('./utils/db/getDatabase')(settings.database.connectionOptions);
-const registeredChannels = new Map();
-const watchedThreads = new Map();
+const channels = new Map();
+const threads = new Map();
 
 // null or undefined
 if (!(settings.topggToken == null || settings.topggToken === '')) {
@@ -35,11 +35,11 @@ const loadCommands = (clearCache) => {
 
 module.exports = {
   cachedUnknownThreads,
-  channels: registeredChannels,
+  channels,
   client,
   db: DB,
   loadCommands,
-  threads: watchedThreads
+  threads
 };
 
 loadCommands();
