@@ -209,7 +209,27 @@
     "ko": "주시된 스레드",
     "sv-SE": "Bevakade trådar"
   },
-
+  "threads-purgeButton": {
+    "en-US": "Unwatch unknown threads"
+  },
+  "threads-purgeButton-confirmPrompt": {
+    "en-US": "Are you sure?"
+  },
+  "threads-purgeButton-confirm-description": {
+    "en-US": "this will unwatch {number} threads."
+  },
+  "threads-purgeButton-confirm": {
+    "en-US": "confirm"
+  },
+  "threads-purgeButton-cancel": {
+    "en-US": "cancel"
+  },
+  "threads-purgeButton-done": {
+    "en-US": "Success!"
+  },
+  "threads-purgeButton-done-description": {
+    "en-US": "Unknown threads were unwatched."
+  },
   "watch-channel-type-not-allowed": {
     "en-US": "You must specify a thread or use this command in it.",
     "ko": "스레드를 지정하거나 스레드에서 명령어를 사용해야 합니다.",

@@ -4,6 +4,16 @@ const Discord = require("discord.js")
 
 const run = ( client ) => {
     client.on('interactionCreate', (interaction) => {
+        /**
+         * 
+         * @param {String} title 
+         * @param {String} description 
+         * @param {Boolean} show_user 
+         * @param {String} color 
+         * @param {Boolean} respond 
+         * @param {Boolean} ephemeral 
+         * @returns {Discord.MessageEmbed}
+         */
         const handleBaseEmbed = (title, description, show_user, color, respond, ephemeral) => {
           const embed = new Discord.MessageEmbed();
           embed.setTitle(title);
