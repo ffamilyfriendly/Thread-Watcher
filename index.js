@@ -1,49 +1,68 @@
-const Discord = require("discord.js"),
-    config = require("./config"),
-    client = new Discord.Client({ intents: Discord.Intents.FLAGS.GUILDS }),
-    { AutoPoster } = require("topgg-autoposter"),
-    fs = require("fs"),
-    db = require("./utils/db/getDatabase")(config.database.connectionOptions)
+const { AutoPoster } = require('topgg-autoposter');
+const settings = require('./config');
+const fs = require('fs');
+const Discord = require('discord.js');
 
-if(config.topggToken) AutoPoster(config.topggToken, client)
+const cachedUnknownThreads = {};
 
-let threads = new Map()
-let channels = new Map()
+const client = new Discord.Client({
+  intents: Discord.Intents.FLAGS.GUILDS
+});
 
-const loadCommands = (clearcache) => {
-    if(clearcache) {
-        for(let cmd of client.commands) {
-            cmd = cmd[0]
-            delete require.cache[require.resolve(`./commands/${cmd}.js`)]
-        }
-    }
-    client.commands = new Map(fs.readdirSync("./commands").filter(f => f.endsWith(".js")).map(f => [f.split(".js")[0],require(`./commands/${f}`)]))
+const DB = require('./utils/db/getDatabase')(settings.database.connectionOptions);
+const registeredChannels = new Map();
+const watchedThreads = new Map();
+
+// null or undefined
+if (!(settings.topggToken == null || settings.topggToken === '')) {
+  AutoPoster(settings.topggToken, client)
 }
 
-module.exports = { db, client, loadCommands, threads, channels };
-
-// load all commands. This adds them to the client.commands map
-loadCommands()
-
-// this runs all event modules. Check /events dir
-require("./utils/events")().forEach(event => event.run( client ))
-
-client.login(config.token)
-
-if(config.stats.enabled) {
-    const http = require("http")
-    const reqListener = (req,res) => {
-        if(!req.url || !req.url.endsWith("/stats")) {
-            res.writeHead(404)
-            return res.end("the only path is /stats... how did you manage to mess that up?")
-        }
-        res.writeHead(200)
-        res.end(JSON.stringify({
-            guilds: client.guilds.cache.size,
-            threads: threads.size
-        }))
+/**
+ * Load all commands and add them to client.commands map.
+ * @param {boolean} clearCache
+ */
+const loadCommands = (clearCache) => {
+  if (clearCache) {
+    for (let cmd of client.commands) {
+      cmd = cmd[0];
+      delete require.cache[require.resolve(`./commands/${cmd}.js`)];
     }
-    
-    const server = http.createServer(reqListener)
-    server.listen(config.stats.port)
+  }
+
+  client.commands = new Map(fs.readdirSync('./commands').filter((f) => f.endsWith('.js')).map((f) => [f.split('.js')[0], require(`./commands/${f}`)]));
+}
+
+module.exports = {
+  cachedUnknownThreads,
+  channels: registeredChannels,
+  client,
+  db: DB,
+  loadCommands,
+  threads: watchedThreads
+};
+
+loadCommands();
+// this runs all event modules. Check /events dir
+require('./utils/events')().forEach((event) => event.run(client));
+client.login(settings.token);
+
+if (settings.stats.enabled) {
+  const http = require('http');
+
+  const reqListener = (req, res) => {
+    if (!(req.url && req.url.endsWith("/stats"))) {
+      res.writeHead(404);
+      return res.end('The only path is /stats... how did you manage to mess that up?');
+    }
+
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      guilds: client.guilds.cache.size,
+      threads: threads.size
+    }));
+  }
+
+  const server = http.createServer(reqListener);
+  server.listen(settings.stats.port);
 }

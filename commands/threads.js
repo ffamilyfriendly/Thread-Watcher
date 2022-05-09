@@ -1,6 +1,43 @@
+const { cachedUnknownThreads } = require('../index');
 const DB = require('../index').db;
 const getLocaleString = require('../utils/getText');
 const { Permissions } = require('discord.js');
+
+/**
+ * @param {boolean} thread
+ */
+const getChannel = async (channelID, thread, activeFetchedThreads, server) => {
+  if (thread) {
+    if (activeFetchedThreads.threads.has(channelID)) {
+      return activeFetchedThreads.threads.get(channelID);
+    }
+    else if (server.id in cachedUnknownThreads && cachedUnknownThreads[server.id].includes(channelID)) {
+      return null;
+    }
+  }
+
+  let channel;
+
+  try {
+    channel = await server.channels.fetch(channelID);
+  }
+  catch {
+    if (!thread) {
+      return null;
+    }
+
+    if (server.id in cachedUnknownThreads) {
+      cachedUnknownThreads[server.id].push(channelID);
+    }
+    else {
+      cachedUnknownThreads[server.id] = [channelID];
+    }
+
+    return null;
+  }
+
+  return channel;
+}
 
 /**
  * @param {*} client
@@ -8,9 +45,8 @@ const { Permissions } = require('discord.js');
  * @param {Function} handleBaseEmbed
  */
 const run = async (client, interaction, handleBaseEmbed) => {
-  const [activeFetchedThreads, channelCollection, watchedThreads] = await Promise.all([
+  const [activeFetchedThreads, watchedThreads] = await Promise.all([
     interaction.guild.channels.fetchActiveThreads(),
-    interaction.guild.channels.fetch(),
     DB.getThreadsInGuild(interaction.guildId),
     interaction.deferReply({
       ephemeral: true
@@ -36,46 +72,7 @@ const run = async (client, interaction, handleBaseEmbed) => {
     const lists = [];
 
     for (const DBChannel of DBChannels) {
-      let channel = null;
-
-      if (i === 1) {
-        if (activeFetchedThreads.threads.has(DBChannel.id)) {
-          channel = activeFetchedThreads.threads.get(DBChannel.id);
-        }
-        else {
-          for (const currentChannel of channelCollection.values()) {
-            // GuildChannel#isText() should not be used because of forum channels and text-in-voce.
-            if (!('threads' in currentChannel && currentChannel.viewable)) {
-              continue;
-            }
-
-            const botPermissions = interaction.guild.me.permissionsIn(currentChannel);
-
-            if (!botPermissions.has(Permissions.FLAGS.READ_MESSAGE_HISTORY)) {
-              continue;
-            }
-
-            const promises = [currentChannel.threads.fetchArchived()];
-
-            if (currentChannel.type === 'GUILD_TEXT') {
-              promises.push(currentChannel.threads.fetchArchived({
-                fetchAll: botPermissions.has(Permissions.FLAGS.MANAGE_THREADS),
-                type: 'private'
-              }));
-            }
-
-            const [archivedPublicFetchedThreads, archivedPrivateFetchedThreads] = await Promise.all(promises);
-            channel = archivedPublicFetchedThreads.threads.get(DBChannel.id) ?? archivedPrivateFetchedThreads?.threads.get(DBChannel.id);
-
-            if (channel !== undefined) {
-              break;
-            }
-          }
-        }
-      }
-      else {
-        channel = channelCollection.get(DBChannel.id);
-      }
+      const channel = await getChannel(DBChannel.id, i === 1, activeFetchedThreads, interaction.guild);
 
       // null or undefined
       if (channel == null) {
