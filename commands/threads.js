@@ -173,7 +173,7 @@ const run = async (client, interaction, handleBaseEmbed) => {
     // make sure that the user who called the command is the same clicking the button. Also verify the interaction is the same
     const filter = (c) => c.customId === `purge-${interaction.id}`;
     // Initiate the component collector. Collector.once will be used since we only need to catch this event once
-    const collector = interaction.channel.createMessageComponentCollector({ filter, time: 1000 * 10 })
+    const collector = interaction.channel.createMessageComponentCollector({ filter, time: 1000 * 60 * 30 })
 
     collector.once("collect", async (col) => {
       const confirmEmbed = handleBaseEmbed(getLocaleString("threads-purgeButton-confirmPrompt", interaction.locale), getLocaleString("threads-purgeButton-confirm-description", interaction.locale, { number: cachedUnknownThreads[interaction.guildId].length }), false, '#cc9633', false, null)
@@ -195,7 +195,7 @@ const run = async (client, interaction, handleBaseEmbed) => {
       confirmComponents.addComponents(confirmButton, cancelButton)
       await col.reply({ embeds:[confirmEmbed], components:[confirmComponents] })
 
-      const confirmCollector = interaction.channel.createMessageComponentCollector({ confirmFilter, time: 1000 * 10 })
+      const confirmCollector = interaction.channel.createMessageComponentCollector({ confirmFilter, time: 1000 * 30 })
       confirmCollector.once("collect", (ans) => {
         if(ans.customId.startsWith("cancel")) {
           col.deleteReply()
