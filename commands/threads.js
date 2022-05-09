@@ -88,6 +88,7 @@ const run = async (client, interaction, handleBaseEmbed) => {
         const statusUnknownThread = getLocaleString('threads-status-unknown-thread', interaction.locale);
         items.push(`\`${DBChannel.id}\` (${statusUnknownThread})`);
         // push broken channel to broken channel cache
+        if(!cachedUnknownThreads[interaction.guildId]) cachedUnknownThreads[interaction.guildId] = []
         if(!(DBChannel.id in cachedUnknownThreads[interaction.guildId])) cachedUnknownThreads[interaction.guildId].push(DBChannel.id);
         continue;
       }
