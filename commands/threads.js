@@ -1,86 +1,118 @@
-const db = require('../index').db;
-const getText = require('../utils/getText');
-const { CommandInteraction, Permissions } = require('discord.js');
+const { cachedUnknownThreads } = require('../index');
+const DB = require('../index').db;
+const getLocaleString = require('../utils/getText');
+const { Permissions } = require('discord.js');
+
+/**
+ * @param {boolean} thread
+ */
+const getChannel = async (channelID, thread, activeFetchedThreads, server) => {
+  if (thread) {
+    if (activeFetchedThreads.threads.has(channelID)) {
+      return activeFetchedThreads.threads.get(channelID);
+    }
+    else if (server.id in cachedUnknownThreads && cachedUnknownThreads[server.id].includes(channelID)) {
+      return null;
+    }
+  }
+
+  let channel;
+
+  try {
+    channel = await server.channels.fetch(channelID);
+  }
+  catch {
+    if (!thread) {
+      return null;
+    }
+
+    if (server.id in cachedUnknownThreads) {
+      cachedUnknownThreads[server.id].push(channelID);
+    }
+    else {
+      cachedUnknownThreads[server.id] = [channelID];
+    }
+
+    return null;
+  }
+
+  return channel;
+}
 
 /**
  * @param {*} client
- * @param {CommandInteraction} interaction
- * @param {function} handleBaseEmbed
+ * @param {*} interaction
+ * @param {Function} handleBaseEmbed
  */
 const run = async (client, interaction, handleBaseEmbed) => {
-  const db_threads = await db.getThreadsInGuild(interaction.guildId);
+  const [activeFetchedThreads, watchedThreads] = await Promise.all([
+    interaction.guild.channels.fetchActiveThreads(),
+    DB.getThreadsInGuild(interaction.guildId),
+    interaction.deferReply({
+      ephemeral: true
+    })
+  ]);
 
-  const description = getText('threads-description', interaction.locale, {
-    'thread-amount': db_threads.length
+  let description = getLocaleString('threads-description-amount', interaction.locale, {
+    'thread-amount': watchedThreads.length
   });
 
-  const title = getText('threads-title', interaction.locale);
+  if (!interaction.memberPermissions.has(Permissions.FLAGS.ADMINISTRATOR)) {
+    const visibilityNotice = getLocaleString('threads-description-visibility', interaction.locale);
+    description += `\n${visibilityNotice}`;
+  }
+
+  const title = getLocaleString('threads-title', interaction.locale);
   const embed = handleBaseEmbed(title, description, false, '#3366cc', false, null);
 
   // This includes future-proofing for adding support to show registered channels.
   for (let i = 1; i <= 1; i++) {
-    const db_channel_likes = (i === 1) ? db_threads : null;
+    const DBChannels = (i === 1) ? watchedThreads : null;
     const items = [];
     const lists = [];
 
-    for (const db_channel_like of db_channel_likes) {
-      let channel_like = null;
+    for (const DBChannel of DBChannels) {
+      const channel = await getChannel(DBChannel.id, i === 1, activeFetchedThreads, interaction.guild);
 
-      if (i === 1) {
-        for (const channel of interaction.guild.channels.cache.values()) {
-          if (!('threads' in channel)) {
-            continue;
-          }
-
-          for (const thread of channel.threads.cache.values()) {
-            if (thread.id === db_channel_like.id) {
-              channel_like = thread;
-              break;
-            }
-          }
-        }
-      }
-      else {
-        channel_like = interaction.guild.channel.cache.get(db_channel_like.id);
-      }
-
-      if (channel_like === null) {
-        const status_unknown_thread = getText('threads-status-unknown-thread', interaction.locale);
-        items.push(`\`${db_channel_like.id}\` (${status_unknown_thread})`);
+      // null or undefined
+      if (channel == null) {
+        const statusUnknownThread = getLocaleString('threads-status-unknown-thread', interaction.locale);
+        items.push(`\`${DBChannel.id}\` (${statusUnknownThread})`);
         continue;
       }
 
-      const user_permissions = interaction.member.permissionsIn(channel_like);
+      const humanPermissions = interaction.member.permissionsIn(channel);
 
-      if (!user_permissions.has(Permissions.FLAGS.VIEW_CHANNEL)) {
+      if (!humanPermissions.has(Permissions.FLAGS.VIEW_CHANNEL)) {
         continue;
       }
-      else if (channel_like.type === 'GUILD_PRIVATE_THREAD' && !(channel_like.members.cache.has(interaction.user.id) || user_permissions.has(Permissions.FLAGS.MANAGE_THREADS))) {
+      // Checking thread membership is not possible because ThreadMemberManager#fetch() requires GUILD_MEMBERS privileged intent.
+      else if (channel.type === 'GUILD_PRIVATE_THREAD' && !humanPermissions.has(Permissions.FLAGS.MANAGE_THREADS)) {
         continue;
       }
 
-      let channel_like_status = null;
+      let status = null;
 
-      if (channel_like.isThread() && channel_like.locked) {
-        channel_like_status = getText('threads-status-locked', interaction.locale);
+      if (channel.isThread() && channel.locked) {
+        status = getLocaleString('threads-status-locked', interaction.locale);
       }
-      else if (channel_like.viewable) {
-        const ok = channel_like.isThread() ? channel_like.sendable : interaction.guild.me.permissionsIn(channel_like).has(Permissions.FLAGS.SEND_MESSAGES_IN_THREADS);
+      else if (channel.viewable) {
+        const ok = channel.isThread() ? channel.sendable : interaction.guild.me.permissionsIn(channel).has(Permissions.FLAGS.SEND_MESSAGES_IN_THREADS);
 
         if (!ok) {
-          channel_like_status = getText('threads-status-cannot-unarchive', interaction.locale);
+          status = getLocaleString('threads-status-cannot-unarchive', interaction.locale);
         }
       }
       else {
-        channel_like_status = getText('threads-status-cannot-unarchive', interaction.locale);
+        status = getLocaleString('threads-status-cannot-unarchive', interaction.locale);
       }
 
-      const item = (channel_like_status === null) ? channel_like.toString() : `~~${channel_like.toString()}~~ (${channel_like_status})`;
+      const item = (status === null) ? channel.toString() : `~~${channel}~~ (${status})`;
       items.push(item);
     }
 
     for (const item of items) {
-      if (lists.length <= 0) {
+      if (lists.length === 0) {
         lists.push(item);
         continue;
       }
@@ -96,19 +128,18 @@ const run = async (client, interaction, handleBaseEmbed) => {
       }
     }
 
-    let first_field = true;
+    let firstField = true;
 
     for (const list of lists) {
-      const first_field_name_locale_string = (i === 1) ? 'threads-field-threads' : null;
-      const field_name = first_field ? getText(first_field_name_locale_string, interaction.locale) : '\u200b';
-      first_field = false;
-      embed.addField(field_name, list);
+      const firstFieldNameStringKey = (i === 1) ? 'threads-field-threads' : null;
+      const fieldName = firstField ? getLocaleString(firstFieldNameStringKey, interaction.locale) : '\u200b';
+      firstField = false;
+      embed.addField(fieldName, list);
     }
   }
 
-  interaction.reply({
-    embeds: [embed],
-    ephemeral: true
+  interaction.editReply({
+    embeds: [embed]
   });
 };
 

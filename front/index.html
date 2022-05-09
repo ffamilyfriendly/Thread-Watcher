@@ -2,75 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./index.css">
     <title>Thread-Watcher</title>
+    <link rel="stylesheet" href="./index.css">
+    <link rel="shortcut icon" type="image/png" href="./icon.png">
+    
 </head>
 <body>
-    <div class="navbar">
-        <div class="logo">
-            <img src="https://images.discordapp.net/avatars/870715447136366662/8e9ba811c5a9ae244b383590601353c2.png?size=128">
-            <p class="title">Thread-Watcher</p>
-        </div>
 
-        <div class="links">
-            <ul>
-                <li class="first"></li>
-                <a href="https://discord.gg/793fagUfmr"><li>Support</li></a>
-                <a href="https://discord.com/oauth2/authorize?client_id=870715447136366662&permissions=274877973504&scope=applications.commands%20bot"><li>Invite</li></a>
-                <a href="https://top.gg/bot/870715447136366662"><li>Vote</li></a>
-                <li class="last"></li>
-            </ul>
+    <div id="container">
+        <div id="logobar">
+            <div id="logobar-inner">
+                <img class="icon" src="./icon.png">
+                <h1>Thread-Watcher</h1>
+            </div>
         </div>
-    </div>
-    <div class="padding">
-        <div class="section">
-            <h1 class="big-title">The Bot</h1>
-            <p><b>Thread-Watcher</b> was created just a few weeks after discord announced threads. The issue with the current state of threads is that they are automatically archived after 3 days without server boosts, <b>until now.</b> Thread watcher is a bot whose sole purpose is to keep threads un-archived for you without having to dish out any money for server boosts. The bot does not come packaged with any moderation tools, fun commands, meme commands, you name it. This bot keeps threads un-archived. <b>That's it.</b> </p>
-            <br>
-            <p>My instance of the bot is currently serving <b id="SERVERS">...</b> guilds with <b id="THREADS">...</b> threads being watched</p>
-        </div>
+        <div id="content">
+            <h2>Hey there!</h2>
+            <p>Thread watcher is a discord bot created to ensure that your discord threads stay unarchived.</p>
+            <p>it is 100% free, contains no additional fuss such as moderation commands, is easy to use, and fully <a href="https://github.com/ffamilyfriendly/thread-watcher">open source</a>!</p>
+            <p>Sounds like a bot for you? Why not join <b id="count">...</b> other server owners by adding Thread-Watcher!</p>
+            <div class="row">
+                <a class="btn gradient">Add to server</a>
+                <a href="https://top.gg/bot/870715447136366662/vote" class="btn vote">Vote on Top.gg</a>
+            </div>
+
+            <h2>Commands</h2>
+            <p>Thread-Watcher is a slash command bot and as such the commands are shown to you in your discord client! You can also view them <a href="https://github.com/ffamilyfriendly/Thread-Watcher/wiki/Commands">here</a>.</p>
         
-        <div class="section">
-            <h1 class="big-title">The Code</h1>
-            <p>The code for this bot is fully open source under the <b><a href="https://github.com/ffamilyfriendly/Thread-Watcher/blob/main/LICENSE.md">MIT</a></b> license which is highly permissive. Want to host your own Thread-Watcher? <b>Go for it.</b> Want to edit the bot and upload it to bot lists? <b>Go for it.</b> Want to rob a bank and set up a questionable money laundering service? <b>Go for it. <small>(under own discretion)</small></b></p>
+            <h2>Support</h2>
+            <p>If you require any support related to the bot please join <a href="https://discord.gg/793fagUfmr">the discord server</a>! I'll try my absolute best to help you out whatever your question may be.</p>
+        
         </div>
-
-        <div class="section">
-            <h1 class="big-title">The Commands</h1>
-            <small>if this list is confusing, join the support server. I will gladly try to explain it better</small>
-            <ul>
-                <li><b>/watch [thread]</b> toggles auto un-archive of thread.
-                    <ul>
-                        <li><b>argument [thread]</b> the thread to add/remove from the list</li>
-                    </ul>
-                </li>
-                <li><b>/threads</b> lists all thread in your server that the bot is watching</li>
-                <li><b>/batch [action] [parent] [optional:pattern]</b> watch/un-watch a lot of threads at the same time!
-                    <ul>
-                        <li><b>argument [action]</b> either watch or un-watch</li>
-                        <li><b>argument [parent]</b> the channel whose threads you want to add/remove (categories accepted)</li>
-                        <li><b>optional argument [pattern]</b> thread name must match this pattern to have action applied. Wildcards (<b>*</b>) allowed. <br>
-                        Exclamation mark (<b>!</b>) at beginning of string will reverse the pattern thus only adding threads whose name does not match the pattern
-                        <h4>Example</h4>
-                        <code>/batch action:watch parent:#channel pattern:*important*</code>
-                        will add all threads under <b>#channel</b> with name that includes important
-                        <h4>Example with exclamation mark</h4>
-                        <code>/batch action:watch parent:#channel pattern:!*important*</code>
-                        will add all threads under <b>#channel</b> with name that does not include important
-                        </li>
-                    </ul>
-                </li>
-            </ul>
+        <div id="footer">
+            <a href="https://discord.gg/793fagUfmr">Discord</a> <a href="https://github.com/ffamilyfriendly/thread-watcher">Repo</a> <a href="https://ko-fi.com/ffamilyfriendly">Donate</a>
         </div>
-        <br><br>
     </div>
 
-    <div id="repo">
-        <a href="https://github.com/ffamilyfriendly/Thread-Watcher/">
-            <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-        </a>
-    </div>
     <script src="./index.js"></script>
 </body>
 </html>
