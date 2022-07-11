@@ -36,8 +36,15 @@ module.exports = class DatabaseExample {
                         logger.error(`could not create table channels: ${err.toString()}`)
                         process.exit(1)
                     }
-                    logger.done("tables ensured!")
-                    resolve()
+
+                    this.db.query("CREATE TABLE IF NOT EXISTS `threadwatcher`.`blacklist` (`id` VARCHAR(20) NOT NULL, `reason` VARCHAR(255) NOT NULL, PRIMARY KEY (`id`));", (err, e) => {
+                        if(err) {
+                            logger.error(`could not create table blacklist: ${err.toString()}`)
+                            process.exit(1)
+                        }
+                        logger.done("tables ensured!")
+                        resolve()
+                    })
                 })
             })
         })
@@ -106,5 +113,25 @@ module.exports = class DatabaseExample {
                 return resolve(res)
             })
         })
+    }
+
+    getBlacklistEntry(id) {
+        // if an entry in blacklist exists for guild return that
+        return new Promise((resolve, reject) => {
+            this.db.query("SELECT * FROM blacklist WHERE id = ?", [id], (err, res) => {
+                if(err) reject(err)
+                return resolve(res[0])
+            }) 
+        })
+    }
+
+    setBlacklistEntry(id, reason) {
+        // adds a blacklist entry for a server which will block that server from using thread-watcher
+        this.db.query("INSERT INTO blacklist VALUES(?,?)", [ id, reason ])
+    }
+
+    removeBlacklistEntry(id) {
+        // removes a blacklist entry
+        this.db.query("DELETE FROM blacklist WHERE id = ?", [id])
     }
 }

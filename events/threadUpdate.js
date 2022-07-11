@@ -30,7 +30,7 @@ const run = ( client ) => {
             mentions += `<@${owner}> `;
           }
       
-          client.channels.cache.get('884845608349868052').send(`${mentions}\`${newThread.guildId}\` server went over ratelimit!`);
+          client.channels.cache.get(config.logchannel).send(`${mentions}\`${newThread.guildId}\` server went over ratelimit!`);
       
           setTimeout(() => {
             blacklist = blacklist.filter(s => s != newThread.guildId);

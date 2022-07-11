@@ -3,6 +3,7 @@ module.exports = {
     topggToken: "", // keep empty if bot is not uploaded to top.gg. Get api key at https://top.gg/bot/BOT ID HERE/webhooks
     logchannel: "884845608349868052", // channel tw will send some logs into. At the time of writing tw will only log when a server goes outisde of ratelimits
     devServer: "", // this is the server that owner commands such as eval will be added to
+    supportServerInvite: "https://discord.gg/whatever",
     database: {
         // currently supported: sqlite, mysql
         // to add supported copy /utils/db/example.js, rename it to your_db.js and make sure all the required functions from example.js work

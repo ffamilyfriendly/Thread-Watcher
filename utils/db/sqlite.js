@@ -21,6 +21,9 @@ module.exports = class DatabaseExample {
 
         // channels for auto-watch threads
         this.db.prepare("CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT)").run()
+
+        // blacklist
+        this.db.prepare("CREATE TABLE IF NOT EXISTS blacklist (id TEXT PRIMARY KEY, reason TEXT)").run()
     }
 
     insertChannel(id, guildid) {
@@ -73,5 +76,22 @@ module.exports = class DatabaseExample {
         return new Promise((resolve, reject) => {
             resolve(this.db.prepare("SELECT * FROM threads WHERE dueArchive < strftime('%s','now')").all())
         })
+    }
+
+    getBlacklistEntry(id) {
+        // if an entry in blacklist exists for guild return that
+        return new Promise((resolve, reject) => {
+            resolve(this.db.prepare("SELECT * FROM blacklist WHERE id = ?").get(id))
+        })
+    }
+
+    setBlacklistEntry(id, reason) {
+        // adds a blacklist entry for a server which will block that server from using thread-watcher
+        this.db.prepare("INSERT INTO blacklist VALUES(?,?)").run(id, reason)
+    }
+
+    removeBlacklistEntry(id) {
+        // removes a blacklist entry
+        this.db.prepare("DELETE FROM blacklist WHERE id = ?").run(id)
     }
 }
