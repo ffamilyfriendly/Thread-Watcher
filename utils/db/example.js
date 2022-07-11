@@ -65,4 +65,17 @@ module.exports = class DatabaseExample {
         // delete channel from the channels table
         // return nothing
     }
+
+    getBlacklistEntry(id) {
+        // if an entry in blacklist exists for guild return that
+        return new Promise()
+    }
+
+    setBlacklistEntry(id, reason) {
+        // adds a blacklist entry for a server which will block that server from using thread-watcher
+    }
+
+    removeBlacklistEntry(id) {
+        // removes a blacklist entry
+    }
 }
