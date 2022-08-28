@@ -16,7 +16,7 @@ const run = ( client ) => {
     const blacklist = [];
     const ratelimits = {};
 
-    client.on('threadUpdate', (oldThread, newThread) => {
+    client.on('threadUpdate', async (oldThread, newThread) => {
         if (oldThread.archived || !newThread.archived || blacklist.includes(newThread.guildId) || !threads.has(newThread.id)) {
           return;
         }
@@ -46,7 +46,8 @@ const run = ( client ) => {
         }
       
         const unarchive_reason = getText('unarchive-reason-keep-active', newThread.guild.preferredLocale);
-        newThread.setArchived(false, unarchive_reason);
+        await newThread.setArchived(false, unarchive_reason);
+        await newThread.setAutoArchiveDuration(10080); // one week
         logger.done(`[auto] (${getDate()}) Unarchived ${newThread.id} thread in ${newThread.guildId} server.`);
         db.updateArchiveTimes(newThread.id, (Date.now() / 1000) + (newThread.autoArchiveDuration * 60));
         ratelimits[newThread.guildId] = (newThread.guildId in ratelimits) ? (ratelimits[newThread.guildId] + 1) : 1;

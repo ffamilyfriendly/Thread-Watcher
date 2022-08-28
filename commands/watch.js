@@ -8,7 +8,7 @@ const { CommandInteraction, Permissions } = require('discord.js');
  * @param {CommandInteraction} interaction
  * @param {Function} handleBaseEmbed
  */
-const run = (client, interaction, handleBaseEmbed) => {
+const run = async (client, interaction, handleBaseEmbed) => {
   const thread = interaction.options.getChannel('thread') ?? interaction.channel;
 
   if (!thread.isThread()) {
@@ -58,6 +58,7 @@ const run = (client, interaction, handleBaseEmbed) => {
   }
 
   try {
+    await thread.setAutoArchiveDuration(10080); // one week
     addThread(thread.id, interaction.guildId, (Date.now() / 1000) + (thread.autoArchiveDuration * 60));
 
     if (thread.archived) {
