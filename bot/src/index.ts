@@ -20,7 +20,13 @@ if(config.tokens.topgg) {
 }
 
 manager.on("shardCreate", shard => {
+
+    shard.on("message", (m) => {
+        manager.shards.forEach(s => s.send(m))
+    })
+
     logger.done(`Shard with id ${shard.id} spawned!`)
 })
+
 
 manager.spawn()
