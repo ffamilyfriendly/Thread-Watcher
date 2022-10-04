@@ -1,4 +1,4 @@
-type ReturnData = {
+export type ReturnData = {
     id: String,
     server: String
 }
@@ -11,7 +11,7 @@ export interface Database {
     getArchivedThreads: (guildIDs: String[]) => Promise<ReturnData[]>,
     getChannels: (guildIDs: String[]) => Promise<ReturnData[]>,
     getThreads: (guildIDs: String[]) => Promise<ReturnData[]>,
-    getThreadsInGuild: (guildID: String) => Promise<ReturnData>,
+    getThreadsInGuild: (guildID: String) => Promise<ReturnData[]>,
     deleteThread: (threadID: String) => Promise<void>,
     deleteChannel: (channelID: String) => Promise<void>
 }

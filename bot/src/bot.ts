@@ -2,10 +2,12 @@ import { Client, GatewayIntentBits } from "discord.js"
 import config from "./config"
 import Log75, { LogLevel } from "log75"
 import loadEvents from "./utilities/loadEvents"
-console.log("a", __dirname)
 import loadCommands from "./utilities/loadCommands"
-
+import { getDatabase } from "./utilities/database/DatabaseManager"
 const logger = new Log75(LogLevel.Debug, { color: true })
+
+const db = getDatabase(config.database.type, config.database.options)
+db.createTables()
 
 const client = new Client({
     intents: [ GatewayIntentBits.Guilds ]

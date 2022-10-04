@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "better-sqlite3": "^7.6.2",
     "discord.js": "^14.3.0",
     "log75": "^2.2.0",
     "topgg-autoposter": "^2.0.1"
