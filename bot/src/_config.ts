@@ -12,6 +12,7 @@ const config = {
         // leaving this field empty will disable the bot automatically posting top.gg stats
         topgg: ""
     },
+    clientID: "",
     database: {
         type: DataBases.sqlite,
         options: {

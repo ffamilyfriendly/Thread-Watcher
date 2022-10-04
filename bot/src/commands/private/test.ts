@@ -1,10 +1,15 @@
-import { SlashCommandBuilder } from "discord.js";
+import { ChatInputCommandInteraction, CommandInteraction, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import { Command } from "src/interfaces/command";
 
 const test: Command = {
 
-    run: async (interaction) => {
-        interaction.reply("test")
+    run: async (interaction: ChatInputCommandInteraction) => {
+        interaction.reply(`test ${interaction.options.getBoolean("kekw") ? "<:kekw:960963125371371600>" : ""}`)
+    },
+    gatekeeping: {
+        ownerOnly: false,
+        devServerOnly: true,
+        userPermissions: [ PermissionFlagsBits.ManageThreads ]
     },
     data: new SlashCommandBuilder()
         .setName("test")
