@@ -2,73 +2,54 @@ import { BaseInteraction, ColorResolvable, CommandInteraction, EmbedBuilder, But
 import config from "../config";
 import { logger } from "../bot";
 import { commands } from "../bot";
-
-/*
-error: {
-            colour: "#D00000",
-            emoji: "<:statusurgent:960959148848214017>"
-        },
-        success: {
-            colour: "#4C9F70",
-            emoji: "<:statusgood:960960196425957447>"
-        },
-        info: {
-            colour: "#197BBD",
-            emoji: "<:statusinfo:960960247571300353>"
-        },
-        warning: {
-            colour: "#F18F01",
-            emoji: "⚠️"
-        }
-*/
-
-enum statusType {
-    error = "error",
-    success = "success",
-    info = "info",
-    warning = "warning"
-}
-
-const buildBaseEmbed = (title: String, status: statusType = statusType.info) => {
-
-    const style = config.style[ status ]
-    const e = new EmbedBuilder()
-    .setColor(style.colour as ColorResolvable)
-    .setTitle(`${style.emoji} ${title}`)
-
-    return e
-}
+import { statusType, baseEmbedOptions } from "../interfaces/command";
 
 const handleCommands = (interaction: ChatInputCommandInteraction) => {
     const command = commands.get(interaction.commandName)
 
+    const buildBaseEmbed = (title: String, status: statusType = statusType.info, misc?: baseEmbedOptions) => {
+
+        const style = config.style[ status ]
+        const e = new EmbedBuilder()
+        .setColor(style.colour as ColorResolvable)
+        .setTitle(`${style.emoji} ${title}`)
+
+        const ephemeral = misc?.ephermal
+        misc?.description ? e.setDescription( misc.description ) : null
+        misc?.color ? e.setColor( misc.color ) : null
+        misc?.fields ? e.addFields( ...misc.fields ) : null
+        misc?.showAuthor ? e.setAuthor({ iconURL: interaction.user.displayAvatarURL(), name: `${interaction.user.username}#${interaction.user.discriminator}` }) : null
+        ephemeral ? null : e.setTimestamp()
+
+        if(interaction.replied || interaction.deferred) {
+            interaction.editReply({ embeds: [ e ] })
+        } else {
+            interaction.reply({ embeds: [ e ], ephemeral: ephemeral ? true : false })
+        }
+
+        return e
+    }
 
     if(!command) {
-        const eEmbed = buildBaseEmbed(`Unknown Command`, statusType.error)
-        eEmbed.setDescription(`command \`${interaction.commandName}\` was not found.`)
-        return interaction.reply( { embeds: [ eEmbed ], ephemeral: true } )
+        return buildBaseEmbed(`Unknown Command`, statusType.error, { description: `command \`${interaction.commandName}\` was not found.`, ephermal: true })
     }
 
     // Ensure command issuer is in the owners array if command is marked as owner only
     if(command.gatekeeping?.ownerOnly && !config.owners.includes(interaction.user.id)) {
-        const eEmbed = buildBaseEmbed(`Owner Only`, statusType.error)
-        eEmbed.setDescription(`command \`${interaction.commandName}\` is only allowed to be ran by the owner${ config.owners.length >= 2 ? "s" : "" }.`)
-        return interaction.reply( { embeds: [ eEmbed ], ephemeral: true } )
+        return buildBaseEmbed(`Owner Only`, statusType.error, { description: `command \`${interaction.commandName}\` is only allowed to be ran by the owner${ config.owners.length >= 2 ? "s" : "" }.`, ephermal: true })
     }
 
     // Ensure command issuer has sufficient permissions in the channel the command was issued in
     if(command.gatekeeping?.userPermissions && !interaction.memberPermissions?.has(command.gatekeeping.userPermissions)) {
         const missing = interaction.memberPermissions?.missing(command.gatekeeping.userPermissions)
-        console.log("missing", missing)
-        const eEmbed = buildBaseEmbed(`Missing Permissions`, statusType.error)
-        eEmbed.setDescription(`command \`${interaction.commandName}\` is only allowed to be ran by users who have sufficient permissions.`)
-        eEmbed.addFields(
-            { name: "You are missing", value: `${missing?.map(m => `\`${m}\``).join(", ")}` }
-        )
-        return interaction.reply( { embeds: [ eEmbed ], ephemeral: true } )
+        return buildBaseEmbed(`Missing Permissions`, statusType.error, {
+            description: `command \`${interaction.commandName}\` is only allowed to be ran by users who have sufficient permissions.`,
+            fields: [ { name: "You are missing", value: `${missing?.map(m => `\`${m}\``).join(", ")}` } ],
+            ephermal: true
+        })
     }
 
-    command.run(interaction)
+    command.run(interaction, buildBaseEmbed)
 }
 
 export default function(interaction: BaseInteraction) {

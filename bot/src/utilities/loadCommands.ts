@@ -9,6 +9,7 @@ const loadCommands = (baseDir: string = "../commands/", dirDive: string = "") =>
     for(let file of readdirSync(p)) {
         const fileStat = statSync(path.join(p, file))
         if(fileStat.isFile() && file.endsWith(".js")) {
+            delete require.cache[ require.resolve(`../commands/${dirDive}/${file}`) ]
             const cmdReq = require(`../commands/${dirDive}/${file}`)?.default
             if(!cmdReq) {
                 logger.warn(`"${baseDir}${dirDive}${file}" command does not export a default object`)
