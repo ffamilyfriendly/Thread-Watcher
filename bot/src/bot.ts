@@ -18,6 +18,10 @@ const commands = loadCommands()
 
 export { client, logger, commands }
 
+client.addListener("reloadCommands", (e) => {
+    console.log(e)
+})
+
 client.login(config.tokens.discord)
 .catch(err => {
     logger.error(`Could not authorise bot. ${err.toString()}`)
