@@ -20,7 +20,9 @@ export interface Command {
     gatekeeping?: {
         ownerOnly: Boolean,
         userPermissions?: PermissionResolvable[],
+        botPermissions?: PermissionResolvable[]
         devServerOnly: Boolean
     },
+    externalOptions?: any[],
     run: (interaction: ChatInputCommandInteraction, buildBaseEmbed: (title: String, status: statusType, misc?: baseEmbedOptions) => EmbedBuilder ) => Promise<void>
 }

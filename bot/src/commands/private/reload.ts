@@ -10,12 +10,7 @@ const reload: Command = {
         const all = interaction.options.getBoolean("globally")
 
         if(all) {
-            interaction.deferReply()
-            interaction.client.shard?.broadcastEval((_client, a: () => void ) => { a() }, { context: loadCommands })
-            .then(results => {
-                console.log(results)
-                buildBaseEmbed(`Commands reloaded on ${results.length} shards`, statusType.success, { ephermal: true })
-            })
+            buildBaseEmbed(`Multi-shard reload is currently not implemented 😢`, statusType.warning, { ephermal: true })
         } else {
             reloadCommands()
             buildBaseEmbed("Commands reloaded", statusType.success, { ephermal: true })

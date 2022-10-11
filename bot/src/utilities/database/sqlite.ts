@@ -38,34 +38,26 @@ class sqlite implements Database {
         })
     };
 
-    getArchivedThreads(guildIDs: String[]): Promise<{ id: String; server: String; }[]> {
+    getArchivedThreads(guildID: string): Promise<{ id: string; server: string; }[]> {
         return new Promise((resolve, reject) => {
             let returnArr: ReturnData[] = []
-            returnArr.push( ...this.db.prepare("SELECT * FROM threads WHERE dueArchive < strftime('%s','now') AND id IN(?)").all(guildIDs) )
+            returnArr.push( ...this.db.prepare("SELECT * FROM threads WHERE dueArchive < strftime('%s','now') AND server = ?").all(guildID) )
             resolve(returnArr)
         })
     };
 
-    getChannels(guildIDs: String[]): Promise<ReturnData[]> {
+    getChannels(guildID: String): Promise<ReturnData[]> {
         return new Promise((resolve, reject) => {
             let returnArr: ReturnData[] = []
-            returnArr.push( ...this.db.prepare("SELECT * FROM channels WHERE id IN(?)").all(guildIDs) )
+            returnArr.push( ...this.db.prepare("SELECT * FROM channels WHERE server = ?").all(guildID) )
             resolve(returnArr)
         })
     };
 
-    getThreads(guildIDs: String[]): Promise<ReturnData[]> {
+    getThreads(guildID: String): Promise<ReturnData[]> {
         return new Promise((resolve, reject) => {
             let returnArr: ReturnData[] = []
-            returnArr.push( ...this.db.prepare("SELECT * FROM threads WHERE id IN(?)").all(guildIDs) )
-            resolve(returnArr)
-        })
-    };
-
-    getThreadsInGuild(guildID: String): Promise<ReturnData[]> {
-        return new Promise((resolve, reject) => {
-            let returnArr: ReturnData[] = []
-            returnArr.push( ...this.db.prepare("SELECT * FROM threads WHERE id = ?").all(guildID) )
+            returnArr.push( ...this.db.prepare("SELECT * FROM threads WHERE server = ?").all(guildID) )
             resolve(returnArr)
         })
     };

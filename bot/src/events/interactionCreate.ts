@@ -49,6 +49,15 @@ const handleCommands = (interaction: ChatInputCommandInteraction) => {
         })
     }
 
+    if(command.gatekeeping?.botPermissions && !interaction.appPermissions?.has(command.gatekeeping.botPermissions)) {
+        const missing = interaction.appPermissions?.missing(command.gatekeeping.botPermissions)
+        return buildBaseEmbed(`Missing Permissions`, statusType.error, {
+            description: `command \`${interaction.commandName}\` requires the bot has sufficient permissions in the channel.`,
+            fields: [ { name: "I am missing", value: `${missing?.map(m => `\`${m}\``).join(", ")}` } ],
+            ephermal: true
+        })
+    }
+
     command.run(interaction, buildBaseEmbed)
 }
 

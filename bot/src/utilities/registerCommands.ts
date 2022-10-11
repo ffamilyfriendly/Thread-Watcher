@@ -27,12 +27,12 @@ const loadCommands = (baseDir: string = "../dist/commands/", dirDive: string = "
                 console.warn(`"${baseDir}${dirDive}${file}" command does not export a default object`)
                 continue;
             }
-            const { run, data } = cmdReq
+            const { run, data, externalOptions } = cmdReq
             if(!run || !data) console.warn(`"${baseDir}${dirDive}${file}" is not an acceptable command file. Missing: ${run ? "" : "function \"run\""} ${data ? "" : "property \"data\""}`) 
             else {
                 if(data?.gatekeeping?.devServerOnly) {
-                    prCommands.push( { run, data } )
-                } else pCommands.push( { run, data } )
+                    prCommands.push( { run, data, externalOptions } )
+                } else pCommands.push( { run, data, externalOptions } )
             }
         } else if(fileStat.isDirectory()) {
             const { publicCommands, privateCommands } = loadCommands(baseDir, dirDive + `${file}/`)
@@ -56,17 +56,23 @@ export default function( global: Boolean ) {
 
     const rest = new REST({ version: "10" }).setToken(config.tokens.discord)
 
+    const commandToJson = (cmd: Command) => {
+        let data = cmd.data.toJSON()
+        if(cmd.externalOptions) data.options?.push( ...cmd.externalOptions )
+        return data
+    }
+
     if(publicCommands.length >= 1) {
         rest.put(
             Routes.applicationCommands(config.clientID),
-            { body: Array.from(publicCommands.values()).map(r => r.data.toJSON()) }
+            { body: Array.from(publicCommands.values()).map(commandToJson) }
         )
     }
 
     if(privateCommands.length >= 1) {
         rest.put(
             Routes.applicationGuildCommands(config.clientID, config.devServer),
-            { body: Array.from(privateCommands.values()).map(r => r.data.toJSON()) }
+            { body: Array.from(privateCommands.values()).map(commandToJson) }
         )
     }
 }
