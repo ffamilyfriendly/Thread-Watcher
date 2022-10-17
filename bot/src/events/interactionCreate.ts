@@ -58,7 +58,12 @@ const handleCommands = (interaction: ChatInputCommandInteraction) => {
         })
     }
 
-    command.run(interaction, buildBaseEmbed)
+    try {
+        command.run(interaction, buildBaseEmbed)
+    } catch(err) {
+        console.error(err)
+        buildBaseEmbed("Unknown error", statusType.error, { ephermal: true, description: `command \`${interaction.commandName}\` failed due to mysterious reasons.\nPlease report this issue if it continues` })
+    }
 }
 
 export default function(interaction: BaseInteraction) {
