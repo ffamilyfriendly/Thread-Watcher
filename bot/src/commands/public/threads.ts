@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, PermissionFlagsBits, PermissionsBitField, SlashCommandBuilder } from "discord.js";
+import { ChatInputCommandInteraction, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed } from "discord.js";
 import loadCommands from "../../utilities/loadCommands";
 import { commands } from "../../bot";
 import { Command, statusType } from "../../interfaces/command";
@@ -10,23 +10,49 @@ type field = {
     value: string
 }
 
-const fitIntoFields = ( name: string, values: string[], totalLength: number = 0 ): { fieldArr: field[], totalLength: number } => {
+/**
+ * This function will split an array of discord channel tags ( <#CHANNEL_ID> ) into embed fields of 1024 chars each
+ * as some of yall have a metric tonne of watched threads. 
+ * The function also limits the total chars of embed field values to a total of 5500 to not bypass the hardlimit of
+ * 6000 chars per embed object.
+ * 
+ * This might make it now show all threads if any user out there somehow manages to have 5500 chars worth of threads stored
+ * which is why this function will be supplemented with a function to create more embeds if needed as 10 embeds are allowed per interaction response
+ */
+const fitIntoFields = ( name: string, values: string[], totalLength: number = 0 ): { fieldArr: field[], totalLength: number, remainingValues: string[] } => {
+    
+    // Embed limits https://discord.com/developers/docs/resources/channel#embed-object-embed-limits
     const MAXLENGTH = 1024
     const ALLOWEDLENGTH = 5500
     
     let fields: field[] = []
     let buff: string = ""
+    let remainingValues: string[] = []
 
-    for(const value of values) {
+    for(let index = 0; index < values.length; index++) {
 
+        const value = values[index]
+
+        // Length of the buffer plus the string currently added to it
         const iLength = (buff.length + value.length) + 2
         totalLength += value.length + 2
 
-        if(totalLength >= ALLOWEDLENGTH) break
+        /**
+         * if the total length of chars in this embed exceeds the per embed hard limit we will 
+         * return the left over values so they can be displayed in another embed
+         */
+        if(totalLength >= ALLOWEDLENGTH) {
+            remainingValues = values.splice(index)
+            break;
+        }
 
+        /**
+         * ensure the current thread can fit into the current field (buff).
+         * If not: push the current field into the array and initiate a new one with the current value
+         */
         if(iLength > MAXLENGTH) {
             fields.push( { name: `${name} ${fields.length + 1}`, value: buff.substring(0, buff.length-2) } )
-            buff = ""
+            buff = `${value}, `
         } else {
             buff += `${value}, `
         }
@@ -34,7 +60,19 @@ const fitIntoFields = ( name: string, values: string[], totalLength: number = 0 
 
     fields.push( { name: `${name} ${fields.length + 1}`, value: buff.substring(0, buff.length-2) } )
 
-    return { fieldArr: fields, totalLength }
+    return { fieldArr: fields, totalLength, remainingValues }
+}
+
+/**
+ * This function will generate as many embeds as are needed to show all watched items
+ * without hitting the limits described above. A maxiumum of 10 embeds will be returned 
+ */
+const fitIntoEmbeds = ( threads: string[], channels: string[] ): EmbedBuilder[] => {
+    let embeds: EmbedBuilder[] = []
+
+
+
+    return embeds
 }
 
 const threads: Command = {
