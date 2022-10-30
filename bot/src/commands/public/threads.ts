@@ -1,9 +1,7 @@
-import { ChatInputCommandInteraction, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed } from "discord.js";
-import loadCommands from "../../utilities/loadCommands";
-import { commands } from "../../bot";
+import { ChatInputCommandInteraction, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable } from "discord.js";
 import { Command, statusType } from "../../interfaces/command";
-import reloadCommands from "../../utilities/routines/reloadCommands";
 import { threads as threadsList } from "../../bot";
+import config from "../../config";
 
 type field = {
     name: string,
@@ -51,7 +49,7 @@ const fitIntoFields = ( name: string, values: string[], totalLength: number = 0 
          * If not: push the current field into the array and initiate a new one with the current value
          */
         if(iLength > MAXLENGTH) {
-            fields.push( { name: `${name} ${fields.length + 1}`, value: buff.substring(0, buff.length-2) } )
+            fields.push( { name: `<#${name}> ${fields.length + 1}`, value: buff.substring(0, buff.length-2) } )
             buff = `${value}, `
         } else {
             buff += `${value}, `
@@ -63,32 +61,25 @@ const fitIntoFields = ( name: string, values: string[], totalLength: number = 0 
     return { fieldArr: fields, totalLength, remainingValues }
 }
 
-/**
- * This function will generate as many embeds as are needed to show all watched items
- * without hitting the limits described above. A maxiumum of 10 embeds will be returned 
- */
-const fitIntoEmbeds = ( threads: string[], channels: string[] ): EmbedBuilder[] => {
-    let embeds: EmbedBuilder[] = []
-
-
-
-    return embeds
+interface resObj {
+    channels: string[],
+    threads: string[],
+    threadsFailed: string[],
+    channelsFailed: string[]
 }
 
 const threads: Command = {
     run: async (interaction: ChatInputCommandInteraction, buildBaseEmbed) => {
 
-        const pub = interaction.options.getBoolean("public")
+        let pub = interaction.options.getBoolean("public")
         const show = interaction.options.getString("show")||"thread"
 
-        await interaction.deferReply({ ephemeral: !(pub||false) })
+        console.log(interaction.options.getString("show"))
 
-        interface resObj {
-            channels: string[],
-            threads: string[],
-            threadsFailed: string[],
-            channelsFailed: string[]
-        }
+        // Only allow users with ManageThreads to create public /threads messages
+        if(!interaction.memberPermissions?.has(PermissionFlagsBits.ManageThreads) && pub) pub = false
+
+        await interaction.deferReply({ ephemeral: !(pub||false) })
 
         const res: resObj = {
             channels: [ ],
@@ -100,12 +91,14 @@ const threads: Command = {
         const getThreads = async () => {
             for(const [ id, _o ] of threadsList) {
                 let thread = await interaction.client.channels.fetch(id).catch(() => { })
-
                 if(thread) {
+                    if( thread.type !== ChannelType.PrivateThread && thread.type !== ChannelType.PublicThread ) return
                     if(!interaction.memberPermissions?.has(PermissionFlagsBits.ViewChannel)) continue;
-                    res.threads.push(`<#${id}>`)
+                    // This is used instead of hotlinking ( <#ID> ) as discord shows un-cached threads as #deleted-channel if not in sidebar
+                    // even when thread is un-archived
+                    res.threads.push(`[#${thread.name}](https://discord.com/channels/${interaction.guildId}/${id})`)
                 } else {
-                    res.threadsFailed.push(`<#${id}> *(Unknown Thread)*`)
+                    res.threadsFailed.push(`${id} (*unknown channel*)`)
                 }
             }
         }
@@ -122,26 +115,40 @@ const threads: Command = {
             await Promise.all([getThreads(), getChannels()])
         }
 
-        let fields: { name: string, value: string }[] = []
+        let embeds = [ ]
 
-        /*
-            TODO: can be possible to hit embed char limit if you have many threads. We are allowed 10 embeds per message so we can solve this
-            with multiple embeds if one is not enough. Gonna have to ditch using the buildBaseEmbed function for this though.
-            anyhow, that is a problem for future me.
+        const genEmbed = () => {
+            const e = new EmbedBuilder()
+            .setColor(config.style.success.colour as ColorResolvable)
 
-            good music for repo explorers: https://open.spotify.com/track/3qa1d6lHDvWnwW0cLKq6xt?si=6c71de38a60f4476
-        */
-        res.threads.push(...(new Array(500)).fill("<#973252956667383949>", 0, 500))
+            return e
+        }
 
-        // lol cope (i'll fix this later)
-        if(fields.length > 25) fields.length = 25
-        const { totalLength, fieldArr } = fitIntoFields("Threads", [ ...res.threads, ...res.threadsFailed ])
-        if(res.threads.length >= 1 || res.threadsFailed.length >= 1) fields.push( ...fieldArr )
-        if(res.channels.length >= 1 || res.channelsFailed.length >= 1) fields.push( ...fitIntoFields("Channels", [ ...res.channels, ...res.channelsFailed ], totalLength).fieldArr )
+        if(res.threads.length >= 1 || res.threadsFailed.length >= 1) {
+            const fields = fitIntoFields("Threads", [ ...res.threads, ...res.threadsFailed ]).fieldArr
+            if(fields.length > 25) fields.length = 25
+            const e = genEmbed()
+                .setDescription(`Keeping \`${res.threads.length}\` threads Un-archived!`)
+                .addFields(...fields)
+            embeds.push(e)
+        }
 
-        buildBaseEmbed(`Watched ${ { all: "threads & channels", thread: "threads", channel: "channels" }[show] }`, statusType.info, {
-            fields
-        })
+        if(res.channels.length >= 1 || res.channelsFailed.length >= 1) {
+            const fields = fitIntoFields("Channels", [ ...res.channels, ...res.channelsFailed ]).fieldArr
+            if(fields.length > 25) fields.length = 25
+            const e = genEmbed()
+                .setDescription(`Watching \`${res.channels.length}\` channels for threads to watch!`)
+                .addFields(...fields)
+            embeds.push(e)
+        }
+
+        if(embeds.length === 0) {
+            buildBaseEmbed(`Nothing to show`, statusType.info, { description: `I'd love to show you something here but you have not added anything that can be displayed with show set to \`${show}\`` })
+            return
+        }
+
+        
+        interaction.editReply( { embeds } )
     },
     data: new SlashCommandBuilder()
         .setName("threads")
