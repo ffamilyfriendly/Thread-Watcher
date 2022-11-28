@@ -9,6 +9,10 @@ export default function(oldThread: ThreadChannel, newThread: ThreadChannel) {
         logger.warn(`Skipped "${newThread.id}" in "${newThread.guildId}" as it is not unarchivable`)
         return
     }
+
+    // make sure auto archive duration is as high as possible
+    if(newThread.autoArchiveDuration !== 10080 && newThread.manageable) newThread.setAutoArchiveDuration(10080)
+
     newThread.setArchived(false)
     logger.info(`Unarchived "${newThread.id}" in "${newThread.guildId}"`)
     db.updateDueArchive(newThread.id, dueArchiveTimestamp(newThread.autoArchiveDuration||0))
