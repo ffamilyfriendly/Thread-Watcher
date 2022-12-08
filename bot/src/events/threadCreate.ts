@@ -4,6 +4,7 @@ import { client, db, logger } from "../bot";
 import { commands } from "../bot";
 import { statusType, baseEmbedOptions } from "../interfaces/command";
 import { addThread, dueArchiveTimestamp } from "../utilities/threadActions";
+import { strToRegex } from "../utilities/regex";
 
 export default async function(thread: ThreadChannel) {
     const auto = (await db.getChannels(thread.guildId)).find(t => t.id == thread.parentId)
@@ -11,7 +12,7 @@ export default async function(thread: ThreadChannel) {
 
     auto.roles = auto.roles.filter(s => !(s?.trim() == ''))
     auto.tags = auto.tags.filter(s => !(s?.trim() == ''))
-
+    const reg = auto.regex.length != 0 ? strToRegex(auto.regex) : false
     let passes = true
 
     if(auto.roles && auto.roles.length !== 0) {
@@ -31,6 +32,12 @@ export default async function(thread: ThreadChannel) {
             if(thread.appliedTags.includes(tag)) tagPasses = true
         }
         if(!tagPasses) passes = false
+    }
+
+    if(reg) {
+        if(!reg.regex.test(thread.name) !== reg.inverted) {
+            passes = false
+        }
     }
 
     if(passes) {

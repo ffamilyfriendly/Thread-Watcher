@@ -1,8 +1,9 @@
-import { ChatInputCommandInteraction, PermissionFlagsBits, ModalBuilder, SlashCommandBuilder, TextChannel, ForumChannel, NewsChannel, SelectMenuBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ModalActionRowComponentBuilder, AnyComponentBuilder, SelectMenuInteraction, Role, GuildForumTagEmoji, GuildForumTag, Interaction, ButtonStyle, CacheType, ButtonInteraction } from "discord.js";
+import { ChatInputCommandInteraction, PermissionFlagsBits, ModalBuilder, SlashCommandBuilder, TextChannel, ForumChannel, NewsChannel, SelectMenuBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ModalActionRowComponentBuilder, AnyComponentBuilder, SelectMenuInteraction, Role, GuildForumTagEmoji, GuildForumTag, Interaction, ButtonStyle, CacheType, ButtonInteraction, ModalSubmitInteraction } from "discord.js";
 import { addThread, dueArchiveTimestamp, removeThread } from "../../utilities/threadActions";
 import { Command, statusType } from "../../interfaces/command";
 import { db, threads } from "../../bot";
 import { ButtonBuilder } from "@discordjs/builders";
+import { validRegex } from "../../utilities/regex";
 
 const auto: Command = {
     run: async (interaction: ChatInputCommandInteraction, buildBaseEmbed) => {
@@ -20,12 +21,14 @@ const auto: Command = {
 
         interface filterTypes {
             roles: (Role|undefined|null)[],
-            tags: (GuildForumTag | undefined)[]
+            tags: (GuildForumTag | undefined)[],
+            regex: string
         }
 
         let filters: filterTypes = {
             roles: [],
-            tags: []
+            tags: [],
+            regex: ""
         }
 
         const alreadyExists = (await db.getChannels(channel.guildId)).find(t => t.id == channel.id)
@@ -39,9 +42,9 @@ const auto: Command = {
             return
         }
 
-        const auto = () => {
+        const autoAdd = () => {
             if(!interaction.guildId) return
-            db.insertChannel({ id: channel.id, server: interaction.guildId, regex: "", tags: filters.tags.map(t => t?.id), roles: filters.roles.map(r => r?.id) })
+            db.insertChannel({ id: channel.id, server: interaction.guildId, regex: filters.regex, tags: filters.tags.map(t => t?.id), roles: filters.roles.map(r => r?.id) })
             buildBaseEmbed("Auto success", statusType.success, {
                 description: `Any thread created in <#${channel.id}> will be automatically watched${ advanced ? " if it matches your filters" : "" }`
             })
@@ -94,10 +97,19 @@ const auto: Command = {
                 .setCustomId(`submit_${interaction.id}`)
                 .setStyle(ButtonStyle.Primary)
                 .setLabel("Save")
-            buttonRow.addComponents( submitButton )
+            const regexButton = new ButtonBuilder()
+                .setCustomId(`regex_${interaction.id}`)
+                .setStyle(ButtonStyle.Secondary)
+                .setLabel("Set regex")
+            const cancelButton = new ButtonBuilder()
+                .setCustomId(`cancel_${interaction.id}`)
+                .setStyle(ButtonStyle.Danger)
+                .setLabel("cancel")
+
+            buttonRow.addComponents( submitButton, regexButton, cancelButton )
             components.push(buttonRow)
 
-            const buildEmbed = (input?: SelectMenuInteraction | ChatInputCommandInteraction | ButtonInteraction) => {
+            const buildEmbed = (input?: SelectMenuInteraction | ChatInputCommandInteraction | ButtonInteraction | ModalSubmitInteraction) => {
 
                 const i_have_aids = (emoji: GuildForumTagEmoji) => {
                     if(!emoji.id) return emoji.name
@@ -107,7 +119,8 @@ const auto: Command = {
                 const e = buildBaseEmbed(`Auto Advanced`, statusType.info, {
                     fields: [
                         { name: `Only watch ${word} posted by users with these roles`, value: filters.roles.length != 0 ? filters.roles.map(r => `<@&${r?.id}>`).join(", ") : "None selected" },
-                        { name: `Only watch ${word} with these tags`, value: filters.tags.length != 0 ? filters.tags.map(tag => `${tag?.emoji ? `${i_have_aids(tag.emoji)} ` : ""}${tag?.name}`).join(", ") : "None selected" }
+                        { name: `Only watch ${word} with these tags`, value: filters.tags.length != 0 ? filters.tags.map(tag => `${tag?.emoji ? `${i_have_aids(tag.emoji)} ` : ""}${tag?.name}`).join(", ") : "None selected" },
+                        { name: "regex", value: `\`${filters.regex||"not set"}\`` }
                     ],
                     components: [ ...components ],
                     noSend: input ? true : false
@@ -119,9 +132,9 @@ const auto: Command = {
             buildEmbed()
 
             const listener = ( input: Interaction ) => {
-                if(!(input.isButton() || input.isSelectMenu())) return
+                if(!(input.isButton() || input.isSelectMenu() || input.isModalSubmit())) return
                 const [ type, id ] = input.customId.split("_")
-                if(id !== interaction.id) return
+                if(id !== interaction.id || input.user.id !== interaction.user.id) return
 
                 if(input.isSelectMenu()) {
                     switch(type) {
@@ -140,18 +153,55 @@ const auto: Command = {
                 if(input.isButton()) {
                     switch(type) {
                         case "submit":
-                            console.log("YOOO")
                             interaction.client.removeListener("interactionCreate", listener)
                             input.update({  embeds: [ buildEmbed(input) ], components: [ ] })
-                            auto()
+                            autoAdd()
                         break;
+                        case "regex":
+                            const modal = new ModalBuilder()
+                                .setCustomId(`modal_${interaction.id}`)
+                                .setTitle("Enter Regex")
+                            const regexText = new TextInputBuilder()
+                                .setCustomId(`regex_${interaction.id}`)
+                                .setLabel("regex")
+                                .setStyle(TextInputStyle.Short)
+                                .setRequired(true)
+                            modal.addComponents( new ActionRowBuilder<TextInputBuilder>().addComponents( regexText ) )
+
+                            input.showModal(modal)
+                        break;
+                        case "cancel":
+                            interaction.client.removeListener("interactionCreate", listener)
+                            input.reply({ content: "cancelled", ephemeral: true })
+                            interaction.fetchReply()
+                                .then(m => m.deletable ? m.delete() : null)
+                        break;
+                    }
+                }
+
+                if(input.isModalSubmit()) {
+                    const regex = input.fields.getTextInputValue(`regex_${interaction.id}`)
+                    const valid = validRegex(regex)
+
+                    if(!regex) {
+                        input.reply({ content: "Cancelled", ephemeral: true })
+                    } else if (!valid.valid) input.reply({ content: `**REGEX NOT VALID**: \`${valid.reason}\`` })
+                    else {
+                        filters.regex = regex
+                        input.reply({ content: "Saved regex!", ephemeral: true })
+                        buildEmbed()
                     }
                 }
             }
 
+            setTimeout(async () => {
+                const e = buildEmbed(interaction)
+                if((await interaction.fetchReply()).editable) interaction.editReply({ embeds: [e], components: [ ] })
+                interaction.client.removeListener("interactionCreate", listener)
+            }, 1000 * 60 * 5)
             interaction.client.on("interactionCreate", listener)
 
-        } else auto()
+        } else autoAdd()
         
 
     },
