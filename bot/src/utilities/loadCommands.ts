@@ -15,9 +15,9 @@ const loadCommands = (baseDir: string = "../commands/", dirDive: string = "") =>
                 logger.warn(`"${baseDir}${dirDive}${file}" command does not export a default object`)
                 continue;
             }
-            const { run, data, gatekeeping } = cmdReq
+            const { run, data, gatekeeping, autocomplete } = cmdReq
             if(!run || !data) logger.warn(`"${baseDir}${dirDive}${file}" is not an acceptable command file. Missing: ${run ? "" : "function \"run\""} ${data ? "" : "property \"data\""}`) 
-            else { commands.set(file.split(".")[0], { run, data, gatekeeping }) }
+            else { commands.set(file.split(".")[0], { run, data, gatekeeping, autocomplete }) }
         } else if(fileStat.isDirectory()) {
             commands = new Map<string, Command>([ ...commands, ...loadCommands(baseDir, dirDive + `${file}/`) ])
         }

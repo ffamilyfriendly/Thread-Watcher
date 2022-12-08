@@ -1,6 +1,6 @@
 import { ThreadChannel } from "discord.js";
 import { logger } from "../bot";
-import { dueArchiveTimestamp } from "../utilities/threadActions";
+import { setArchive } from "../utilities/threadActions";
 import { db, threads } from "../bot";
 
 export default function(oldThread: ThreadChannel, newThread: ThreadChannel) {
@@ -10,10 +10,13 @@ export default function(oldThread: ThreadChannel, newThread: ThreadChannel) {
         return
     }
 
-    // make sure auto archive duration is as high as possible
-    if(newThread.autoArchiveDuration !== 10080 && newThread.manageable) newThread.setAutoArchiveDuration(10080)
-
-    newThread.setArchived(false)
-    logger.info(`Unarchived "${newThread.id}" in "${newThread.guildId}"`)
-    db.updateDueArchive(newThread.id, dueArchiveTimestamp(newThread.autoArchiveDuration||0))
+    const AUTOARCHIVEDURATION = 10_080
+    setArchive(newThread, AUTOARCHIVEDURATION)
+        .then(() => {
+            if(newThread.autoArchiveDuration !== AUTOARCHIVEDURATION && newThread.manageable) newThread.setAutoArchiveDuration(AUTOARCHIVEDURATION)
+            logger.info(`Unarchived "${newThread.id}" in "${newThread.guildId}"`)
+        })
+        .catch(err => {
+            logger.error(`Failed to unarchive "${newThread.id}" in "${newThread.guildId}\n${err}"`)
+        })
 }

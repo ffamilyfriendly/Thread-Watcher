@@ -1,4 +1,4 @@
-import { ColorResolvable, SlashCommandBuilder, SlashCommandSubcommandsOnlyBuilder, PermissionResolvable, ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
+import { ColorResolvable, SlashCommandBuilder, SlashCommandSubcommandsOnlyBuilder, PermissionResolvable, ChatInputCommandInteraction, EmbedBuilder, AutocompleteInteraction, ActionRowBuilder, MessageActionRowComponentData, MessageActionRowComponentBuilder, APIMessageActionRowComponent, Interaction, SelectMenuInteraction } from "discord.js";
 
 export enum statusType {
     error = "error",
@@ -12,7 +12,9 @@ export type baseEmbedOptions = {
     color?: ColorResolvable,
     fields?: { name: string; value: string }[],
     ephermal?: Boolean,
-    showAuthor?: Boolean
+    showAuthor?: Boolean,
+    components?: ActionRowBuilder<any>[],
+    noSend?: boolean
 }
 
 export interface Command {
@@ -24,5 +26,6 @@ export interface Command {
         devServerOnly: Boolean
     },
     externalOptions?: any[],
-    run: (interaction: ChatInputCommandInteraction, buildBaseEmbed: (title: String, status: statusType, misc?: baseEmbedOptions) => EmbedBuilder ) => Promise<void>
+    run: (interaction: ChatInputCommandInteraction, buildBaseEmbed: (title: String, status: statusType, misc?: baseEmbedOptions) => EmbedBuilder ) => Promise<void>,
+    autocomplete?: (interaction: AutocompleteInteraction) => Promise<void>
 }

@@ -76,3 +76,13 @@ export default function( global: Boolean ) {
         )
     }
 }
+
+export function clearCommands(local: Boolean) {
+    return new Promise((resolve, reject) => {
+        const rest = new REST({ version: "10" }).setToken(config.tokens.discord)
+        const route = local ? Routes.applicationGuildCommands(config.clientID, config.devServer) : Routes.applicationCommands(config.clientID)
+        rest.put(route, { body: [] })
+            .then(resolve)
+            .catch(reject)
+    })
+}

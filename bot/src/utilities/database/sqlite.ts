@@ -1,4 +1,4 @@
-import { Database, ReturnData } from "src/interfaces/database";
+import { ChannelData, Database, ReturnData } from "src/interfaces/database";
 import sql, { Database as sqliteDatabase } from "better-sqlite3"
 
 class sqlite implements Database {
@@ -11,15 +11,16 @@ class sqlite implements Database {
     createTables(): Promise<void> {
         return new Promise((resolve, reject) => {
             this.db.prepare("CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT, dueArchive INTEGER)").run()
-            this.db.prepare("CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT)").run()
+            this.db.prepare("CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT, regex TEXT, roles TEXT, tags TEXT)").run()
             this.db.prepare("CREATE TABLE IF NOT EXISTS blacklist (id TEXT PRIMARY KEY, reason TEXT)").run()
             resolve()
         })
     };
 
-    insertChannel(id: String, guildID: String): Promise<void> {
+    insertChannel( data: ChannelData ): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.db.prepare("INSERT INTO channels VALUES(?,?)").run(id, guildID)
+            const { id, server, regex, roles, tags } = data
+            this.db.prepare("INSERT INTO channels VALUES(?,?, ?, ?, ?)").run(id, server, regex, roles.join(","), tags.join(","))
             resolve()
         })
     };
@@ -46,10 +47,13 @@ class sqlite implements Database {
         })
     };
 
-    getChannels(guildID: String): Promise<ReturnData[]> {
+    getChannels(guildID: String): Promise<ChannelData[]> {
         return new Promise((resolve, reject) => {
-            let returnArr: ReturnData[] = []
-            returnArr.push( ...this.db.prepare("SELECT * FROM channels WHERE server = ?").all(guildID) )
+            let returnArr: ChannelData[] = []
+            returnArr.push( ...this.db.prepare("SELECT * FROM channels WHERE server = ?").all(guildID).map( item => {
+                let rv: ChannelData = { id: item.id, server: item.server, regex: item?.regex, tags: item?.tags.split(","), roles: item?.roles.split(",") };
+                return rv
+            }) )
             resolve(returnArr)
         })
     };

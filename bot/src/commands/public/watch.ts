@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, PermissionFlagsBits, PrivateThreadChannel, PublicThreadChannel, SlashCommandBuilder, ThreadChannel } from "discord.js";
-import { addThread, dueArchiveTimestamp, removeThread } from "../../utilities/threadActions";
+import { addThread, dueArchiveTimestamp, removeThread, setArchive } from "../../utilities/threadActions";
 import { Command, statusType } from "../../interfaces/command";
 import { threads } from "../../bot";
 
@@ -28,7 +28,9 @@ const watch: Command = {
         } else {
             addThread(thread.id, dueArchiveTimestamp(thread.autoArchiveDuration||0), interaction.guildId||"")
             .then(() => {
-                if(thread.archived && thread.unarchivable) thread.setArchived(false)
+                if(thread.archived && thread.unarchivable) {
+                    setArchive(thread, thread.autoArchiveDuration||0)
+                }
                 if(thread.unarchivable) {
                     buildBaseEmbed(`Watched thread`, statusType.success, { showAuthor: true, description: `Bot will keep <#${thread.id}> active` })
                 } else {

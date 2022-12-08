@@ -1,10 +1,11 @@
-import { BaseInteraction, ColorResolvable, CommandInteraction, EmbedBuilder, ButtonBuilder, ChatInputCommandInteraction } from "discord.js";
+import { BaseInteraction, ColorResolvable, CommandInteraction, EmbedBuilder, ButtonBuilder, ChatInputCommandInteraction, Interaction, AutocompleteInteraction } from "discord.js";
 import config from "../config";
-import { logger } from "../bot";
+import { client, logger } from "../bot";
 import { commands } from "../bot";
 import { statusType, baseEmbedOptions } from "../interfaces/command";
 
 const handleCommands = (interaction: ChatInputCommandInteraction) => {
+
     const command = commands.get(interaction.commandName)
 
     const buildBaseEmbed = (title: String, status: statusType = statusType.info, misc?: baseEmbedOptions) => {
@@ -21,10 +22,12 @@ const handleCommands = (interaction: ChatInputCommandInteraction) => {
         misc?.showAuthor ? e.setAuthor({ iconURL: interaction.user.displayAvatarURL(), name: `${interaction.user.username}#${interaction.user.discriminator}` }) : null
         ephemeral ? null : e.setTimestamp()
 
+        if(misc?.noSend) return e
+
         if(interaction.replied || interaction.deferred) {
-            interaction.editReply({ embeds: [ e ] })
+            interaction.editReply({ embeds: [ e ], components: [ ...(misc?.components || [ ]) ] })
         } else {
-            interaction.reply({ embeds: [ e ], ephemeral: ephemeral ? true : false })
+            interaction.reply({ embeds: [ e ], components: [ ...(misc?.components || [ ]) ], ephemeral: ephemeral ? true : false })
         }
 
         return e
@@ -66,6 +69,12 @@ const handleCommands = (interaction: ChatInputCommandInteraction) => {
     }
 }
 
+const handleAutoComplete = ( interaction: AutocompleteInteraction ) => {
+    const command = commands.get(interaction.commandName)
+    if(command?.autocomplete) command.autocomplete(interaction)
+}
+
 export default function(interaction: BaseInteraction) {
     if(interaction.isChatInputCommand()) handleCommands(interaction)
+    if(interaction.isAutocomplete()) handleAutoComplete(interaction)
 }
