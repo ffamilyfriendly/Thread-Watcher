@@ -1,6 +1,6 @@
-import { ChatInputCommandInteraction, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable } from "discord.js";
+import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable, DMChannel, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember } from "discord.js";
 import { Command, statusType } from "../../interfaces/command";
-import { threads as threadsList } from "../../bot";
+import { db, threads as threadsList } from "../../bot";
 import config from "../../config";
 
 type field = {
@@ -74,8 +74,6 @@ const threads: Command = {
         let pub = interaction.options.getBoolean("public")
         const show = interaction.options.getString("show")||"thread"
 
-        console.log(interaction.options.getString("show"))
-
         // Only allow users with ManageThreads to create public /threads messages
         if(!interaction.memberPermissions?.has(PermissionFlagsBits.ManageThreads) && pub) pub = false
 
@@ -103,8 +101,22 @@ const threads: Command = {
             }
         }
 
-        const getChannels = () => {
+        const getChannels = async () => {
             let t = []
+            if(!interaction.guildId) return 
+            const channels = await db.getChannels(interaction.guildId)
+
+            for(const channelData of channels) {
+                const channel = await interaction.client.channels.fetch(channelData.id).catch(() => { })
+                if(channel) {
+                    if( !( ((channel instanceof TextChannel) || ( channel instanceof ForumChannel ) || (channel instanceof NewsChannel)) && interaction.member instanceof GuildMember ) ) break;
+                    if(channel.permissionsFor(interaction.member).has(PermissionFlagsBits.ViewChannel)) {
+                        res.channels.push(`[#${channel.name}](https://discord.com/channels/${interaction.guildId}/${channel.id})`)
+                    }
+                } else {
+                    res.channelsFailed.push(`${channelData.id} (*unknown channel*)`)
+                }
+            }
             t.push("a")
             return t
         }
