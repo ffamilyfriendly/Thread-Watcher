@@ -7,6 +7,10 @@ import { addThread, dueArchiveTimestamp } from "../utilities/threadActions";
 import { strToRegex } from "../utilities/regex";
 import { ChannelData } from "src/interfaces/database";
 
+export function regMatch(str: string, reg: RegExp, inverted: boolean) {
+    return reg.test(str) === !inverted
+}
+
 export function threadShouldBeWatched(auto: ChannelData, thread: ThreadChannel) {
     return new Promise( async (resolve, reject) => {
         auto.roles = auto.roles.filter(s => !(s?.trim() == ''))
@@ -34,7 +38,7 @@ export function threadShouldBeWatched(auto: ChannelData, thread: ThreadChannel) 
         }
     
         if(reg) {
-            if(!reg.regex.test(thread.name) !== reg.inverted) {
+            if(!regMatch(thread.name, reg.regex, reg.inverted)) {
                 passes = false
             }
         }
