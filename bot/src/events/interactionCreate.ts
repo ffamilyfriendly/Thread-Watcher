@@ -37,6 +37,10 @@ const handleCommands = (interaction: ChatInputCommandInteraction) => {
         return buildBaseEmbed(`Unknown Command`, statusType.error, { description: `command \`${interaction.commandName}\` was not found.`, ephermal: true })
     }
 
+    if(!interaction.channel) {
+        return buildBaseEmbed("Unknown Channel", statusType.error, { description: `Your interaction happened in an unknown channel.\n**If this is a DM:** run it in a server. Thread-Watcher does not enjoy sliding into DMs\n**If this is __not__ a DM:** something went wrong. Try again later or something` })
+    }
+
     // Ensure command issuer is in the owners array if command is marked as owner only
     if(command.gatekeeping?.ownerOnly && !config.owners.includes(interaction.user.id)) {
         return buildBaseEmbed(`Owner Only`, statusType.error, { description: `command \`${interaction.commandName}\` is only allowed to be ran by the owner${ config.owners.length >= 2 ? "s" : "" }.`, ephermal: true })

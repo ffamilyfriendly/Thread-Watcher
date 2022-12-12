@@ -1,9 +1,30 @@
 import { ThreadChannel } from "discord.js";
 import { logger } from "../bot";
-import { setArchive } from "../utilities/threadActions";
+import { addThread, dueArchiveTimestamp, removeThread, setArchive } from "../utilities/threadActions";
 import { db, threads } from "../bot";
+import { threadShouldBeWatched } from "./threadCreate";
 
-export default function(oldThread: ThreadChannel, newThread: ThreadChannel) {
+export default async function(oldThread: ThreadChannel, newThread: ThreadChannel) {
+    
+    const auto = (await db.getChannels(newThread.guildId)).find(t => t.id == newThread.parentId)
+    if(auto) {
+
+        const isWatched = threads.has(newThread.id)
+
+        if(await threadShouldBeWatched(auto, newThread)) {
+            if(!isWatched) {
+                logger.info(`Automatically adding thread "${newThread.id}" in ${newThread.guildId} (TU)`)
+                addThread(newThread.id, dueArchiveTimestamp(newThread.autoArchiveDuration||0), newThread.guildId)
+            }
+        } else {
+            if(isWatched) {
+                logger.info(`Automatically removing thread "${newThread.id}" in ${newThread.guildId} (TU)`)
+                removeThread(newThread.id)
+            }
+        }
+    }
+
+
     if(!newThread.archived || oldThread.archived || !threads.has(newThread.id)) return
     if(!newThread.unarchivable) {
         logger.warn(`Skipped "${newThread.id}" in "${newThread.guildId}" as it is not unarchivable`)
