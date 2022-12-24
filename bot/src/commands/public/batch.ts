@@ -1,8 +1,9 @@
 import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable, DMChannel, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember } from "discord.js";
 import { Command, statusType } from "../../interfaces/command";
 import { db, threads as threadsList } from "../../bot";
-import { regMatch } from "src/events/threadCreate";
-import { strToRegex } from "src/utilities/regex";
+import { regMatch } from "../../events/threadCreate";
+import { strToRegex } from "../../utilities/regex";
+import { addThread, dueArchiveTimestamp, removeThread } from "../../utilities/threadActions";
 
 type beer = TextChannel | NewsChannel | ForumChannel
 
@@ -64,18 +65,28 @@ const batch: Command = {
         }
 
         for(const t of threads) {
+            const addAndFuckingUnArchiveThreadLol = ( thread: ThreadChannel ) => {
+                    if(thread.archived && thread.unarchivable) thread.setArchived(false)
+                    addThread( thread.id, dueArchiveTimestamp(thread.autoArchiveDuration||0), thread.guildId )
+            }
             switch(action) {
                 case "watch":
-                    // maybe i could microwave a hamster :D
+                    addAndFuckingUnArchiveThreadLol(t)
                 break;
                 case "unwatch":
-                    // code here probably yes?
+                    removeThread(t.id)
                 break;
                 case "toggle":
-                    // do code here xdxd
+                    if(threadsList.has(t.id)) {
+                        removeThread(t.id)
+                    } else addAndFuckingUnArchiveThreadLol(t)
                 break;
             }
         }
+
+        buildBaseEmbed("aight bossman", statusType.success, {
+            description: `I did whatever the fuck you want with these threads: ${threads.map(t => `<#${t.id}>`).join(", ")}`
+        })
     },
     data: new SlashCommandBuilder()
         .setName("batch")
