@@ -21,9 +21,9 @@ export function threadShouldBeWatched(auto: ChannelData, thread: ThreadChannel) 
         if(auto.roles && auto.roles.length !== 0) {
             let rolePasses = false
             for(const role of auto.roles) {
-                const owner = await thread.fetchOwner()
+                const owner = thread.ownerId ? await thread.guild.members.fetch({ force: true, user: thread.ownerId }) : null
                 if(!role) break;
-                if(owner?.guildMember?.roles.cache.has(role)) rolePasses = true
+                if(owner?.roles.cache.has(role)) rolePasses = true
             }
             if(!rolePasses) passes = false
         }
