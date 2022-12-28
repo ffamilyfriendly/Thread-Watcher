@@ -76,21 +76,6 @@ const auto: Command = {
 
             if(!interaction.guild) return
 
-            const roleSelectRow = new ActionRowBuilder<SelectMenuBuilder>()
-
-            const options: { label: string, description: string, value: string }[] = interaction.guild.roles.cache.map(r => {
-                return { label: `${r.name}`, description: `watch post if user has this role`, value: r.id }
-            })
-
-            const selectRoles = new SelectMenuBuilder()
-                .setCustomId(`roleselect_${interaction.id}`)
-                .setPlaceholder("Select Roles")
-                .addOptions( ...options )
-                .setMinValues(0)
-                .setMaxValues(options.length)
-                roleSelectRow.addComponents(selectRoles)
-            components.push(roleSelectRow)
-
             const buttonRow = new ActionRowBuilder()
 
             const submitButton = new ButtonBuilder()
@@ -118,7 +103,6 @@ const auto: Command = {
 
                 const e = buildBaseEmbed(`Auto Advanced`, statusType.info, {
                     fields: [
-                        { name: `Only watch ${word} posted by users with these roles`, value: filters.roles.length != 0 ? filters.roles.map(r => `<@&${r?.id}>`).join(", ") : "None selected" },
                         { name: `Only watch ${word} with these tags`, value: filters.tags.length != 0 ? filters.tags.map(tag => `${tag?.emoji ? `${i_have_aids(tag.emoji)} ` : ""}${tag?.name}`).join(", ") : "None selected" },
                         { name: "regex", value: `\`${filters.regex||"not set"}\`` }
                     ],
@@ -142,9 +126,6 @@ const auto: Command = {
                             if((channel instanceof ForumChannel)) {
                                 filters.tags = input.values.map(i => channel.availableTags.find(y => y.id === i))
                             }
-                        break;
-                        case "roleselect":
-                            filters.roles = input.values.map(i => interaction.guild?.roles.cache.get(i))
                         break;
                     }
 

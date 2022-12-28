@@ -11,7 +11,7 @@ const db = getDatabase(config.database.type, config.database.options)
 db.createTables()
 
 const client = new Client({
-    intents: [ GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers ]
+    intents: [ GatewayIntentBits.Guilds/*, GatewayIntentBits.GuildMembers*/ ]
 })
 
 loadEvents(client)
