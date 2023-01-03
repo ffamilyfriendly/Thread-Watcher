@@ -68,6 +68,10 @@ interface resObj {
     channelsFailed: string[]
 }
 
+export function getDirectTag(c: ThreadChannel|TextChannel|ForumChannel|NewsChannel) {
+    return `[#${c.name}](https://discord.com/channels/${c.guildId}/${c.id})`
+}
+
 const threads: Command = {
     run: async (interaction: ChatInputCommandInteraction, buildBaseEmbed) => {
 
@@ -87,16 +91,18 @@ const threads: Command = {
         }
 
         const getThreads = async () => {
-            for(const [ id, _o ] of threadsList) {
-                let thread = await interaction.client.channels.fetch(id).catch(() => { })
+            if(!interaction.guildId) return 
+            const threads = await db.getThreads(interaction.guildId)
+            for(const _t of threads) {
+                let thread = await interaction.client.channels.fetch(_t.id).catch(() => { })
                 if(thread) {
                     if( thread.type !== ChannelType.PrivateThread && thread.type !== ChannelType.PublicThread ) return
                     if(!interaction.memberPermissions?.has(PermissionFlagsBits.ViewChannel)) continue;
                     // This is used instead of hotlinking ( <#ID> ) as discord shows un-cached threads as #deleted-channel if not in sidebar
                     // even when thread is un-archived
-                    res.threads.push(`[#${thread.name}](https://discord.com/channels/${interaction.guildId}/${id})`)
+                    res.threads.push(getDirectTag(thread))
                 } else {
-                    res.threadsFailed.push(`${id} (*unknown channel*)`)
+                    res.threadsFailed.push(`${_t.id} (*unknown thread*)`)
                 }
             }
         }
@@ -111,7 +117,7 @@ const threads: Command = {
                 if(channel) {
                     if( !( ((channel instanceof TextChannel) || ( channel instanceof ForumChannel ) || (channel instanceof NewsChannel)) && interaction.member instanceof GuildMember ) ) break;
                     if(channel.permissionsFor(interaction.member).has(PermissionFlagsBits.ViewChannel)) {
-                        res.channels.push(`[#${channel.name}](https://discord.com/channels/${interaction.guildId}/${channel.id})`)
+                        res.channels.push(getDirectTag(channel))
                     }
                 } else {
                     res.channelsFailed.push(`${channelData.id} (*unknown channel*)`)

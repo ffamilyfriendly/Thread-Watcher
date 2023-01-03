@@ -5,12 +5,16 @@ export function dueArchiveTimestamp(dueArchive: number): Number {
     return (Date.now() / 1000) + (dueArchive * 60)
 }
 
-export function setArchive(thread: ThreadChannel, dueArchive: number) {
+export function setArchive(thread: ThreadChannel, dueArchive: number = 10_080) {
     return new Promise((resolve, reject) => {
         thread.setArchived(false)
             .then(() => {
-                thread.setAutoArchiveDuration(dueArchive)
-                db.updateDueArchive(thread.id, dueArchiveTimestamp(dueArchive))
+                let DArchive = thread.autoArchiveDuration
+                if(thread.manageable) {
+                    thread.setAutoArchiveDuration(dueArchive)
+                    DArchive = dueArchive
+                }
+                db.updateDueArchive(thread.id, dueArchiveTimestamp(DArchive||0))
                     .then(resolve)
                     .catch(reject)
             })

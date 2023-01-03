@@ -66,7 +66,11 @@ const handleCommands = (interaction: ChatInputCommandInteraction) => {
     }
 
     try {
-        command.run(interaction, buildBaseEmbed)
+        command.run(interaction, buildBaseEmbed).catch(e => {
+            buildBaseEmbed("Command Error", statusType.error, { ephermal: true, description: `command \`${interaction.commandName}\` failed due to mysterious reasons.\nPlease report this issue if it continues` })
+            logger.error(`[${command.data.name}] failed on guild ${interaction.guildId}\n${e.toString()} (dump below)`)
+            console.error(e)
+        })
     } catch(err) {
         console.error(err)
         buildBaseEmbed("Unknown error", statusType.error, { ephermal: true, description: `command \`${interaction.commandName}\` failed due to mysterious reasons.\nPlease report this issue if it continues` })

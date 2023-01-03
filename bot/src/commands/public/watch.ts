@@ -29,7 +29,7 @@ const watch: Command = {
             addThread(thread.id, dueArchiveTimestamp(thread.autoArchiveDuration||0), interaction.guildId||"")
             .then(() => {
                 if(thread.archived && thread.unarchivable) {
-                    setArchive(thread, thread.autoArchiveDuration||0)
+                    setArchive(thread)
                 }
                 if(thread.unarchivable) {
                     buildBaseEmbed(`Watched thread`, statusType.success, { showAuthor: true, description: `Bot will keep <#${thread.id}> active` })
