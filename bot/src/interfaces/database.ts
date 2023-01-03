@@ -1,6 +1,10 @@
 export type ReturnData = {
     id: string,
-    server: string
+    server: string,
+}
+
+export type ThreadData = ReturnData & {
+    dueArchive: number
 }
 
 export type ChannelData = ReturnData & {
@@ -9,14 +13,14 @@ export type ChannelData = ReturnData & {
     tags: (string|null|undefined)[]
 }
 
+
 export interface Database {
     createTables: () => Promise<void>,
     insertChannel: ( data: ChannelData ) => Promise<void>,
     insertThread: (id: string, dueArchive: Number, guildID: string) => Promise<void>,
     updateDueArchive: (id: string, dueArchive: Number) => Promise<void>,
-    getArchivedThreads: (guildID: string) => Promise<ReturnData[]>,
     getChannels: (guildID: string) => Promise<ChannelData[]>,
-    getThreads: (guildID: string) => Promise<ReturnData[]>,
+    getThreads: (guildID: string) => Promise<ThreadData[]>,
     deleteThread: (threadID: string) => Promise<void>,
     deleteChannel: (channelID: string) => Promise<void>
 }

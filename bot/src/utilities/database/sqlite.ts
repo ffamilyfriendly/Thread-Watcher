@@ -1,4 +1,4 @@
-import { ChannelData, Database, ReturnData } from "src/interfaces/database";
+import { ChannelData, Database, ReturnData, ThreadData } from "src/interfaces/database";
 import sql, { Database as sqliteDatabase } from "better-sqlite3"
 
 class sqlite implements Database {
@@ -39,14 +39,6 @@ class sqlite implements Database {
         })
     };
 
-    getArchivedThreads(guildID: string): Promise<{ id: string; server: string; }[]> {
-        return new Promise((resolve, reject) => {
-            let returnArr: ReturnData[] = []
-            returnArr.push( ...this.db.prepare("SELECT * FROM threads WHERE dueArchive < strftime('%s','now') AND server = ?").all(guildID) )
-            resolve(returnArr)
-        })
-    };
-
     getChannels(guildID: String): Promise<ChannelData[]> {
         return new Promise((resolve, reject) => {
             let returnArr: ChannelData[] = []
@@ -58,9 +50,9 @@ class sqlite implements Database {
         })
     };
 
-    getThreads(guildID: String): Promise<ReturnData[]> {
+    getThreads(guildID: String): Promise<ThreadData[]> {
         return new Promise((resolve, reject) => {
-            let returnArr: ReturnData[] = []
+            let returnArr: ThreadData[] = []
             returnArr.push( ...this.db.prepare("SELECT * FROM threads WHERE server = ?").all(guildID) )
             resolve(returnArr)
         })

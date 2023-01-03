@@ -1,4 +1,5 @@
 import { ActivityType, Client } from "discord.js";
+import ensureThreads, { getPossiblyArchivedThreads } from "../utilities/routines/ensureThreads";
 import { db, logger, threads } from "../bot";
 
 
@@ -12,6 +13,7 @@ export default function(client: Client) {
             .then((res) => {
                 for(const t of res)
                     threads.set(t.id, t)
+                ensureThreads(getPossiblyArchivedThreads(res))
             })
         }
     }
