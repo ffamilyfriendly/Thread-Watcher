@@ -1,4 +1,5 @@
 import { Database } from "better-sqlite3";
+import mysql from "./mysql";
 import sqlite from "./sqlite";
 
 export enum DataBases {
@@ -6,10 +7,13 @@ export enum DataBases {
     mysql
 }
 
-export function getDatabase( type: DataBases, options?: Object ): sqlite {
+export function getDatabase( type: DataBases): sqlite|mysql {
     switch(type) {
         case DataBases.sqlite:
             return new sqlite()
+        break;
+        case DataBases.mysql:
+            return new mysql();
         break;
     }
 

@@ -7,7 +7,7 @@ import { getDatabase } from "./utilities/database/DatabaseManager"
 import { ReturnData } from "./interfaces/database"
 const logger = new Log75(LogLevel.Debug, { color: true })
 
-const db = getDatabase(config.database.type, config.database.options)
+const db = getDatabase(config.database.type)
 db.createTables()
 
 const client = new Client({
