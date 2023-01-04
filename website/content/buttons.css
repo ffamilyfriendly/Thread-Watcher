@@ -1,0 +1,52 @@
+.button {
+    text-decoration: none;
+    color: var(--on-background);
+    text-align: center;
+    background-color: var(--surface);
+    padding: 0.7rem;
+    border-radius: 0.4rem;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    transition: .2s;
+
+    overflow: hidden;
+}
+
+.button.primary {
+    background-color: var(--primary);
+}
+
+.button.large {
+    width: 50%;
+}
+
+.button:hover {
+    transform: scale(1.03);
+}
+
+.button.wide {
+    width: 100%;
+}
+
+.button-circle {
+    position: absolute;
+    width: 3rem;
+    height: 3rem;
+    background-color: rgba(128, 128, 128, 0.144);
+    border-radius: 50%;
+}
+
+@media only screen and (max-width: 600px) {
+
+    .button {
+        padding: 0.4rem;
+    }
+
+    .button.large {
+        width: auto;
+    }
+
+}
