@@ -1,13 +1,20 @@
-# Thread Watcher version 2
-Thread Watcher is getting a full rewrite as the old codebase is quite messy and has no support for sharding.
+# Thread Watcher
 
-## When?
-No time of completion is set in stone but it is probable that the bot has been fully rewritten and tested as early as ~~late september / early october~~ when it's done 👉😎👉
+> **Thread-Watcher** is a simple to use discord bot dedicated to keeping discord threads un-archived. The bot was created as a proof of concept in early fall 2021 but has since amassed a steady user base of over 4000 servers. The bot is written using [typescript](https://www.typescriptlang.org/) and runs on the [nodejs](https://nodejs.org/en/) runtime with the [discord.js](https://discord.js.org/#/) library providing an easy way to interact with the discord API.
 
-## Todo
-- [X] allow users to add/remove single threads
-- [ ] allow users to batch add/remove threads
-- [X] allow users to automatically watch all new threads in forums / text channels
-- [ ] add more filtering options to /batch
-- [ ] ~~allow a toggle to automagically resurrect archived threads when using /auto~~ (not doing this)
-- [X] allow users to automagically watch new forum posts if they fit certain criteria (post flairs)
+<div align="center">
+	<a href="https://threadwatcher.xyz"><img src="https://img.shields.io/badge/Website-informational?style=for-the-badge" alt="support server" /></a>
+	&emsp;
+	<a href="https://discord.com/api/oauth2/authorize?client_id=870715447136366662&permissions=274877973504&scope=bot+applications.commands"><img src="https://img.shields.io/badge/Invite the official bot-informational?style=for-the-badge" alt="support server" /></a>
+	&emsp;
+	<a href="https://discord.gg/793fagUfmr"><img src="https://img.shields.io/badge/Support%20Server-informational?style=for-the-badge" alt="support server" /></a>
+    &emsp;
+    <a href="https://threadwatcher.xyz/donate"><img src="https://img.shields.io/badge/Donations-informational?style=for-the-badge" alt="support server" /></a>
+    <!-- Did I steal this directly from https://github.com/MarcusOtter/discord-needle/blob/main/README.md? Perhaps-->
+</div>
+
+## Docker
+This bot does currently __not__ come with a docker file. This will be added at a later data.
+
+## License
+The code for the bot and website are both licensed under the [MIT license](https://github.com/ffamilyfriendly/Thread-Watcher/blob/main/LICENSE.md).
