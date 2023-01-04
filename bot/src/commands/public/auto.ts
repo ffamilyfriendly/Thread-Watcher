@@ -131,7 +131,7 @@ const auto: Command = {
 
             buildEmbed()
 
-            const listener = ( input: Interaction ) => {
+            const listener = async ( input: Interaction ) => {
                 if(!(input.isButton() || input.isSelectMenu() || input.isModalSubmit())) return
                 const [ type, id ] = input.customId.split("_")
                 if(id !== interaction.id || input.user.id !== interaction.user.id) return
@@ -154,7 +154,7 @@ const auto: Command = {
                     switch(type) {
                         case "submit":
                             interaction.client.removeListener("interactionCreate", listener)
-                            input.update({  embeds: [ buildEmbed(input) ], components: [ ] })
+                            await input.update({  embeds: [ buildEmbed(input) ], components: [ ] })
                             autoAdd()
                         break;
                         case "regex":

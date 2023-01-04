@@ -44,7 +44,12 @@ const config = {
     // this is a list of discord users allowed to use owner only commands (eval and so forth)
     // only add users you 100% trust to this array as it allows them to run code directly on your host via the eval command
     // (the user listed in the config is me, family friendly. I recomend you replace this id with your own)
-    owners: [ "286224826170081290" ]
+    owners: [ "286224826170081290" ],
+    
+    // a server you own.
+    // owner only commands such as eval will be registered on this server
+    devServer: "874566459429355581",
+    devServerInvite: ""
 }
 
 export default config

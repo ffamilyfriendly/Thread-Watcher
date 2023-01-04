@@ -17,15 +17,6 @@ class mysql implements Database {
 
     }
 
-    private promiseWrap(func: QueryFunction, params: string|QueryOptions) {
-        return new Promise((resolve, reject) => {
-            func( params, (err: MysqlError|undefined, res: queryCallback|undefined) => {
-                if(err) reject(err)
-                if(res) resolve(res)
-            } )
-        })
-    }
-
     createTables(): Promise<void> {
         return new Promise((resolve, reject) => {
             this.connection.connect(async (err) => {
@@ -39,22 +30,26 @@ class mysql implements Database {
                         console.error(`[MYSQL] could not create table threads`, err)
                         process.exit(1)
                     }                    
-                })
 
-                this.connection.query(`CREATE TABLE IF NOT EXISTS \`${this.database}\`.\`channels\` (\`id\` VARCHAR(20) NOT NULL, \`server\` VARCHAR(20) NOT NULL, \`regex\` TINYTEXT, \`roles\` TEXT, \`tags\` TEXT);`, (err) => {
-                    if(err) {
-                        console.error(`[MYSQL] could not create table channels`, err)
-                        process.exit(1)
-                    }
+                    this.connection.query(`CREATE TABLE IF NOT EXISTS \`${this.database}\`.\`channels\` (\`id\` VARCHAR(20) NOT NULL, \`server\` VARCHAR(20) NOT NULL, \`regex\` TINYTEXT, \`roles\` TEXT, \`tags\` TEXT);`, (err) => {
+                        if(err) {
+                            console.error(`[MYSQL] could not create table channels`, err)
+                            process.exit(1)
+                        }
+
+                        resolve()
+                    })
                 })
-                //resolve()
             })
         })
     };
 
+
+
     insertChannel( data: ChannelData ): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.connection.query("INSERT INTO channels VALUES(?,?,?,?)", (err) => {
+            const { id, server, regex, roles, tags } = data
+            this.connection.query("INSERT INTO channels VALUES(?,?,?,?,?)", [ id, server, regex, roles.join(","), tags.join(",") ], (err) => {
                 if(err) return reject(err)
                 resolve()
             })
@@ -79,11 +74,36 @@ class mysql implements Database {
         })
     };
 
+        /**
+     * 
+     *             returnArr.push( ...this.db.prepare("SELECT * FROM channels WHERE server = ?").all(guildID).map( item => {
+                let rv: ChannelData = { id: item.id, server: item.server, regex: item?.regex, tags: item?.tags.split(","), roles: item?.roles.split(",") };
+                return rv
+            }) )
+     * 
+     * @param data 
+     * @returns 
+     */
+
     getChannels(guildID: String): Promise<ChannelData[]> {
+
+        type rawChannelData = {
+            id: string,
+            server: string,
+            regex?: string,
+            roles?: string
+            tags?: string
+        }
+
         return new Promise((resolve, reject) => {
-            this.connection.query("SELECT * FROM channels WHERE server = ?", [ guildID ], (err, res) => {
+            let returnArr: ChannelData[] = []
+            this.connection.query("SELECT * FROM channels WHERE server = ?", [ guildID ], (err, res: rawChannelData[]) => {
                 if(err) reject(err)
-                return resolve(res)
+                
+                for(const row of res)
+                    returnArr.push({ id: row.id, server: row.server, regex: row.regex||"", tags: row.tags?.split(",")||[], roles: row.roles?.split(",")||[] })
+
+                return resolve(returnArr)
             })
         })
     };
