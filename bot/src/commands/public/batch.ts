@@ -64,10 +64,10 @@ const batch: Command = {
 
         await interaction.deferReply()
 
-        const threads: ThreadChannel[] = await (parent instanceof CategoryChannel ? getDirThreads(parent) : getThreads(parent))
+        let threads: ThreadChannel[] = await (parent instanceof CategoryChannel ? getDirThreads(parent) : getThreads(parent))
 
         if(reg) {
-            threads.filter(f => regMatch(f.name, reg.regex, reg.inverted))   
+            threads = threads.filter(f => regMatch(f.name, reg.regex, reg.inverted))   
         }
 
         type actionsList = {
