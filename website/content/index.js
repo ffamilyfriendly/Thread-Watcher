@@ -13,8 +13,10 @@ const searchShard = async() => {
     const shard = document.getElementById("search_shard").value
     if(!shard || shard.length > 20 || shard.length < 17 || !shard.match(/^\d+$/gi)) return showError("Not a valid discord guild id")
 
-    const res = await (await fetch(`${API_BASE}/getShard?guild=${shard}`)).json()
-    console.log(res)
+    const catchErr = (e) => {
+        showError(e)
+    }
+    const res = await (await fetch(`${API_BASE}/getShard?guild=${shard}`).catch(catchErr)).json().catch(catchErr)
     if(res && !res.found) return showError(`That guild does not use Thread-Watcher. <a href="https://threadwatcher.xyz/invite">Click here to invite</a>`)
     showError(`Shard found! That guild is on shard <b>${res.shard}</b>`, "success")
 }
