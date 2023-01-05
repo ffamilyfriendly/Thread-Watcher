@@ -46,7 +46,6 @@ const getDirThreads = ( dir: CategoryChannel ): Promise<ThreadChannel[]> => {
 
 const batch: Command = {
     run: async (interaction: ChatInputCommandInteraction, buildBaseEmbed) => {
-
         const parent = interaction.options.getChannel("parent") || interaction.channel
         if(!( (parent instanceof TextChannel) || (parent instanceof NewsChannel) || (parent instanceof ForumChannel) || (parent instanceof CategoryChannel) )) {
             buildBaseEmbed(`Wrong Channel Type`, statusType.error, { description: `<#${parent?.id}> is not a valid channel for this command`, ephermal: true })

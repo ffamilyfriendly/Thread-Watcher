@@ -15,8 +15,14 @@
 
     --primary: #B82ADA;
     --secondary: #1bcddb;
+    --success: lightgreen;
+    --error: red;
 
     --padding: 20%;
+}
+
+a {
+    color: var(--secondary);
 }
 
 html {
@@ -27,6 +33,18 @@ body {
     background-color: var(--background-color);
     color: var(--on-background);
     font-family: 'Poppins', sans-serif;
+}
+
+.error {
+    color: var(--error);
+}
+
+.success {
+    color: var(--success);
+}
+
+.hide {
+    display: none;
 }
 
 .display {
@@ -135,10 +153,15 @@ path {
     fill: white;
 }
 
-icon {
+div[aria-type="icon"] {
     display: inline-block;
     width: 2rem;
     height: 2rem;
+}
+
+div[aria-type="icon"].small {
+    width: 1rem;
+    height: 1rem;
 }
 
 .hero {
@@ -155,7 +178,7 @@ icon {
     gap: 1rem;
 }
 
-.logo > h2 {
+.logo > h1 {
     font-size: 2.5rem;
 }
 
@@ -194,9 +217,47 @@ svg.divider {
     min-height: 5rem;
 }
 
+.searchbar {
+    display: flex;
+    width: 100%;
+    border-radius: 0.2rem;
+    overflow: hidden;
+}
+
+.searchbar > .button {
+    border-radius: 0 0.2rem 0.2rem 0;
+    gap: 0.3rem;
+}
+
+.searchbar > input {
+    background-color: var(--surface);
+    border: 0;
+    color: white;
+    padding: 0.5rem;
+    width: 30%;
+}
+
 footer {
     padding: 2rem;
     text-align: center;
+}
+
+th {
+    background-color: var(--primary);
+}
+
+table {
+    background-color: var(--surface);
+    width: 100%;
+}
+
+td, th {
+    padding: 0.4rem;
+    text-align: center;
+}
+
+tr:nth-child(odd) {
+    background-color: var(--surface);
 }
 
 @media only screen and (max-width: 1500px) {
@@ -228,13 +289,17 @@ footer {
     }
  
     .showcase > .row > img {
-        height: 100%;
+        width: 100%;
         max-width: 100%;
     }
 
 }
 
 @media only screen and (max-width: 600px) {
+
+    .searchbar > input {
+        width: 80%;
+    }
 
     .display.large {
         font-size: 2.5rem;
@@ -244,8 +309,8 @@ footer {
         font-size: 10rem;
     }
 
-    .logo > h2 {
-        font-size: 1.5rem;
+    .logo > h1 {
+        font-size: 2rem !important;
     }
     
     .logo > img {

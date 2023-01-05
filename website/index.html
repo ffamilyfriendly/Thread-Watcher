@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thread-Watcher</title>
+    <title>Thread-Watcher - keep discord threads unarchived</title>
     <link rel="shortcut icon" type="image/png" href="./content/icon.png">
     <link rel="icon" type="image/png" href="./content/icon.png">
     <link rel="stylesheet" href="./content/index.css">
-    <script src="./content/index.js" async></script>
+    <script src="./content/index.js"></script>
 </head>
 <body>
 
@@ -57,7 +57,7 @@
                     Thread-Watcher will always strive to be a bot without any premium or otherwise paywalled features. With that being said; running the bot is not free. If you enjoy the bot and have a buck or two to spare you can find ways to donate below
                 </p>
                 <br>
-                <a href="https://threadwatcher.xyz/donate" class="button large primary"><icon>heart</icon>donate</a>
+                <a href="https://threadwatcher.xyz/donate" class="button large primary"><div aria-type="icon">heart</div>Donate</a>
             </section>
         </div>
     </div>
@@ -75,7 +75,7 @@
                     
                 </p>
                 <br>
-                <a href="https://threadwatcher.xyz/github" class="button large"><icon>github</icon>View Source</a>
+                <a href="https://threadwatcher.xyz/github" class="button large"><div aria-type="icon">github</div>View Source</a>
             </section>
         </div>
     </div>
@@ -83,12 +83,30 @@
 </div>
 <br>
 <svg class="divider" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path class="divider" fill-opacity="1" d="M0,0L48,32C96,64,192,128,288,165.3C384,203,480,213,576,208C672,203,768,181,864,186.7C960,192,1056,224,1152,208C1248,192,1344,128,1392,96L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>
-<div class="bottom padded">
+<div class="bottom stack padded">
+    <div>
+        <h1 class="display gradient" id="shards">Shards</h1>
+        <h2>Find your shard</h2>
+        <div class="searchbar">
+            <input id="search_shard" placeholder="Your servers id" type="text">
+            <a onclick="searchShard()" class="button small primary"><div aria-type="icon" class="small">search</div>find</a>
+        </div>
+        <small id="search_error" class="hide error">Not a valid discord snowflake</small>
+        <br>
+        <table id="shards_table">
+            <tr>
+                <th>Shard</th>
+                <th>status</th>
+                <th>Guild Count</th>
+                <th>Uptime</th>
+            </tr>
+        </table>
+    </div>
 
-    <h1 class="display gradient" id="commands">Contact</h1>
-    If you have any inquiries or need support regarding the bot you can contact me 
-
-
+    <div>
+        <h1 class="display gradient" id="commands">Contact</h1>
+        If you have any inquiries or need support regarding the bot you can contact me 
+    </div>
     <footer>
         Made with ❤ by <a href="https://familyfriendly.xyz"><b>Family Friendly</b></a>
     </footer>

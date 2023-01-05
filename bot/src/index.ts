@@ -3,6 +3,7 @@ import config from "./config"
 import Log75, { LogLevel } from "log75"
 import { AutoPoster } from "topgg-autoposter"
 import registerCommands, { clearCommands } from "./utilities/registerCommands";
+import start from "./web";
 
 const args = process.argv.slice(2)
 if(args.includes("-reg_commands")) {
@@ -35,5 +36,6 @@ manager.on("shardCreate", shard => {
     logger.done(`Shard with id ${shard.id} spawned!`)
 })
 
-
 manager.spawn()
+
+if(config.statsServer.enabled) start(manager, config.statsServer.port)

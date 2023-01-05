@@ -13,10 +13,15 @@
     transition: .2s;
 
     overflow: hidden;
+    cursor: pointer;
 }
 
 .button.primary {
     background-color: var(--primary);
+}
+
+.button.small {
+    padding: 0.5rem;
 }
 
 .button.large {
