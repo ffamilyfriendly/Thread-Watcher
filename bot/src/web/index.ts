@@ -1,5 +1,7 @@
 import { ShardingManager } from "discord.js";
 import express from "express";
+import config from "../config";
+import { DataBases, getDatabase } from "../utilities/database/DatabaseManager";
 import { logger } from "./../index";
 const app = express()
 
@@ -19,21 +21,65 @@ const getStats = async (m: ShardingManager) => {
     return { userCount, shards: res[1] }
 }
 
-export default function start(manager: ShardingManager, port: number) {
+function getTopggVotes(): Promise<number> {
+    return new Promise((resolve, reject) => {
+        fetch(`https://top.gg/api/bots/${config.clientID}`, { headers: [ [ "Authorization", config.tokens.topgg ] ] })
+        .then(res => {
+            res.json()
+                .then(res => {
+                    if(res && res.points && typeof res.points === "number") resolve(res.monthlyPoints)
+                })
+                .catch(e => reject(e))
+        })
+        .catch(e => reject(e))
+    })
+}
+
+export default function start(manager: ShardingManager, port: number, db: DataBases) {
+
+    const database = getDatabase(db)
 
     type statsData = {
         guildCount: number,
         userCount: number
-        shards: { id: number, status: number, ping: number, uptime: number, guilds: number }[]
+        shards: { id: number, status: number, ping: number, uptime: number, guilds: number }[],
+        threads: number,
+        channels: number,
+        votes: number
     }
 
     let stats: statsData = {
         guildCount: 0,
         userCount: 0,
+        threads: 0,
+        channels: 0,
+        votes: 0,
         shards: [ ]
     }
 
+    let timesRan = 0
+
     const statsFunc = () => {
+        if(timesRan % 2 === 0 && config.tokens.topgg.length > 0) {
+            getTopggVotes()
+                .then(r => {
+                    stats.votes = r
+                })
+                .catch(e => {
+                    console.warn(`could not get top.gg votes`, e)
+                })
+        }
+
+        database.getNumberOfThreads()
+            .then(r => {
+                stats.threads = r
+            })
+
+        database.getNumberOfChannels()
+            .then(r => {
+                stats.channels = r
+            })
+
         getStats(manager).then(r => {
             stats.userCount = r.userCount
 
@@ -51,6 +97,7 @@ export default function start(manager: ShardingManager, port: number) {
                 })
             }
         })
+        timesRan += 1
     }
 
     setTimeout(statsFunc, 1000)

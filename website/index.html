@@ -15,10 +15,40 @@
 <div class="top padded">
 
     <div class="hero">
-        <div class="stack mid">
+        <div class="stack mid smallgap">
             <div class="logo">
-                <img src="./content/icon.png">
+                <img loading="eager" src="./content/icon.png">
                 <h1 class="display large">Thread-Watcher</h1>
+            </div>
+            <p id="slogan-idk">
+                Keeping your discord threads archived since 2021
+            </p>
+            <div class="button-row">
+                <a class="button gradient" href="https://threadwatcher.xyz/invite">Invite</a>
+                <a class="button primary" href="https://threadwatcher.xyz/devserver">Support</a>
+            </div>
+        </div>
+    </div>
+    <div class="commands-row">
+        <div class="stats primary">
+            <div aria-type="icon">guild</div>
+            <div class="body">
+                <h1 id="guilds_number">...</h1>
+                <p>servers</p>
+            </div>
+        </div>
+        <div class="stats secondary">
+            <div aria-type="icon">watch</div>
+            <div class="body">
+                <h1 id="threads_number">...</h1>
+                <p>Threads</p>
+            </div>
+        </div>
+        <div onclick="window.open('https://top.gg/bot/870715447136366662/vote', '_blank')" class="stats topgg">
+            <div aria-type="icon">vote</div>
+            <div class="body">
+                <h1 id="votes_number">...</h1>
+                <p>Votes</p>
             </div>
         </div>
     </div>
@@ -30,7 +60,7 @@
     <h1 class="display gradient" id="features">Features</h1>
     <div class="row reversed">
 
-        <img src="https://www.kungahuset.se/images/200.4f523ba817f4470a4bb1247c/1648133828335/160302_HMK_1380x870.jpg" />
+        <img loading="eager" src="./content/feature_1.png" />
 
         <div class="mid">
             <section>
@@ -47,7 +77,7 @@
 
     <div class="row">
 
-        <img src="https://www.kungahuset.se/images/200.4f523ba817f4470a4bb1247c/1648133828335/160302_HMK_1380x870.jpg" />
+        <img loading="lazy" src="./content/feature_2.png" />
 
         <div class="mid">
             <section>
@@ -57,14 +87,14 @@
                     Thread-Watcher will always strive to be a bot without any premium or otherwise paywalled features. With that being said; running the bot is not free. If you enjoy the bot and have a buck or two to spare you can find ways to donate below
                 </p>
                 <br>
-                <a href="https://threadwatcher.xyz/donate" class="button large primary"><div aria-type="icon">heart</div>Donate</a>
+                <a href="#donate" class="button large primary"><div aria-type="icon">heart</div>Donate</a>
             </section>
         </div>
     </div>
 
     <div class="row reversed">
 
-        <img src="https://i.ytimg.com/vi/bScQmbx4Jqk/maxresdefault.jpg" />
+        <img loading="lazy" src="./content/feature_3.png" />
 
         <div class="mid">
             <section>
@@ -104,12 +134,33 @@
     </div>
 
     <div>
-        <h1 class="display gradient" id="commands">Contact</h1>
-        If you have any inquiries or need support regarding the bot you can contact me 
+        <h1 class="display gradient" id="donate">Support The Bot</h1>
+        <h3>Thank you for considering supporting Thread-Watcher</h3>
+        <p>
+            As stated above Thread-Watcher strives to be a bot without any paywalls or other annoyances. However, running the bot is not free. If you enjoy the bot and have a few bucks to spare per month you can <a href="https://ko-fi.com/ffamilyfriendly">subscribe monthly</a> on kofi! You can also do a one time donation by clicking the nifty button in the bottom left of your screen.
+            <br/>
+            Subscribing monthly will give you a hoisted donator role on the <a href="https://threadwatcher.xyz/devserver">support server</a> as well as a shoutout above this section on this page.
+            <br/><br/>
+        </p>
+        <h3>Want to sponsor the project?</h3>
+        <p>
+            If you represtent a company and want to do some sort of a sponsorship deal in exchange for space on this page you can find my contact details <a href="https://familyfriendly.xyz/contact.html">here</a>
+        </p>
     </div>
+
     <footer>
         Made with ❤ by <a href="https://familyfriendly.xyz"><b>Family Friendly</b></a>
     </footer>
+
+    <script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
+    <script>
+        kofiWidgetOverlay.draw('ffamilyfriendly', {
+            'type': 'floating-chat',
+            'floating-chat.donateButton.text': 'Support me',
+            'floating-chat.donateButton.background-color': '#B82ADA',
+            'floating-chat.donateButton.text-color': '#fff'
+        });
+    </script>
 </div>
 </body>
 </html>

@@ -72,6 +72,30 @@ class sqlite implements Database {
         }) 
     };
 
+    getNumberOfThreads(): Promise<number> {
+        return new Promise((resolve, reject) => {
+            const res = this.db.prepare("SELECT COUNT(*) FROM threads;").all()
+
+            let count = res[0]
+            if(count) count = Object.values(res[0])[0]
+            else count = NaN
+
+            resolve(count)
+        })
+    }
+
+    getNumberOfChannels(): Promise<number> {
+        return new Promise((resolve, reject) => {
+            const res = this.db.prepare("SELECT COUNT(*) FROM channels;").all()
+
+            let count = res[0]
+            if(count) count = Object.values(res[0])[0]
+            else count = NaN
+
+            resolve(count)
+        })
+    }
+
 }
 
 export default sqlite

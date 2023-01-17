@@ -38,4 +38,4 @@ manager.on("shardCreate", shard => {
 
 manager.spawn()
 
-if(config.statsServer.enabled) start(manager, config.statsServer.port)
+if(config.statsServer.enabled) start(manager, config.statsServer.port, config.database.type)

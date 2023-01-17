@@ -14,7 +14,6 @@ class mysql implements Database {
         this.connection = createConnection({
             host, user, password, database
         })
-
     }
 
     createTables(): Promise<void> {
@@ -134,6 +133,33 @@ class mysql implements Database {
             })
         })
     };
+
+    getNumberOfThreads(): Promise<number> {
+        return new Promise((resolve, reject) => {
+            this.connection.query("SELECT COUNT(*) FROM threads;", (err, res) => {
+                if(err) reject(err)
+                console.log(res)
+                let count = res[0]
+                if(count) count = Object.values(res[0])[0]
+                else count = NaN
+
+                return resolve(count)
+            })
+        })
+    }
+
+    getNumberOfChannels(): Promise<number> {
+        return new Promise((resolve, reject) => {
+            this.connection.query("SELECT COUNT(*) FROM channels;", (err, res) => {
+                if(err) reject(err)
+                let count = res[0]
+                if(count) count = Object.values(res[0])[0]
+                else count = NaN
+                
+                return resolve(count)
+            })
+        })
+    }
 
 }
 

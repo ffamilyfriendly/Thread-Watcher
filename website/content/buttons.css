@@ -44,6 +44,16 @@
     border-radius: 50%;
 }
 
+.button-row {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+}
+
+.button-row > .button {
+    width: 30%;
+}
+
 @media only screen and (max-width: 600px) {
 
     .button {

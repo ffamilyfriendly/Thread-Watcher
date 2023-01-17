@@ -13,6 +13,12 @@
     <!-- Did I steal this directly from https://github.com/MarcusOtter/discord-needle/blob/main/README.md? Perhaps-->
 </div>
 
+<div align="center">
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/H2H03SLYD)
+
+</div>
+
 ## Docker
 This bot does currently __not__ come with a docker file. This will be added at a later data.
 

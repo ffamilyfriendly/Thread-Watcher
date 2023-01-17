@@ -33,6 +33,7 @@ body {
     background-color: var(--background-color);
     color: var(--on-background);
     font-family: 'Poppins', sans-serif;
+    font-display: swap;
 }
 
 .error {
@@ -48,8 +49,9 @@ body {
 }
 
 .display {
-    font-family: 'Concert One', cursive;
+    font-family: 'Concert One', Copperplate, Papyrus, fantasy;
     font-size: 3rem;
+    font-display: swap;
     color: white;
 }
 
@@ -81,6 +83,17 @@ p.large {
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#ff00e1",endColorstr="#00ffff",GradientType=1); 
     background-clip: text;
     -webkit-text-fill-color: transparent;
+}
+
+.button.gradient {
+    background: rgb(255,0,225);
+    background: -moz-linear-gradient(86deg, rgba(255,0,225,1) 19%, rgba(0,255,255,1) 75%);
+    background: -webkit-linear-gradient(86deg, rgba(255,0,225,1) 19%, rgba(0,255,255,1) 75%);
+    background: linear-gradient(86deg, rgba(255,0,225,1) 19%, rgba(0,255,255,1) 75%);
+    color: white;
+    filter: none;
+    background-clip: 0;
+    -webkit-text-fill-color: initial;
 }
 
 .section {
@@ -142,6 +155,10 @@ div.stack {
     justify-content: center;
     flex-direction: column;
     gap: 5rem;
+}
+
+div.stack.smallgap {
+    gap: 1rem;
 }
 
 div.mid {
@@ -208,7 +225,8 @@ svg.divider {
 .commands-row {
     display: flex;
     width: 100%;
-    justify-content: space-between;
+    justify-content: center;
+    gap: 1rem;
 }
 
 .bottom {
@@ -260,6 +278,47 @@ tr:nth-child(odd) {
     background-color: var(--surface);
 }
 
+#slogan-idk {
+    font-size: 1.5rem;
+}
+
+.stats.primary {
+    --stats_bg: var(--primary);
+}
+
+.stats.secondary {
+    --stats_bg: var(--secondary);
+}
+
+.stats.surface {
+    --stats_bg: var(--surface);
+}
+
+.stats.topgg {
+    --stats_bg: #FF3366;
+    cursor: pointer;
+}
+
+.stats {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.0rem 0.5rem 0.0rem 0.5rem;
+    background-color: var(--stats_bg);
+    gap: 1rem;
+    border-radius: 0.5rem;
+}
+
+.stats > div[aria-type="icon"] {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.stats > .body {
+    padding: 1rem;
+}
+
 @media only screen and (max-width: 1500px) {
 
     .showcase > .row > .mid > section {
@@ -273,6 +332,18 @@ tr:nth-child(odd) {
 }
 
 @media only screen and (max-width: 1150px) {
+    .stats {
+        padding: 0.0rem 0.2rem 0.0rem 0.2rem;
+        gap: 0.2rem;
+    }
+    
+    .stats > .body {
+        padding: 0.2rem;
+    }
+
+    #slogan-idk {
+        font-size: 1rem;
+    }
 
     .showcase > .row {
         gap: 0;
