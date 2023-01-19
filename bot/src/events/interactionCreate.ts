@@ -24,10 +24,14 @@ const handleCommands = (interaction: ChatInputCommandInteraction) => {
 
         if(misc?.noSend) return e
 
-        if(interaction.replied || interaction.deferred) {
-            interaction.editReply({ embeds: [ e ], components: [ ...(misc?.components || [ ]) ] })
-        } else {
-            interaction.reply({ embeds: [ e ], components: [ ...(misc?.components || [ ]) ], ephemeral: ephemeral ? true : false })
+        try {
+            if(interaction.replied || interaction.deferred) {
+                interaction.editReply({ embeds: [ e ], components: [ ...(misc?.components || [ ]) ] })
+            } else {
+                interaction.reply({ embeds: [ e ], components: [ ...(misc?.components || [ ]) ], ephemeral: ephemeral ? true : false })
+            }
+        } catch(err) {
+            logger.error("buildBaseEmbed failed", err)
         }
 
         return e
