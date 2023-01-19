@@ -31,6 +31,8 @@ const run = () => {
         // if thread is archived and unarchivable we will unarchive the thread
         if(thread.archived && thread.unarchivable) {
             setArchive(thread)
+        } else {
+            if(thread?.autoArchiveDuration) db.updateDueArchive(thread.id, thread.autoArchiveDuration)
         }
         threadsProcessed += 1
     })
