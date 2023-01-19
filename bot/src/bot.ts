@@ -4,6 +4,7 @@ import Log75, { LogLevel } from "log75"
 import loadEvents from "./utilities/loadEvents"
 import loadCommands from "./utilities/loadCommands"
 import { getDatabase } from "./utilities/database/DatabaseManager"
+import registerCommands from "./utilities/registerCommands";
 import { ReturnData } from "./interfaces/database"
 const logger = new Log75(LogLevel.Debug, { color: true })
 
@@ -18,6 +19,13 @@ loadEvents(client)
 const commands = loadCommands()
 
 const threads = new Map<string, ReturnData>();
+
+// reg commands
+
+const args = process.argv
+if(args.includes("-reg_commands")) {
+    registerCommands(!args.includes("-local"))
+}
 
 export { client, logger, commands, db, threads }
 

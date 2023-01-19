@@ -48,7 +48,7 @@ const run = () => {
         }, "info")
     }
 
-    if(queue.length !== 0) setTimeout(run, 1000/20)
+    if(queue.length !== 0) setTimeout(run, 1000/50)
     else {
         running = false
         logger.done(`[ensureThread/run] queue empty. Runtime: ${elapsedTime()} minutes`)
