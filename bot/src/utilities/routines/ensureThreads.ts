@@ -1,4 +1,4 @@
-import { client, logger } from "../../bot";
+import { client, db, logger } from "../../bot";
 import { ThreadData } from "../../interfaces/database";
 import { setArchive } from "../threadActions";
 
@@ -35,7 +35,11 @@ const run = () => {
         threadsProcessed += 1
     })
     .catch(e => {
-        logger.error(`[ensureThread/run] issue with thread ${t.id}:\n${e.toString()}`)
+        
+        const eString: string = e.toString()
+        // If permissions error on thread we set its dueUpdate time to the max so it does not waste our ratelimits
+        if(eString.includes("Missing Access") || eString.includes("Unknown Channel")) db.updateDueArchive(t.id, 2147483645)
+        logger.error(`[ensureThread/run] issue with thread ${t.id}:\n${eString}`)
     })
 
     // every 1000 threads we will display an info table. This makes it really fun to watch during the startup routine and has no real function
@@ -44,11 +48,11 @@ const run = () => {
             "queue length": queue.length,
             "threads processed": threadsProcessed,
             "time elapsed": `${elapsedTime().toFixed(2)}m`,
-            "time left": `${(( queue.length * 1000/20) / 1000 ).toFixed(2)}s`
+            "time left": `${(( queue.length * 1000/6) / 1000 ).toFixed(2)}s`
         }, "info")
     }
 
-    if(queue.length !== 0) setTimeout(run, 1000/50)
+    if(queue.length !== 0) setTimeout(run, 1000/6)
     else {
         running = false
         logger.done(`[ensureThread/run] queue empty. Runtime: ${elapsedTime()} minutes`)
