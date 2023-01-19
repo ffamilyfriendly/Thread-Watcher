@@ -20,7 +20,7 @@ if(args.includes("-clear_commands")) {
 }
 
 const logger = new Log75(LogLevel.Debug, { color: true })
-const manager = new ShardingManager("./dist/bot.js", { token: config.tokens.discord, execArgv:  args  })
+const manager = new ShardingManager("./dist/bot.js", { token: config.tokens.discord, shardArgs:  args  })
 
 export { logger }
 
