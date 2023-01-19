@@ -35,12 +35,11 @@ const run = () => {
         threadsProcessed += 1
     })
     .catch(e => {
-        logger.error(`[ensureThread/run] issue with thread ${t.id}:\n${e.toString()} (dump below)`)
-        console.error(e)
+        logger.error(`[ensureThread/run] issue with thread ${t.id}:\n${e.toString()}`)
     })
 
-    // every 100 threads we will display an info table. This makes it really fun to watch during the startup routine and has no real function
-    if(threadsProcessed % 100 === 0) {
+    // every 1000 threads we will display an info table. This makes it really fun to watch during the startup routine and has no real function
+    if(threadsProcessed % 1000 === 0) {
         logger.table({
             "queue length": queue.length,
             "threads processed": threadsProcessed,

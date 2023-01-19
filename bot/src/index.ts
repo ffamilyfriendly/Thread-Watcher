@@ -32,10 +32,24 @@ if(config.tokens.topgg) {
     AutoPoster(config.tokens.topgg, manager)
 }
 
+const webserver = () => {
+    if(config.statsServer.enabled) start(manager, config.statsServer.port, config.database.type)
+}
+
+let timeOut = setTimeout(() => { }, 100000);
+
 manager.on("shardCreate", shard => {
+    if(timeOut) clearTimeout(timeOut)
     logger.done(`Shard with id ${shard.id} spawned!`)
+
+    timeOut = setTimeout(webserver, 1000 * 20)
 })
 
 manager.spawn()
-
-if(config.statsServer.enabled) start(manager, config.statsServer.port, config.database.type)
+    .then(() => {
+        logger.debug("Shard Manager spawned!")
+    })
+    .catch(e => {
+        logger.error("Failed to spawn Shard Manager. (dump below)")
+        console.error(e)
+    })
