@@ -56,6 +56,9 @@ export default async function(thread: ThreadChannel) {
     if(await threadShouldBeWatched(auto, thread)) {
         logger.info(`Automatically adding thread "${thread.id}" in ${thread.guildId}`)
         addThread(thread.id, dueArchiveTimestamp(thread.autoArchiveDuration||0), thread.guildId)
+            .catch(err => {
+                logger.error(`could not add thread "${thread.id}" in ${thread.guildId}: ${err.toString()}`)
+            })
     } else {
         logger.info(`Not adding thread "${thread.id}" in ${thread.guildId} as filters prevent it`)
     }
