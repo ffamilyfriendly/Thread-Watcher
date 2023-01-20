@@ -81,8 +81,7 @@ export default function ensureThreads( threads: ThreadData[] ) {
 export function getPossiblyArchivedThreads( threads: ThreadData[] ) {
     let MaybeArchived: ThreadData[] = []
     for( const thread of threads ) {
-        const delta = thread.dueArchive - (Date.now()/1000)
-        if(delta < 0) MaybeArchived.push(thread)
+        if(thread.dueArchive < (Date.now()/1000)) MaybeArchived.push(thread)
     }
     return MaybeArchived
 }

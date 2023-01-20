@@ -15,6 +15,9 @@ export default async function(oldThread: ThreadChannel, newThread: ThreadChannel
             if(!isWatched) {
                 logger.info(`Automatically adding thread "${newThread.id}" in ${newThread.guildId} (TU)`)
                 addThread(newThread.id, dueArchiveTimestamp(newThread.autoArchiveDuration||0), newThread.guildId)
+                .catch(err => {
+                    logger.error(`could not add thread "${newThread.id}" in ${newThread.guildId}: ${err.toString()}`)
+                })
             }
         } else {
             if(isWatched) {
