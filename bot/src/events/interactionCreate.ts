@@ -31,7 +31,8 @@ const handleCommands = (interaction: ChatInputCommandInteraction) => {
                 interaction.reply({ embeds: [ e ], components: [ ...(misc?.components || [ ]) ], ephemeral: ephemeral ? true : false })
             }
         } catch(err) {
-            logger.error("buildBaseEmbed failed", err)
+            logger.error("buildBaseEmbed failed (dump below)")
+            console.error(err)
         }
 
         return e

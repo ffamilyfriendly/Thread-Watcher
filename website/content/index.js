@@ -79,10 +79,13 @@ const handleStats = async () => {
             const DAYS_DIV = t / 1000 / 60 / 60 / 24
             const HOURS_DIV = t / 1000 / 60 / 60
             const MINUTES_DIV = t / 1000 / 60
+            let str = ""
 
-            if(Math.floor(DAYS_DIV) !== 0) return `${DAYS_DIV.toFixed(1)} days`
-            else if (Math.floor(HOURS_DIV) !== 0) `${HOURS_DIV.toFixed(1)} hours`
-            else return `${MINUTES_DIV.toFixed(1)} minutes`
+            if(Math.floor(DAYS_DIV) !== 0) str = `${DAYS_DIV.toFixed(1)} days`
+            else if (Math.floor(HOURS_DIV) !== 0) str = `${HOURS_DIV.toFixed(1)} hours`
+            else str = `${MINUTES_DIV.toFixed(1)} minutes`
+
+            return str
         }
 
         /**

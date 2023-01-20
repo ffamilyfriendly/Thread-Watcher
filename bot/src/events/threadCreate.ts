@@ -18,6 +18,8 @@ export function threadShouldBeWatched(auto: ChannelData, thread: ThreadChannel) 
         const reg = auto.regex.length != 0 ? strToRegex(auto.regex) : false
         let passes = true
 
+        if(thread.locked) resolve(false)
+
         if(auto.roles && auto.roles.length !== 0) {
             let rolePasses = false
             for(const role of auto.roles) {
