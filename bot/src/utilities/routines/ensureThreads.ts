@@ -31,6 +31,13 @@ const run = () => {
         // if thread is archived and unarchivable we will unarchive the thread
         if(thread.archived && thread.unarchivable && !thread.locked) {
             setArchive(thread)
+            .catch(e => {
+                const eString: string = e.toString()
+                if(eString.includes("Maximum number")) {
+                    queue = queue.filter(i => i.server !== thread.guildId)
+                }
+                logger.error(`[ensureThread/run] could not un-archive ${t.id}:\n${eString}`)
+            })
         } else {
             if(thread?.autoArchiveDuration) db.updateDueArchive(thread.id, thread.autoArchiveDuration)
         }

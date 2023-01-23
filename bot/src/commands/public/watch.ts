@@ -34,7 +34,8 @@ const watch: Command = {
                 if(thread.archived && canBeUnarchived) {
                     setArchive(thread)
                 }
-                if(canBeUnarchived) {
+
+                if(canBeUnarchived || ( !canBeUnarchived && !thread.archived )) {
                     buildBaseEmbed(`Watched thread`, statusType.success, { showAuthor: true, description: `Bot will keep <#${thread.id}> active` })
                 } else {
                     buildBaseEmbed(`Watched thread but...`, statusType.warning, { showAuthor: true, description: `Bot has added <#${thread.id}> to the watchlist.\n\nHowever, the thread will __**NOT**__ be kept active as the bot has insufficient permissions for the thread` })

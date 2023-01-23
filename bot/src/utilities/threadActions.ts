@@ -7,7 +7,8 @@ export function dueArchiveTimestamp(dueArchive: number): Number {
 
 export function setArchive(thread: ThreadChannel, dueArchive: number = 10_080) {
     return new Promise((resolve, reject) => {
-        if(thread.locked) resolve()
+        if(thread.locked) resolve(null);
+
         thread.setArchived(false)
             .then(() => {
                 let DArchive = thread.autoArchiveDuration
