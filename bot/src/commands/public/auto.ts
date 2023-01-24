@@ -2,8 +2,21 @@ import { ChatInputCommandInteraction, PermissionFlagsBits, ModalBuilder, SlashCo
 import { addThread, dueArchiveTimestamp, removeThread } from "../../utilities/threadActions";
 import { Command, statusType } from "../../interfaces/command";
 import { db, threads } from "../../bot";
-import { ButtonBuilder } from "@discordjs/builders";
+import { ButtonBuilder, StringSelectMenuBuilder } from "@discordjs/builders";
 import { validRegex } from "../../utilities/regex";
+
+interface nButton {
+    button: ButtonBuilder,
+    onClick: (interaction: ButtonInteraction) => void
+}
+
+type buttonOptions = {
+    label: string,
+    style?: ButtonStyle,
+    disabled?: boolean
+}
+
+
 
 const auto: Command = {
     run: async (interaction: ChatInputCommandInteraction, buildBaseEmbed) => {
@@ -11,6 +24,27 @@ const auto: Command = {
         const advanced = interaction.options.getBoolean("advanced") || false
 
         if(!channel) return
+
+        let rButtons = new Map<string, nButton>()
+        function gButton(btn: buttonOptions, callback: (int: ButtonInteraction) => void, ): nButton {
+            
+            const id = `${(Buffer.from(btn.label + Date.now()).toString("base64") )}`
+
+            const b = new ButtonBuilder()
+                .setCustomId(`${id}_${interaction.id}`)
+                .setLabel(btn.label)
+                .setStyle(btn.style || ButtonStyle.Primary)
+                .setDisabled(btn.disabled ?? false)
+
+            const rv = {
+                button: b,
+                onClick: callback
+            }
+
+            rButtons.set(id, rv)
+
+            return rv
+        }
         
         //await interaction.deferReply()
 
@@ -54,63 +88,143 @@ const auto: Command = {
 
             let components: any[] = [ ]
 
-            const flairSelectRow = new ActionRowBuilder<SelectMenuBuilder>()
-
             const word = channel.type === 15 ? "posts" : "threads"
-
-            if(channel.type === 15) {
-
-                const options: { label: string, description: string, value: string }[] = channel.availableTags.map( tag => {
-                    return { label: tag.name, description: `Watch posts with the tag ${tag.name}`, value: tag.id }
-                } )
-
-                const selectFlairs = new SelectMenuBuilder()
-                    .setCustomId(`flairselect_${interaction.id}`)
-                    .setPlaceholder("Select Tags")
-                    .addOptions( ...options )
-                    .setMinValues(0)
-                    .setMaxValues(options.length)
-                    flairSelectRow.addComponents(selectFlairs)
-                    components.push(flairSelectRow)
-            }
 
             if(!interaction.guild) return
 
-            const roleSelectRow = new ActionRowBuilder<SelectMenuBuilder>()
+            
 
-            const options: { label: string, description: string, value: string }[] = interaction.guild.roles.cache.map(r => {
+            type roleOption = { label: string, description: string, value: string }
+
+            const roleOptions: roleOption[] = interaction.guild.roles.cache.map(r => {
                 return { label: `${r.name}`, description: `watch post if user has this role`, value: r.id }
             })
 
-            const selectRoles = new SelectMenuBuilder()
-                .setCustomId(`roleselect_${interaction.id}`)
-                .setPlaceholder("Select Roles")
-                .addOptions( ...options )
-                .setMinValues(0)
-                .setMaxValues(options.length)
-                roleSelectRow.addComponents(selectRoles)
-            components.push(roleSelectRow)
+            let roleNavIndex = 0
+            const roleOptionChunks: roleOption[][] = []
+            for(let i = 0; i < roleOptions.length; i++) {
+                const index = Math.floor(i / 25)
+                if(!roleOptionChunks[index]) roleOptionChunks[index] = [ ]
+                roleOptionChunks[index].push(roleOptions[i])
+            }
 
-            const buttonRow = new ActionRowBuilder()
+            const getSelectTags = () => {
+                const flairSelectRow = new ActionRowBuilder<SelectMenuBuilder>()
+                if(channel.type === 15) {
 
-            const submitButton = new ButtonBuilder()
-                .setCustomId(`submit_${interaction.id}`)
-                .setStyle(ButtonStyle.Primary)
-                .setLabel("Save")
-            const regexButton = new ButtonBuilder()
-                .setCustomId(`regex_${interaction.id}`)
-                .setStyle(ButtonStyle.Secondary)
-                .setLabel("Set regex")
-            const cancelButton = new ButtonBuilder()
-                .setCustomId(`cancel_${interaction.id}`)
-                .setStyle(ButtonStyle.Danger)
-                .setLabel("cancel")
+                    const options: { label: string, description: string, value: string }[] = channel.availableTags.map( tag => {
+                        return { label: tag.name, description: `Watch posts with the tag ${tag.name}`, value: tag.id }
+                    } )
+    
+                    const selectFlairs = new StringSelectMenuBuilder()
+                        .setCustomId(`flairselect_${interaction.id}`)
+                        .setPlaceholder("Select Tags")
+                        .addOptions( ...options )
+                        .setMinValues(0)
+                        .setMaxValues(options.length)
+                        flairSelectRow.addComponents(selectFlairs)
+                    components.push(flairSelectRow)
+                }
+            }
 
-            buttonRow.addComponents( submitButton, regexButton, cancelButton )
-            components.push(buttonRow)
+            const getSelectRoles = (index: number) => {
+                if(!interaction.guild) return
+
+                const roleSelectRow = new ActionRowBuilder<SelectMenuBuilder>()
+
+
+                const selectRoles = new StringSelectMenuBuilder()
+                    .setCustomId(`roleselect_${interaction.id}`)
+                    .setPlaceholder(`Select roles${ roleNavIndex !== 0 ? ` (Page ${roleNavIndex + 1})` : "" }`)
+                    .addOptions( ...roleOptionChunks[index] )
+                    .setMinValues(0)
+                    .setMaxValues(roleOptionChunks[index].length)
+                roleSelectRow.setComponents(selectRoles)
+
+                components.push(roleSelectRow)
+            }
+
+            const getRoleNavigationButtons = () => {
+                const roleNavRow = new ActionRowBuilder()
+                let btnList = [ ]
+
+                if(roleOptionChunks.length > 1) {
+                    const backButton = gButton({ label: "back", disabled: roleNavIndex === 0 }, async (int) => {
+                        roleNavIndex = Math.max(0, roleNavIndex - 1)
+                        getSelectRoles(roleNavIndex)
+                        await int.update({ embeds: [buildEmbed()] })
+                    })
+    
+                    const forwardsButton = gButton({ label: "forwards", disabled: roleNavIndex === (roleOptionChunks.length-1) } , async (int) => {
+                        roleNavIndex = Math.min(roleOptionChunks.length-1, roleNavIndex + 1)
+                        getSelectRoles(roleNavIndex)
+                        await int.update({ embeds: [buildEmbed()] })
+                    })
+
+                    btnList.push( backButton.button, forwardsButton.button )
+                }
+
+                if(filters.roles.length !== 0) {
+                    const clearFiltersButton = gButton({ label: "Clear Roles", style: ButtonStyle.Danger, disabled: false }, async (int) => {
+                        filters.roles = [ ]
+                        await int.update({ embeds: [buildEmbed()] })
+                    })
+                    btnList.push( clearFiltersButton.button )
+                }
+                roleNavRow.setComponents(btnList)
+
+                if(roleNavRow.components.length !== 0) components.push(roleNavRow)
+            }
+
+            const getAdvancedButtons = () => {
+                const buttonRow = new ActionRowBuilder()
+            
+                const saveButton = gButton({ label: "Save" }, async (int) => {
+                    interaction.client.removeListener("interactionCreate", listener)
+                    await int.update({  embeds: [ buildEmbed(int) ], components: [ ] })
+                    autoAdd()
+                })
+
+                const regexButton = gButton({ label: filters.regex ? "Clear Regex" : "Set Regex", style: ButtonStyle.Secondary }, async (int) => {
+                    if(filters.regex) {
+                        filters.regex = ""
+                        await int.update({  embeds: [ buildEmbed() ] })
+                    } else {
+                        const modal = new ModalBuilder()
+                            .setCustomId(`modal_${interaction.id}`)
+                            .setTitle("Enter Regex")
+                        const regexText = new TextInputBuilder()
+                            .setCustomId(`regex_${interaction.id}`)
+                            .setLabel("regex")
+                            .setStyle(TextInputStyle.Short)
+                            .setRequired(true)
+                        modal.addComponents( new ActionRowBuilder<TextInputBuilder>().addComponents( regexText ) )
+                        int.showModal(modal)
+                    }
+                })
+
+                const cancelButton = gButton({ label: "Cancel", style: ButtonStyle.Danger }, async (int) => {
+                    interaction.client.removeListener("interactionCreate", listener)
+                    int.reply({ content: "cancelled", ephemeral: true })
+                    interaction.fetchReply()
+                        .then(m => m.deletable ? m.delete() : null)
+                })
+
+                buttonRow.addComponents( saveButton.button, regexButton.button, cancelButton.button )
+                components.push(buttonRow)
+            }
+
+            const getComponents = () => {
+                components = []
+                getSelectTags()
+                getSelectRoles(roleNavIndex)
+                getAdvancedButtons()
+                getRoleNavigationButtons()
+            }
 
             const buildEmbed = (input?: SelectMenuInteraction | ChatInputCommandInteraction | ButtonInteraction | ModalSubmitInteraction) => {
 
+                getComponents()
                 const i_have_aids = (emoji: GuildForumTagEmoji) => {
                     if(!emoji.id) return emoji.name
                     else return `<:${emoji.name}:${emoji.id}>`
@@ -132,11 +246,11 @@ const auto: Command = {
             buildEmbed()
 
             const listener = async ( input: Interaction ) => {
-                if(!(input.isButton() || input.isSelectMenu() || input.isModalSubmit())) return
+                if(!(input.isButton() || input.isStringSelectMenu() || input.isModalSubmit())) return
                 const [ type, id ] = input.customId.split("_")
                 if(id !== interaction.id || input.user.id !== interaction.user.id) return
 
-                if(input.isSelectMenu()) {
+                if(input.isStringSelectMenu()) {
                     switch(type) {
                         case "flairselect":
                             if((channel instanceof ForumChannel)) {
@@ -144,40 +258,13 @@ const auto: Command = {
                             }
                         break;
                         case "roleselect":
-                            filters.roles = input.values.map(i => interaction.guild?.roles.cache.get(i))
+                            filters.roles.push(...input.values.map(i => interaction.guild?.roles.cache.get(i)).filter(r => !filters.roles.includes(r)) )
                         break;
                     }
 
-                    input.update({  embeds: [ buildEmbed(input) ] })
+                    input.update({  embeds: [ buildEmbed() ] })
                 }
-                if(input.isButton()) {
-                    switch(type) {
-                        case "submit":
-                            interaction.client.removeListener("interactionCreate", listener)
-                            await input.update({  embeds: [ buildEmbed(input) ], components: [ ] })
-                            autoAdd()
-                        break;
-                        case "regex":
-                            const modal = new ModalBuilder()
-                                .setCustomId(`modal_${interaction.id}`)
-                                .setTitle("Enter Regex")
-                            const regexText = new TextInputBuilder()
-                                .setCustomId(`regex_${interaction.id}`)
-                                .setLabel("regex")
-                                .setStyle(TextInputStyle.Short)
-                                .setRequired(true)
-                            modal.addComponents( new ActionRowBuilder<TextInputBuilder>().addComponents( regexText ) )
-
-                            input.showModal(modal)
-                        break;
-                        case "cancel":
-                            interaction.client.removeListener("interactionCreate", listener)
-                            input.reply({ content: "cancelled", ephemeral: true })
-                            interaction.fetchReply()
-                                .then(m => m.deletable ? m.delete() : null)
-                        break;
-                    }
-                }
+                if(input.isButton() && rButtons.has(type)) rButtons.get(type)?.onClick(input)
 
                 if(input.isModalSubmit()) {
                     const regex = input.fields.getTextInputValue(`regex_${interaction.id}`)

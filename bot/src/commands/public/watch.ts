@@ -28,17 +28,14 @@ const watch: Command = {
         } else {
             addThread(thread.id, dueArchiveTimestamp(thread.autoArchiveDuration||0), interaction.guildId||"")
             .then(() => {
-
-                const canBeUnarchived = thread.unarchivable
-
-                if(thread.archived && canBeUnarchived) {
-                    setArchive(thread)
-                }
-
-                if(canBeUnarchived || ( !canBeUnarchived && !thread.archived )) {
+                if(!thread.archived || thread.unarchivable) {
                     buildBaseEmbed(`Watched thread`, statusType.success, { showAuthor: true, description: `Bot will keep <#${thread.id}> active` })
                 } else {
                     buildBaseEmbed(`Watched thread but...`, statusType.warning, { showAuthor: true, description: `Bot has added <#${thread.id}> to the watchlist.\n\nHowever, the thread will __**NOT**__ be kept active as the bot has insufficient permissions for the thread` })
+                }
+
+                if(thread.archived && thread.unarchivable) {
+                    setArchive(thread)
                 }
             })
             .catch(() => {

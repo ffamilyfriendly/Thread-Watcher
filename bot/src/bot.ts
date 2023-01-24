@@ -34,3 +34,9 @@ client.login(config.tokens.discord)
     logger.error(`Could not authorise bot. ${err.toString()}`)
     process.exit(1)
 })
+
+process.on("uncaughtException", (err) => {
+    logger.error(`[FATAL ERROR] shard ${client.shard?.ids[0]} encountered a fatal error. (dump below)`)
+    console.error(err)
+    process.exit(1)
+})
