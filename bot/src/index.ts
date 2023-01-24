@@ -50,3 +50,10 @@ manager.spawn()
         logger.error("Failed to spawn Shard Manager. (dump below)")
         console.error(e)
     })
+
+const killChildren = () => {
+    manager.shards.forEach(s => s.kill())
+}
+
+process.on("SIGABRT", killChildren)
+process.on("SIGINT", killChildren)
