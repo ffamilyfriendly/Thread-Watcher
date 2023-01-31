@@ -6,7 +6,23 @@ import loadCommands from "./utilities/loadCommands"
 import { getDatabase } from "./utilities/database/DatabaseManager"
 import registerCommands from "./utilities/registerCommands";
 import { ReturnData } from "./interfaces/database"
-const logger = new Log75(LogLevel.Debug, { color: true })
+import { red, green, yellow } from "ansi-colors"
+
+class log76 extends Log75 {
+    error(s: string) {
+        super.print(s, `${client.shard?.ids[0]} ERR`, red, console.error)
+    }
+
+    done(s: string) {
+        super.print(s, `${client.shard?.ids[0]} OK`, green, console.log)
+    }
+
+    warn(s: string) {
+        super.print(s, `${client.shard?.ids[0]} WARN`, yellow, console.warn)
+    }
+}
+
+const logger = new log76(LogLevel.Debug, { color: true })
 
 const db = getDatabase(config.database.type)
 db.createTables()

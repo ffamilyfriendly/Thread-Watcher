@@ -1,6 +1,6 @@
 import { client, db, logger } from "../../bot";
 import { ThreadData } from "../../interfaces/database";
-import { setArchive } from "../threadActions";
+import { calcNextUnarchive, setArchive } from "../threadActions";
 
 /**
  * Hey there im past John and I coded this shit. Does it work well for 5 guilds? yep. Does it work well for 4000 guilds? fuck if i know
@@ -39,7 +39,7 @@ const run = () => {
                 logger.error(`[ensureThread/run] could not un-archive ${t.id}:\n${eString}`)
             })
         } else {
-            if(thread?.autoArchiveDuration) db.updateDueArchive(thread.id, thread.autoArchiveDuration)
+            if(thread?.autoArchiveDuration) db.updateDueArchive(thread.id, Number(calcNextUnarchive(thread)))
         }
         threadsProcessed += 1
     })

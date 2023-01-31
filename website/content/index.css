@@ -319,6 +319,19 @@ tr:nth-child(odd) {
     padding: 1rem;
 }
 
+.legal-container {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.legal {
+    background-color: var(--surface);
+    padding: 2rem;
+    max-width: 70ch;
+}
+
 @media only screen and (max-width: 1500px) {
 
     .showcase > .row > .mid > section {

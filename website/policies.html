@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thread-Watcher</title>
+    <link rel="shortcut icon" type="image/png" href="./content/icon.png">
+    <link rel="icon" type="image/png" href="./content/icon.png">
+    <link rel="stylesheet" href="./content/index.css">
+
+    <script src="./content/index.js" async></script>
+</head>
+<body>
+    <div class="legal-container">
+        <div class="legal">
+            <div>
+                <h1 id="privacy" class="display gradient">Privacy Policy</h1>
+                <small><b>TLDR:</b> The bot does not store any message data, user related data, or PPI. To remove data simply use the bot to un-watch or un-auto channels or threads.</small>
+                <br/><br/>
+                <section>
+                    <h2>Data Stored</h2>
+                    <h3>In the Database</h3>
+                    <table id="shards_table">
+                        <tr>
+                            <th>key</th>
+                            <th>explanation</th>
+                        </tr>
+                        <tr>
+                            <td>*generic.id</td>
+                            <td>the <a href="https://en.wikipedia.org/wiki/Snowflake_ID">snowflake</a> of a watched object</td>
+                        </tr>
+                        <tr>
+                            <td>*generic.server</td>
+                            <td>the snowflake of the guild the object was watched in</td>
+                        </tr>
+                        <tr>
+                            <td>thread.dueArchive</td>
+                            <td>a timestamp in seconds of when the thread will be archived automatically</td>
+                        </tr>
+                        <tr>
+                            <td>channel.regex</td>
+                            <td>a string representation of the regex, if set, that is used to filter threads</td>
+                        </tr>
+                        <tr>
+                            <td>channel.roles</td>
+                            <td>a list in <a href="https://en.wikipedia.org/wiki/Comma-separated_values">CSV</a> form that contains the roles needed for a thread to be watched, if set</td>
+                        </tr>
+                        <tr>
+                            <td>channel.tags</td>
+                            <td>a list in CSV form that contains the tags needed for a forum post to be watched, if set</td>
+                        </tr>
+                    </table>
+                    <small>* generic is data that is identical on both thread and channel entries </small>
+
+                    <h3>In Logs</h3>
+                    <p>Logs may contain thread snowflakes, and guild snowflakes. These logs are instrumental when locating and patching bugs. The logs are accesible by the maintainer(s) only.</p>
+
+                    <h2>Removal of Data</h2>
+                    <p>You can manually remove data by using the /auto or /watch command again targeting the object you want removed from the database. In the event that you want all data removed from the bot you can do so by contacting me <a href="https://threadwatcher.xyz/devserver">in discord</a> or via email to me(at)familyfriendly.xyz.</p>
+                </section>
+                <p><b>Last updated:</b> 2023-01-31</p>
+            </div>
+    
+            <div>
+                <h1 id="terms" class="display gradient">Terms Of Service</h1>
+                <small><b>TLDR:</b> do not intentionally harm function of the bot, do not use the bot to break discord guidelines or laws, and you acknowledge that the service may cease at any time without warning</small>
+                <br/><br/>
+                <section>
+                    <p>By inviting Thread-Watcher to your discord server you agree that you have read, understood, and accepted these terms as well as the privacy policy. The terms herein apply to the official hosted instance of Thread-Watcher with the snowflake 870715447136366662. For the terms pertaining to the open source project you may find those <a href="https://github.com/ffamilyfriendly/Thread-Watcher/blob/main/LICENSE.md">here</a>.</p>
+                    <h2>Availability</h2>
+                    <ul>
+                        <li>User data may be deleted at any time.</li>
+                        <li>The bot may cease operation at any time. With or without warning.</li>
+                        <li>The bot may, for whatever reason, have periods of specified or un-specified downtime.</li>
+                        <li>Your access to the bot may partially or fully restricted without any warning or reason.</li>
+                    </ul>
+                    <h2>Usage of the bot</h2>
+                    <ul>
+                        <li>You may not use the bot in a fashion that restricts functionality for other users. This includes but is not limited to taking advantage of vulnerabilities, or overloading the bot.</li>
+                        <li>You may only use the bot in a fashion that aligns with <a href="https://discord.com/terms">discords terms of service</a> and local laws.</li>
+                    </ul>
+                </section>
+                <p><b>Last updated:</b> 2023-01-31</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -5,6 +5,11 @@ export function dueArchiveTimestamp(dueArchive: number): Number {
     return (Date.now() / 1000) + (dueArchive * 60)
 }
 
+export function calcNextUnarchive(thread: ThreadChannel) {
+    if(!thread) return
+    return ((thread.archivedAt?.getTime()||0) / 1000) + ((thread.autoArchiveDuration||0) * 60)
+}
+
 export function setArchive(thread: ThreadChannel, dueArchive: number = 10_080) {
     return new Promise((resolve, reject) => {
         if(thread.locked) resolve(null);
