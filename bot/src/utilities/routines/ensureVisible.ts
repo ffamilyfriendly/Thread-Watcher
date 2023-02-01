@@ -20,7 +20,7 @@ const makeVisible = () => {
                 .then(() => {
                     thread.setAutoArchiveDuration(10080)
                 })
-        } else if(!thread.manageable && thread.sendable) {
+        } else if(!thread.manageable && thread.sendable && !thread.archived) {
             if(thread.permissionsFor(thread.client.user.id)?.has(PermissionFlagsBits.EmbedLinks)) {
                 const e = new EmbedBuilder()
                     .setTitle("Bumping Thread")
