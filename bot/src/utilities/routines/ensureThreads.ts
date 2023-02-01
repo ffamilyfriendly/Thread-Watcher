@@ -39,7 +39,6 @@ const run = () => {
                 logger.error(`[ensureThread/run] could not un-archive ${t.id}:\n${eString}`)
             })
         } else {
-            console.log("updating...")
             if(thread?.autoArchiveDuration) {
                 // Since autoArchiveDuration is no longer controlling when a thread becomes archived I set this to some dumb stuff
                 // DONT EVEN WORRY ABOUT IT
