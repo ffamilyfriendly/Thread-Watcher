@@ -29,11 +29,24 @@ export function setArchive(thread: ThreadChannel, dueArchive: number = 10_080) {
     })
 }
 
-export function addThread(id: string, dueArchive: Number, guildID: string): Promise<void> {
+export function bumpAutoTime(thread: ThreadChannel) {
+    return new Promise((resolve, reject) => {
+        let t = threads.get(thread.id)
+        if(!t) return reject(`thread ${thread.id} not in thread list`)
+        const newTimeStamp = dueArchiveTimestamp(thread.autoArchiveDuration||0) as number
+        t.dueArchive = newTimeStamp
+
+        db.updateDueArchive(thread.id, newTimeStamp)
+            .then(resolve)
+            .catch(reject)
+    })
+}
+
+export function addThread(id: string, dueArchive: number, guildID: string): Promise<void> {
     return new Promise((resolve, reject) => {
         db.insertThread(id, dueArchive, guildID)
         .then(() => {
-            threads.set(id, { id, server: guildID });
+            threads.set(id, { id, server: guildID, dueArchive: dueArchive });
             resolve();
         })
         .catch(() => {
@@ -53,4 +66,11 @@ export function removeThread(id: string): Promise<void> {
             reject()
         })
     })
+}
+
+export function clearGuild(id: string): Promise<void> {
+    threads.forEach(t => {
+        if(t.server == id) threads.delete(t.id)
+    })
+    return db.deleteGuild(id)
 }

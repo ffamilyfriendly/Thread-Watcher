@@ -23,6 +23,7 @@ export interface Database {
     getThreads: (guildID: string) => Promise<ThreadData[]>,
     deleteThread: (threadID: string) => Promise<void>,
     deleteChannel: (channelID: string) => Promise<void>,
+    deleteGuild: (guildID: string) => Promise<void>,
     getNumberOfThreads: () => Promise<number>,
     getNumberOfChannels: () => Promise<number>
 }

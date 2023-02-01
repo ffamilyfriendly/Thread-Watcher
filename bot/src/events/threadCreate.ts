@@ -1,8 +1,5 @@
-import { BaseInteraction, ColorResolvable, CommandInteraction, EmbedBuilder, ButtonBuilder, ChatInputCommandInteraction, Interaction, AutocompleteInteraction, ThreadChannel } from "discord.js";
-import config from "../config";
-import { client, db, logger } from "../bot";
-import { commands } from "../bot";
-import { statusType, baseEmbedOptions } from "../interfaces/command";
+import { ThreadChannel } from "discord.js";
+import { db, logger } from "../bot";
 import { addThread, dueArchiveTimestamp } from "../utilities/threadActions";
 import { strToRegex } from "../utilities/regex";
 import { ChannelData } from "src/interfaces/database";
@@ -55,7 +52,7 @@ export default async function(thread: ThreadChannel) {
 
     if(await threadShouldBeWatched(auto, thread)) {
         logger.info(`Automatically adding thread "${thread.id}" in ${thread.guildId}`)
-        addThread(thread.id, dueArchiveTimestamp(thread.autoArchiveDuration||0), thread.guildId)
+        addThread(thread.id, dueArchiveTimestamp(thread.autoArchiveDuration||0) as number, thread.guildId)
             .catch(err => {
                 logger.error(`could not add thread "${thread.id}" in ${thread.guildId}: ${err.toString()}`)
             })

@@ -1,6 +1,6 @@
 import { client, db, logger } from "../../bot";
 import { ThreadData } from "../../interfaces/database";
-import { calcNextUnarchive, setArchive } from "../threadActions";
+import { calcNextUnarchive, dueArchiveTimestamp, setArchive } from "../threadActions";
 
 /**
  * Hey there im past John and I coded this shit. Does it work well for 5 guilds? yep. Does it work well for 4000 guilds? fuck if i know
@@ -39,7 +39,14 @@ const run = () => {
                 logger.error(`[ensureThread/run] could not un-archive ${t.id}:\n${eString}`)
             })
         } else {
-            if(thread?.autoArchiveDuration) db.updateDueArchive(thread.id, Number(calcNextUnarchive(thread)))
+            console.log("updating...")
+            if(thread?.autoArchiveDuration) {
+                // Since autoArchiveDuration is no longer controlling when a thread becomes archived I set this to some dumb stuff
+                // DONT EVEN WORRY ABOUT IT
+                // :D
+                const nextTimestamp = Math.max(calcNextUnarchive(thread)||0, (dueArchiveTimestamp(thread.autoArchiveDuration) as number) - (thread.autoArchiveDuration/2))
+                db.updateDueArchive(thread.id, nextTimestamp)
+            }
         }
         threadsProcessed += 1
     })
@@ -88,7 +95,8 @@ export default function ensureThreads( threads: ThreadData[] ) {
 export function getPossiblyArchivedThreads( threads: ThreadData[] ) {
     let MaybeArchived: ThreadData[] = []
     for( const thread of threads ) {
-        if( thread.dueArchive < (Date.now()/1000) ) MaybeArchived.push(thread)
+        const bigger = thread.dueArchive < (Date.now()/1000)
+        if( bigger ) MaybeArchived.push(thread)
     }
     return MaybeArchived
 }

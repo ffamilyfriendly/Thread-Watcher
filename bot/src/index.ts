@@ -1,9 +1,26 @@
-import { ShardingManager } from "discord.js";
+import { ShardingManager, WebhookClient, EmbedBuilder, Colors, ColorResolvable } from "discord.js";
 import config from "./config"
 import Log75, { LogLevel } from "log75"
 import { AutoPoster } from "topgg-autoposter"
 import { clearCommands } from "./utilities/registerCommands";
 import start from "./web";
+
+const webhookClient = config.logWebhook ? new WebhookClient({ url: config.logWebhook }) : null;
+
+const webLog = (title: string, description: string|null, colour: ColorResolvable = Colors.Aqua) => {
+    if(!webhookClient) return
+    const embed = new EmbedBuilder()
+        .setTitle(title)
+        .setTimestamp(new Date())
+        .setColor(colour)
+    if(description) embed.setDescription(description)
+    
+    webhookClient.send({
+        username: "Thread-Watcher",
+        avatarURL: "https://threadwatcher.xyz/content/icon.png",
+        embeds: [embed]
+    })
+}
 
 const args = process.argv.slice(2)
 if(args.includes("-clear_commands")) {
@@ -38,6 +55,23 @@ let timeOut = setTimeout(() => { }, 100000);
 manager.on("shardCreate", shard => {
     if(timeOut) clearTimeout(timeOut)
     logger.done(`Shard with id ${shard.id} spawned!`)
+    webLog(`Shard ${shard.id} spawned!`, null)
+
+    shard.addListener("ready", () => {
+        webLog(`Shard ${shard.id} ready!`, null, Colors.Green)
+    })
+
+    shard.addListener("death", () => {
+        webLog(`Shard ${shard.id} died!`, null, Colors.Red)
+    })
+
+    shard.addListener("disconnect", () => {
+        webLog(`Shard ${shard.id} disconnected!`, null, Colors.Orange)
+    })
+
+    shard.addListener("reconnecting", () => {
+        webLog(`Shard ${shard.id} is reconnecting!`, null, Colors.DarkGreen)
+    })
 
     timeOut = setTimeout(webserver, 1000 * 20)
 })

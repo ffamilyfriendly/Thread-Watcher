@@ -52,7 +52,9 @@ const config = {
     // a server you own.
     // owner only commands such as eval will be registered on this server
     devServer: "devServerId",
-    devServerInvite: "https://discord.gg/server"
+    devServerInvite: "https://discord.gg/server",
+    // Will send shard starts/exits/errors to this webhook. url will need to start with discord.com NOT discordapp.com
+    logWebhook: ""
 }
 
 export default config

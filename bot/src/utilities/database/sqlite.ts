@@ -72,6 +72,14 @@ class sqlite implements Database {
         }) 
     };
 
+    deleteGuild(guildID: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.db.prepare("DELETE FROM channels WHERE server = ?").all(guildID)
+            this.db.prepare("DELETE FROM threads WHERE server = ?").all(guildID)
+            resolve()
+        })
+    };
+
     getNumberOfThreads(): Promise<number> {
         return new Promise((resolve, reject) => {
             const res = this.db.prepare("SELECT COUNT(*) FROM threads;").all()

@@ -1,6 +1,7 @@
 import { ActivityType, Client } from "discord.js";
 import ensureThreads, { getPossiblyArchivedThreads } from "../utilities/routines/ensureThreads";
 import { db, logger, threads } from "../bot";
+import { bumpThreadsRoutine } from "../utilities/routines/ensureVisible";
 
 
 
@@ -29,4 +30,7 @@ export default function(client: Client) {
 
     setPresence()
     setInterval(setPresence, 1000 * 60 * 60)
+
+    // DO NOT LEAVE THIS AS ONE MINUTE DUMBO
+    setInterval(bumpThreadsRoutine, 1000 * 60 * 4)
 }

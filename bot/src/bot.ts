@@ -5,7 +5,7 @@ import loadEvents from "./utilities/loadEvents"
 import loadCommands from "./utilities/loadCommands"
 import { getDatabase } from "./utilities/database/DatabaseManager"
 import registerCommands from "./utilities/registerCommands";
-import { ReturnData } from "./interfaces/database"
+import { ReturnData, ThreadData } from "./interfaces/database"
 import { red, green, yellow } from "ansi-colors"
 
 class log76 extends Log75 {
@@ -34,7 +34,7 @@ const client = new Client({
 loadEvents(client)
 const commands = loadCommands()
 
-const threads = new Map<string, ReturnData>();
+const threads = new Map<string, ThreadData>();
 
 // reg commands
 

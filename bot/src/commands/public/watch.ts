@@ -26,7 +26,7 @@ const watch: Command = {
                 buildBaseEmbed(`Failed to unwatch thread`, statusType.error, { ephermal: true, description: `Bot failed to unwatch <#${thread.id}>` })
             })
         } else {
-            addThread(thread.id, dueArchiveTimestamp(thread.autoArchiveDuration||0), interaction.guildId||"")
+            addThread(thread.id, dueArchiveTimestamp(thread.autoArchiveDuration||0) as number, interaction.guildId||"")
             .then(() => {
                 if(!thread.archived || thread.unarchivable) {
                     buildBaseEmbed(`Watched thread`, statusType.success, { showAuthor: true, description: `Bot will keep <#${thread.id}> active` })
