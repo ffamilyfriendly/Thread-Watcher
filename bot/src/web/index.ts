@@ -35,8 +35,10 @@ function getTopggVotes(): Promise<number> {
     })
 }
 
-export default function start(manager: ShardingManager, port: number, db: DataBases) {
+let started = false
 
+export default function start(manager: ShardingManager, port: number, db: DataBases) {
+    if(started) return
     const database = getDatabase(db)
 
     type statsData = {
@@ -130,5 +132,6 @@ export default function start(manager: ShardingManager, port: number, db: DataBa
 
     app.listen(port, () => {
         logger.done(`listening on port ${port}`)
+        started = true
     })
 }

@@ -34,6 +34,7 @@ export default async function(oldThread: ThreadChannel, newThread: ThreadChannel
             .catch((e) => {
                 logger.error(`failed to bump thread with id ${newThread.id}: ${e}`)
             })
+        return
     }  
     if(!newThread.unarchivable) {
         // For some reason this line kept breaking???
