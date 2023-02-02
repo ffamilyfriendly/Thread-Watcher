@@ -36,7 +36,8 @@ export default async function(oldThread: ThreadChannel, newThread: ThreadChannel
             })
     }  
     if(!newThread.unarchivable) {
-        logger.warn(`Skipped "${newThread.id}" in "${newThread.guildId}" as it is not unarchivable`)
+        // For some reason this line kept breaking???
+        console.warn(`Skipped "${newThread.id}" in "${newThread.guildId}" as it is not unarchivable`)
         return
     } else if (newThread.locked) {
         logger.warn(`Skipped "${newThread.id}" in "${newThread.guildId}" as it is locked`)

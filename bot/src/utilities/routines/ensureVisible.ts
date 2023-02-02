@@ -19,6 +19,12 @@ const makeVisible = () => {
             thread.setAutoArchiveDuration(4320)
                 .then(() => {
                     thread.setAutoArchiveDuration(10080)
+                        .catch(() => {
+                            logger.error(`could not set thread ${thread.id} to 10080 autoArchiveDuration`)
+                        })
+                })
+                .catch(e => {
+                    logger.error(`could not bump thread ${thread.id}`)
                 })
         } else if(!thread.manageable && thread.sendable && !thread.archived) {
             if(thread.permissionsFor(thread.client.user.id)?.has(PermissionFlagsBits.EmbedLinks)) {
@@ -41,7 +47,7 @@ const makeVisible = () => {
         console.error(e)
     })
 
-    if(queue.length !== 0) setTimeout(makeVisible, 1000/6)
+    if(queue.length !== 0) setTimeout(makeVisible, 1000/2)
     else {
         running = false
     }
