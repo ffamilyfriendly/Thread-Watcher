@@ -4,7 +4,8 @@ export type ReturnData = {
 }
 
 export type ThreadData = ReturnData & {
-    dueArchive: number
+    dueArchive: number,
+    watching: boolean
 }
 
 export type ChannelData = ReturnData & {
@@ -24,6 +25,7 @@ export interface Database {
     deleteThread: (threadID: string) => Promise<void>,
     deleteChannel: (channelID: string) => Promise<void>,
     deleteGuild: (guildID: string) => Promise<void>,
+    unwatchThread: ( threadID: string ) => Promise<void>,
     getNumberOfThreads: () => Promise<number>,
     getNumberOfChannels: () => Promise<number>
 }

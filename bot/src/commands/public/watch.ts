@@ -17,12 +17,12 @@ const watch: Command = {
 
         if(!(thread instanceof ThreadChannel)) return
 
-        if(threads.has(thread.id)) {
+        if(threads.has(thread.id) && threads.get(thread.id)?.watching) {
             removeThread(thread.id)
             .then(() => {
                 buildBaseEmbed(`Unwatched thread`, statusType.success, { showAuthor: true, description: `Bot will no longer keep <#${thread.id}> active` })
             })
-            .catch(() => {
+            .catch((e) => {
                 buildBaseEmbed(`Failed to unwatch thread`, statusType.error, { ephermal: true, description: `Bot failed to unwatch <#${thread.id}>` })
             })
         } else {

@@ -10,7 +10,7 @@ class sqlite implements Database {
 
     createTables(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.db.prepare("CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT, dueArchive INTEGER)").run()
+            this.db.prepare("CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT, dueArchive INTEGER, watching INTEGER)").run()
             this.db.prepare("CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT, regex TEXT, roles TEXT, tags TEXT)").run()
             this.db.prepare("CREATE TABLE IF NOT EXISTS blacklist (id TEXT PRIMARY KEY, reason TEXT)").run()
             resolve()
@@ -27,7 +27,7 @@ class sqlite implements Database {
 
     insertThread(id: String, dueArchive: Number, guildID: String): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.db.prepare("INSERT INTO threads VALUES(?,?,?)").run(id, guildID, dueArchive)
+            this.db.prepare("REPLACE INTO threads VALUES(?,?,?,1)").run(id, guildID, dueArchive)
             resolve()
         })
     };
@@ -76,6 +76,13 @@ class sqlite implements Database {
         return new Promise((resolve, reject) => {
             this.db.prepare("DELETE FROM channels WHERE server = ?").all(guildID)
             this.db.prepare("DELETE FROM threads WHERE server = ?").all(guildID)
+            resolve()
+        })
+    };
+
+    unwatchThread(threadID: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.db.prepare("UPDATE threads SET watching = 0 WHERE id = ?").run(threadID)
             resolve()
         })
     };

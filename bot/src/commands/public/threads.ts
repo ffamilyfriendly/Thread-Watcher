@@ -98,6 +98,7 @@ const threads: Command = {
                 if(thread) {
                     if( thread.type !== ChannelType.PrivateThread && thread.type !== ChannelType.PublicThread ) return
                     if(!interaction.memberPermissions?.has(PermissionFlagsBits.ViewChannel)) continue;
+                    if(!_t.watching) continue;
                     // This is used instead of hotlinking ( <#ID> ) as discord shows un-cached threads as #deleted-channel if not in sidebar
                     // even when thread is un-archived
                     res.threads.push(getDirectTag(thread))

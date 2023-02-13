@@ -68,7 +68,7 @@ export function getPossiblyArchivedThreads( threads: ThreadData[] ) {
     let MaybeArchived: ThreadData[] = []
     for( const thread of threads ) {
         const bigger = thread.dueArchive < (Date.now()/1000)
-        if( bigger ) MaybeArchived.push(thread)
+        if( bigger && thread.watching ) MaybeArchived.push(thread)
     }
     return MaybeArchived
 }

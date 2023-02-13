@@ -46,7 +46,7 @@ export function addThread(id: string, dueArchive: number, guildID: string): Prom
     return new Promise((resolve, reject) => {
         db.insertThread(id, dueArchive, guildID)
         .then(() => {
-            threads.set(id, { id, server: guildID, dueArchive: dueArchive });
+            threads.set(id, { id, server: guildID, dueArchive: dueArchive, watching: true });
             resolve();
         })
         .catch(() => {
@@ -55,14 +55,15 @@ export function addThread(id: string, dueArchive: number, guildID: string): Prom
     })
 }
 
-export function removeThread(id: string): Promise<void> {
+export function removeThread(id: string, force: boolean = false): Promise<void> {
     return new Promise((resolve, reject) => {
-        db.deleteThread(id)
+        force ? db.deleteThread(id) : db.unwatchThread(id)
         .then(() => {
             threads.delete(id);
             resolve();
         })
-        .catch(() => {
+        .catch((e) => {
+            console.error(e)
             reject()
         })
     })

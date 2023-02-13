@@ -24,7 +24,7 @@ class mysql implements Database {
                     reject(err)
                 } 
 
-                this.connection.query(`CREATE TABLE IF NOT EXISTS \`${this.database}\`.\`threads\` (\`id\` VARCHAR(20) NOT NULL, \`server\` VARCHAR(20) NOT NULL, \`dueArchive\` INT NOT NULL, PRIMARY KEY (\`ID\`));`, (err) => {
+                this.connection.query(`CREATE TABLE IF NOT EXISTS \`${this.database}\`.\`threads\` (\`id\` VARCHAR(20) NOT NULL, \`server\` VARCHAR(20) NOT NULL, \`dueArchive\` INT NOT NULL, watching BOOLEAN, PRIMARY KEY (\`ID\`));`, (err) => {
                     if(err) {
                         console.error(`[MYSQL] could not create table threads`, err)
                         process.exit(1)
@@ -57,7 +57,7 @@ class mysql implements Database {
 
     insertThread(id: String, dueArchive: Number, guildID: String): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.connection.query("INSERT INTO threads VALUES(?,?,?)", [ id, guildID, dueArchive ], (err) => {
+            this.connection.query("REPLACE INTO threads VALUES(?,?,?,true)", [ id, guildID, dueArchive ], (err) => {
                 if(err) return reject(err)
                 resolve()
             })
@@ -109,7 +109,7 @@ class mysql implements Database {
 
     getThreads(guildID: String): Promise<ThreadData[]> {
         return new Promise((resolve, reject) => {
-            this.connection.query("SELECT * FROM threads WHERE server = ?", [ guildID ], (err, res) => {
+            this.connection.query("SELECT * FROM threads WHERE server = ? AND watching = 1", [ guildID ], (err, res) => {
                 if(err) reject(err)
                 return resolve(res)
             })
@@ -142,6 +142,15 @@ class mysql implements Database {
             Promise.all(promises)
                 .then(() => resolve())
                 .catch(reject)
+        })
+    };
+
+    unwatchThread(threadID: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.connection.query("UPDATE threads SET watching = 0 WHERE id = ?", [ threadID ], (err, res) => {
+                if(err) reject(err)
+                return resolve(res)
+            })
         })
     };
 

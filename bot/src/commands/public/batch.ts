@@ -86,7 +86,7 @@ const batch: Command = {
         for(const t of threads) {
             const addAndUnArchiveThread = ( thread: ThreadChannel ) => {
                 // do not add thread to watchlist if already watched
-                if(threadsList.has(thread.id)) return actions.noAction.push(thread)
+                if(threadsList.has(thread.id) && threadsList.get(thread.id)?.watching) return actions.noAction.push(thread)
 
                 if(thread.archived && thread.unarchivable) {
                     setArchive(thread)
