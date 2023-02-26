@@ -63,8 +63,8 @@ const handleStats = async () => {
     const guildCount = document.getElementById("guilds_number")
     const threadCount = document.getElementById("threads_number")
     const votesCount = document.getElementById("votes_number")
-    guildCount.innerText = data.guildCount
-    threadCount.innerText = data.threads
+    guildCount.innerText = `${(data.guildCount / 1000).toFixed(1)}k`
+    threadCount.innerText = `${(data.threads / 1000).toFixed(1)}k`
     votesCount.innerText = data.votes
 
     const populateTable = () => {

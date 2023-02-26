@@ -1,4 +1,3 @@
-import { Database } from "better-sqlite3";
 import mysql from "./mysql";
 import sqlite from "./sqlite";
 

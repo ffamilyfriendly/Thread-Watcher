@@ -1,5 +1,5 @@
-import { ChannelData, Database, ReturnData, ThreadData } from "../../interfaces/database";
-import { Connection, createConnection, MysqlError, queryCallback, QueryFunction, QueryOptions } from "mysql";
+import { ChannelData, Database, ThreadData } from "../../interfaces/database";
+import { Connection, createConnection } from "mysql";
 import config from "../../config";
 
 class mysql implements Database {
