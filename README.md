@@ -20,7 +20,14 @@
 </div>
 
 ## Docker
-This bot does currently __not__ come with a docker file. This will be added at a later data.
+This bot includes Docker and Docker Compose support. To build a docker image that will run Thread Watcher upon start (and automatically register the slash commands), use the following command inside the folder you've cloned the repo: 
+> docker build -t thread-watcher bot/
+
+To run the resulting docker image, use the following command:
+> docker run --name thread-watcher -d thread-watcher
+
+Alternatively, if you'd prefer to use Docker Compose, you can use the included `docker-compose.yml` directly by using the following command inside the folder you've cloned the repo:
+> docker-compose up -d
 
 ## License
 The code for the bot and website are both licensed under the [MIT license](https://github.com/ffamilyfriendly/Thread-Watcher/blob/main/LICENSE.md).
