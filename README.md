@@ -26,7 +26,7 @@ This bot includes Docker and Docker Compose support. To build a docker image tha
 To run the resulting docker image, use the following command:
 > docker run --name thread-watcher -d thread-watcher
 
-Alternatively, if you'd prefer to use Docker Compose, you can use the included docker-compose.yml directly by using the following command inside the folder you've cloned the repo:
+Alternatively, if you'd prefer to use Docker Compose, you can use the included `docker-compose.yml` directly by using the following command inside the folder you've cloned the repo:
 > docker-compose up -d
 
 ## License
