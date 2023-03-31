@@ -1,7 +1,6 @@
-import { ChatInputCommandInteraction, PermissionFlagsBits, ModalBuilder, SlashCommandBuilder, TextChannel, ForumChannel, NewsChannel, SelectMenuBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ModalActionRowComponentBuilder, AnyComponentBuilder, SelectMenuInteraction, Role, GuildForumTagEmoji, GuildForumTag, Interaction, ButtonStyle, CacheType, ButtonInteraction, ModalSubmitInteraction } from "discord.js";
-import { addThread, dueArchiveTimestamp, removeThread } from "../../utilities/threadActions";
+import { ChatInputCommandInteraction, PermissionFlagsBits, ModalBuilder, SlashCommandBuilder, TextChannel, ForumChannel, NewsChannel, SelectMenuBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, SelectMenuInteraction, Role, GuildForumTagEmoji, GuildForumTag, Interaction, ButtonStyle, ButtonInteraction, ModalSubmitInteraction } from "discord.js";
 import { Command, statusType } from "../../interfaces/command";
-import { db, threads } from "../../bot";
+import { db } from "../../bot";
 import { ButtonBuilder, StringSelectMenuBuilder } from "@discordjs/builders";
 import { validRegex } from "../../utilities/regex";
 
@@ -185,7 +184,7 @@ const auto: Command = {
                     autoAdd()
                 })
 
-                const regexButton = gButton({ label: filters.regex ? "Clear Regex" : "Set Regex", style: ButtonStyle.Secondary }, async (int) => {
+                const regexButton = gButton({ label: filters.regex ? "Clear Pattern" : "Set Pattern", style: ButtonStyle.Secondary }, async (int) => {
                     if(filters.regex) {
                         filters.regex = ""
                         await int.update({  embeds: [ buildEmbed() ] })
@@ -195,7 +194,7 @@ const auto: Command = {
                             .setTitle("Enter Regex")
                         const regexText = new TextInputBuilder()
                             .setCustomId(`regex_${interaction.id}`)
-                            .setLabel("regex")
+                            .setLabel("pattern")
                             .setStyle(TextInputStyle.Short)
                             .setRequired(true)
                         modal.addComponents( new ActionRowBuilder<TextInputBuilder>().addComponents( regexText ) )
@@ -234,7 +233,7 @@ const auto: Command = {
                     fields: [
                         { name: `Only watch ${word} posted by users with these roles`, value: filters.roles.length != 0 ? filters.roles.map(r => `<@&${r?.id}>`).join(", ") : "None selected" },
                         { name: `Only watch ${word} with these tags`, value: filters.tags.length != 0 ? filters.tags.map(tag => `${tag?.emoji ? `${i_have_aids(tag.emoji)} ` : ""}${tag?.name}`).join(", ") : "None selected" },
-                        { name: "regex", value: `\`${filters.regex||"not set"}\`` }
+                        { name: "pattern", value: `\`${filters.regex||"not set"}\`` }
                     ],
                     components: [ ...components ],
                     noSend: input ? true : false
@@ -272,10 +271,10 @@ const auto: Command = {
 
                     if(!regex) {
                         input.reply({ content: "Cancelled", ephemeral: true })
-                    } else if (!valid.valid) input.reply({ content: `**REGEX NOT VALID**: \`${valid.reason}\`` })
+                    } else if (!valid.valid) input.reply({ content: `**PATTERN NOT VALID**: \`${valid.reason}\`\n[__pattern guide__](https://docs.threadwatcher.xyz/usage/commands/batch#pattern)` })
                     else {
                         filters.regex = regex
-                        input.reply({ content: "Saved regex!", ephemeral: true })
+                        input.reply({ content: "Saved pattern!", ephemeral: true })
                         buildEmbed()
                     }
                 }

@@ -1,16 +1,27 @@
+// I've prayed twice to God after typing this but he's not responding. God has abandoned me
+const quantifier = "\\p{L}\\p{Emoji_Presentation}><\\(\\)!*\\-\\[\\]\\d"
+
 export function validRegex(r: string) {
     if(r.trim() === '') return { valid: false, reason: "regex string empty" }
-    if(!/^[\w!*]{0,100}$/gm.test(r)) return { valid: false, reason: "invalid regex format" }
+    if(!/^[\p{L}\p{Emoji_Presentation}><\(\)!*\-\[\]\d]{0,100}$/gmu.test(r)) return { valid: false, reason: "invalid regex format" }
 
     return { valid: true }
 }
 
 export function strToRegex(r: string) {
+    r = r.replace(/(\]|\[|\)|\()/gi, "\\$1")
+    r = r.replace(/\*+/gi, "*")
+
+    r = "^" + r + "$"
     let inverted = false
     if(r[0] === '!') {
         inverted = true
         r = r.replace('!','')
     }
 
-    return { inverted, regex: new RegExp(r.replace('*', '\\w*'))}
+    r = r.replaceAll('*', `[${quantifier}]*`)
+
+    console.log(`R: ${r}`)
+
+    return { inverted, regex: new RegExp(r, "gmu")}
 }

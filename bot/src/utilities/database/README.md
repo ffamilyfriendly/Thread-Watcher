@@ -11,7 +11,7 @@ the mysql adapter will require you to host a mysql instance. This option is gene
 
 adapter uses the mysql library.
 
-**source code:** [sqlite adapter](https://github.com/ffamilyfriendly/Thread-Watcher/blob/main/bot/src/utilities/database/mysql.ts)
+**source code:** [mysql adapter](https://github.com/ffamilyfriendly/Thread-Watcher/blob/main/bot/src/utilities/database/mysql.ts)
 
 # Implement own database adapter
 To implement your own database adapter follow these steps:

@@ -73,7 +73,7 @@ manager.on("shardCreate", shard => {
         webLog(`Shard ${shard.id} is reconnecting!`, null, Colors.DarkGreen)
     })
 
-    timeOut = setTimeout(webserver, 1000 * 20)
+    timeOut = setTimeout(webserver, 1000 * 60 * 2)
 })
 
 manager.spawn()
