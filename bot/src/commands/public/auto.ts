@@ -282,7 +282,8 @@ const auto: Command = {
 
             setTimeout(async () => {
                 const e = buildEmbed(interaction)
-                if((await interaction.fetchReply()).editable) interaction.editReply({ embeds: [e], components: [ ] })
+                const reply = await interaction.fetchReply()
+                if(interaction.replied && reply?.editable) interaction.editReply({ embeds: [e], components: [ ] })
                 interaction.client.removeListener("interactionCreate", listener)
             }, 1000 * 60 * 5)
             interaction.client.on("interactionCreate", listener)

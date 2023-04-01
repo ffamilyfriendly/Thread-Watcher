@@ -21,7 +21,5 @@ export function strToRegex(r: string) {
 
     r = r.replaceAll('*', `[${quantifier}]*`)
 
-    console.log(`R: ${r}`)
-
     return { inverted, regex: new RegExp(r, "gmu")}
 }
