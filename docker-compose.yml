@@ -6,10 +6,6 @@ services:
         context: ./bot
         dockerfile: Dockerfile
     restart: always
-    volumes:
-      - type: bind
-        source: ./data/data.db
-        target: /data.db
 
 networks:
   default:
