@@ -13,13 +13,17 @@ const config = {
         topgg: ""
     },
     clientID: "592814450084675594",
+    // Thread-Watcher uses sqlite by default, but can support MySQL.
+    // if you wish to use MySQL, you will need to create the "threadwatcher" database and update the parameters in the options section
+    // with the appropriate values. If MySQL is running on the same system, 'host' should be "127.0.01"
     database: {
-        type: DataBases.mysql,
+        type: DataBases.sqlite,
+        // type: DataBases.mysql,
         options: {
-            user: "user",
-            password: "passwd",
-            host: "ip",
-            port: 1337,
+            user: "",
+            password: "",
+            host: "",
+            port: 3306,
             database: "threadwatcher"
         }
     },
