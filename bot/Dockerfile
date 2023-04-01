@@ -37,5 +37,5 @@ WORKDIR /usr/src/bot
 COPY --chown=nonroot:nonroot --from=builder /usr/src/bot/node_modules /usr/src/bot/node_modules
 COPY --chown=nonroot:nonroot --from=builder /usr/src/bot/dist /usr/src/bot/dist
 
-# Start the bot.
-CMD [ "./dist/index.js" ]
+# Start the bot & register slash commands.
+CMD [ "./dist/index.js", "-reg_commands" ]
