@@ -33,9 +33,9 @@ ENV NODE_ENV production
 # Set working directory
 WORKDIR /usr/src/bot
 
-# Copy built node modules and binaries without including the toolchain
-# COPY --chown=nonroot:nonroot --from=builder /usr/src/bot/node_modules /usr/src/bot/node_modules
-COPY --chown=nonroot:nonroot --from=builder . /usr/src/bot
+# Copy built node modules and binaries without including the source codde or toolchain
+COPY --chown=nonroot:nonroot --from=builder /usr/src/bot/node_modules /usr/src/bot/node_modules
+COPY --chown=nonroot:nonroot --from=builder /usr/src/bot/dist /usr/src/bot/dist
 
 # Start the bot.
-ENTRYPOINT [ "node", "./dist/index.js" ]
+CMD [ "./dist/index.js" ]
