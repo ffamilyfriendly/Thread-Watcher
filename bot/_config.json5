@@ -1,0 +1,75 @@
+/*
+    If you're reading this you are probably setting up your own Thread-Watcher instance.
+    Firstly, welcome to the club! :D 
+    If everything goes well this'll be a short and easy proccess.
+
+    Useful stuff:
+        docs: https://docs.threadwatcher.xyz
+        support server: https://threadwatcher.xyz/devserver
+        application dash: https://discord.com/developers/applications
+        official instance (in case you give up): https://threadwatcher.xyz/invite
+*/
+
+{
+   tokens: {
+      /*
+        It's !!EXTREMELY!! important that you do not share this token with anyone.
+        you can get it from the discord application dashboard
+      */
+      discord: 'SUPER SECRET',
+      /*
+        Used to automatically upload bot stats to top.gg. You can only get this token if your instance is accepted to top.gg.
+        As a top.gg mod I'll have to further add that you'll need to modify the bot a bit for it to be allowed on top.gg as
+        clones are not allowed.
+      */
+      topgg: '',
+   },
+   clientID: '',
+   database: {
+        // database types: "sqlite", and "mysql". I recomend using sqlite as it's plug and play
+      type: 'sqlite',
+      options: {
+        // if you are using sqlite you can skip this part unless you want to change dataLocation
+         user: '',
+         password: '',
+         host: '',
+         port: 3306,
+         database: 'threadwatcher',
+         // Where sqlite data resides and backups will be made
+         dataLocation: './data',
+      },
+   },
+   // Wheter or not you want your instance stats broadcasted via HTTP. You probably dont
+   statsServer: {
+      enabled: false,
+      port: 3000,
+   },
+   style: {
+      error: {
+         colour: '#D00000',
+         emoji: '<:statusurgent:960959148848214017>',
+      },
+      success: {
+         colour: '#4C9F70',
+         emoji: '<:statusgood:960960196425957447>',
+      },
+      info: {
+         colour: '#197BBD',
+         emoji: '<:statusinfo:960960247571300353>',
+      },
+      warning: {
+         colour: '#F18F01',
+         emoji: '⚠️',
+      },
+   },
+   // These users will be able to run owner only commands such as eval. I recomend removing "286224826170081290" and adding your discord id here.
+   owners: [
+      '286224826170081290',
+   ],
+   // The id of your support server. Owner only commands will be registered to this server
+   devServer: 'devServerId',
+   // an invite to your dev server. Will be displayed when commands failed etc so users know where to contact you for help
+   devServerInvite: 'https://discord.gg/server',
+   // A webhook where shard notifications will be sent. Ensure this webhook starts with discord.com and NOT discordapp.com as that breaks the bot
+   logWebhook: '',
+}

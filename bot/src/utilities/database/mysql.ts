@@ -1,13 +1,13 @@
 import { ChannelData, Database, ThreadData } from "../../interfaces/database";
 import { Connection, createConnection } from "mysql";
-import config from "../../config";
+import { ConfigFile } from "../cnf";
 
 class mysql implements Database {
 
     connection: Connection
     database: string
 
-    constructor() {
+    constructor(config: ConfigFile) {
         const { host, user, password, database } = config.database.options
 
         this.database = database

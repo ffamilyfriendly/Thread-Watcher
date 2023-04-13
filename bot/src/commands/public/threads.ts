@@ -1,7 +1,6 @@
 import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable, DMChannel, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember } from "discord.js";
 import { Command, statusType } from "../../interfaces/command";
-import { db, threads as threadsList } from "../../bot";
-import config from "../../config";
+import { db, threads as threadsList, config } from "../../bot";
 
 type field = {
     name: string,

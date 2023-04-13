@@ -1,6 +1,6 @@
 import { ShardingManager } from "discord.js";
 import express from "express";
-import config from "../config";
+import { config } from "../index";
 import { DataBases, getDatabase } from "../utilities/database/DatabaseManager";
 import { logger } from "./../index";
 const app = express()
@@ -39,7 +39,7 @@ let started = false
 
 export default function start(manager: ShardingManager, port: number, db: DataBases) {
     if(started) return
-    const database = getDatabase(db)
+    const database = getDatabase(db, config)
 
     type statsData = {
         guildCount: number,

@@ -1,11 +1,14 @@
 import { ChannelData, Database, ReturnData, ThreadData } from "src/interfaces/database";
 import sql, { Database as sqliteDatabase } from "better-sqlite3"
+import { ConfigFile } from "../cnf";
+import { join } from "path";
 
 class sqlite implements Database {
     db: sqliteDatabase
 
-    constructor() {
-        this.db = sql("./data.db")
+    constructor(config: ConfigFile) {
+        const dbPath = join(config.database.options.dataLocation, "data.db")
+        this.db = sql(dbPath)
     }
 
     createTables(): Promise<void> {

@@ -1,8 +1,8 @@
-import config from "../config";
 import { Command } from "src/interfaces/command";
 import { readdirSync, statSync } from "fs";
 import path from "path";
 import { REST, Routes } from "discord.js";
+import { ConfigFile } from "./cnf";
 
 /*
     Yes, this is indeed the same code as in loadCommands.
@@ -43,7 +43,7 @@ const loadCommands = (baseDir: string = "../dist/commands/", dirDive: string = "
     return { publicCommands: pCommands, privateCommands: prCommands }
 }
 
-export default function( global: Boolean ) {
+export default function( global: Boolean, config: ConfigFile ) {
     const { publicCommands, privateCommands } = loadCommands("../commands/")
     if(!global && !config.devServer) return console.warn(`-reg_commands was used with the -local flag but no dev server is specified in config.\nPlease edit the config to include the id of your development server or remove the -local flag to register commands globally`)
     console.log(`Registering commands ${ global ? "globally" : `on your server (${config.devServer})` }`)
@@ -77,7 +77,7 @@ export default function( global: Boolean ) {
     }
 }
 
-export function clearCommands(local: Boolean) {
+export function clearCommands(local: Boolean, config: ConfigFile) {
     return new Promise((resolve, reject) => {
         const rest = new REST({ version: "10" }).setToken(config.tokens.discord)
         const route = local ? Routes.applicationGuildCommands(config.clientID, config.devServer) : Routes.applicationCommands(config.clientID)

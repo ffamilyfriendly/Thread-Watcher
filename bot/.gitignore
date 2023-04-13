@@ -3,3 +3,4 @@
 /yarn.lock
 /dist
 /data.db
+/config.json5

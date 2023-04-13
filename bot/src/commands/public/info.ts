@@ -1,8 +1,7 @@
 import { ChatInputCommandInteraction, EmbedBuilder, PermissionFlagsBits, PrivateThreadChannel, PublicThreadChannel, SlashCommandBuilder, ThreadChannel } from "discord.js";
 import { addThread, dueArchiveTimestamp, removeThread, setArchive } from "../../utilities/threadActions";
 import { Command, statusType } from "../../interfaces/command";
-import { threads } from "../../bot";
-import config from "../../config";
+import { threads, config } from "../../bot";
 
 const info: Command = {
     run: async (interaction: ChatInputCommandInteraction, buildBaseEmbed) => {

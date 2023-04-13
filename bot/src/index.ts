@@ -1,9 +1,12 @@
 import { ShardingManager, WebhookClient, EmbedBuilder, Colors, ColorResolvable } from "discord.js";
-import config from "./config"
 import Log75, { LogLevel } from "log75"
 import { AutoPoster } from "topgg-autoposter"
 import { clearCommands } from "./utilities/registerCommands";
 import start from "./web";
+import cnf from "./utilities/cnf"
+import { DataBases } from "./utilities/database/DatabaseManager";
+
+const config = cnf()
 
 const webhookClient = config.logWebhook ? new WebhookClient({ url: config.logWebhook }) : null;
 
@@ -25,7 +28,7 @@ const webLog = (title: string, description: string|null, colour: ColorResolvable
 const args = process.argv.slice(2)
 if(args.includes("-clear_commands")) {
     const local = args.includes("-local")
-    clearCommands(local)
+    clearCommands(local, config)
         .then(() => {
             logger.done(`removed all ${ local ? "local" : "global" } commands. Exiting...`)
             process.exit(0)
@@ -39,7 +42,7 @@ if(args.includes("-clear_commands")) {
 const logger = new Log75(LogLevel.Debug, { color: true })
 const manager = new ShardingManager("./dist/bot.js", { token: config.tokens.discord, shardArgs:  args  })
 
-export { logger }
+export { logger, config }
 
 if(config.tokens.topgg) {
     logger.info("Using top.gg autoposter")
@@ -47,7 +50,7 @@ if(config.tokens.topgg) {
 }
 
 const webserver = () => {
-    if(config.statsServer.enabled) start(manager, config.statsServer.port, config.database.type)
+    if(config.statsServer.enabled) start(manager, config.statsServer.port, DataBases[config.database.type])
 }
 
 let timeOut = setTimeout(() => { }, 100000);

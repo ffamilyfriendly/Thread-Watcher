@@ -1,6 +1,5 @@
 import { BaseInteraction, ColorResolvable, CommandInteraction, EmbedBuilder, ButtonBuilder, ChatInputCommandInteraction, Interaction, AutocompleteInteraction } from "discord.js";
-import config from "../config";
-import { client, logger } from "../bot";
+import { client, logger, config } from "../bot";
 import { commands } from "../bot";
 import { statusType, baseEmbedOptions } from "../interfaces/command";
 

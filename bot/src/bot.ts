@@ -1,12 +1,14 @@
 import { Client, GatewayIntentBits } from "discord.js"
-import config from "./config"
 import Log75, { LogLevel } from "log75"
 import loadEvents from "./utilities/loadEvents"
 import loadCommands from "./utilities/loadCommands"
-import { getDatabase } from "./utilities/database/DatabaseManager"
+import { DataBases, getDatabase } from "./utilities/database/DatabaseManager"
 import registerCommands from "./utilities/registerCommands";
 import { ReturnData, ThreadData } from "./interfaces/database"
 import { red, green, yellow } from "ansi-colors"
+import cnf from "./utilities/cnf"
+
+const config = cnf()
 
 class log76 extends Log75 {
     error(s: string) {
@@ -24,7 +26,7 @@ class log76 extends Log75 {
 
 const logger = new log76(LogLevel.Debug, { color: true })
 
-const db = getDatabase(config.database.type)
+const db = getDatabase(DataBases[config.database.type], config)
 db.createTables()
 
 const client = new Client({
@@ -40,10 +42,10 @@ const threads = new Map<string, ThreadData>();
 
 const args = process.argv
 if(args.includes("-reg_commands")) {
-    registerCommands(!args.includes("-local"))
+    registerCommands(!args.includes("-local"), config)
 }
 
-export { client, logger, commands, db, threads }
+export { client, logger, commands, db, threads, config }
 
 client.login(config.tokens.discord)
 .catch(err => {
