@@ -1,6 +1,7 @@
 import {stringify, parse as j5Parse} from "json5"
 import { join } from "path"
 import { existsSync, renameSync, readFileSync, writeFileSync } from "fs"
+import { validateValue } from "./defaults"
 
 const P_J5 = join(__dirname, "../../../config.json5")
 const P_FBJ5 = join(__dirname, "../../../_config.json5")
@@ -77,8 +78,11 @@ const ensureFile = () => {
     console.log(j5CnfExists, j5FallBackExists, tsCnfExists)
 }
 
+const reviver = ( key: string, value: any ) => validateValue(key, value)
+
 export default function(): ConfigFile {
     ensureFile()
-    const config = (j5Parse(readFileSync(P_J5, "utf-8")) as ConfigFile)
+    const config = (j5Parse(readFileSync(P_J5, "utf-8"), reviver) as ConfigFile)
+    console.log(config)
     return config
 }
