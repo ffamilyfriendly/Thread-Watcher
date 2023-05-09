@@ -27,10 +27,10 @@ const loadCommands = (baseDir: string = "../dist/commands/", dirDive: string = "
                 console.warn(`"${baseDir}${dirDive}${file}" command does not export a default object`)
                 continue;
             }
-            const { run, data, externalOptions } = cmdReq
+            const { run, data, externalOptions, gatekeeping } = cmdReq
             if(!run || !data) console.warn(`"${baseDir}${dirDive}${file}" is not an acceptable command file. Missing: ${run ? "" : "function \"run\""} ${data ? "" : "property \"data\""}`) 
             else {
-                if(data?.gatekeeping?.devServerOnly) {
+                if(gatekeeping?.devServerOnly) {
                     prCommands.push( { run, data, externalOptions } )
                 } else pCommands.push( { run, data, externalOptions } )
             }
@@ -43,10 +43,14 @@ const loadCommands = (baseDir: string = "../dist/commands/", dirDive: string = "
     return { publicCommands: pCommands, privateCommands: prCommands }
 }
 
-export default function( global: Boolean, config: ConfigFile ) {
+export default function( global: Boolean, config: ConfigFile ): Promise<unknown> {
     const { publicCommands, privateCommands } = loadCommands("../commands/")
-    if(!global && !config.devServer) return console.warn(`-reg_commands was used with the -local flag but no dev server is specified in config.\nPlease edit the config to include the id of your development server or remove the -local flag to register commands globally`)
+    if(!global && !config.devServer) {
+        console.warn(`-reg_commands was used with the -local flag but no dev server is specified in config.\nPlease edit the config to include the id of your development server or remove the -local flag to register commands globally`)
+        return new Promise((_res, rej) => rej("no dev server specified in config"))
+    }
     console.log(`Registering commands ${ global ? "globally" : `on your server (${config.devServer})` }`)
+    console.log(`Global commands:\n${publicCommands.map(c => c.data.name).join(", ")}\nLocal commands:\n${privateCommands.map(c => c.data.name).join(", ")}`)
     
     if(!global && config.devServer) {
         privateCommands.push(...publicCommands)
@@ -62,19 +66,25 @@ export default function( global: Boolean, config: ConfigFile ) {
         return data
     }
 
+    let promises = []
+
     if(publicCommands.length >= 1) {
-        rest.put(
+        const promise = rest.put(
             Routes.applicationCommands(config.clientID),
             { body: Array.from(publicCommands.values()).map(commandToJson) }
         )
+        promises.push(promise)
     }
 
     if(privateCommands.length >= 1) {
-        rest.put(
+        const promise = rest.put(
             Routes.applicationGuildCommands(config.clientID, config.devServer),
             { body: Array.from(privateCommands.values()).map(commandToJson) }
         )
+        promises.push(promise)
     }
+
+    return Promise.all(promises)
 }
 
 export function clearCommands(local: Boolean, config: ConfigFile) {

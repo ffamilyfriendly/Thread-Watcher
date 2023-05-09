@@ -3,8 +3,7 @@ import Log75, { LogLevel } from "log75"
 import loadEvents from "./utilities/loadEvents"
 import loadCommands from "./utilities/loadCommands"
 import { DataBases, getDatabase } from "./utilities/database/DatabaseManager"
-import registerCommands from "./utilities/registerCommands";
-import { ReturnData, ThreadData } from "./interfaces/database"
+import { ThreadData } from "./interfaces/database"
 import { red, green, yellow } from "ansi-colors"
 import cnf from "./utilities/cnf"
 
@@ -37,13 +36,6 @@ loadEvents(client)
 const commands = loadCommands()
 
 const threads = new Map<string, ThreadData>();
-
-// reg commands
-
-const args = process.argv
-if(args.includes("-reg_commands")) {
-    registerCommands(!args.includes("-local"), config)
-}
 
 export { client, logger, commands, db, threads, config }
 

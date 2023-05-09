@@ -1,7 +1,7 @@
 import { ShardingManager, WebhookClient, EmbedBuilder, Colors, ColorResolvable } from "discord.js";
 import Log75, { LogLevel } from "log75"
 import { AutoPoster } from "topgg-autoposter"
-import { clearCommands } from "./utilities/registerCommands";
+import registerCommands, { clearCommands } from "./utilities/registerCommands";
 import start from "./web";
 import cnf from "./utilities/cnf"
 import { DataBases } from "./utilities/database/DatabaseManager";
@@ -26,18 +26,36 @@ const webLog = (title: string, description: string|null, colour: ColorResolvable
 }
 
 const args = process.argv.slice(2)
-if(args.includes("-clear_commands")) {
-    const local = args.includes("-local")
-    clearCommands(local, config)
+
+const checkArguments = async () => {
+
+    if(args.includes("-clear_commands")) {
+        const local = args.includes("-local")
+        await clearCommands(local, config)
+            .then(() => {
+                logger.done(`removed all ${ local ? "local" : "global" } commands. Exiting...`)
+                process.exit(0)
+            })
+            .catch((err) => {
+                logger.error(`failed to remove all ${ local ? "local" : "global" } commands.\n${err}`)
+                process.exit(1)
+            })
+    }
+
+    if(args.includes("-reg_commands")) {
+        await registerCommands(!args.includes("-local"), config)
         .then(() => {
-            logger.done(`removed all ${ local ? "local" : "global" } commands. Exiting...`)
             process.exit(0)
         })
         .catch((err) => {
-            logger.error(`failed to remove all ${ local ? "local" : "global" } commands.\n${err}`)
+            logger.error(`failed to register commands.\n${err}`)
             process.exit(1)
         })
+        
+    }
 }
+
+checkArguments()
 
 const logger = new Log75(LogLevel.Debug, { color: true })
 const manager = new ShardingManager("./dist/bot.js", { token: config.tokens.discord, shardArgs:  args  })
