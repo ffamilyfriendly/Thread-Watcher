@@ -5,7 +5,7 @@ import { DataBases } from "../database/DatabaseManager"
 const token: ConfigValue = {
     validate: (value) => {
         if(typeof value !== "string") return false
-        return /[MN][A-Za-z\d]{23}\.[\w-]{6}\.[\w-]+/gm.test(value)
+        return (value.length > 10)
     },
     matchKeys: [ "discord" ],
 }

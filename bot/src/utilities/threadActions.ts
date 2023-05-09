@@ -1,10 +1,18 @@
-import { ThreadAutoArchiveDuration, ThreadChannel } from "discord.js";
+import { ThreadChannel } from "discord.js";
 import { db, threads } from "../bot";
 
-export function dueArchiveTimestamp(dueArchive: number): Number {
-    return (Date.now() / 1000) + (dueArchive * 60)
+/**
+ * 
+ * @param dueArchive the amount of time a thread has to be inactive for discord to hide it, in minutes
+ * @param fromDate from what timestamp to calculate when thread will be hidden 
+ * @returns {Number} the calculated timestamp where a thread will be hidden
+ */
+export function dueArchiveTimestamp(dueArchive: number, fromDate?: Date): Number {
+    const date = fromDate || new Date()
+    return (date.getTime() / 1000) + (dueArchive * 60)
 }
 
+/* TODO: analyse if this function is redundant. Looks to serve the same purpouse as the "dueArchiveTimestamp" function */
 export function calcNextUnarchive(thread: ThreadChannel) {
     if(!thread) return
     return ((thread.archivedAt?.getTime()||0) / 1000) + ((thread.autoArchiveDuration||0) * 60)

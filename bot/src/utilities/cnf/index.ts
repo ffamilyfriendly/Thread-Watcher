@@ -74,8 +74,6 @@ const ensureFile = () => {
         renameSync(P_FBJ5, P_J5)
         return
     }
-
-    console.log(j5CnfExists, j5FallBackExists, tsCnfExists)
 }
 
 const reviver = ( key: string, value: any ) => validateValue(key, value)
@@ -83,6 +81,5 @@ const reviver = ( key: string, value: any ) => validateValue(key, value)
 export default function(): ConfigFile {
     ensureFile()
     const config = (j5Parse(readFileSync(P_J5, "utf-8"), reviver) as ConfigFile)
-    console.log(config)
     return config
 }

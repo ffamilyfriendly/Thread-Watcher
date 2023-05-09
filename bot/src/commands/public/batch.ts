@@ -92,7 +92,7 @@ const batch: Command = {
                     setArchive(thread)
                     actions.unarchived.push(thread)
                 } else actions.addedWithoutUnArchived.push(thread)
-                addThread( thread.id, dueArchiveTimestamp(thread.autoArchiveDuration||0) as number, thread.guildId )
+                addThread( thread.id, dueArchiveTimestamp(thread.autoArchiveDuration||0, thread.lastMessage?.createdAt) as number, thread.guildId )
             }
 
             const rmThread = ( thread: ThreadChannel ) => {

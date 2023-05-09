@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, PermissionFlagsBits, PrivateThreadChannel, PublicThreadChannel, SlashCommandBuilder, ThreadChannel } from "discord.js";
+import { ChatInputCommandInteraction, PermissionFlagsBits, SlashCommandBuilder, ThreadChannel } from "discord.js";
 import { addThread, dueArchiveTimestamp, removeThread, setArchive } from "../../utilities/threadActions";
 import { Command, statusType } from "../../interfaces/command";
 import { threads } from "../../bot";
@@ -26,7 +26,7 @@ const watch: Command = {
                 buildBaseEmbed(`Failed to unwatch thread`, statusType.error, { ephermal: true, description: `Bot failed to unwatch <#${thread.id}>` })
             })
         } else {
-            addThread(thread.id, dueArchiveTimestamp(thread.autoArchiveDuration||0) as number, interaction.guildId||"")
+            addThread(thread.id, dueArchiveTimestamp(thread.autoArchiveDuration||0, thread.lastMessage?.createdAt) as number, interaction.guildId||"")
             .then(() => {
                 if(!thread.archived || thread.unarchivable) {
                     buildBaseEmbed(`Watched thread`, statusType.success, { showAuthor: true, description: `Bot will keep <#${thread.id}> active` })
