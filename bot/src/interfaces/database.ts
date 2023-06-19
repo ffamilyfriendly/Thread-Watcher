@@ -27,5 +27,6 @@ export interface Database {
     deleteGuild: (guildID: string) => Promise<void>,
     unwatchThread: ( threadID: string ) => Promise<void>,
     getNumberOfThreads: () => Promise<number>,
-    getNumberOfChannels: () => Promise<number>
+    getNumberOfChannels: () => Promise<number>,
+    createBackup: ( baseDir: string ) => Promise<string>
 }

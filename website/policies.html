@@ -16,7 +16,7 @@
         <div class="legal">
             <div>
                 <h1 id="privacy" class="display gradient">Privacy Policy</h1>
-                <small><b>TLDR:</b> The bot does not store any message data, user related data, or PPI. To remove data simply use the bot to un-watch or un-auto channels or threads.</small>
+                <small><b>TLDR:</b> The bot does not store any message data, user related data, or PII. To remove channel data, un-watch the channel. To remove <b>ALL</b> data, remove the bot from the guild.</small>
                 <br/><br/>
                 <section>
                     <h2>Data Stored</h2>
@@ -39,6 +39,10 @@
                             <td>a timestamp in seconds of when the thread will be archived automatically</td>
                         </tr>
                         <tr>
+                            <td>thread.watched</td>
+                            <td>a boolean indicating if the thread is watched or not</td>
+                        </tr>
+                        <tr>
                             <td>channel.regex</td>
                             <td>a string representation of the regex, if set, that is used to filter threads</td>
                         </tr>
@@ -54,12 +58,14 @@
                     <small>* generic is data that is identical on both thread and channel entries </small>
 
                     <h3>In Logs</h3>
-                    <p>Logs may contain thread snowflakes, and guild snowflakes. These logs are instrumental when locating and patching bugs. The logs are accesible by the maintainer(s) only.</p>
+                    <p>Logs may contain thread snowflakes, channel snowflakes, and guild snowflakes. These logs are instrumental when locating and patching bugs. The logs are accesible by the maintainer(s) only.</p>
 
                     <h2>Removal of Data</h2>
-                    <p>You can manually remove data by using the /auto or /watch command again targeting the object you want removed from the database. In the event that you want all data removed from the bot you can do so by contacting me <a href="https://threadwatcher.xyz/devserver">in discord</a> or via email to me(at)familyfriendly.xyz.</p>
+                    <p>Channel data can be manually removed by using /auto to toggle the watch status of the channel to off. Thread data is not removed when a thread is un-watched. If you want to remove all data you can do so by kicking the bot from the guild as long as the bot is online. </p>
+                    <br/>
+                    <p>In the event that you can not remove data by kicking the bot you may contact me directly at <a href="mailto:privacy@threadwatcher.xyz">privacy@threadwatcher.xyz</a></p>
                 </section>
-                <p><b>Last updated:</b> 2023-01-31</p>
+                <p><b>Last updated:</b> 2023-05-20</p>
             </div>
     
             <div>
@@ -73,7 +79,7 @@
                         <li>User data may be deleted at any time.</li>
                         <li>The bot may cease operation at any time. With or without warning.</li>
                         <li>The bot may, for whatever reason, have periods of specified or un-specified downtime.</li>
-                        <li>Your access to the bot may partially or fully restricted without any warning or reason.</li>
+                        <li>Your access to the bot may be partially or fully restricted without any warning or reason.</li>
                     </ul>
                     <h2>Usage of the bot</h2>
                     <ul>
@@ -81,7 +87,7 @@
                         <li>You may only use the bot in a fashion that aligns with <a href="https://discord.com/terms">discords terms of service</a> and local laws.</li>
                     </ul>
                 </section>
-                <p><b>Last updated:</b> 2023-01-31</p>
+                <p><b>Last updated:</b> 2023-05-20</p>
             </div>
         </div>
     </div>

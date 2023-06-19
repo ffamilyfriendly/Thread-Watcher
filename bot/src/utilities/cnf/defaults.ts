@@ -1,5 +1,6 @@
 import { ConfigValue } from "src/interfaces/config";
 import { DataBases } from "../database/DatabaseManager"
+import { validate } from "node-cron";
 
 
 const token: ConfigValue = {
@@ -32,14 +33,23 @@ const webhook: ConfigValue = {
 const dbType: ConfigValue = {
     validate: (value) => {
         if(typeof value !== "string") return false
-        return !!DataBases[value as "sqlite"|"mysql"]
+        return !!DataBases[value as ("sqlite"|"mysql")]
     },
     default: "sqlite",
     defaultOnInvalid: true,
     matchKeys: [ "type" ]
 }
 
-const validators = [ token, colour, webhook, dbType ]
+const cronTime: ConfigValue = {
+    validate: (value) => {
+        if(typeof value !== "string") return false
+        return !value.trim() || validate(value)
+    },
+    default: "0 */6 * * *",
+    matchKeys: [ "backupInterval" ]
+}
+
+const validators = [ token, colour, webhook, dbType, cronTime ]
 
 export function validateValue( key: string, value: any ) {
     const validator = validators.find(a => a.matchKeys.includes(key))

@@ -4,7 +4,8 @@ import { AutoPoster } from "topgg-autoposter"
 import registerCommands, { clearCommands } from "./utilities/registerCommands";
 import start from "./web";
 import cnf from "./utilities/cnf"
-import { DataBases } from "./utilities/database/DatabaseManager";
+import { DataBases, getDatabase } from "./utilities/database/DatabaseManager";
+import scheduleBackups from "./utilities/routines/backup";
 
 const config = cnf()
 
@@ -59,16 +60,21 @@ checkArguments()
 
 const logger = new Log75(LogLevel.Debug, { color: true })
 const manager = new ShardingManager("./dist/bot.js", { token: config.tokens.discord, shardArgs:  args  })
+const database = getDatabase(DataBases[config.database.type], config)
 
-export { logger, config }
+export { logger, config, webLog }
 
 if(config.tokens.topgg) {
     logger.info("Using top.gg autoposter")
     AutoPoster(config.tokens.topgg, manager)
 }
 
+if(config.database.backupInterval) {
+    scheduleBackups(database)
+}
+
 const webserver = () => {
-    if(config.statsServer.enabled) start(manager, config.statsServer.port, DataBases[config.database.type])
+    if(config.statsServer.enabled) start(manager, config.statsServer.port, database)
 }
 
 let timeOut = setTimeout(() => { }, 100000);

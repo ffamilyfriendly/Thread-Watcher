@@ -181,6 +181,12 @@ class mysql implements Database {
         })
     }
 
+    createBackup(baseDir: string): Promise<string> {
+        return new Promise((resolve, reject) => {
+            // TODO: impl backup for mysql
+        })
+    }
+
 }
 
 export default mysql

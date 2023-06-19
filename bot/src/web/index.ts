@@ -1,7 +1,7 @@
 import { ShardingManager } from "discord.js";
 import express from "express";
 import { config } from "../index";
-import { DataBases, getDatabase } from "../utilities/database/DatabaseManager";
+import { databaseInstance } from "../utilities/database/DatabaseManager";
 import { logger } from "./../index";
 const app = express()
 
@@ -37,9 +37,8 @@ function getTopggVotes(): Promise<number> {
 
 let started = false
 
-export default function start(manager: ShardingManager, port: number, db: DataBases) {
+export default function start(manager: ShardingManager, port: number, database: databaseInstance) {
     if(started) return
-    const database = getDatabase(db, config)
 
     type statsData = {
         guildCount: number,

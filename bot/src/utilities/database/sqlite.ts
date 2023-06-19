@@ -1,7 +1,8 @@
 import { ChannelData, Database, ReturnData, ThreadData } from "src/interfaces/database";
 import sql, { Database as sqliteDatabase } from "better-sqlite3"
 import { ConfigFile } from "../cnf";
-import { join } from "path";
+import { join, resolve } from "path";
+import { getBackupName } from "./DatabaseManager";
 
 class sqlite implements Database {
     db: sqliteDatabase
@@ -111,6 +112,17 @@ class sqlite implements Database {
             else count = NaN
 
             resolve(count)
+        })
+    }
+
+    createBackup(baseDir: string): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const backupPath = `${join(baseDir, getBackupName())}.db`
+            this.db.backup(backupPath)
+                .then(() => {
+                    resolve(backupPath)
+                })
+                .catch(reject)
         })
     }
 

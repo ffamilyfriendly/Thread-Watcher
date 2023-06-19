@@ -24,7 +24,7 @@ type BotStyle = {
 export type ConfigFile = {
     tokens: { discord: string, topgg: string },
     clientID: string,
-    database: { type: "sqlite"|"mysql", options: DbOptions },
+    database: { type: "sqlite"|"mysql", options: DbOptions, backupInterval: string, backupAmount: number },
     statsServer: { enabled: boolean, port: number },
     style: { error: BotStyle, success: BotStyle, info: BotStyle, warning: BotStyle },
     owners: string[],
