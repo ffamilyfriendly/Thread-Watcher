@@ -20,6 +20,10 @@
     background-color: var(--primary);
 }
 
+.button.secondary {
+    background-color: var(--secondary);
+}
+
 .button.small {
     padding: 0.5rem;
 }

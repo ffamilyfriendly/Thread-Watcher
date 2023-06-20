@@ -123,7 +123,27 @@ const handleStats = async () => {
     populateTable()
 }
 
+const checkTestimonials = (el) => {
+    const isScrollable = el.scrollHeight > el.clientHeight
+
+    if(!isScrollable) {
+        console.log("not scrollable")
+        el.classList.remove("top-overflow", "bottom-overflow")
+        return
+    }
+
+    const isScrolledToBottom = el.scrollHeight <= el.clientHeight + el.scrollTop;
+    const isScrolledToTop = isScrolledToBottom ? false : el.scrollTop === 0;
+    el.classList.toggle('top-overflow', !isScrolledToBottom);
+    el.classList.toggle('bottom-overflow', !isScrolledToTop);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     handleIcons()
     handleStats()
+    checkTestimonials(document.querySelector(".testimonials"))
+    document.querySelector(".testimonials").addEventListener("scroll", (event) => {
+        console.log("yes")
+        checkTestimonials(event.currentTarget)
+    })
 })
