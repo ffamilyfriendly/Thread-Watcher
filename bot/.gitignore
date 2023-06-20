@@ -1,6 +1,6 @@
 ./src/config.json
 /node_modules
-/yarn.lock
 /dist
 /data.db
 /config.json5
+yarn-error.log

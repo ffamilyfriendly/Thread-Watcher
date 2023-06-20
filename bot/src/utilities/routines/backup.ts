@@ -30,7 +30,7 @@ export default function scheduleBackups(database: databaseInstance) {
         
         const fsItems = readdirSync(backupsDirPath).sort().reverse()
         for(const [index, fsItem] of fsItems.entries()) {
-            if((index + 1) >= config.database.backupAmount) {
+            if((index + 1) > config.database.backupAmount) {
                 const fsItemFullPath = join(backupsDirPath, fsItem)
                 const fsItemInfo = lstatSync(fsItemFullPath)
 

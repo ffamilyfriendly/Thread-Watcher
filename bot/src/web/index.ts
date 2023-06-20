@@ -90,7 +90,7 @@ export default function start(manager: ShardingManager, port: number, database: 
                 if(!(shard instanceof Array) || shard.length !== 5) continue;
                 if(typeof shard[4] === "number") stats.guildCount += shard[4]
                 stats.shards.push({
-                    id: (shard[0] instanceof Array<number>) ? shard[0][0] : 0,
+                    id: (shard[0] instanceof Array) ? shard[0][0] : 0,
                     status: typeof shard[1] === "number" ? shard[1] : 0,
                     ping:   typeof shard[2] === "number" ? shard[2] : 0,
                     uptime: typeof shard[3] === "number" ? shard[3] : 0,
@@ -112,7 +112,7 @@ export default function start(manager: ShardingManager, port: number, database: 
         manager.broadcastEval((c, { guildId }) => [c.shard?.ids, c.guilds.cache.has(guildId)], { context: { guildId: guild } })
         .then((result) => {
             for(const row of result) {
-                const shardId: number = row[0] instanceof Array<Number> ? row[0][0] : 69
+                const shardId: number = row[0] instanceof Array ? row[0][0] : 69
 
                 if(typeof row[1] === "boolean" && row[1]) {
                     return res.send({ found: true, shard: shardId })

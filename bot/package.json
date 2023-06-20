@@ -11,6 +11,7 @@
     "json5": "^2.2.3",
     "log75": "^2.2.0",
     "mysql": "^2.18.1",
+    "mysqldump": "^3.2.0",
     "node-cron": "^3.0.2",
     "topgg-autoposter": "^2.0.1",
     "yarn": "^1.22.19"

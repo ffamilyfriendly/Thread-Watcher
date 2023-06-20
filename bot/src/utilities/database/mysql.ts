@@ -1,16 +1,21 @@
 import { ChannelData, Database, ThreadData } from "../../interfaces/database";
 import { Connection, createConnection } from "mysql";
 import { ConfigFile } from "../cnf";
+import mysqldump from "mysqldump"
+import { join } from "path";
+import { getBackupName } from "./DatabaseManager";
 
 class mysql implements Database {
 
     connection: Connection
     database: string
+    private connDetails: { host: string, user: string, password: string, database: string }
 
     constructor(config: ConfigFile) {
         const { host, user, password, database } = config.database.options
 
         this.database = database
+        this.connDetails = { host, user, password, database }
         this.connection = createConnection({
             host, user, password, database
         })
@@ -158,7 +163,6 @@ class mysql implements Database {
         return new Promise((resolve, reject) => {
             this.connection.query("SELECT COUNT(*) FROM threads;", (err, res) => {
                 if(err) reject(err)
-                console.log(res)
                 let count = res[0]
                 if(count) count = Object.values(res[0])[0]
                 else count = NaN
@@ -183,7 +187,14 @@ class mysql implements Database {
 
     createBackup(baseDir: string): Promise<string> {
         return new Promise((resolve, reject) => {
-            // TODO: impl backup for mysql
+            const backupPath = `${join(baseDir, getBackupName())}.db`
+            mysqldump({
+                connection: this.connDetails,
+                dumpToFile: backupPath,
+                compressFile: false
+            })
+                .then(() => { resolve(backupPath) })
+                .catch(reject)
         })
     }
 
