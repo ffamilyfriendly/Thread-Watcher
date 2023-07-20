@@ -1,24 +1,35 @@
-import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable, DMChannel, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember } from "discord.js";
+import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable, DMChannel, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember, FetchedThreads, FetchedThreadsMore } from "discord.js";
 import { Command, statusType } from "../../interfaces/command";
-import { db, threads as threadsList } from "../../bot";
+import { threads as threadsList } from "../../bot";
 import { regMatch } from "../../events/threadCreate";
 import { strToRegex } from "../../utilities/regex";
 import { addThread, dueArchiveTimestamp, removeThread, setArchive } from "../../utilities/threadActions";
-import { getDirectTag } from "./threads";
 
 type beer = TextChannel | NewsChannel | ForumChannel
 
 const getThreads = function( channel: beer ): Promise<ThreadChannel[]> {
     return new Promise<ThreadChannel[]>( async (resolve, reject) => {
         let threads: ThreadChannel[] = [ ]
+        let promises: Promise<FetchedThreads|FetchedThreadsMore>[] = []
 
         if(!channel.viewable) return reject("can not view channel")
-        const [ active, archived ] = await Promise.all([ channel.threads.fetchActive(), channel.threads.fetchArchived() ]).catch(e => {
+
+        // Fetch all the active threads for the channel
+        promises.push(channel.threads.fetchActive())
+
+        // Fetch all the archived threads for the channel. This requires the bot has "ReadMessageHistory"
+        if(channel.guild.members.me && channel.permissionsFor(channel.guild.members.me).has(PermissionFlagsBits.ReadMessageHistory))
+            promises.push(channel.threads.fetchArchived())
+
+        const resolvedThreads = await Promise.all(promises).catch(e => {
             reject(e)
             return []
         })
 
-        threads.push( ...active.threads.values(), ...archived.threads.values() )
+        for(const resolved of resolvedThreads)
+            // for some reason this needs to be done as ALL threads in the server are returned???
+            // I've no clue why as docs specify that channel.threads.fetch<Active|Archived>() only returns threads of that channel
+            threads.push( ...resolved.threads.filter(t => t.parentId == channel.id).values() )
 
         resolve(threads)
     })  
@@ -47,8 +58,14 @@ const getDirThreads = ( dir: CategoryChannel ): Promise<ThreadChannel[]> => {
 const batch: Command = {
     run: async (interaction: ChatInputCommandInteraction, buildBaseEmbed) => {
         const parent = interaction.options.getChannel("parent") || interaction.channel
+
         if(!( (parent instanceof TextChannel) || (parent instanceof NewsChannel) || (parent instanceof ForumChannel) || (parent instanceof CategoryChannel) )) {
             buildBaseEmbed(`Wrong Channel Type`, statusType.error, { description: `<#${parent?.id}> is not a valid channel for this command`, ephermal: true })
+            return
+        }
+
+        if(!parent.viewable) {
+            buildBaseEmbed("Cannot view channel", statusType.error, { description: `Thread-Watcher cannot see <#${parent.id}>. Make sure the bot has the \`View Channel\` permission in the channel.`, ephermal: true })
             return
         }
 

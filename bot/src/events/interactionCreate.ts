@@ -69,16 +69,25 @@ const handleCommands = (interaction: ChatInputCommandInteraction) => {
         })
     }
 
+    const errDetails = `
+Please report this issue ${config.devServerInvite && (config.devServerInvite !== "https://discord.gg/server") ? `on the [support server](< ${config.devServerInvite}>)` : `on [the repo](<https://github.com/ffamilyfriendly/Thread-Watcher/issues/new>)`}. Include the following:
+\`\`\`
+command: ${command.data.name}
+guild: ${interaction.guildId}
+replicate: <what you did to get this error>
+\`\`\`
+    `
+
     try {
         command.run(interaction, buildBaseEmbed).catch(e => {
-            buildBaseEmbed("Command Error", statusType.error, { ephermal: true, description: `command \`${interaction.commandName}\` failed due to mysterious reasons.\nPlease report this issue if it continues` })
+            buildBaseEmbed("Command Error", statusType.error, { ephermal: true, description: `command \`${interaction.commandName}\` failed due to mysterious reasons.\n${errDetails}` })
             logger.error(`[${command.data.name}] failed on guild ${interaction.guildId}\n${e.toString()} (dump below)`)
             console.error(e)
         })
     } catch(err) {
         logger.error(`[${command.data.name}] failed hard on guild ${interaction.guildId} (dump below)`)
         console.error(err)
-        buildBaseEmbed("Unknown error", statusType.error, { ephermal: true, description: `command \`${interaction.commandName}\` failed due to mysterious reasons.\nPlease report this issue if it continues` })
+        buildBaseEmbed("Unknown error", statusType.error, { ephermal: true, description: `command \`${interaction.commandName}\` failed due to mysterious reasons.\n${errDetails}` })
     }
 }
 
