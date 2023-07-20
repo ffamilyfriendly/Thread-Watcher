@@ -11,7 +11,7 @@ export default function(client: Client) {
     const loadThreads = (): Promise<ThreadData[]|void>[] => {
         let promises: Promise<ThreadData[]|void>[] = []
 
-        for(const [id,guild] of client.guilds.cache) {
+        for(const [_id,guild] of client.guilds.cache) {
             let dbPromise: Promise<ThreadData[]|void> = db.getThreads(guild.id)
             .then((res) => {
                 for(const t of res)

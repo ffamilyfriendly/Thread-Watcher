@@ -76,6 +76,7 @@ const handleCommands = (interaction: ChatInputCommandInteraction) => {
             console.error(e)
         })
     } catch(err) {
+        logger.error(`[${command.data.name}] failed hard on guild ${interaction.guildId} (dump below)`)
         console.error(err)
         buildBaseEmbed("Unknown error", statusType.error, { ephermal: true, description: `command \`${interaction.commandName}\` failed due to mysterious reasons.\nPlease report this issue if it continues` })
     }
