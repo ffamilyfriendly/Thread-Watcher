@@ -1,23 +1,28 @@
 import { ActivityType, Client } from "discord.js";
 import { db, logger, threads } from "../bot";
 import { bumpThreadsRoutine } from "../utilities/routines/ensureVisible";
+import { ThreadData } from "src/interfaces/database";
 
 
 
 export default function(client: Client) {
     logger.info(`Client ready! `)
 
-    const loadThreads = () => {
+    const loadThreads = (): Promise<ThreadData[]|void>[] => {
+        let promises: Promise<ThreadData[]|void>[] = []
+
         for(const [id,guild] of client.guilds.cache) {
-            db.getThreads(guild.id)
+            let dbPromise: Promise<ThreadData[]|void> = db.getThreads(guild.id)
             .then((res) => {
                 for(const t of res)
                     threads.set(t.id, t)
             })
-        }
-    }
 
-    loadThreads()
+            promises.push(dbPromise)
+        }
+
+        return promises
+    }
 
     const setPresence = () => {
         client.user?.setPresence({ activities:[{ name:"your threads 🧵", type: ActivityType.Watching }], status: "online" })
@@ -26,6 +31,11 @@ export default function(client: Client) {
     setPresence()
     setInterval(setPresence, 1000 * 60 * 60)
 
-    bumpThreadsRoutine()
+    Promise.allSettled(loadThreads())
+        .then(bumpThreadsRoutine)
+        .catch(e => {
+            logger.warn(`[Ready] could not load data for some guilds`)
+            console.warn(e)
+        })
     setInterval(bumpThreadsRoutine, 1000 * 60 * 50)
 }
