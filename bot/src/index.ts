@@ -28,6 +28,8 @@ const webLog = (title: string, description: string|null, colour: ColorResolvable
 
 const args = process.argv.slice(2)
 
+const logger = new Log75(LogLevel.Debug, { color: true })
+
 const checkCommandRegistryParameters = async () => {
 
     if(checkCommandChange()) {
@@ -68,8 +70,6 @@ const checkCommandRegistryParameters = async () => {
 }
 
 checkCommandRegistryParameters()
-
-const logger = new Log75(LogLevel.Debug, { color: true })
 const manager = new ShardingManager("./dist/bot.js", { token: config.tokens.discord, shardArgs:  args  })
 const database = getDatabase(DataBases[config.database.type], config)
 
