@@ -1,7 +1,7 @@
 import { ShardingManager, WebhookClient, EmbedBuilder, Colors, ColorResolvable } from "discord.js";
 import Log75, { LogLevel } from "log75"
 import { AutoPoster } from "topgg-autoposter"
-import registerCommands, { clearCommands } from "./utilities/registerCommands";
+import registerCommands, { checkCommandChange, clearCommands } from "./utilities/registerCommands";
 import start from "./web";
 import cnf from "./utilities/cnf"
 import { DataBases, getDatabase } from "./utilities/database/DatabaseManager";
@@ -28,7 +28,18 @@ const webLog = (title: string, description: string|null, colour: ColorResolvable
 
 const args = process.argv.slice(2)
 
-const checkArguments = async () => {
+const checkCommandRegistryParameters = async () => {
+
+    if(checkCommandChange()) {
+        logger.debug("no command change found")
+    } else {
+        try {
+            registerCommands(!args.includes("-local"), config)
+        } catch(err) {
+            logger.error("failed to register commands.\n${err}")
+            process.exit(1)
+        }
+    }
 
     if(args.includes("-clear_commands")) {
         const local = args.includes("-local")
@@ -56,7 +67,7 @@ const checkArguments = async () => {
     }
 }
 
-checkArguments()
+checkCommandRegistryParameters()
 
 const logger = new Log75(LogLevel.Debug, { color: true })
 const manager = new ShardingManager("./dist/bot.js", { token: config.tokens.discord, shardArgs:  args  })

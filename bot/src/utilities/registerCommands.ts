@@ -1,8 +1,9 @@
 import { Command } from "src/interfaces/command";
-import { readdirSync, statSync } from "fs";
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "fs";
 import path from "path";
 import { REST, Routes } from "discord.js";
 import { ConfigFile } from "./cnf";
+import { Hash, createHash } from "crypto";
 
 /*
     Yes, this is indeed the same code as in loadCommands.
@@ -16,7 +17,6 @@ const loadCommands = (baseDir: string = "../dist/commands/", dirDive: string = "
 
     let pCommands: Command[] = []
     let prCommands: Command[] = []
-
 
     const p = path.join(__dirname, baseDir + (dirDive ? dirDive : ""))
     for(let file of readdirSync(p)) {
@@ -95,4 +95,31 @@ export function clearCommands(local: Boolean, config: ConfigFile) {
             .then(resolve)
             .catch(reject)
     })
+}
+
+export function genCommandHash( writeToFile: boolean = true ): string {
+    const { publicCommands, privateCommands } = loadCommands("../commands/")
+    const hash = createHash("sha256")
+    
+    for(const command of [...publicCommands, ...privateCommands]) {
+        const commandInfo = `${JSON.stringify(command.data)}:${JSON.stringify(command.externalOptions ?? "")}`
+        hash.update(commandInfo)
+    }
+
+    const digest = hash.digest("base64")
+
+    if(writeToFile) {
+        writeFileSync("./.commandshash", digest)
+    }
+
+    return digest
+}
+
+export function checkCommandChange(): boolean {
+    const oldHashPath = path.join(__dirname, "../../.commandshash")
+
+    const oldHash = existsSync(oldHashPath) ? readFileSync(oldHashPath, "utf8") : Buffer.from("file does not exist").toString("base64")
+    const currentHash = genCommandHash()
+
+    return oldHash === currentHash
 }
