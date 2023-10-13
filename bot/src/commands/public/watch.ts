@@ -53,7 +53,7 @@ const watch: Command = {
         .setDescription("watch or unwatch a thread"),
     externalOptions: [
         {
-            channel_types: [ 10, 11, 12 ],
+            channel_types: [ 10, 11, 12, 16 ],
             description: "thread to watch or unwatch",
             name: "thread",
             type: 7

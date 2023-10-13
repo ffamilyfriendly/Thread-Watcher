@@ -173,7 +173,7 @@ const batch: Command = {
     },
     externalOptions: [
         {
-            channel_types: [ 0, 4, 5, 15 ],
+            channel_types: [ 0, 4, 5, 15, 16 ],
             description: "parent whose children will be affected",
             name: "parent",
             type: 7

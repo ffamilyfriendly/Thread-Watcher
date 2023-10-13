@@ -32,6 +32,19 @@ const client = new Client({
     intents: [ GatewayIntentBits.Guilds ]
 })
 
+/*
+    Sometimes ol' John is a silly willy and makes weird refferences that result in this file being ran without being called by
+    the shard manager. This is rather silly as this makes the code think it's able to be strong and independant (tries authing as a non-sharded bot - This is bad).
+    A very bodged fix for this is to find any orphan trying to be alive and make it not be alive anymore thanks to my special orphan killing algorith (patent pending)
+
+    (I should try to find the root cause of this code being called in stand-alone mode but that is effort and I am lazy)
+*/
+let hasParent: boolean = true
+if(!client.shard) {
+    logger.debug("Orphan client detected.\nKilling the orphan :D")
+    hasParent = false
+}
+
 loadEvents(client)
 const commands = loadCommands()
 
@@ -39,14 +52,17 @@ const threads = new Map<string, ThreadData>();
 
 export { client, logger, commands, db, threads, config }
 
-client.login(config.tokens.discord)
-.catch(err => {
-    logger.error(`Could not authorise bot. ${err.toString()}`)
-    process.exit(1)
-})
+if(hasParent) {
+    client.login(config.tokens.discord)
+    .catch(err => {
+        logger.error(`Could not authorise bot. ${err.toString()}`)
+        process.exit(1)
+    })
 
-process.on("uncaughtException", (err) => {
-    logger.error(`[FATAL ERROR] shard ${client.shard?.ids[0]} encountered a fatal error. (dump below)`)
-    console.error(err)
-    process.exit(1)
-})
+    process.on("uncaughtException", (err) => {
+        logger.error(`[FATAL ERROR] shard ${client.shard?.ids[0]} encountered a fatal error. (dump below)`)
+        console.error(err)
+        process.exit(1)
+    })
+}
+

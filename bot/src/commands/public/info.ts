@@ -15,7 +15,7 @@ const info: Command = {
                     interaction.client.shard?.fetchClientValues("guilds.cache.size")
                         .then(results => {
 
-                            if(!(results instanceof Array<number>)) return
+                            if(!(results instanceof Array)) return
 
                             let guildCount: number = 0
                             for(const item of results) {

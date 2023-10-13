@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "
 import path from "path";
 import { REST, Routes } from "discord.js";
 import { ConfigFile } from "./cnf";
-import { Hash, createHash } from "crypto";
+import { createHash } from "crypto";
 
 /*
     Yes, this is indeed the same code as in loadCommands.
