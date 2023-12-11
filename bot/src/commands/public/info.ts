@@ -61,7 +61,7 @@ const info: Command = {
                 fields: [
                     {
                         name: "Source code",
-                        value: "Thread-Watcher is fully open source. You can view the source code [here](https://github.com/ffamilyfriendly/Thread-Watcher/) and get help with self-hosting the bot [in the wiki](https://github.com/ffamilyfriendly/Thread-Watcher/wiki/Hosting)"
+                        value: "Thread-Watcher is fully open source. You can view the source code [here](https://github.com/ffamilyfriendly/Thread-Watcher/) and get help with self-hosting the bot [on the wiki](https://docs.threadwatcher.xyz/hosting/start)"
                     },
                     {
                         name: "Credits",

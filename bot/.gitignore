@@ -1,7 +1,7 @@
 ./src/config.json
 /node_modules
 /dist
-/data.db
+*.db
 /config.json5
 yarn-error.log
 */backups

@@ -8,7 +8,13 @@ import { db, threads } from "../bot";
  * @returns {Number} the calculated timestamp where a thread will be hidden
  */
 export function dueArchiveTimestamp(dueArchive: number, fromDate?: Date): Number {
-    const date = fromDate || new Date()
+
+    // if an undefined value is passed we want to treat the thread as already stale
+    // Previously we defaulted to simply the current date which meant that if the thread was already stale
+    // and the bot did not manage to get the last message it would take a few days (or a week at most) until the bot
+    // actually did its job
+    const date = typeof fromDate == "undefined" ? new Date(0) : fromDate || new Date()
+    
     return (date.getTime() / 1000) + (dueArchive * 60)
 }
 
