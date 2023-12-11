@@ -12,12 +12,6 @@ export function dueArchiveTimestamp(dueArchive: number, fromDate?: Date): Number
     return (date.getTime() / 1000) + (dueArchive * 60)
 }
 
-/* TODO: analyse if this function is redundant. Looks to serve the same purpouse as the "dueArchiveTimestamp" function */
-export function calcNextUnarchive(thread: ThreadChannel) {
-    if(!thread) return
-    return ((thread.archivedAt?.getTime()||0) / 1000) + ((thread.autoArchiveDuration||0) * 60)
-}
-
 export function setArchive(thread: ThreadChannel, dueArchive: number = 10_080) {
     return new Promise((resolve, reject) => {
         if(thread.locked) resolve(null);

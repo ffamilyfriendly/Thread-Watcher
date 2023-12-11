@@ -41,7 +41,7 @@ const client = new Client({
 */
 let hasParent: boolean = true
 if(!client.shard) {
-    logger.debug("Orphan client detected.\nKilling the orphan :D")
+    logger.debug("👶 Orphan client detected.\n💀 Killing the orphan :D")
     hasParent = false
 }
 
