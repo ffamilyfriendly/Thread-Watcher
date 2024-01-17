@@ -67,7 +67,7 @@ interface resObj {
     channelsFailed: string[]
 }
 
-export function getDirectTag(c: ThreadChannel|TextChannel|ForumChannel|NewsChannel) {
+export function getDirectTag(c: ThreadChannel|TextChannel|ForumChannel|NewsChannel|CategoryChannel) {
     return `[#${c.name}](https://discord.com/channels/${c.guildId}/${c.id})`
 }
 
@@ -115,7 +115,7 @@ const threads: Command = {
             for(const channelData of channels) {
                 const channel = await interaction.client.channels.fetch(channelData.id).catch(() => { })
                 if(channel) {
-                    if( !( ((channel instanceof TextChannel) || ( channel instanceof ForumChannel ) || (channel instanceof NewsChannel)) && interaction.member instanceof GuildMember ) ) break;
+                    if( !( ((channel instanceof TextChannel) || ( channel instanceof ForumChannel ) || (channel instanceof NewsChannel) || (channel instanceof CategoryChannel)) && interaction.member instanceof GuildMember ) ) break;
                     if(channel.permissionsFor(interaction.member).has(PermissionFlagsBits.ViewChannel)) {
                         res.channels.push(getDirectTag(channel))
                     }
@@ -155,7 +155,7 @@ const threads: Command = {
             const fields = fitIntoFields("Channels", [ ...res.channels, ...res.channelsFailed ]).fieldArr
             if(fields.length > 25) fields.length = 25
             const e = genEmbed()
-                .setDescription(`Watching \`${res.channels.length}\` channels for threads to watch!`)
+                .setDescription(`Watching \`${res.channels.length}\` channels for new threads!`)
                 .addFields(...fields)
             embeds.push(e)
         }

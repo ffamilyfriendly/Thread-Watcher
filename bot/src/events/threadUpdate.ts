@@ -6,7 +6,7 @@ import { threadShouldBeWatched } from "./threadCreate";
 
 export default async function(oldThread: ThreadChannel, newThread: ThreadChannel) {
     try {
-        const auto = (await db.getChannels(newThread.guildId)).find(t => t.id == newThread.parentId)
+        const auto = (await db.getChannels(newThread.guildId)).find(t => t.id == newThread.parentId) || (await db.getChannels(newThread.guildId)).find(t => t.id == newThread.parent?.parentId)
     if(auto) {
 
         const isWatched = threads.has(newThread.id)

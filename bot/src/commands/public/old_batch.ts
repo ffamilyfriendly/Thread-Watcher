@@ -1,26 +1,13 @@
-import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable, DMChannel, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember, FetchedThreads, FetchedThreadsMore, MediaChannel, Role, GuildForumTag } from "discord.js";
+import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable, DMChannel, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember, FetchedThreads, FetchedThreadsMore } from "discord.js";
 import { Command, statusType } from "../../interfaces/command";
-import { db, threads as threadsList } from "../../bot";
+import { threads as threadsList } from "../../bot";
 import { regMatch } from "../../events/threadCreate";
 import { strToRegex } from "../../utilities/regex";
 import { addThread, dueArchiveTimestamp, removeThread, setArchive } from "../../utilities/threadActions";
 
-type threadContainers = TextChannel | NewsChannel | ForumChannel | MediaChannel
+type beer = TextChannel | NewsChannel | ForumChannel
 
-type actionsList = {
-    archived: ThreadChannel[],
-    unarchived: ThreadChannel[],
-    addedWithoutUnArchived: ThreadChannel[],
-    noAction: ThreadChannel[]
-}
-
-interface filterTypes {
-    roles: (Role|undefined|null)[],
-    tags: (GuildForumTag | undefined)[],
-    regex: string
-}
-
-const getThreads = function( channel: threadContainers ): Promise<ThreadChannel[]> {
+const getThreads = function( channel: beer ): Promise<ThreadChannel[]> {
     return new Promise<ThreadChannel[]>( async (resolve, reject) => {
         let threads: ThreadChannel[] = [ ]
         let promises: Promise<FetchedThreads|FetchedThreadsMore>[] = []
@@ -71,9 +58,6 @@ const getDirThreads = ( dir: CategoryChannel ): Promise<ThreadChannel[]> => {
 const batch: Command = {
     run: async (interaction: ChatInputCommandInteraction, buildBaseEmbed) => {
         const parent = interaction.options.getChannel("parent") || interaction.channel
-        const action = interaction.options.getString("action")
-        const advanced = interaction.options.getBoolean("advanced")
-        const watchNew = interaction.options.getBoolean("watch-new")
 
         if(!( (parent instanceof TextChannel) || (parent instanceof NewsChannel) || (parent instanceof ForumChannel) || (parent instanceof CategoryChannel) )) {
             buildBaseEmbed(`Wrong Channel Type`, statusType.error, { description: `<#${parent?.id}> is not a valid channel for this command`, ephermal: true })
@@ -85,30 +69,28 @@ const batch: Command = {
             return
         }
 
-        if(!action || !interaction.guildId) { 
+        const action = interaction.options.getString("action")
+        if(!action) { 
             buildBaseEmbed(`Rare Easter Egg`, statusType.warning, { description: `Congrats! 🎉\nThis error should be impossible to get but you got it anyhow you silly little sausage.` })
             return
         }
 
+        const pattern = interaction.options.getString("pattern")
+        const reg = pattern ? (pattern.length != 0 ? strToRegex(pattern) : null) : null
+
         await interaction.deferReply()
 
-        const threads: ThreadChannel[] = []
+        let threads: ThreadChannel[] = await (parent instanceof CategoryChannel ? getDirThreads(parent) : getThreads(parent))
 
-        let filters: filterTypes = {
-            roles: [],
-            tags: [],
-            regex: ""
+        if(reg) {
+            threads = threads.filter(f => regMatch(f.name, reg.regex, reg.inverted))   
         }
 
-        if(advanced) {
-            const selectedRoles: string[] = [ ]
-        } else {
-            
-
-            if(parent instanceof CategoryChannel) threads.push(...await getDirThreads(parent))
-            else threads.push(...await getThreads(parent))
-
-
+        type actionsList = {
+            archived: ThreadChannel[],
+            unarchived: ThreadChannel[],
+            addedWithoutUnArchived: ThreadChannel[],
+            noAction: ThreadChannel[]
         }
 
         const actions: actionsList = {
@@ -148,21 +130,7 @@ const batch: Command = {
                     if(threadsList.has(t.id)) rmThread(t)
                     else addAndUnArchiveThread(t)
                 break;
-                default:
-                    actions.noAction.push(t)
-                break;
             }
-        }
-
-
-        if(watchNew) {
-            const alreadyExists = (await db.getChannels(parent.id)).find(t => t.id == parent.id)
-
-            // If filter alr exists for this channel we go ahead and delete it
-            // this so the insertion we make later does not cause any oopsie poopsies
-            if(alreadyExists) await db.deleteChannel(parent.id)
-    
-            db.insertChannel({ id: parent.id, server: interaction.guildId, regex: filters.regex, tags: filters.tags.map(t => t?.id), roles: filters.roles.map(r => r?.id) })
         }
 
         const buildActionList = () => {
@@ -176,18 +144,12 @@ const batch: Command = {
             return rv
         }
 
-        const resultEmbed = buildBaseEmbed("Done", statusType.success, {
-            noSend: true,
-            description: `new threads ${ watchNew ? "will" : "will not" } be watched`,
-            fields: [
-                { 
-                    name: "Threads actioned", value: buildActionList() 
-                }
-            ]
+        const e = buildBaseEmbed(`Batch ${action} done`, statusType.success, {
+            description: `Action ran on \`${threads.length}\` thread${threads.length === 1 ? "" : "s"}\n${buildActionList()}`,
+            noSend: true
         })
 
-
-        interaction.editReply({ embeds:[ resultEmbed ] })
+        interaction.editReply({ embeds: [ e ] })
     },
     data: new SlashCommandBuilder()
         .setName("batch")
@@ -196,23 +158,18 @@ const batch: Command = {
             o
             .setName("action")
             .setDescription("what action to run on selected threads")
-            .setChoices(...[ { name: "watch", value:"watch" }, { name: "unwatch", value:"unwatch" }, { name: "toggle", value:"toggle" }, { name: "nothing", value: "nothing" } ])
+            .setChoices(...[ { name: "watch", value:"watch" }, { name: "unwatch", value:"unwatch" }, { name: "toggle", value:"toggle" } ])
             .setRequired(true)
         )
-        .addBooleanOption((o) =>
+        .addStringOption((o) =>
             o
-            .setName("advanced")
-            .setDescription("if you want more options")
-        )
-        .addBooleanOption((o) =>
-            o
-            .setName("watch-new")
-            .setDescription("will automatically watch new threads")
+            .setName("pattern")
+            .setDescription("run batch action only on threads which fit this pattern")
         ),
     gatekeeping: {
         userPermissions: [ PermissionFlagsBits.ManageThreads ],
         ownerOnly: false,
-        devServerOnly: true
+        devServerOnly: false
     },
     externalOptions: [
         {

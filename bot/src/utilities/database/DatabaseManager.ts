@@ -16,6 +16,11 @@ export function getBackupName(): string {
 }
 
 export function getDatabase(type: DataBases, config: ConfigFile): sqlite|mysql {
+    // I could probably return a proxy obj of the database instance
+    // and handle cache like that and ditch the cache collection which
+    // would allow me to just use db.whatever anywhere without worrying about cache
+    // but this feels complex and not needed. Keeping comment in here for later
+    
     switch(type) {
         case DataBases.sqlite:
             return new sqlite(config)

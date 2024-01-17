@@ -65,11 +65,11 @@ const info: Command = {
                     },
                     {
                         name: "Credits",
-                        value: `[Thread-Watcher](https://threadwathcer.xyz) is being developed by [**Family friendly#6191**](https://familyfriendly.xyz) using the [discord.js](https://discord.js.org/#/) library.\nIt uses the libraries [better-sqlite3](https://www.npmjs.com/package/better-sqlite3) by [**Joshua Wise**](https://github.com/JoshuaWise) and [mysql](https://www.npmjs.com/package/mysql) created by [**the contributors of mysqljs/mysql**](https://github.com/mysqljs/mysql/graphs/contributors) to store data.\nIt also uses the logging library [log75](https://www.npmjs.com/package/log75) created by [**wait what**](https://waitwhat.sh/)`
+                        value: `[Thread-Watcher](https://threadwathcer.xyz) is being developed by [**FamilyFriendly**](https://familyfriendly.xyz) using the [discord.js](https://discord.js.org/#/) library.\nIt uses the libraries [better-sqlite3](https://www.npmjs.com/package/better-sqlite3) by [**Joshua Wise**](https://github.com/JoshuaWise) and [mysql](https://www.npmjs.com/package/mysql) created by [**the contributors of mysqljs/mysql**](https://github.com/mysqljs/mysql/graphs/contributors) to store data.\nIt also uses the logging library [log75](https://www.npmjs.com/package/log75) created by [**wait what**](https://waitwhat.sh/)`
                     },
                     {
-                        name: "Donations",
-                        value: "Want to help keep Thread-Watcher free? You can find ways to donate [here](https://threadwatcher.xyz/donate)"
+                        name: "Support the Bot",
+                        value: "Want to help keep Thread-Watcher free? You can find ways to donate [here](https://threadwatcher.xyz/donate)\nIf you cant donate (I get it) I'd very much appriciate an honest review on [top.gg](https://top.gg/bot/870715447136366662#reviews)"
                     }
                 ],
                 ephermal: true,

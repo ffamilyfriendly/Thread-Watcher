@@ -47,7 +47,11 @@ export function threadShouldBeWatched(auto: ChannelData, thread: ThreadChannel) 
 }
 
 export default async function(thread: ThreadChannel) {
-    const auto = (await db.getChannels(thread.guildId)).find(t => t.id == thread.parentId)
+
+    // Here we check if the threads parent or the threads grandparent has an auto rule
+    // This is kinda ugly and not performant as we do 2 queries but I do not care
+    const auto = (await db.getChannels(thread.guildId)).find(t => t.id == thread.parentId) || (await db.getChannels(thread.guildId)).find(t => t.id == thread.parent?.parentId)
+    
     if(!auto) return
 
     if(await threadShouldBeWatched(auto, thread)) {

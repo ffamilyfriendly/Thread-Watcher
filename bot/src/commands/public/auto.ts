@@ -19,6 +19,10 @@ type buttonOptions = {
 
 const auto: Command = {
     run: async (interaction: ChatInputCommandInteraction, buildBaseEmbed) => {
+        
+        buildBaseEmbed("Depracated", statusType.warning, { description: "The functionality of this command has been moved to `/batch`" })
+        
+        /*
         const channel = interaction.options.getChannel("channel") || interaction.channel
         const advanced = interaction.options.getBoolean("advanced") || false
 
@@ -44,8 +48,6 @@ const auto: Command = {
 
             return rv
         }
-        
-        //await interaction.deferReply()
 
         if(!( (channel instanceof TextChannel) ||(channel instanceof NewsChannel) || (channel instanceof ForumChannel) )) {
             buildBaseEmbed("Wrong Channel", statusType.error, { description: `<#${channel.id}> is not any of: \`ForumChannel\`, \`TextChannel\`, or \`NewsChannel\`` })
@@ -289,7 +291,7 @@ const auto: Command = {
             interaction.client.on("interactionCreate", listener)
 
         } else autoAdd()
-        
+        */
 
     },
     gatekeeping: {
