@@ -1,9 +1,10 @@
-import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable, DMChannel, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember, FetchedThreads, FetchedThreadsMore, MediaChannel, Role, GuildForumTag } from "discord.js";
+import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable, DMChannel, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember, FetchedThreads, FetchedThreadsMore, MediaChannel, Role, GuildForumTag, ActionRowBuilder, SelectMenuBuilder, ButtonStyle, ButtonInteraction } from "discord.js";
 import { Command, statusType } from "../../interfaces/command";
 import { db, threads as threadsList } from "../../bot";
 import { regMatch } from "../../events/threadCreate";
 import { strToRegex } from "../../utilities/regex";
 import { addThread, dueArchiveTimestamp, removeThread, setArchive } from "../../utilities/threadActions";
+import TwButton from "../../components/Button";
 
 type threadContainers = TextChannel | NewsChannel | ForumChannel | MediaChannel
 
@@ -94,21 +95,57 @@ const batch: Command = {
 
         const threads: ThreadChannel[] = []
 
+        if(parent instanceof CategoryChannel) threads.push(...await getDirThreads(parent))
+            else threads.push(...await getThreads(parent))
+
         let filters: filterTypes = {
             roles: [],
             tags: [],
             regex: ""
         }
 
+        const embeds = []
+
+        // This is against the law but I do not care for i am the code bandit herherherhehrherherherhreuh
+        const components: any[] = []
+
         if(advanced) {
+            const filterEmbed = buildBaseEmbed("Filter Options", statusType.info, { noSend: true })
+            const regexRowComponents = new ActionRowBuilder()
+            const rolesSelectComponents = new ActionRowBuilder<SelectMenuBuilder>()
+            const rolesRowNavigationComponents = new ActionRowBuilder()
+            const tagsSelectComponents = new ActionRowBuilder<SelectMenuBuilder>()
+            embeds.push(filterEmbed)
+            components.push(regexRowComponents, rolesSelectComponents, rolesRowNavigationComponents, tagsSelectComponents) 
+
+            const genEmbedFields = () => {
+                filterEmbed.setFields([
+                    { name: "Roles", value: "only threads created by people with any of these roles will be watches:\n<roleshere>", inline: true },
+                    { name: "Tags", value: "only posts with any of these tags will be watched:\n<tagshere>", inline: true },
+                    { name: "Regex", value: "only posts whose name pass this regex will be watched:\n<regexhere>", inline: true }
+                ])
+            }
+
+            const tButton = new TwButton("test", ButtonStyle.Success)
+
+            tButton.filter = (int: ButtonInteraction) => int.user.id === interaction.user.id
+
+            tButton.onclick((i) => {
+                console.log("YAY!!! :D :D :D")
+                console.log(i)
+                i.update("sup")
+            })
+
+            regexRowComponents.addComponents(tButton.button)
+
+            genEmbedFields()
+
             const selectedRoles: string[] = [ ]
-        } else {
-            
 
-            if(parent instanceof CategoryChannel) threads.push(...await getDirThreads(parent))
-            else threads.push(...await getThreads(parent))
+            interaction.editReply({embeds: [ filterEmbed ], components: [ ...components ]})
 
-
+            // For debugging
+            return
         }
 
         const actions: actionsList = {
@@ -186,8 +223,10 @@ const batch: Command = {
             ]
         })
 
+        embeds.push(resultEmbed)
 
-        interaction.editReply({ embeds:[ resultEmbed ] })
+
+        interaction.editReply({ embeds })
     },
     data: new SlashCommandBuilder()
         .setName("batch")

@@ -1,7 +1,8 @@
-import { BaseInteraction, ColorResolvable, CommandInteraction, EmbedBuilder, ButtonBuilder, ChatInputCommandInteraction, Interaction, AutocompleteInteraction } from "discord.js";
+import { BaseInteraction, ColorResolvable, CommandInteraction, EmbedBuilder, ButtonBuilder, ChatInputCommandInteraction, Interaction, AutocompleteInteraction, ButtonInteraction } from "discord.js";
 import { client, logger, config } from "../bot";
 import { commands } from "../bot";
 import { statusType, baseEmbedOptions } from "../interfaces/command";
+import { ButtonInteractionQueue } from "../components/Button";
 
 const handleCommands = (interaction: ChatInputCommandInteraction) => {
 
@@ -96,7 +97,15 @@ const handleAutoComplete = ( interaction: AutocompleteInteraction ) => {
     if(command?.autocomplete) command.autocomplete(interaction)
 }
 
+const handleButton = ( interaction: ButtonInteraction ) => {
+    const button = ButtonInteractionQueue.get(interaction.customId)
+    if(button) {
+        button._middleware(interaction)
+    }
+}
+
 export default function(interaction: BaseInteraction) {
     if(interaction.isChatInputCommand()) handleCommands(interaction)
     if(interaction.isAutocomplete()) handleAutoComplete(interaction)
+    if(interaction.isButton()) handleButton(interaction)
 }
