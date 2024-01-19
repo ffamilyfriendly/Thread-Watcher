@@ -1,10 +1,11 @@
-import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable, DMChannel, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember, FetchedThreads, FetchedThreadsMore, MediaChannel, Role, GuildForumTag, ActionRowBuilder, SelectMenuBuilder, ButtonStyle, ButtonInteraction } from "discord.js";
+import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable, DMChannel, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember, FetchedThreads, FetchedThreadsMore, MediaChannel, Role, GuildForumTag, ActionRowBuilder, SelectMenuBuilder, ButtonStyle, ButtonInteraction, TextInputStyle } from "discord.js";
 import { Command, statusType } from "../../interfaces/command";
 import { db, threads as threadsList } from "../../bot";
 import { regMatch } from "../../events/threadCreate";
 import { strToRegex } from "../../utilities/regex";
 import { addThread, dueArchiveTimestamp, removeThread, setArchive } from "../../utilities/threadActions";
 import TwButton from "../../components/Button";
+import { ModalBuilder, TextInputBuilder } from "@discordjs/builders";
 
 type threadContainers = TextChannel | NewsChannel | ForumChannel | MediaChannel
 
@@ -110,34 +111,83 @@ const batch: Command = {
         const components: any[] = []
 
         if(advanced) {
-            const filterEmbed = buildBaseEmbed("Filter Options", statusType.info, { noSend: true })
+            const filterEmbed = buildBaseEmbed(
+                "Filter Options", 
+                statusType.info, 
+                    { 
+                        noSend: true,
+                        description: `
+                            The bot will only handle threads that match the criteria set by you below.
+
+                            <:arrow_right:1197893896416538695> If multiple roles are selected, the thread owner **needs only one** for the thread to be watched
+                            <:arrow_right:1197893896416538695> The same is true for post tags
+                        `
+                    }
+                )
+
             const regexRowComponents = new ActionRowBuilder()
-            const rolesSelectComponents = new ActionRowBuilder<SelectMenuBuilder>()
-            const rolesRowNavigationComponents = new ActionRowBuilder()
-            const tagsSelectComponents = new ActionRowBuilder<SelectMenuBuilder>()
+            //const rolesSelectComponents = new ActionRowBuilder<SelectMenuBuilder>()
+            //const rolesRowNavigationComponents = new ActionRowBuilder()
+            //const tagsSelectComponents = new ActionRowBuilder<SelectMenuBuilder>()
             embeds.push(filterEmbed)
-            components.push(regexRowComponents, rolesSelectComponents, rolesRowNavigationComponents, tagsSelectComponents) 
+            components.push(regexRowComponents, /*rolesSelectComponents, rolesRowNavigationComponents, tagsSelectComponents*/) 
 
             const genEmbedFields = () => {
                 filterEmbed.setFields([
-                    { name: "Roles", value: "only threads created by people with any of these roles will be watches:\n<roleshere>", inline: true },
-                    { name: "Tags", value: "only posts with any of these tags will be watched:\n<tagshere>", inline: true },
-                    { name: "Regex", value: "only posts whose name pass this regex will be watched:\n<regexhere>", inline: true }
+                    { name: "Roles", value: "<roleshere>", inline: true },
+                    { name: "Tags", value: "<tagshere>", inline: true },
+                    { name: "Pattern", value: `\`${filters.regex}\``, inline: true }
                 ])
             }
 
-            const tButton = new TwButton("test", ButtonStyle.Success)
+            const updateEmbed = (i: ButtonInteraction) => {
+                genEmbedFields()
+                i.update({embeds: [ filterEmbed ]})
+            }
 
-            tButton.filter = (int: ButtonInteraction) => int.user.id === interaction.user.id
+            const regexButtons = () => {
+                const setButton = new TwButton("Select Pattern", ButtonStyle.Primary)
+                const tryButton = new TwButton("Try Pattern", ButtonStyle.Secondary)
+                const clearButton = new TwButton("Clear Pattern", ButtonStyle.Danger)
 
-            tButton.onclick((i) => {
-                console.log("YAY!!! :D :D :D")
-                console.log(i)
-                i.update("sup")
-            })
+                const filter = (int: ButtonInteraction) => int.user.id === interaction.user.id
+    
+                setButton.filter    = filter
+                tryButton.filter    = filter
+                clearButton.filter  = filter
+                
+                setButton.onclick((i) => {
+                    const modal = new ModalBuilder()
+                        .setCustomId(`modal_${interaction.id}`)
+                        .setTitle("Enter Pattern")
+                    
+                    const patternText = new TextInputBuilder()
+                        .setCustomId(`pattern_${interaction.id}`)
+                        .setLabel("Pattern")
+                        .setStyle(TextInputStyle.Short)
+                        .setRequired(true)
 
-            regexRowComponents.addComponents(tButton.button)
+                    const container = new ActionRowBuilder().addComponents(patternText)
+                    // this is bitching about types even though I have everything handled
+                    // and I will still have to handle modal interactions and I dont have the time rn
+                    // TODO: fix this (later)
+                    modal.addComponents(container)
 
+
+                    updateEmbed(i)
+                })
+
+                clearButton.onclick((i) => {
+                    filters.regex = ""
+                    updateEmbed(i)
+                })
+    
+                regexRowComponents.addComponents(setButton.button, clearButton.button, tryButton.button)
+            }
+
+
+
+            regexButtons()
             genEmbedFields()
 
             const selectedRoles: string[] = [ ]
