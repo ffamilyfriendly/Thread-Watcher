@@ -161,7 +161,7 @@ const threads: Command = {
         }
 
         if(embeds.length === 0) {
-            buildBaseEmbed(`Nothing to show`, statusType.info, { description: `I'd love to show you something here but you have not added anything that can be displayed with show set to \`${show}\`` })
+            buildBaseEmbed("Nothing to show", statusType.info, { description: `I'd love to show you something here but you have not added anything that can be displayed with show set to \`${show}\`` })
             return
         }
 

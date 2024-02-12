@@ -11,7 +11,7 @@ export default function scheduleBackups(database: databaseInstance) {
     const backupsDirPath = join(config.database.options.dataLocation, "./backups")
 
     if(!existsSync(backupsDirPath)) {
-        logger.debug(`backup directory does not exist. Creating one`)
+        logger.debug("backup directory does not exist. Creating one")
         mkdirSync(backupsDirPath)
     }
 
@@ -23,9 +23,9 @@ export default function scheduleBackups(database: databaseInstance) {
                 webLog("Backup Created", `Backup was created at ${backupName}`, "Green")
             })
             .catch(err => {
-                logger.error(`backup could not be created`)
+                logger.error("backup could not be created")
                 console.log(err)
-                webLog("Backup Failed", `Could not create backup.`, "Red")
+                webLog("Backup Failed", "Could not create backup.", "Red")
             })
         
         const fsItems = readdirSync(backupsDirPath).sort().reverse()
