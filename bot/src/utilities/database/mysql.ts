@@ -31,13 +31,13 @@ class mysql implements Database {
 
                 this.connection.query(`CREATE TABLE IF NOT EXISTS \`${this.database}\`.\`threads\` (\`id\` VARCHAR(20) NOT NULL, \`server\` VARCHAR(20) NOT NULL, \`dueArchive\` INT NOT NULL, watching BOOLEAN, PRIMARY KEY (\`ID\`));`, (err) => {
                     if(err) {
-                        console.error(`[MYSQL] could not create table threads`, err)
+                        console.error("[MYSQL] could not create table threads", err)
                         process.exit(1)
                     }                    
 
                     this.connection.query(`CREATE TABLE IF NOT EXISTS \`${this.database}\`.\`channels\` (\`id\` VARCHAR(20) NOT NULL, \`server\` VARCHAR(20) NOT NULL, \`regex\` TINYTEXT, \`roles\` TEXT, \`tags\` TEXT);`, (err) => {
                         if(err) {
-                            console.error(`[MYSQL] could not create table channels`, err)
+                            console.error("[MYSQL] could not create table channels", err)
                             process.exit(1)
                         }
 

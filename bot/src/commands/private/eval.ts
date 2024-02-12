@@ -38,12 +38,12 @@ const evalCommand: Command = {
 
         try {
             const res = await clean(eval(code))
-            buildBaseEmbed(`Executed code`, statusType.success, { fields: [
+            buildBaseEmbed("Executed code", statusType.success, { fields: [
                 { name:"Code", value: `\`\`\`js\n${code}\n\`\`\`` },
                 { name:"Result", value: `\`\`\`js\n${res}\n\`\`\`` }
             ], description: `Execution took ${Date.now() - started}ms` })
         } catch(err) {
-            buildBaseEmbed(`Executed code`, statusType.error, { fields: [
+            buildBaseEmbed("Executed code", statusType.error, { fields: [
                 { name:"Code", value: `\`\`\`js\n${code}\n\`\`\`` },
                 { name:"Error", value: `\`\`\`js\n${err}\n\`\`\`` }
             ] })

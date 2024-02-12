@@ -10,7 +10,7 @@ const reload: Command = {
         const all = interaction.options.getBoolean("globally")
 
         if(all) {
-            buildBaseEmbed(`Multi-shard reload is currently not implemented 😢`, statusType.warning, { ephermal: true })
+            buildBaseEmbed("Multi-shard reload is currently not implemented 😢", statusType.warning, { ephermal: true })
         } else {
             reloadCommands()
             buildBaseEmbed("Commands reloaded", statusType.success, { ephermal: true })

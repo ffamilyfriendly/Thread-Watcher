@@ -46,7 +46,7 @@ const loadCommands = (baseDir: string = "../dist/commands/", dirDive: string = "
 export default function( global: Boolean, config: ConfigFile ): Promise<unknown> {
     const { publicCommands, privateCommands } = loadCommands("../commands/")
     if(!global && !config.devServer) {
-        console.warn(`-reg_commands was used with the -local flag but no dev server is specified in config.\nPlease edit the config to include the id of your development server or remove the -local flag to register commands globally`)
+        console.warn("-reg_commands was used with the -local flag but no dev server is specified in config.\nPlease edit the config to include the id of your development server or remove the -local flag to register commands globally")
         return new Promise((_res, rej) => rej("no dev server specified in config"))
     }
     console.log(`Registering commands ${ global ? "globally" : `on your server (${config.devServer})` }`)

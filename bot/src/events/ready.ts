@@ -6,7 +6,7 @@ import { ThreadData } from "src/interfaces/database";
 
 
 export default function(client: Client) {
-    logger.info(`Client ready! `)
+    logger.info("Client ready! ")
 
     const loadThreads = (): Promise<ThreadData[]|void>[] => {
         let promises: Promise<ThreadData[]|void>[] = []
@@ -34,7 +34,7 @@ export default function(client: Client) {
     Promise.allSettled(loadThreads())
         .then(bumpThreadsRoutine)
         .catch(e => {
-            logger.warn(`[Ready] could not load data for some guilds`)
+            logger.warn("[Ready] could not load data for some guilds")
             console.warn(e)
         })
     setInterval(bumpThreadsRoutine, 1000 * 60 * 50)
