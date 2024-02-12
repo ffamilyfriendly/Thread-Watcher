@@ -18,7 +18,7 @@ export function dueArchiveTimestamp(dueArchive: number, fromDate?: Date): Number
     return (date.getTime() / 1000) + (dueArchive * 60)
 }
 
-export function setArchive(thread: ThreadChannel, dueArchive: number = 10_080) {
+export function setArchive(thread: ThreadChannel, dueArchive = 10_080) {
     return new Promise((resolve, reject) => {
         if(thread.locked) resolve(null);
 
@@ -63,7 +63,7 @@ export function addThread(id: string, dueArchive: number, guildID: string): Prom
     })
 }
 
-export function removeThread(id: string, force: boolean = false): Promise<void> {
+export function removeThread(id: string, force = false): Promise<void> {
     return new Promise((resolve, reject) => {
         force ? db.deleteThread(id) : db.unwatchThread(id)
         .then(() => {

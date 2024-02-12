@@ -17,7 +17,7 @@ const info: Command = {
 
                             if(!(results instanceof Array)) return
 
-                            let guildCount: number = 0
+                            let guildCount = 0
                             for(const item of results) {
                                 if(typeof item === "number") guildCount += item
                             }
@@ -29,7 +29,7 @@ const info: Command = {
 
             let gc = await getGuildCount()
 
-            let guildCount: number = 0
+            let guildCount = 0
             if(typeof gc !== "number") guildCount = 0
             else guildCount = gc
 

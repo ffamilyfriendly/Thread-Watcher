@@ -1,6 +1,6 @@
 export default class Chunkable<T> {
     private inner: T[] = []
-    private pointer: number = 0
+    private pointer = 0
     public chunkSize = 25
     
     constructor(chunkSize: number) {

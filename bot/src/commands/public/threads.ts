@@ -16,14 +16,14 @@ type field = {
  * This might make it now show all threads if any user out there somehow manages to have 5500 chars worth of threads stored
  * which is why this function will be supplemented with a function to create more embeds if needed as 10 embeds are allowed per interaction response
  */
-const fitIntoFields = ( name: string, values: string[], totalLength: number = 0 ): { fieldArr: field[], totalLength: number, remainingValues: string[] } => {
+const fitIntoFields = ( name: string, values: string[], totalLength = 0 ): { fieldArr: field[], totalLength: number, remainingValues: string[] } => {
     
     // Embed limits https://discord.com/developers/docs/resources/channel#embed-object-embed-limits
     const MAXLENGTH = 1024
     const ALLOWEDLENGTH = 5500
     
     let fields: field[] = []
-    let buff: string = ""
+    let buff = ""
     let remainingValues: string[] = []
 
     for(let index = 0; index < values.length; index++) {

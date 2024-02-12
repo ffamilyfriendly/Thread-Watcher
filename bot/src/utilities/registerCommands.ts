@@ -13,7 +13,7 @@ import { createHash } from "crypto";
     I am at the end of my wits here
 */
 
-const loadCommands = (baseDir: string = "../dist/commands/", dirDive: string = "") => {
+const loadCommands = (baseDir = "../dist/commands/", dirDive = "") => {
 
     let pCommands: Command[] = []
     let prCommands: Command[] = []
@@ -97,7 +97,7 @@ export function clearCommands(local: Boolean, config: ConfigFile) {
     })
 }
 
-export function genCommandHash( writeToFile: boolean = true ): string {
+export function genCommandHash( writeToFile = true ): string {
     const { publicCommands, privateCommands } = loadCommands("../commands/")
     const hash = createHash("sha256")
     

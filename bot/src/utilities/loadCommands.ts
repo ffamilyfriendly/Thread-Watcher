@@ -3,7 +3,7 @@ import { Command } from "src/interfaces/command"
 import { logger } from "../bot"
 import path from "path"
 
-const loadCommands = (baseDir: string = "../commands/", dirDive: string = "") => {
+const loadCommands = (baseDir = "../commands/", dirDive = "") => {
     let commands = new Map<string, Command>()
     const p = path.join(__dirname, baseDir + (dirDive ? dirDive : ""))
     for(let file of readdirSync(p)) {
