@@ -1,4 +1,4 @@
-const API_BASE = `https://threadwatcher.xyz/api`
+const API_BASE = "https://threadwatcher.xyz/api"
 
 const searchShard = async() => {
 
@@ -17,7 +17,7 @@ const searchShard = async() => {
         showError(e)
     }
     const res = await (await fetch(`${API_BASE}/getShard?guild=${shard}`).catch(catchErr)).json().catch(catchErr)
-    if(res && !res.found) return showError(`That guild does not use Thread-Watcher. <a href="https://threadwatcher.xyz/invite">Click here to invite</a>`)
+    if(res && !res.found) return showError('That guild does not use Thread-Watcher. <a href="https://threadwatcher.xyz/invite">Click here to invite</a>')
     showError(`Shard found! That guild is on shard <b>${res.shard}</b>`, "success")
 }
 

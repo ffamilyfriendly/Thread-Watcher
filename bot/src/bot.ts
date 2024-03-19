@@ -39,7 +39,7 @@ const client = new Client({
 
     (I should try to find the root cause of this code being called in stand-alone mode but that is effort and I am lazy)
 */
-let hasParent: boolean = true
+let hasParent = true
 if(!client.shard) {
     logger.debug("👶 Orphan client detected.\n💀 Killing the orphan :D")
     hasParent = false

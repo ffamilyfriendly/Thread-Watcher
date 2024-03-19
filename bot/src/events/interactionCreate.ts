@@ -40,22 +40,22 @@ const handleCommands = (interaction: ChatInputCommandInteraction) => {
     }
 
     if(!command) {
-        return buildBaseEmbed(`Unknown Command`, statusType.error, { description: `command \`${interaction.commandName}\` was not found.`, ephermal: true })
+        return buildBaseEmbed("Unknown Command", statusType.error, { description: `command \`${interaction.commandName}\` was not found.`, ephermal: true })
     }
 
     if(!interaction.channel) {
-        return buildBaseEmbed("Unknown Channel", statusType.error, { description: `Your interaction happened in an unknown channel.\n**If this is a DM:** run it in a server. Thread-Watcher does not enjoy sliding into DMs\n**If this is __not__ a DM:** something went wrong. Try again later or something` })
+        return buildBaseEmbed("Unknown Channel", statusType.error, { description: "Your interaction happened in an unknown channel.\n**If this is a DM:** run it in a server. Thread-Watcher does not enjoy sliding into DMs\n**If this is __not__ a DM:** something went wrong. Try again later or something" })
     }
 
     // Ensure command issuer is in the owners array if command is marked as owner only
     if(command.gatekeeping?.ownerOnly && !config.owners.includes(interaction.user.id)) {
-        return buildBaseEmbed(`Owner Only`, statusType.error, { description: `command \`${interaction.commandName}\` is only allowed to be ran by the owner${ config.owners.length >= 2 ? "s" : "" }.`, ephermal: true })
+        return buildBaseEmbed("Owner Only", statusType.error, { description: `command \`${interaction.commandName}\` is only allowed to be ran by the owner${ config.owners.length >= 2 ? "s" : "" }.`, ephermal: true })
     }
 
     // Ensure command issuer has sufficient permissions in the channel the command was issued in
     if(command.gatekeeping?.userPermissions && !interaction.memberPermissions?.has(command.gatekeeping.userPermissions)) {
         const missing = interaction.memberPermissions?.missing(command.gatekeeping.userPermissions)
-        return buildBaseEmbed(`Missing Permissions`, statusType.error, {
+        return buildBaseEmbed("Missing Permissions", statusType.error, {
             description: `command \`${interaction.commandName}\` is only allowed to be ran by users who have sufficient permissions.`,
             fields: [ { name: "You are missing", value: `${missing?.map(m => `\`${m}\``).join(", ")}` } ],
             ephermal: true
@@ -64,7 +64,7 @@ const handleCommands = (interaction: ChatInputCommandInteraction) => {
 
     if(command.gatekeeping?.botPermissions && !interaction.appPermissions?.has(command.gatekeeping.botPermissions)) {
         const missing = interaction.appPermissions?.missing(command.gatekeeping.botPermissions)
-        return buildBaseEmbed(`Missing Permissions`, statusType.error, {
+        return buildBaseEmbed("Missing Permissions", statusType.error, {
             description: `command \`${interaction.commandName}\` requires the bot has sufficient permissions in the channel.`,
             fields: [ { name: "I am missing", value: `${missing?.map(m => `\`${m}\``).join(", ")}` } ],
             ephermal: true
@@ -72,7 +72,7 @@ const handleCommands = (interaction: ChatInputCommandInteraction) => {
     }
 
     const errDetails = `
-Please report this issue ${config.devServerInvite && (config.devServerInvite !== "https://discord.gg/server") ? `on the [support server](< ${config.devServerInvite}>)` : `on [the repo](<https://github.com/ffamilyfriendly/Thread-Watcher/issues/new>)`}. Include the following:
+Please report this issue ${config.devServerInvite && (config.devServerInvite !== "https://discord.gg/server") ? `on the [support server](< ${config.devServerInvite}>)` : "on [the repo](<https://github.com/ffamilyfriendly/Thread-Watcher/issues/new>)"}. Include the following:
 \`\`\`
 command: ${command.data.name}
 guild: ${interaction.guildId}

@@ -60,7 +60,7 @@ const batch: Command = {
         const parent = interaction.options.getChannel("parent") || interaction.channel
 
         if(!( (parent instanceof TextChannel) || (parent instanceof NewsChannel) || (parent instanceof ForumChannel) || (parent instanceof CategoryChannel) )) {
-            buildBaseEmbed(`Wrong Channel Type`, statusType.error, { description: `<#${parent?.id}> is not a valid channel for this command`, ephermal: true })
+            buildBaseEmbed("Wrong Channel Type", statusType.error, { description: `<#${parent?.id}> is not a valid channel for this command`, ephermal: true })
             return
         }
 
@@ -71,7 +71,7 @@ const batch: Command = {
 
         const action = interaction.options.getString("action")
         if(!action) { 
-            buildBaseEmbed(`Rare Easter Egg`, statusType.warning, { description: `Congrats! 🎉\nThis error should be impossible to get but you got it anyhow you silly little sausage.` })
+            buildBaseEmbed("Rare Easter Egg", statusType.warning, { description: "Congrats! 🎉\nThis error should be impossible to get but you got it anyhow you silly little sausage." })
             return
         }
 
@@ -134,7 +134,7 @@ const batch: Command = {
         }
 
         const buildActionList = () => {
-            let rv = ``
+            let rv = ""
 
             if(actions.addedWithoutUnArchived.length !== 0) rv += `**Threads watched but not unarchived:** \`${actions.addedWithoutUnArchived.length}\`\n`
             if(actions.unarchived.length !== 0) rv += `**Threads watched and unarchived:** \`${actions.unarchived.length}\`\n`

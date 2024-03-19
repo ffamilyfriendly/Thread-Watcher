@@ -67,7 +67,7 @@ export default function start(manager: ShardingManager, port: number, database: 
                     stats.votes = r
                 })
                 .catch(e => {
-                    console.warn(`could not get top.gg votes`, e)
+                    console.warn("could not get top.gg votes", e)
                 })
         }
 

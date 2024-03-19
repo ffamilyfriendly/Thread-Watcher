@@ -13,7 +13,7 @@ import { createHash } from "crypto";
     I am at the end of my wits here
 */
 
-const loadCommands = (baseDir: string = "../dist/commands/", dirDive: string = "") => {
+const loadCommands = (baseDir = "../dist/commands/", dirDive = "") => {
 
     let pCommands: Command[] = []
     let prCommands: Command[] = []
@@ -46,7 +46,7 @@ const loadCommands = (baseDir: string = "../dist/commands/", dirDive: string = "
 export default function( global: Boolean, config: ConfigFile ): Promise<unknown> {
     const { publicCommands, privateCommands } = loadCommands("../commands/")
     if(!global && !config.devServer) {
-        console.warn(`-reg_commands was used with the -local flag but no dev server is specified in config.\nPlease edit the config to include the id of your development server or remove the -local flag to register commands globally`)
+        console.warn("-reg_commands was used with the -local flag but no dev server is specified in config.\nPlease edit the config to include the id of your development server or remove the -local flag to register commands globally")
         return new Promise((_res, rej) => rej("no dev server specified in config"))
     }
     console.log(`Registering commands ${ global ? "globally" : `on your server (${config.devServer})` }`)
@@ -97,7 +97,7 @@ export function clearCommands(local: Boolean, config: ConfigFile) {
     })
 }
 
-export function genCommandHash( writeToFile: boolean = true ): string {
+export function genCommandHash( writeToFile = true ): string {
     const { publicCommands, privateCommands } = loadCommands("../commands/")
     const hash = createHash("sha256")
     
