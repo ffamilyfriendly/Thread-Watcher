@@ -2,10 +2,11 @@ import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder
 import { Command, statusType } from "../../interfaces/command";
 import { db, threads as threadsList } from "../../bot";
 import { regMatch } from "../../events/threadCreate";
-import { strToRegex } from "../../utilities/regex";
+import { strToRegex, validRegex } from "../../utilities/regex";
 import { addThread, dueArchiveTimestamp, removeThread, setArchive } from "../../utilities/threadActions";
 import TwButton from "../../components/Button";
 import { ModalBuilder, TextInputBuilder } from "@discordjs/builders";
+import TwModal from "../../components/Modal";
 
 type threadContainers = TextChannel | NewsChannel | ForumChannel | MediaChannel
 
@@ -142,7 +143,11 @@ const batch: Command = {
 
             const updateEmbed = (i: ButtonInteraction) => {
                 genEmbedFields()
-                i.update({embeds: [ filterEmbed ]})
+                interaction.editReply({ embeds: [ filterEmbed ] })
+
+                if(!i.replied) {
+                    i.update("asdasd")
+                } 
             }
 
             const regexButtons = () => {
@@ -157,24 +162,27 @@ const batch: Command = {
                 clearButton.filter  = filter
                 
                 setButton.onclick((i) => {
-                    const modal = new ModalBuilder()
-                        .setCustomId(`modal_${interaction.id}`)
-                        .setTitle("Enter Pattern")
-                    
-                    const patternText = new TextInputBuilder()
-                        .setCustomId(`pattern_${interaction.id}`)
-                        .setLabel("Pattern")
-                        .setStyle(TextInputStyle.Short)
-                        .setRequired(true)
+                    const modal = new TwModal("Enter Pattern")
+                    modal.addInput("pattern", "pattern")
+                    modal.filter = (i) => i.user.id === interaction.user.id
 
-                    const container = new ActionRowBuilder().addComponents(patternText)
-                    // this is bitching about types even though I have everything handled
-                    // and I will still have to handle modal interactions and I dont have the time rn
-                    // TODO: fix this (later)
-                    modal.addComponents(container)
+                    modal.onSubmit(response => {
+                        const ptrn = response.fields.getTextInputValue("pattern")
+                        
+                        const isRegexValid = validRegex(ptrn)
 
+                        if(isRegexValid.valid) {
+                            filters.regex = ptrn
+                            response.reply({ ephemeral: true, content: "saved" })
+                        } else {
+                            const embed = buildBaseEmbed("Syntax Error", statusType.error, { noSend: true, description: `the pattern you provided (\`${ptrn}\`) is not valid due to ${isRegexValid.reason}. Read the documentation on [**patterns**](https://example.com) for more info!` })
+                            response.reply({ ephemeral: true, embeds: [ embed ] })
+                        }   
 
-                    updateEmbed(i)
+                        updateEmbed(i)
+                    })
+
+                    i.showModal(modal.modal)
                 })
 
                 clearButton.onclick((i) => {

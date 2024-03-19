@@ -4,6 +4,14 @@ import { ConfigFile } from "../cnf";
 import { join } from "path";
 import { getBackupName } from "./DatabaseManager";
 
+// This typename is inappropriate but honestly I dont care.
+// I am angry at the typechecker grrrrrrrrrrr
+// also i am angry at discord user lizard grrrrrrrrrr
+interface AssType extends Omit<ChannelData, "tags"|"roles"> {
+    tags: string,
+    roles: string
+}
+
 class sqlite implements Database {
     db: sqliteDatabase
 
@@ -46,7 +54,8 @@ class sqlite implements Database {
     getChannels(guildID: String): Promise<ChannelData[]> {
         return new Promise((resolve, reject) => {
             let returnArr: ChannelData[] = []
-            returnArr.push( ...this.db.prepare("SELECT * FROM channels WHERE server = ?").all(guildID).map( item => {
+            returnArr.push( ...this.db.prepare("SELECT * FROM channels WHERE server = ?").all(guildID).map( i  => {
+                const item: AssType = i as AssType
                 let rv: ChannelData = { id: item.id, server: item.server, regex: item?.regex, tags: item?.tags.split(","), roles: item?.roles.split(",") };
                 return rv
             }) )
@@ -57,7 +66,7 @@ class sqlite implements Database {
     getThreads(guildID: String): Promise<ThreadData[]> {
         return new Promise((resolve, reject) => {
             let returnArr: ThreadData[] = []
-            returnArr.push( ...this.db.prepare("SELECT * FROM threads WHERE server = ?").all(guildID) )
+            returnArr.push( ...(this.db.prepare("SELECT * FROM threads WHERE server = ?").all(guildID) as ThreadData[]) )
             resolve(returnArr)
         })
     };
@@ -96,10 +105,10 @@ class sqlite implements Database {
             const res = this.db.prepare("SELECT COUNT(*) FROM threads;").all()
 
             let count = res[0]
-            if(count) count = Object.values(res[0])[0]
+            if(count) count = Object.values(res[0] as [number, string])[0]
             else count = NaN
 
-            resolve(count)
+            resolve(count as number)
         })
     }
 
@@ -108,10 +117,10 @@ class sqlite implements Database {
             const res = this.db.prepare("SELECT COUNT(*) FROM channels;").all()
 
             let count = res[0]
-            if(count) count = Object.values(res[0])[0]
+            if(count) count = Object.values(res[0] as [number, string])[0]
             else count = NaN
 
-            resolve(count)
+            resolve(count as number)
         })
     }
 

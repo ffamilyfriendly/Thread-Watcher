@@ -1,8 +1,9 @@
-import { BaseInteraction, ColorResolvable, CommandInteraction, EmbedBuilder, ButtonBuilder, ChatInputCommandInteraction, Interaction, AutocompleteInteraction, ButtonInteraction } from "discord.js";
+import { BaseInteraction, ColorResolvable, CommandInteraction, EmbedBuilder, ButtonBuilder, ChatInputCommandInteraction, Interaction, AutocompleteInteraction, ButtonInteraction, ModalSubmitInteraction } from "discord.js";
 import { client, logger, config } from "../bot";
 import { commands } from "../bot";
 import { statusType, baseEmbedOptions } from "../interfaces/command";
 import { ButtonInteractionQueue } from "../components/Button";
+import { ModalInteractionQueue } from "../components/Modal";
 
 const handleCommands = (interaction: ChatInputCommandInteraction) => {
 
@@ -104,8 +105,16 @@ const handleButton = ( interaction: ButtonInteraction ) => {
     }
 }
 
+const handleModal = ( interaction: ModalSubmitInteraction ) => {
+    const modal = ModalInteractionQueue.get(interaction.customId)
+    if(modal) {
+        modal._middleware(interaction)
+    }
+}
+
 export default function(interaction: BaseInteraction) {
     if(interaction.isChatInputCommand()) handleCommands(interaction)
     if(interaction.isAutocomplete()) handleAutoComplete(interaction)
     if(interaction.isButton()) handleButton(interaction)
+    if(interaction.isModalSubmit()) handleModal(interaction)
 }
