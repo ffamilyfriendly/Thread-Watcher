@@ -1,4 +1,5 @@
 import { ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ComponentEmojiResolvable } from "discord.js"
+import TwGenericComponent from "../interfaces/genericComponent"
 
 type buttonOnClick = ( interaction: ButtonInteraction ) => void
 export type buttonFilter = ( interaction: ButtonInteraction ) => boolean
@@ -13,7 +14,7 @@ export { ButtonInteractionQueue }
  * after the callback is taken it will be added to the ButtonInteractionQueue Map and will be keyed by the button id
  * and when a button interaction that matches the id of the button pops into interactionCreate it will call the onclick func.
  */
-export default class TwButton {
+export default class TwButton implements TwGenericComponent<ButtonInteraction> {
     public button: ButtonBuilder
     public id: string
 

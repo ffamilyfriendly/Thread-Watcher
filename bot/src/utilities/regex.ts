@@ -9,15 +9,17 @@ export function validRegex(r: string) {
 }
 
 export function strToRegex(r: string) {
-    r = r.replace(/(\]|\[|\)|\()/gi, "\\$1")
-    r = r.replace(/\*+/gi, "*")
-
-    r = "^" + r + "$"
     let inverted = false
     if(r[0] === '!') {
         inverted = true
         r = r.replace('!','')
     }
+    
+    r = r.replace(/(\]|\[|\)|\()/gi, "\\$1")
+    r = r.replace(/\*+/gi, "*")
+
+    r = "^" + r + "$"
+
 
     r = r.replaceAll('*', `[${quantifier}]*`)
 

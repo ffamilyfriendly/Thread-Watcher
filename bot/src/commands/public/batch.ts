@@ -1,12 +1,13 @@
-import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable, DMChannel, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember, FetchedThreads, FetchedThreadsMore, MediaChannel, Role, GuildForumTag, ActionRowBuilder, SelectMenuBuilder, ButtonStyle, ButtonInteraction, TextInputStyle } from "discord.js";
+import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable, DMChannel, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember, FetchedThreads, FetchedThreadsMore, MediaChannel, Role, GuildForumTag, ActionRowBuilder, SelectMenuBuilder, ButtonStyle, ButtonInteraction, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, StringSelectMenuInteraction, AnySelectMenuInteraction, RoleSelectMenuBuilder } from "discord.js";
 import { Command, statusType } from "../../interfaces/command";
 import { db, threads as threadsList } from "../../bot";
 import { regMatch } from "../../events/threadCreate";
 import { strToRegex, validRegex } from "../../utilities/regex";
 import { addThread, dueArchiveTimestamp, removeThread, setArchive } from "../../utilities/threadActions";
 import TwButton from "../../components/Button";
-import { ModalBuilder, TextInputBuilder } from "@discordjs/builders";
 import TwModal from "../../components/Modal";
+import Chunkable from "../../utilities/Chunkable";
+import TwStringSelect from "../../components/StringSelect";
 
 type threadContainers = TextChannel | NewsChannel | ForumChannel | MediaChannel
 
@@ -78,6 +79,8 @@ const batch: Command = {
         const advanced = interaction.options.getBoolean("advanced")
         const watchNew = interaction.options.getBoolean("watch-new")
 
+        const buttonFilter = (int: ButtonInteraction) => int.user.id === interaction.user.id
+
         if(!( (parent instanceof TextChannel) || (parent instanceof NewsChannel) || (parent instanceof ForumChannel) || (parent instanceof CategoryChannel) )) {
             buildBaseEmbed("Wrong Channel Type", statusType.error, { description: `<#${parent?.id}> is not a valid channel for this command`, ephermal: true })
             return
@@ -97,8 +100,12 @@ const batch: Command = {
 
         const threads: ThreadChannel[] = []
 
+        // put all the affected threads into a flat array
         if(parent instanceof CategoryChannel) threads.push(...await getDirThreads(parent))
             else threads.push(...await getThreads(parent))
+
+        // put all the roles into a chunkable (such a good class wow must have been a genious who made that)
+        const roles = Chunkable.from(Array.from(interaction.guild?.roles.cache.values() ?? []))
 
         let filters: filterTypes = {
             roles: [],
@@ -111,6 +118,7 @@ const batch: Command = {
         // This is against the law but I do not care for i am the code bandit herherherhehrherherherhreuh
         const components: any[] = []
 
+        let proceed = true
         if(advanced) {
             const filterEmbed = buildBaseEmbed(
                 "Filter Options", 
@@ -127,39 +135,136 @@ const batch: Command = {
                 )
 
             const regexRowComponents = new ActionRowBuilder()
-            //const rolesSelectComponents = new ActionRowBuilder<SelectMenuBuilder>()
-            //const rolesRowNavigationComponents = new ActionRowBuilder()
-            //const tagsSelectComponents = new ActionRowBuilder<SelectMenuBuilder>()
+            const rolesSelectComponents = new ActionRowBuilder<SelectMenuBuilder>()
+            const rolesRowNavigationComponents = new ActionRowBuilder()
+            const tagsSelectComponents = new ActionRowBuilder<SelectMenuBuilder>()
+            const confirmationButtonComponents = new ActionRowBuilder()
+
             embeds.push(filterEmbed)
-            components.push(regexRowComponents, /*rolesSelectComponents, rolesRowNavigationComponents, tagsSelectComponents*/) 
+            components.push(regexRowComponents, rolesSelectComponents, rolesRowNavigationComponents) 
+
+            if(parent instanceof ForumChannel && parent.availableTags.length !== 0) {
+                components.push(tagsSelectComponents)
+            }
+
+            components.push(confirmationButtonComponents)
 
             const genEmbedFields = () => {
                 filterEmbed.setFields([
-                    { name: "Roles", value: "<roleshere>", inline: true },
-                    { name: "Tags", value: "<tagshere>", inline: true },
+                    { name: "Roles", value: (filters.roles.map(r => `<@&${r?.id}>`).join(", ") || "none selected"), inline: true },
+                    { name: "Tags", value: (filters.tags.map(t => `${t?.name}`).join(", ") || "none selected"), inline: true },
                     { name: "Pattern", value: `\`${filters.regex}\``, inline: true }
                 ])
             }
 
-            const updateEmbed = (i: ButtonInteraction) => {
+            const updateEmbed = (i: ButtonInteraction|AnySelectMenuInteraction) => {
                 genEmbedFields()
-                interaction.editReply({ embeds: [ filterEmbed ] })
+                interaction.editReply({ embeds: [ filterEmbed ], components })
 
                 if(!i.replied) {
                     i.update("asdasd")
                 } 
             }
 
+            const tagsSelect = () => {
+                if(!(parent instanceof ForumChannel)) return 
+                console.log(parent.availableTags)
+                const select = new TwStringSelect()
+                select.select.setPlaceholder("select tags!")
+                    .setMinValues(1)
+                    .setMaxValues(parent.availableTags.length)
+                
+                for(const i of parent.availableTags) {
+                    const option = new StringSelectMenuOptionBuilder()
+                        .setLabel(i.name)
+                        .setDescription(`${i.id}`)
+                        .setValue(i.id)
+                    select.select.addOptions(option)
+                }
+
+                select.filter = (i) => i.user.id === interaction.user.id
+                select.onSubmit((i) => {
+                    filters.tags = i.values.map(tagId => parent.availableTags.find(tag => tag.id === tagId))
+                    updateEmbed(i)
+                })
+
+                tagsSelectComponents.addComponents(select.select)
+            }
+
+            const roleNavigation = () => {
+                let rolesPage = roles.current
+
+                const select = new TwStringSelect()
+
+                const setSelectValues = () => {
+                    if(rolesPage.length === 0) return
+                    select.select.setPlaceholder("select roles!")
+                        .setMinValues(1)
+                        .setMaxValues(rolesPage.length)
+                        .setOptions([])
+
+                    for(const i of rolesPage) {
+                        const option = new StringSelectMenuOptionBuilder()
+                            .setLabel(i.name)
+                            .setDescription( Math.random() > 0.995 ? "wow an easter egg???" : `${i.members.size} members has this role`)
+                            .setValue(i.id)
+
+                        select.select.addOptions(option)
+                    }
+
+                }
+
+                setSelectValues()
+
+                const nextButton    = new TwButton("next", ButtonStyle.Secondary, { emoji: "▶" })
+                const prevButton    = new TwButton("prev", ButtonStyle.Secondary, { emoji: "◀" })
+                const clearButton   = new TwButton("clear", ButtonStyle.Danger, { emoji: "🗑️" })
+
+                nextButton.filter   = buttonFilter
+                prevButton.filter   = buttonFilter
+                clearButton.filter  = buttonFilter
+                select.filter = (i) => i.user.id === interaction.user.id
+                clearButton.button.setDisabled(true)
+                
+                clearButton.onclick((i) => {
+                    filters.roles = []
+                    clearButton.button.setDisabled(true)
+                    updateEmbed(i)
+                })
+
+                nextButton.onclick((i) => {
+                    rolesPage = roles.forwards()
+                    setSelectValues()
+                    updateEmbed(i)
+                })
+
+                prevButton.onclick((i) => {
+                    rolesPage = roles.back()
+                    setSelectValues()
+                    updateEmbed(i)
+                })
+
+                select.onSubmit((i) => {
+                    filters.roles.push( ...i.values.map(rId => i.guild?.roles.cache.get(rId)) )
+                    clearButton.button.setDisabled(false)
+                    updateEmbed(i)
+                })
+
+                rolesRowNavigationComponents.addComponents(prevButton.button, clearButton.button, nextButton.button)
+                rolesSelectComponents.addComponents(select.select)
+                
+            }
+
             const regexButtons = () => {
                 const setButton = new TwButton("Select Pattern", ButtonStyle.Primary)
                 const tryButton = new TwButton("Try Pattern", ButtonStyle.Secondary)
                 const clearButton = new TwButton("Clear Pattern", ButtonStyle.Danger)
-
-                const filter = (int: ButtonInteraction) => int.user.id === interaction.user.id
     
-                setButton.filter    = filter
-                tryButton.filter    = filter
-                clearButton.filter  = filter
+                setButton.filter    = buttonFilter
+                tryButton.filter    = buttonFilter
+                clearButton.filter  = buttonFilter
+                tryButton.button.setDisabled(true)
+                clearButton.button.setDisabled(true)
                 
                 setButton.onclick((i) => {
                     const modal = new TwModal("Enter Pattern")
@@ -179,6 +284,9 @@ const batch: Command = {
                             response.reply({ ephemeral: true, embeds: [ embed ] })
                         }   
 
+                        clearButton.button.setDisabled(false)
+                        tryButton.button.setDisabled(false)
+
                         updateEmbed(i)
                     })
 
@@ -187,24 +295,70 @@ const batch: Command = {
 
                 clearButton.onclick((i) => {
                     filters.regex = ""
+                    clearButton.button.setDisabled(true)
+                    tryButton.button.setDisabled(false)
                     updateEmbed(i)
+                })
+
+                tryButton.onclick((i) => {
+                    const testThreads = threads.slice(0, 10)
+
+                    const regex = strToRegex(filters.regex)
+                    const e = buildBaseEmbed("Test Results", statusType.info, { noSend: true, description: `pattern: \`${filters.regex}\` ${regex.inverted ? "**(INVERTED)**" : ""}` })
+                    
+
+                    e.addFields({ name: "Results", value: ` ${ testThreads.map( e => `**${e.name}**: ${regex.regex.test(e.name) != regex.inverted}` ).join("\n") } ` })
+                
+                    i.reply({ embeds: [ e ], ephemeral: true })
                 })
     
                 regexRowComponents.addComponents(setButton.button, clearButton.button, tryButton.button)
             }
 
+            const confirmButtons = () => {
+                // confirmationButtonComponents
+                const confirm = new TwButton("Confirm Choices", ButtonStyle.Primary)
+                const cancel = new TwButton("Cancel", ButtonStyle.Danger)
+
+                confirm.filter  = buttonFilter
+                cancel.filter   = buttonFilter
+
+                cancel.onclick((i) => {
+                    const e = buildBaseEmbed("Cancelled!", statusType.warning, { noSend: true })
+                    i.update({ embeds: [ e ], components: [ ] })
+                    proceed = false
+                })
+
+                confirm.onclick((i) => {
+                    filterEmbed.setColor("Green")
+                    i.update({ embeds: [ filterEmbed ], components: [] })
+
+                    // HELLO FUTURE ME!!!
+                    /*
+                        this is where we call the function that does the stuff to the thread (/batch functionality)
+                        as well as write it to db (/auto functionality). We must also remember to immedietly call that
+                        if advanced is not used
+                    */
+                })
+
+                confirmationButtonComponents.addComponents(confirm.button, cancel.button)
+            }
+
 
 
             regexButtons()
+            roleNavigation()
+            tagsSelect()
+            confirmButtons()
             genEmbedFields()
-
-            const selectedRoles: string[] = [ ]
 
             interaction.editReply({embeds: [ filterEmbed ], components: [ ...components ]})
 
             // For debugging
             return
         }
+
+        if(!proceed) return
 
         const actions: actionsList = {
             archived: [ ],

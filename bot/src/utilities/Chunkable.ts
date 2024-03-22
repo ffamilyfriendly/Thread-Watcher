@@ -7,8 +7,12 @@ export default class Chunkable<T> {
         this.chunkSize = chunkSize
     }
 
+    get current() {
+        return this.getChunk(this.pointer)
+    }
+
     add(item: T|T[]) {
-        if(!(item instanceof Array)) item = [ ]
+        if(!(item instanceof Array)) item = [ item ]
         this.inner.push(...item)
     }
 
@@ -26,4 +30,12 @@ export default class Chunkable<T> {
         this.pointer = Math.max(0, this.pointer - 1)
         return this.getChunk(this.pointer)
     }
+
+    static from<T>(arr: T[], chunkSize = 25): Chunkable<T> {
+        const instance = new Chunkable<T>(chunkSize)
+        instance.add(arr)
+
+        return instance
+    }
 }
+

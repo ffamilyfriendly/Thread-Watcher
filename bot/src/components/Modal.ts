@@ -1,5 +1,6 @@
 import { ActionRowBuilder, ModalActionRowComponentBuilder, ModalBuilder, TextInputBuilder } from "@discordjs/builders"
 import { ModalSubmitInteraction, TextInputStyle } from "discord.js"
+import TwGenericComponent from "../interfaces/genericComponent"
 
 type modalSubmit = ( interaction: ModalSubmitInteraction ) => void
 export type modalFilter = ( interaction: ModalSubmitInteraction ) => boolean
@@ -14,7 +15,7 @@ export { ModalInteractionQueue }
  * after the callback is taken it will be added to the ButtonInteractionQueue Map and will be keyed by the button id
  * and when a button interaction that matches the id of the button pops into interactionCreate it will call the onclick func.
  */
-export default class TwModal {
+export default class TwModal implements TwGenericComponent<ModalSubmitInteraction> {
     public modal: ModalBuilder
     public id: string
 

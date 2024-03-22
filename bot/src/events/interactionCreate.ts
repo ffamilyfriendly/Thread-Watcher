@@ -1,9 +1,11 @@
-import { BaseInteraction, ColorResolvable, CommandInteraction, EmbedBuilder, ButtonBuilder, ChatInputCommandInteraction, Interaction, AutocompleteInteraction, ButtonInteraction, ModalSubmitInteraction } from "discord.js";
+import { BaseInteraction, ColorResolvable, CommandInteraction, EmbedBuilder, ButtonBuilder, ChatInputCommandInteraction, Interaction, AutocompleteInteraction, ButtonInteraction, ModalSubmitInteraction, StringSelectMenuInteraction } from "discord.js";
 import { client, logger, config } from "../bot";
 import { commands } from "../bot";
 import { statusType, baseEmbedOptions } from "../interfaces/command";
 import { ButtonInteractionQueue } from "../components/Button";
 import { ModalInteractionQueue } from "../components/Modal";
+import { StringSelectInteractionQueue } from "../components/StringSelect";
+import TwGenericComponent from "../interfaces/genericComponent";
 
 const handleCommands = (interaction: ChatInputCommandInteraction) => {
 
@@ -98,23 +100,26 @@ const handleAutoComplete = ( interaction: AutocompleteInteraction ) => {
     if(command?.autocomplete) command.autocomplete(interaction)
 }
 
-const handleButton = ( interaction: ButtonInteraction ) => {
-    const button = ButtonInteractionQueue.get(interaction.customId)
-    if(button) {
-        button._middleware(interaction)
-    }
+interface FunkyFella extends BaseInteraction {
+    customId: string
 }
 
-const handleModal = ( interaction: ModalSubmitInteraction ) => {
-    const modal = ModalInteractionQueue.get(interaction.customId)
-    if(modal) {
-        modal._middleware(interaction)
+function handleInteraction<TInteractionType extends FunkyFella>(interaction: TInteractionType, queue: Map<string, TwGenericComponent<TInteractionType>>) {
+    const TwComponent = queue.get(interaction.customId)
+    console.log("hello")
+    if(TwComponent) {
+        TwComponent._middleware(interaction)
+    } else if(interaction.isRepliable()) {
+        interaction.reply({ ephemeral: true, content: `no handler for interaction with id \`${interaction.customId}\` could be found.` })
     }
 }
 
 export default function(interaction: BaseInteraction) {
     if(interaction.isChatInputCommand()) handleCommands(interaction)
     if(interaction.isAutocomplete()) handleAutoComplete(interaction)
-    if(interaction.isButton()) handleButton(interaction)
-    if(interaction.isModalSubmit()) handleModal(interaction)
+    if(interaction.isButton()) handleInteraction(interaction, ButtonInteractionQueue)
+    if(interaction.isModalSubmit()) handleInteraction(interaction, ModalInteractionQueue)
+    console.log("event?")
+    if(interaction.isAnySelectMenu()) return handleInteraction(interaction, StringSelectInteractionQueue)
+    console.log("passed event")
 }

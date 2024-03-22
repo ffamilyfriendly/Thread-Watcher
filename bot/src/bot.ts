@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits } from "discord.js"
+import { Client, GatewayIntentBits, Options } from "discord.js"
 import Log75, { LogLevel } from "log75"
 import loadEvents from "./utilities/loadEvents"
 import loadCommands from "./utilities/loadCommands"
@@ -29,7 +29,9 @@ const db = getDatabase(DataBases[config.database.type], config)
 db.createTables()
 
 const client = new Client({
-    intents: [ GatewayIntentBits.Guilds ]
+    intents: [ GatewayIntentBits.Guilds ],
+    // SLIM DOWN CACHE PLS PLS PLS PLS REMEMBER
+    // TODO: SLIM THIS CACHE SLIM IT DOWN STOP EATING MY MEMORY
 })
 
 /*
