@@ -15,13 +15,7 @@ export function strToRegex(r: string) {
         r = r.replace('!','')
     }
     
-    r = r.replace(/(\]|\[|\)|\()/gi, "\\$1")
-    r = r.replace(/\*+/gi, "*")
+    r = r.replace(/(\]|\[|\)|\()/g, "\\$1").replace(/\*{1,}/g, `[${quantifier}]*`)
 
-    r = "^" + r + "$"
-
-
-    r = r.replaceAll('*', `[${quantifier}]*`)
-
-    return { inverted, regex: new RegExp(r, "gmu")}
+    return { inverted, regex: new RegExp(`^${r}$`, "gmu")}
 }

@@ -107,7 +107,7 @@ export default function start(manager: ShardingManager, port: number, database: 
     app.get("/getShard", (req, res) => {
         const { guild } = req.query
         if(!guild || typeof guild !== "string") return res.status(400).send("missing param guild")
-        if(guild.length > 20 || guild.length < 17 || !guild.match(/^\d+$/gi)) return res.status(400).send("invalid guild id")
+        if(!/^\d{17,20}$/.test(guild)) return res.status(400).send("invalid guild id")
 
         manager.broadcastEval((c, { guildId }) => [c.shard?.ids, c.guilds.cache.has(guildId)], { context: { guildId: guild } })
         .then((result) => {
