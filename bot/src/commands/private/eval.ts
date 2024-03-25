@@ -20,9 +20,7 @@ const clean = async (text: string) => {
       text = require("util").inspect(text, { depth: 1 });
     
     // Replace symbols with character code alternatives
-    text = text
-      .replace(/`/g, "`" + String.fromCharCode(8203))
-      .replace(/@/g, "@" + String.fromCharCode(8203));
+    text = text.replace(/[`@]/g, m => `${m}\u200b`);
     
     // Send off the cleaned up result
     return text;
