@@ -7,7 +7,7 @@
     "@types/node-cron": "^3.0.7",
     "better-sqlite3": "^9.4.3",
     "discord.js": "^14.14.1",
-    "express": "^4.18.2",
+    "express": "^4.19.2",
     "json5": "^2.2.3",
     "log75": "^3.0.1",
     "mysql": "^2.18.1",
