@@ -1,0 +1,10 @@
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/bot'
+    commit-message:
+      prefix: 'deps: '
+    schedule:
+      day: 'sunday'
+      interval: 'weekly'
+      time: '07:00'

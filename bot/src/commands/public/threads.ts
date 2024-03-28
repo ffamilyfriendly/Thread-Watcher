@@ -8,7 +8,7 @@ const info: Command = {
     },
     data: new SlashCommandBuilder()
         .setName("threads")
-        .setDescription("depracated")
+        .setDescription("deprecated")
 }
 
 export default info
