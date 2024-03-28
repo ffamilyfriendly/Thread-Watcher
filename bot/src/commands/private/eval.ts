@@ -19,13 +19,8 @@ const clean = async (text: string) => {
     if (typeof text !== "string")
       text = require("util").inspect(text, { depth: 1 });
     
-    // Replace symbols with character code alternatives
-    text = text
-      .replace(/`/g, "`" + String.fromCharCode(8203))
-      .replace(/@/g, "@" + String.fromCharCode(8203));
-    
-    // Send off the cleaned up result
-    return text;
+    // Replace symbols with character code alternatives and send off the cleaned up result
+    return text.replace(/[`@]/g, m => `${m}\u200b`);
 }
 
 const evalCommand: Command = {
