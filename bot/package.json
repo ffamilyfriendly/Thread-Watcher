@@ -17,7 +17,7 @@
     "yarn": "^1.22.19"
   },
   "devDependencies": {
-    "@types/node": "^20.11.30",
+    "@types/node": "^20.12.5",
     "typescript": "^5.2.2"
   },
   "license": "MIT",
