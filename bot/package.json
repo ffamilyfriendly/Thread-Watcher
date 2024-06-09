@@ -6,7 +6,7 @@
     "@types/mysql": "^2.15.21",
     "@types/node-cron": "^3.0.7",
     "better-sqlite3": "^9.4.3",
-    "discord.js": "^14.14.1",
+    "discord.js": "^14.15.3",
     "express": "^4.18.2",
     "json5": "^2.2.3",
     "log75": "^3.0.1",
