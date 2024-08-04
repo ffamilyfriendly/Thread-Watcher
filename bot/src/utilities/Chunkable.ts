@@ -31,6 +31,17 @@ export default class Chunkable<T> {
         return this.getChunk(this.pointer)
     }
 
+    next(): T[]|false {
+        const res = (this.chunkSize * this.pointer) < this.inner.length
+
+        if(res) {
+            const curr = this.current
+            this.pointer++
+            return curr
+        }
+        else return false
+    }
+
     static from<T>(arr: T[], chunkSize = 25): Chunkable<T> {
         const instance = new Chunkable<T>(chunkSize)
         instance.add(arr)

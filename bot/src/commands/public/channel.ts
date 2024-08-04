@@ -9,7 +9,16 @@ const info: Command = {
 
         if(!channel) return
 
-        if(interaction.commandName === "add") {
+        const command = interaction.options.getSubcommand(true)
+
+        const alrExists = (await db.getChannels(interaction.guildId??"")).find(t => t.id == channel.id)
+
+        if(command === "add") {
+            if(alrExists) {
+                buildBaseEmbed("Already watched", statusType.warning, { description: "That channel is already watched. Remove it with `/channel remove`" })
+                return;
+            }
+
             db.insertChannel({ server: interaction.guildId ?? "", id: channel.id, regex: "", roles: [], tags: [] })
             buildBaseEmbed("Added channel", statusType.success)
         } else {

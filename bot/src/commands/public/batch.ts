@@ -68,7 +68,7 @@ const handleThreadActioning = async (threads: ThreadChannel[], action: actionTyp
                     rv.noAction.push(thread)
                 break;
                 case "watch":
-                    if(!threadsList.has(thread.id)) {
+                    if(!threadsList.get(thread.id)?.watching) {
                         addThread(thread.id, dueArchiveTimestamp(thread.autoArchiveDuration ?? 0, thread.lastMessage?.createdAt), thread.guildId)
                         rv.added.push(thread)
                     } else {

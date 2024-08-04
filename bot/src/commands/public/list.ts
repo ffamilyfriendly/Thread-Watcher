@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable, DMChannel, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember } from "discord.js";
 import { Command, statusType } from "../../interfaces/command";
 import { db, threads as threadsList, config } from "../../bot";
+import Chunkable from "../../utilities/Chunkable";
 
 type field = {
     name: string,
@@ -20,7 +21,6 @@ const fitIntoFields = ( name: string, values: string[], totalLength: number = 0 
     
     // Embed limits https://discord.com/developers/docs/resources/channel#embed-object-embed-limits
     const MAXLENGTH = 1024
-    const ALLOWEDLENGTH = 5500
     
     let fields: field[] = []
     let buff: string = ""
@@ -34,21 +34,13 @@ const fitIntoFields = ( name: string, values: string[], totalLength: number = 0 
         const iLength = (buff.length + value.length) + 2
         totalLength += value.length + 2
 
-        /**
-         * if the total length of chars in this embed exceeds the per embed hard limit we will 
-         * return the left over values so they can be displayed in another embed
-         */
-        if(totalLength >= ALLOWEDLENGTH) {
-            remainingValues = values.splice(index)
-            break;
-        }
 
         /**
          * ensure the current thread can fit into the current field (buff).
          * If not: push the current field into the array and initiate a new one with the current value
          */
         if(iLength > MAXLENGTH) {
-            fields.push( { name: `<#${name}> ${fields.length + 1}`, value: buff.substring(0, buff.length-2) } )
+            fields.push( { name: `${name} ${fields.length + 1}`, value: buff.substring(0, buff.length-2) } )
             buff = `${value}, `
         } else {
             buff += `${value}, `
@@ -75,7 +67,7 @@ const threads: Command = {
     run: async (interaction: ChatInputCommandInteraction, buildBaseEmbed) => {
 
         let pub = interaction.options.getBoolean("public")
-        const show = interaction.options.getString("show")||"thread"
+        const show = interaction.options.getString("show")||"all"
 
         // Only allow users with ManageThreads to create public /threads messages
         if(!interaction.memberPermissions?.has(PermissionFlagsBits.ManageThreads) && pub) pub = false
@@ -106,6 +98,8 @@ const threads: Command = {
                 }
             }
         }
+
+        console.log("ARRAY", res.threads)
 
         const getChannels = async () => {
             let t = []
@@ -142,22 +136,32 @@ const threads: Command = {
             return e
         }
 
+
         if(res.threads.length >= 1 || res.threadsFailed.length >= 1) {
             const fields = fitIntoFields("Threads", [ ...res.threads, ...res.threadsFailed ]).fieldArr
-            if(fields.length > 25) fields.length = 25
-            const e = genEmbed()
-                .setDescription(`Keeping \`${res.threads.length}\` threads Un-archived!`)
-                .addFields(...fields)
-            embeds.push(e)
-        }
-
+            const chunks = Chunkable.from(fields, 20)
+            
+            let items = chunks.next()
+            while(items) {
+                const e = genEmbed()
+                    .setDescription(`Keeping \`${res.threads.length}\` threads Un-archived!`)
+                    .addFields(...items)
+                embeds.push(e)
+                items = chunks.next()
+            }
+        } 
         if(res.channels.length >= 1 || res.channelsFailed.length >= 1) {
             const fields = fitIntoFields("Channels", [ ...res.channels, ...res.channelsFailed ]).fieldArr
-            if(fields.length > 25) fields.length = 25
-            const e = genEmbed()
+            const chunks = Chunkable.from(fields, 20)
+            
+            let items = chunks.next()
+            while(items) {
+                const e = genEmbed()
                 .setDescription(`Watching \`${res.channels.length}\` channels for new threads!`)
-                .addFields(...fields)
-            embeds.push(e)
+                    .addFields(...items)
+                embeds.push(e)
+                items = chunks.next()
+            }
         }
 
         if(embeds.length === 0) {
