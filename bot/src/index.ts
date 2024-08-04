@@ -73,7 +73,7 @@ checkCommandRegistryParameters()
 const manager = new ShardingManager("./dist/bot.js", { token: config.tokens.discord, shardArgs:  args  })
 const database = getDatabase(DataBases[config.database.type], config)
 
-export { logger, config, webLog }
+export { logger, config, webLog, webhookClient }
 
 if(config.tokens.topgg) {
     logger.info("Using top.gg autoposter")

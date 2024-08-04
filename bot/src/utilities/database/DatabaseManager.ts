@@ -1,10 +1,16 @@
 import { ConfigFile } from "../cnf";
+import DiscordMessage from "./backup/discord";
 import mysql from "./mysql";
 import sqlite from "./sqlite";
 
 export enum DataBases {
     sqlite,
     mysql
+}
+
+export enum BackupProviders {
+    none,
+    discord
 }
 
 export type databaseInstance = sqlite|mysql
@@ -32,4 +38,10 @@ export function getDatabase(type: DataBases, config: ConfigFile): sqlite|mysql {
 
     console.log(`could not get a database implementation for "${DataBases[type]}"`)
     process.exit(1)
+}
+
+export function getBackupProvider(type: BackupProviders, config: ConfigFile): DiscordMessage|undefined {
+    console.log("TYPE", type)
+    console.log("PROVIDERS", BackupProviders)
+    if(type == BackupProviders.discord) return new DiscordMessage(config)
 }

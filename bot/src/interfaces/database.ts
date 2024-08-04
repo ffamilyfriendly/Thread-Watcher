@@ -30,3 +30,7 @@ export interface Database {
     getNumberOfChannels: () => Promise<number>,
     createBackup: ( baseDir: string ) => Promise<string>
 }
+
+export interface BackupProvider {
+    createBackup: (path: string) => Promise<void>
+}

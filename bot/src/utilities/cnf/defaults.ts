@@ -1,5 +1,5 @@
 import { ConfigValue } from "src/interfaces/config";
-import { DataBases } from "../database/DatabaseManager"
+import { BackupProviders, DataBases } from "../database/DatabaseManager"
 import { validate } from "node-cron";
 
 
@@ -33,11 +33,22 @@ const webhook: ConfigValue = {
 const dbType: ConfigValue = {
     validate: (value) => {
         if(typeof value !== "string") return false
-        return !!DataBases[value as ("sqlite"|"mysql")]
+        return value in DataBases
     },
     default: "sqlite",
     defaultOnInvalid: true,
     matchKeys: [ "type" ]
+}
+
+
+const backupProvider: ConfigValue = {
+    validate: (value) => {
+        if(typeof value !== "string") return false
+        return value in BackupProviders
+    },
+    default: "discord",
+    defaultOnInvalid: true,
+    matchKeys: [ "backupProvider" ]
 }
 
 const cronTime: ConfigValue = {
@@ -49,7 +60,7 @@ const cronTime: ConfigValue = {
     matchKeys: [ "backupInterval" ]
 }
 
-const validators = [ token, colour, webhook, dbType, cronTime ]
+const validators = [ token, colour, webhook, dbType, cronTime, backupProvider ]
 
 export function validateValue( key: string, value: any ) {
     const validator = validators.find(a => a.matchKeys.includes(key))
