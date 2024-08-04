@@ -7,7 +7,7 @@ import { db, threads } from "../bot";
  * @param fromDate from what timestamp to calculate when thread will be hidden 
  * @returns {Number} the calculated timestamp where a thread will be hidden
  */
-export function dueArchiveTimestamp(dueArchive: number, fromDate?: Date): Number {
+export function dueArchiveTimestamp(dueArchive: number, fromDate?: Date): number {
 
     // if an undefined value is passed we want to treat the thread as already stale
     // Previously we defaulted to simply the current date which meant that if the thread was already stale

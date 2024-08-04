@@ -1,7 +1,7 @@
-import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable, DMChannel, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember, FetchedThreads, FetchedThreadsMore, MediaChannel, Role, GuildForumTag, ActionRowBuilder, SelectMenuBuilder, ButtonStyle, ButtonInteraction, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, StringSelectMenuInteraction, AnySelectMenuInteraction, RoleSelectMenuBuilder } from "discord.js";
+import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable, DMChannel, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember, FetchedThreads, FetchedThreadsMore, MediaChannel, Role, GuildForumTag, ActionRowBuilder, SelectMenuBuilder, ButtonStyle, ButtonInteraction, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, StringSelectMenuInteraction, AnySelectMenuInteraction, RoleSelectMenuBuilder, Interaction } from "discord.js";
 import { Command, statusType } from "../../interfaces/command";
 import { db, threads as threadsList } from "../../bot";
-import { regMatch } from "../../events/threadCreate";
+import { regMatch, threadShouldBeWatched } from "../../events/threadCreate";
 import { strToRegex, validRegex } from "../../utilities/regex";
 import { addThread, dueArchiveTimestamp, removeThread, setArchive } from "../../utilities/threadActions";
 import TwButton from "../../components/Button";
@@ -12,11 +12,12 @@ import TwStringSelect from "../../components/StringSelect";
 type threadContainers = TextChannel | NewsChannel | ForumChannel | MediaChannel
 
 type actionsList = {
-    archived: ThreadChannel[],
-    unarchived: ThreadChannel[],
-    addedWithoutUnArchived: ThreadChannel[],
+    added: ThreadChannel[],
+    removed: ThreadChannel[],
     noAction: ThreadChannel[]
 }
+
+type actionType = "watch" | "unwatch" | "toggle" | "inaction"
 
 interface filterTypes {
     roles: (Role|undefined|null)[],
@@ -52,6 +53,53 @@ const getThreads = function( channel: threadContainers ): Promise<ThreadChannel[
     })  
 }
 
+const handleThreadActioning = async (threads: ThreadChannel[], action: actionType, filters: filterTypes): Promise<actionsList> => {
+    const rv: actionsList = {
+        added: [],
+        removed: [],
+        noAction: []
+    }
+
+    for(const thread of threads) {
+
+        if(await threadShouldBeWatched({ id: thread.id, server: thread.guildId, regex: filters.regex ?? "", roles: filters.roles.map(r => r?.id), tags: filters.tags.map(t => t?.id) }, thread)) {
+            switch(action) {
+                case "inaction": 
+                    rv.noAction.push(thread)
+                break;
+                case "watch":
+                    if(!threadsList.has(thread.id)) {
+                        addThread(thread.id, dueArchiveTimestamp(thread.autoArchiveDuration ?? 0, thread.lastMessage?.createdAt), thread.guildId)
+                        rv.added.push(thread)
+                    } else {
+                        rv.noAction.push(thread)
+                    }
+                break;
+                case "unwatch": 
+                    if(threadsList.has(thread.id)) {
+                        removeThread(thread.id)
+                        rv.removed.push(thread)
+                    } else {
+                        rv.noAction.push(thread)
+                    }
+                break;
+                case "toggle":
+                    if(threadsList.has(thread.id)) {
+                        removeThread(thread.id)
+                        rv.removed.push(thread)
+                    } else {
+                        addThread(thread.id, dueArchiveTimestamp(thread.autoArchiveDuration ?? 0, thread.lastMessage?.createdAt), thread.guildId)
+                        rv.noAction.push(thread)
+                    }
+                break;
+            }
+        }
+
+    }
+
+    return rv
+}
+
 const getDirThreads = ( dir: CategoryChannel ): Promise<ThreadChannel[]> => {
     return new Promise<ThreadChannel[]>( async (resolve, reject) => {
         let threads: ThreadChannel[] = [ ]
@@ -75,9 +123,49 @@ const getDirThreads = ( dir: CategoryChannel ): Promise<ThreadChannel[]> => {
 const batch: Command = {
     run: async (interaction: ChatInputCommandInteraction, buildBaseEmbed) => {
         const parent = interaction.options.getChannel("parent") || interaction.channel
-        const action = interaction.options.getString("action")
         const advanced = interaction.options.getBoolean("advanced")
         const watchNew = interaction.options.getBoolean("watch-new")
+        let action: actionType = "inaction"
+
+        switch(interaction.options.getString("action")) {
+            case "toggle":
+                action = "toggle"
+                break;
+            case "watch":
+                action = "watch"
+                break;
+            case "unwatch":
+                action = "unwatch"
+                break;
+            default:
+                action = "inaction"
+        }
+
+        const buildActionList = (actions: actionsList) => {
+            let rv = ""
+
+            if(actions.added.length !== 0) rv += `**Threads watched:** \`${actions.added.length}\`\n`
+            if(actions.removed.length !== 0) rv += `**Threads unwatched:** \`${actions.removed.length}\`\n`
+            if(actions.noAction.length !== 0) rv += `**Threads not affected:** \`${actions.noAction.length}\`\n`
+
+            return rv
+        }
+
+        const sendResultsEmbed = (actions: actionsList) => {
+            const resultEmbed = buildBaseEmbed("Done", statusType.success, {
+                noSend: true,
+                description: `new threads created in <#${parent?.id}> ${ watchNew ? "will" : "will not" } be watched\n-# **Keep in mind:** it might take upwards of an hour for the bot to ressurect any threads watched`,
+                fields: [
+                    { 
+                        name: "Threads actioned", value: buildActionList(actions) 
+                    }
+                ]
+            })
+
+            embeds.push(resultEmbed)
+    
+            interaction.editReply({ embeds, components: [] })
+        }
 
         const buttonFilter = (int: ButtonInteraction) => int.user.id === interaction.user.id
 
@@ -113,7 +201,7 @@ const batch: Command = {
             regex: ""
         }
 
-        const embeds = []
+        const embeds: EmbedBuilder[] = []
 
         // This is against the law but I do not care for i am the code bandit herherherhehrherherherhreuh
         const components: any[] = []
@@ -280,6 +368,9 @@ const batch: Command = {
                             filters.regex = ptrn
                             response.reply({ ephemeral: true, content: "saved" })
                         } else {
+                            /**
+                             * TODO: update docs link for patterns
+                             */
                             const embed = buildBaseEmbed("Syntax Error", statusType.error, { noSend: true, description: `the pattern you provided (\`${ptrn}\`) is not valid due to ${isRegexValid.reason}. Read the documentation on [**patterns**](https://example.com) for more info!` })
                             response.reply({ ephemeral: true, embeds: [ embed ] })
                         }   
@@ -329,7 +420,7 @@ const batch: Command = {
                     proceed = false
                 })
 
-                confirm.onclick((i) => {
+                confirm.onclick(async (i) => {
                     filterEmbed.setColor("Green")
                     i.update({ embeds: [ filterEmbed ], components: [] })
 
@@ -339,6 +430,20 @@ const batch: Command = {
                         as well as write it to db (/auto functionality). We must also remember to immedietly call that
                         if advanced is not used
                     */
+
+                    const result = await handleThreadActioning(threads, action, filters)
+                    if(watchNew) {
+                        const alreadyExists = (await db.getChannels(parent.id)).find(t => t.id == parent.id)
+            
+                        // If filter alr exists for this channel we go ahead and delete it
+                        // this so the insertion we make later does not cause any oopsie poopsies
+                        if(alreadyExists) await db.deleteChannel(parent.id)
+                
+                        db.insertChannel({ id: parent.id, server: interaction.guildId ?? "", regex: filters.regex, tags: filters.tags.map(t => t?.id), roles: filters.roles.map(r => r?.id) })
+                    }
+
+                    sendResultsEmbed(result)
+                    //i.reply("ok :D")
                 })
 
                 confirmationButtonComponents.addComponents(confirm.button, cancel.button)
@@ -356,89 +461,22 @@ const batch: Command = {
 
             // For debugging
             return
-        }
-
-        if(!proceed) return
-
-        const actions: actionsList = {
-            archived: [ ],
-            unarchived: [ ],
-            addedWithoutUnArchived: [ ],
-            noAction: [ ]
-        }
-
-        for(const t of threads) {
-            const addAndUnArchiveThread = ( thread: ThreadChannel ) => {
-                // do not add thread to watchlist if already watched
-                if(threadsList.has(thread.id) && threadsList.get(thread.id)?.watching) return actions.noAction.push(thread)
-
-                if(thread.archived && thread.unarchivable) {
-                    setArchive(thread)
-                    actions.unarchived.push(thread)
-                } else actions.addedWithoutUnArchived.push(thread)
-                addThread( thread.id, dueArchiveTimestamp(thread.autoArchiveDuration||0, thread.lastMessage?.createdAt) as number, thread.guildId )
-            }
-
-            const rmThread = ( thread: ThreadChannel ) => {
-                // no need to remove a thread that is not watched
-                if(!threadsList.has(thread.id)) return actions.noAction.push(thread)
-                removeThread(thread.id)
-                actions.archived.push(thread)
-            }
-
-            switch(action) {
-                case "watch":
-                    addAndUnArchiveThread(t)
-                break;
-                case "unwatch":
-                    rmThread(t)
-                break;
-                case "toggle":
-                    if(threadsList.has(t.id)) rmThread(t)
-                    else addAndUnArchiveThread(t)
-                break;
-                default:
-                    actions.noAction.push(t)
-                break;
-            }
-        }
-
-
-        if(watchNew) {
-            const alreadyExists = (await db.getChannels(parent.id)).find(t => t.id == parent.id)
-
-            // If filter alr exists for this channel we go ahead and delete it
-            // this so the insertion we make later does not cause any oopsie poopsies
-            if(alreadyExists) await db.deleteChannel(parent.id)
+        } else {
+            const result = await handleThreadActioning(threads, action, filters)
+            if(watchNew) {
+                const alreadyExists = (await db.getChannels(parent.id)).find(t => t.id == parent.id)
     
-            db.insertChannel({ id: parent.id, server: interaction.guildId, regex: filters.regex, tags: filters.tags.map(t => t?.id), roles: filters.roles.map(r => r?.id) })
+                // If filter alr exists for this channel we go ahead and delete it
+                // this so the insertion we make later does not cause any oopsie poopsies
+                if(alreadyExists) await db.deleteChannel(parent.id)
+        
+                db.insertChannel({ id: parent.id, server: interaction.guildId, regex: filters.regex, tags: filters.tags.map(t => t?.id), roles: filters.roles.map(r => r?.id) })
+            }
+            sendResultsEmbed(result)
         }
 
-        const buildActionList = () => {
-            let rv = ""
-
-            if(actions.addedWithoutUnArchived.length !== 0) rv += `**Threads watched but not unarchived:** \`${actions.addedWithoutUnArchived.length}\`\n`
-            if(actions.unarchived.length !== 0) rv += `**Threads watched and unarchived:** \`${actions.unarchived.length}\`\n`
-            if(actions.archived.length !== 0) rv += `**Threads removed from watchlist:** \`${actions.archived.length}\`\n`
-            if(actions.noAction.length !== 0) rv += `**Threads not affected:** \`${actions.noAction.length}\`\n`
-
-            return rv
-        }
-
-        const resultEmbed = buildBaseEmbed("Done", statusType.success, {
-            noSend: true,
-            description: `new threads ${ watchNew ? "will" : "will not" } be watched`,
-            fields: [
-                { 
-                    name: "Threads actioned", value: buildActionList() 
-                }
-            ]
-        })
-
-        embeds.push(resultEmbed)
 
 
-        interaction.editReply({ embeds })
     },
     data: new SlashCommandBuilder()
         .setName("batch")

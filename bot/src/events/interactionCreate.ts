@@ -119,7 +119,5 @@ export default function(interaction: BaseInteraction) {
     if(interaction.isAutocomplete()) handleAutoComplete(interaction)
     if(interaction.isButton()) handleInteraction(interaction, ButtonInteractionQueue)
     if(interaction.isModalSubmit()) handleInteraction(interaction, ModalInteractionQueue)
-    console.log("event?")
     if(interaction.isAnySelectMenu()) return handleInteraction(interaction, StringSelectInteractionQueue)
-    console.log("passed event")
 }
