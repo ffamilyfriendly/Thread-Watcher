@@ -4,11 +4,11 @@ import {
   PermissionFlagsBits,
   SlashCommandBuilder,
 } from "discord.js";
-import { Command } from "../../interfaces/command";
-import { db } from "../../bot";
+import { Command, statusType } from "../../interfaces/command";
+import { settings } from "../../bot";
 
 const info: Command = {
-  run: async (interaction: ChatInputCommandInteraction) => {
+  run: async (interaction: ChatInputCommandInteraction, buildBaseEmbed) => {
     const group = interaction.options.getSubcommandGroup(true);
     const subcommand = interaction.options.getSubcommand(true);
 
@@ -19,15 +19,45 @@ const info: Command = {
      */
     if (group === "logs") {
       if (subcommand === "reset") {
-        // RESET
+        settings.removeSetting(interaction.guildId ?? "", "LOGCHANNEL");
+        buildBaseEmbed("Done", statusType.success, {
+          description: `set config \`LOGCHANNEL\` to default value`,
+        });
       } else {
         const channel = interaction.options.getChannel("channel", true);
+        settings
+          .setSetting(interaction.guildId ?? "", "LOGCHANNEL", channel.id)
+          .then(() => {
+            buildBaseEmbed("Done", statusType.success, {
+              description: `set config \`LOGCHANNEL\` to value \`${channel.id}\``,
+            });
+          })
+          .catch(() => {
+            buildBaseEmbed("Failed", statusType.error, {
+              description: `could not set config \`LOGCHANNEL\` to value \`${channel.id}\``,
+            });
+          });
       }
     } else if (group === "behaviour") {
       if (subcommand === "reset") {
-        // RESET
+        settings.removeSetting(interaction.guildId ?? "", "BEHAVIOUR");
+        buildBaseEmbed("Done", statusType.success, {
+          description: `set config \`BEHAVIOUR\` to default value`,
+        });
       } else {
         const behaviour = interaction.options.getString("behaviour", true);
+        settings
+          .setSetting(interaction.guildId ?? "", "BEHAVIOUR", behaviour)
+          .then(() => {
+            buildBaseEmbed("Done", statusType.success, {
+              description: `set config \`BEHAVIOUR\` to value \`${behaviour}\``,
+            });
+          })
+          .catch(() => {
+            buildBaseEmbed("Failed", statusType.error, {
+              description: `could not set config \`BEHAVIOUR\` to value \`${behaviour}\``,
+            });
+          });
       }
     }
   },
