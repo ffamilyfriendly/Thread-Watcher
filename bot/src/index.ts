@@ -95,19 +95,19 @@ manager.on("shardCreate", shard => {
     logger.done(`Shard with id ${shard.id} spawned!`)
     webLog(`Shard ${shard.id} spawned!`, null)
 
-    shard.addListener("ready", () => {
+    shard.on("ready", () => {
         webLog(`Shard ${shard.id} ready!`, null, Colors.Green)
     })
 
-    shard.addListener("death", () => {
+    shard.on("death", () => {
         webLog(`Shard ${shard.id} died!`, null, Colors.Red)
     })
 
-    shard.addListener("disconnect", () => {
+    shard.on("disconnect", () => {
         webLog(`Shard ${shard.id} disconnected!`, null, Colors.Orange)
     })
 
-    shard.addListener("reconnecting", () => {
+    shard.on("reconnecting", () => {
         webLog(`Shard ${shard.id} is reconnecting!`, null, Colors.DarkGreen)
     })
 

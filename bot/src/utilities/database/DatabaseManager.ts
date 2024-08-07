@@ -41,7 +41,5 @@ export function getDatabase(type: DataBases, config: ConfigFile): sqlite|mysql {
 }
 
 export function getBackupProvider(type: BackupProviders, config: ConfigFile): DiscordMessage|undefined {
-    console.log("TYPE", type)
-    console.log("PROVIDERS", BackupProviders)
     if(type == BackupProviders.discord) return new DiscordMessage(config)
 }

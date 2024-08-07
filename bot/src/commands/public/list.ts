@@ -1,9 +1,9 @@
-import { ChatInputCommandInteraction, Channel, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, Embed, ThreadChannel, ChannelType, ColorResolvable, DMChannel, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember } from "discord.js";
+import { ChatInputCommandInteraction, PermissionFlagsBits, EmbedBuilder, SlashCommandBuilder, ThreadChannel, ChannelType, ColorResolvable, CategoryChannel, TextChannel, ForumChannel, NewsChannel, GuildMember } from "discord.js";
 import { Command, statusType } from "../../interfaces/command";
-import { db, threads as threadsList, config } from "../../bot";
+import { db, config } from "../../bot";
 import Chunkable from "../../utilities/Chunkable";
 
-type field = {
+interface field {
     name: string,
     value: string
 }
@@ -17,18 +17,16 @@ type field = {
  * This might make it now show all threads if any user out there somehow manages to have 5500 chars worth of threads stored
  * which is why this function will be supplemented with a function to create more embeds if needed as 10 embeds are allowed per interaction response
  */
-const fitIntoFields = ( name: string, values: string[], totalLength: number = 0 ): { fieldArr: field[], totalLength: number, remainingValues: string[] } => {
+const fitIntoFields = ( name: string, values: string[], totalLength = 0 ): { fieldArr: field[], totalLength: number, remainingValues: string[] } => {
     
     // Embed limits https://discord.com/developers/docs/resources/channel#embed-object-embed-limits
     const MAXLENGTH = 1024
     
-    let fields: field[] = []
-    let buff: string = ""
-    let remainingValues: string[] = []
+    const fields: field[] = []
+    let buff = ""
+    const remainingValues: string[] = []
 
-    for(let index = 0; index < values.length; index++) {
-
-        const value = values[index]
+    for(const value of values) {
 
         // Length of the buffer plus the string currently added to it
         const iLength = (buff.length + value.length) + 2
@@ -85,7 +83,7 @@ const threads: Command = {
             if(!interaction.guildId) return 
             const threads = await db.getThreads(interaction.guildId)
             for(const _t of threads) {
-                let thread = await interaction.client.channels.fetch(_t.id).catch(() => { })
+                const thread = await interaction.client.channels.fetch(_t.id)
                 if(thread) {
                     if( thread.type !== ChannelType.PrivateThread && thread.type !== ChannelType.PublicThread ) return
                     if(!interaction.memberPermissions?.has(PermissionFlagsBits.ViewChannel)) continue;
@@ -99,15 +97,13 @@ const threads: Command = {
             }
         }
 
-        console.log("ARRAY", res.threads)
-
         const getChannels = async () => {
-            let t = []
+            const t = []
             if(!interaction.guildId) return 
             const channels = await db.getChannels(interaction.guildId)
 
             for(const channelData of channels) {
-                const channel = await interaction.client.channels.fetch(channelData.id).catch(() => { })
+                const channel = await interaction.client.channels.fetch(channelData.id)
                 if(channel) {
                     if( !( ((channel instanceof TextChannel) || ( channel instanceof ForumChannel ) || (channel instanceof NewsChannel) || (channel instanceof CategoryChannel)) && interaction.member instanceof GuildMember ) ) break;
                     if(channel.permissionsFor(interaction.member).has(PermissionFlagsBits.ViewChannel)) {
@@ -127,7 +123,7 @@ const threads: Command = {
             await Promise.all([getThreads(), getChannels()])
         }
 
-        let embeds = [ ]
+        const embeds = [ ]
 
         const genEmbed = () => {
             const e = new EmbedBuilder()

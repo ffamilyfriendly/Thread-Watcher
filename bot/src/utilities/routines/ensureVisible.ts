@@ -18,16 +18,27 @@ const makeVisible = () => {
             await thread.setArchived(false)
 
         if(!thread.locked && thread.manageable) {
-            thread.setAutoArchiveDuration(4320)
-                .then(() => {
-                    thread.setAutoArchiveDuration(10080)
-                        .catch(() => {
-                            logger.error(`could not set thread ${thread.id} to 10080 autoArchiveDuration`)
-                        })
+
+            /**
+             * Previous behaviour was to set the autoarchiveduration to 4320 then directly set it back to 10080.
+             * This worked but is not great for ratelimits. This has been changed to setting it to 4320 if it is 10080
+             * or setting it to 10080 if it is anything else. 
+             */
+
+            // CHECK BEHAVIOUR SETTING HERE
+
+            if(thread.autoArchiveDuration === 10080) {
+                thread.setAutoArchiveDuration(4320)
+                .catch(() => {
+                    logger.error(`could not set thread ${thread.id} to 4320 autoArchiveDuration`)
                 })
+            } else {
+                thread.setAutoArchiveDuration(10080)
                 .catch(e => {
                     logger.error(`could not bump thread ${thread.id} failed to set autoArchiveDuration`)
                 })
+            }
+
         } else if(!thread.manageable && thread.sendable && !thread.archived) {
             if(thread.permissionsFor(thread.client.user.id)?.has(PermissionFlagsBits.EmbedLinks)) {
                 const e = new EmbedBuilder()

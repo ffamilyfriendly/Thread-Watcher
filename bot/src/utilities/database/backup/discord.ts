@@ -1,6 +1,6 @@
 import { statSync } from "fs";
 import { BackupProvider } from "../../../interfaces/database";
-import { EmbedBuilder, WebhookClient } from "discord.js";
+import { WebhookClient } from "discord.js";
 import { ConfigFile } from "../../../utilities/cnf";
 
 export default class DiscordMessage implements BackupProvider {
@@ -11,7 +11,7 @@ export default class DiscordMessage implements BackupProvider {
         this.webhookClient = new WebhookClient({ url: config.logWebhook })
     }
 
-    createBackup(path: string): Promise<void> {
+    createBackup(path: string): Promise<`https://${string}` | null> {
         return new Promise((resolve, reject) => {
             const file = statSync(path)
             const fileSizeInMib = file.size / 1000000.0
@@ -19,13 +19,9 @@ export default class DiscordMessage implements BackupProvider {
             if(!file.isFile())      return reject("path does not resolve in a file")
             if(fileSizeInMib > 25)  return reject("file size is larger than allowed (>25Mib)")
             if(!this.webhookClient) return reject("no webhook client has been initiated.")
-
-            const embed = new EmbedBuilder()
-                .setTitle("Database Backup")
-                .setTimestamp(new Date())
-                .setColor("Aqua")
             
-            this.webhookClient.send({ embeds: [ embed ], files: [ path ], username: "Backup Provider" })
+            this.webhookClient.send({ files: [ path ], username: "Backup Provider" })
+            resolve(null)
         })
     }
 
