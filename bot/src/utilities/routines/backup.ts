@@ -1,6 +1,6 @@
 import { config, logger, webLog } from "../../index";
 import { schedule } from "node-cron"
-import { databaseInstance } from "../database/DatabaseManager";
+import { BackupProviders, databaseInstance, getBackupProvider } from "../database/DatabaseManager";
 import { join } from "path";
 import { existsSync, mkdirSync, readdirSync, rmSync, lstatSync } from "fs"
 
@@ -18,13 +18,27 @@ export default function scheduleBackups(database: databaseInstance) {
     schedule(config.database.backupInterval, () => {
         logger.info("running backup")
         database.createBackup(backupsDirPath)
-            .then(backupName => {
+            .then(async backupName => {
                 logger.done(`Created backup @ ${backupName}!`)
-                webLog("Backup Created", `Backup was created at ${backupName}`, "Green")
+                
+                let backupLocation = ""
+
+                if(config.database.backupProvider != "none") {
+                    const provider = getBackupProvider(BackupProviders[config.database.backupProvider], config)
+
+                    if(provider) {
+                        const res = await provider.createBackup(backupName)
+                        if(res) {
+                            backupLocation = `\n**url:** ${res}`
+                        }
+                    } 
+                }
+
+                webLog("Backup Created", `Backup was created at ${backupName}${backupLocation}`, "Green")
             })
             .catch(err => {
                 logger.error("backup could not be created")
-                console.log(err)
+                console.error(err)
                 webLog("Backup Failed", "Could not create backup.", "Red")
             })
         

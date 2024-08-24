@@ -106,7 +106,6 @@ interface FunkyFella extends BaseInteraction {
 
 function handleInteraction<TInteractionType extends FunkyFella>(interaction: TInteractionType, queue: Map<string, TwGenericComponent<TInteractionType>>) {
     const TwComponent = queue.get(interaction.customId)
-    console.log("hello")
     if(TwComponent) {
         TwComponent._middleware(interaction)
     } else if(interaction.isRepliable()) {
@@ -119,7 +118,5 @@ export default function(interaction: BaseInteraction) {
     if(interaction.isAutocomplete()) handleAutoComplete(interaction)
     if(interaction.isButton()) handleInteraction(interaction, ButtonInteractionQueue)
     if(interaction.isModalSubmit()) handleInteraction(interaction, ModalInteractionQueue)
-    console.log("event?")
     if(interaction.isAnySelectMenu()) return handleInteraction(interaction, StringSelectInteractionQueue)
-    console.log("passed event")
 }

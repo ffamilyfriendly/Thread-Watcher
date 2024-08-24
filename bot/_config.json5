@@ -42,7 +42,9 @@
       // check out https://crontab.guru/ for formatting
       backupInterval: '0 */6 * * *',
       // How many backups you want to keep before writing over old ones
-      backupAmount: 10
+      backupAmount: 10,
+      // allowed: discord | none
+      backupProvider: "discord"
    },
    // Wheter or not you want your instance stats broadcasted via HTTP. You probably dont
    statsServer: {

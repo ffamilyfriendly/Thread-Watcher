@@ -7,7 +7,7 @@ import { db, threads } from "../bot";
  * @param fromDate from what timestamp to calculate when thread will be hidden 
  * @returns {Number} the calculated timestamp where a thread will be hidden
  */
-export function dueArchiveTimestamp(dueArchive: number, fromDate?: Date): Number {
+export function dueArchiveTimestamp(dueArchive: number, fromDate?: Date): number {
 
     // if an undefined value is passed we want to treat the thread as already stale
     // Previously we defaulted to simply the current date which meant that if the thread was already stale
@@ -39,7 +39,7 @@ export function setArchive(thread: ThreadChannel, dueArchive = 10_080) {
 
 export function bumpAutoTime(thread: ThreadChannel) {
     return new Promise((resolve, reject) => {
-        let t = threads.get(thread.id)
+        const t = threads.get(thread.id)
         if(!t) return reject(`thread ${thread.id} not in thread list`)
         const newTimeStamp = dueArchiveTimestamp(thread.autoArchiveDuration||0) as number
         t.dueArchive = newTimeStamp
@@ -65,6 +65,7 @@ export function addThread(id: string, dueArchive: number, guildID: string): Prom
 
 export function removeThread(id: string, force = false): Promise<void> {
     return new Promise((resolve, reject) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         force ? db.deleteThread(id) : db.unwatchThread(id)
         .then(() => {
             threads.delete(id);

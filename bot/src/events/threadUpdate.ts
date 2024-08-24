@@ -29,6 +29,8 @@ export default async function(oldThread: ThreadChannel, newThread: ThreadChannel
     }
 
 
+    
+
     if(!threads.has(newThread.id)) return
     if(!newThread.archived && !newThread.locked) {
         bumpAutoTime(newThread)
