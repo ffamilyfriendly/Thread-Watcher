@@ -41,14 +41,14 @@ class mysql implements Database {
           (err) => {
             if (err) {
               console.error("[MYSQL] could not create table threads", err);
-              process.exit(1);
+              throw new Error("[MYSQL] could not create table threads");
             }
             this.connection.query(
               `CREATE TABLE IF NOT EXISTS \`${this.database}\`.\`channels\` (\`id\` VARCHAR(20) NOT NULL, \`server\` VARCHAR(20) NOT NULL, \`regex\` TINYTEXT, \`roles\` TEXT, \`tags\` TEXT);`,
               (err) => {
                 if (err) {
                   console.error("[MYSQL] could not create table channels", err);
-                  process.exit(1);
+                  throw new Error("[MYSQL] could not create table channels");
                 }
                 this.connection.query(
                   `CREATE TABLE IF NOT EXISTS \`${this.database}\`.\`config\` (\`server\` VARCHAR(20) NOT NULL, \`cfg_id\` VARCHAR(20) NOT NULL, \`value\` VARCHAR(20) NOT NULL, PRIMARY KEY(\`server\`, \`cfg_id\`))`,
@@ -58,7 +58,7 @@ class mysql implements Database {
                         "[MYSQL] could not create table config",
                         err,
                       );
-                      process.exit(1);
+                      throw new Error("[MYSQL] could not create table config");
                     }
                     resolve();
                   },

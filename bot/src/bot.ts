@@ -59,7 +59,7 @@ export { client, logger, commands, db, threads, config, settings };
 if (hasParent) {
   client.login(config.tokens.discord).catch((err) => {
     logger.error(`Could not authorise bot. ${err.toString()}`);
-    process.exit(1);
+    throw new Error(`Could not authorise bot. ${err.toString()}`);
   });
 
   process.on("uncaughtException", (err) => {
@@ -67,6 +67,8 @@ if (hasParent) {
       `[FATAL ERROR] shard ${client.shard?.ids[0]} encountered a fatal error. (dump below)`,
     );
     console.error(err);
-    process.exit(1);
+    throw new Error(
+      `[FATAL ERROR] shard ${client.shard?.ids[0]} encountered a fatal error. (dump below)`,
+    );
   });
 }
