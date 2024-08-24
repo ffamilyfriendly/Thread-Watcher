@@ -10,6 +10,15 @@ import UserSettings from "./utilities/userSettings";
 
 const config = cnf();
 
+const db = getDatabase(DataBases[config.database.type], config);
+db.createTables();
+
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds],
+  // SLIM DOWN CACHE PLS PLS PLS PLS REMEMBER
+  // TODO: SLIM THIS CACHE SLIM IT DOWN STOP EATING MY MEMORY,
+});
+
 class log76 extends Log75 {
   error(s: string) {
     super.print(s, `${client.shard?.ids[0]} ERR`, red, console.error);
@@ -25,15 +34,6 @@ class log76 extends Log75 {
 }
 
 const logger = new log76(LogLevel.Debug, { color: true });
-
-const db = getDatabase(DataBases[config.database.type], config);
-db.createTables();
-
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
-  // SLIM DOWN CACHE PLS PLS PLS PLS REMEMBER
-  // TODO: SLIM THIS CACHE SLIM IT DOWN STOP EATING MY MEMORY,
-});
 
 /*
     Sometimes ol' John is a silly willy and makes weird refferences that result in this file being ran without being called by

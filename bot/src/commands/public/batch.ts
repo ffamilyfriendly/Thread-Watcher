@@ -190,6 +190,7 @@ const batch: Command = {
     const advanced = interaction.options.getBoolean("advanced");
     const watchNew = interaction.options.getBoolean("watch-new");
     let action: actionType = "inaction";
+    const embeds: EmbedBuilder[] = [];
 
     switch (interaction.options.getString("action")) {
       case "toggle":
@@ -288,8 +289,6 @@ const batch: Command = {
       tags: [],
       regex: "",
     };
-
-    const embeds: EmbedBuilder[] = [];
 
     // This is against the law but I do not care for i am the code bandit herherherhehrherherherhreuh
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
