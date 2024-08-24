@@ -32,7 +32,7 @@ db.createTables();
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
   // SLIM DOWN CACHE PLS PLS PLS PLS REMEMBER
-  // TODO: SLIM THIS CACHE SLIM IT DOWN STOP EATING MY MEMORY
+  // TODO: SLIM THIS CACHE SLIM IT DOWN STOP EATING MY MEMORY,
 });
 
 /*

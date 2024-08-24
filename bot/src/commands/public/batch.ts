@@ -548,7 +548,7 @@ const batch: Command = {
 
       const confirmButtons = () => {
         // confirmationButtonComponents
-        const confirm = new TwButton("Confirm Choices", ButtonStyle.Primary);
+        const confirm = new TwButton("Confirm Choices", ButtonStyle.Success);
         const cancel = new TwButton("Cancel", ButtonStyle.Danger);
 
         confirm.filter = buttonFilter;

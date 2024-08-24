@@ -1,5 +1,5 @@
 import { PermissionFlagsBits, EmbedBuilder } from "discord.js";
-import { client, logger, threads } from "../../bot";
+import { client, logger, settings, threads } from "../../bot";
 import { ThreadData } from "../../interfaces/database";
 import { bumpAutoTime } from "../threadActions";
 
@@ -18,15 +18,21 @@ const makeVisible = () => {
       if (thread.archived && thread.unarchivable)
         await thread.setArchived(false);
 
+      // If user only wants the bot to unarchive the thread without keeping it "active" we can just return here
+      if (
+        (await settings.getSetting(thread.guildId, "BEHAVIOUR")) ===
+        "UNARCHIVE_ONLY"
+      ) {
+        bumpAutoTime(thread);
+        return;
+      }
+
       if (!thread.locked && thread.manageable) {
         /**
          * Previous behaviour was to set the autoarchiveduration to 4320 then directly set it back to 10080.
          * This worked but is not great for ratelimits. This has been changed to setting it to 4320 if it is 10080
          * or setting it to 10080 if it is anything else.
          */
-
-        // CHECK BEHAVIOUR SETTING HERE
-
         if (thread.autoArchiveDuration === 10080) {
           thread.setAutoArchiveDuration(4320).catch(() => {
             logger.error(
