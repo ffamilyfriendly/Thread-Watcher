@@ -136,7 +136,7 @@ const handleThreadActioning = async (
           }
           break;
         case "toggle":
-          if (threadsList.has(thread.id)) {
+          if (threadsList.get(thread.id)?.watching) {
             removeThread(thread.id);
             rv.removed.push(thread);
           } else {
