@@ -4,6 +4,13 @@ import { ThreadData } from "../../interfaces/database";
 import { bumpAutoTime } from "../threadActions";
 
 const queue: ThreadData[] = [];
+const summary = {
+  worked: 0,
+  fail_unknown_channel: 0,
+  fail_could_not_edit: 0,
+  failed_perms: 0,
+};
+
 let running = false;
 
 const makeVisible = () => {
@@ -35,15 +42,11 @@ const makeVisible = () => {
          */
         if (thread.autoArchiveDuration === 10080) {
           thread.setAutoArchiveDuration(4320).catch(() => {
-            logger.error(
-              `could not set thread ${thread.id} to 4320 autoArchiveDuration`,
-            );
+            summary.fail_could_not_edit++;
           });
         } else {
           thread.setAutoArchiveDuration(10080).catch(() => {
-            logger.error(
-              `could not bump thread ${thread.id} failed to set autoArchiveDuration`,
-            );
+            summary.fail_could_not_edit++;
           });
         }
       } else if (!thread.manageable && thread.sendable && !thread.archived) {
@@ -70,21 +73,21 @@ const makeVisible = () => {
           );
         }
       } else {
-        logger.error(`could not bump thread ${thread.id} due to perms`);
+        summary.failed_perms++;
       }
 
       bumpAutoTime(thread);
     })
-    .catch((e) => {
-      logger.error(
-        `could not get thread with id ${t.id} thus not bumping it (dump below)`,
-      );
-      console.error(e);
+    .catch(() => {
+      summary.fail_unknown_channel++;
     });
 
   if (queue.length !== 0) setTimeout(makeVisible, 1000 / 4);
   else {
     running = false;
+    logger.done(
+      `ensureVisible routine completed.\nSummary:\n- worked: ${summary.worked} (${(summary.worked / (summary.worked + summary.failed_perms + summary.fail_unknown_channel + summary.fail_could_not_edit)) * 100}%)\n- cant get channel: ${summary.fail_unknown_channel}\n- no perms: ${summary.failed_perms}\n- could not edit: ${summary.fail_could_not_edit}`,
+    );
   }
 };
 

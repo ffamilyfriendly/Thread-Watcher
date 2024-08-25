@@ -12,6 +12,8 @@ const info: Command = {
 
     if (!channel) return;
 
+    await interaction.deferReply();
+
     const command = interaction.options.getSubcommand(true);
 
     const alrExists = (await db.getChannels(interaction.guildId ?? "")).find(

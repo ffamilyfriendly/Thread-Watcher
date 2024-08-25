@@ -3,39 +3,40 @@ import { db, logger, threads } from "../bot";
 import { bumpThreadsRoutine } from "../utilities/routines/ensureVisible";
 import { ThreadData } from "src/interfaces/database";
 
+export default function (client: Client) {
+  logger.info("Client ready! ");
 
+  const loadThreads = (): Promise<ThreadData[] | void>[] => {
+    const promises: Promise<ThreadData[] | void>[] = [];
 
-export default function(client: Client) {
-    logger.info("Client ready! ")
+    for (const [_id, guild] of client.guilds.cache) {
+      const dbPromise: Promise<ThreadData[] | void> = db
+        .getThreads(guild.id)
+        .then((res) => {
+          for (const t of res) threads.set(t.id, t);
+        });
 
-    const loadThreads = (): Promise<ThreadData[]|void>[] => {
-        let promises: Promise<ThreadData[]|void>[] = []
-
-        for(const [_id,guild] of client.guilds.cache) {
-            let dbPromise: Promise<ThreadData[]|void> = db.getThreads(guild.id)
-            .then((res) => {
-                for(const t of res)
-                    threads.set(t.id, t)
-            })
-
-            promises.push(dbPromise)
-        }
-
-        return promises
+      promises.push(dbPromise);
     }
 
-    const setPresence = () => {
-        client.user?.setPresence({ activities:[{ name:"your threads 🧵", type: ActivityType.Watching }], status: "online" })
-    }
+    return promises;
+  };
 
-    setPresence()
-    setInterval(setPresence, 1000 * 60 * 60)
+  const setPresence = () => {
+    client.user?.setPresence({
+      activities: [{ name: "your threads 🧵", type: ActivityType.Watching }],
+      status: "online",
+    });
+  };
 
-    Promise.allSettled(loadThreads())
-        .then(bumpThreadsRoutine)
-        .catch(e => {
-            logger.warn("[Ready] could not load data for some guilds")
-            console.warn(e)
-        })
-    setInterval(bumpThreadsRoutine, 1000 * 60 * 50)
+  setPresence();
+  setInterval(setPresence, 1000 * 60 * 60);
+
+  Promise.allSettled(loadThreads())
+    .then(bumpThreadsRoutine)
+    .catch((e) => {
+      logger.warn("[Ready] could not load data for some guilds");
+      console.warn(e);
+    });
+  setInterval(bumpThreadsRoutine, 1000 * 60 * 50);
 }
