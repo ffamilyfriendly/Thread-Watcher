@@ -45,7 +45,7 @@ const info: Command = {
   gatekeeping: {
     userPermissions: [PermissionFlagsBits.ManageThreads],
     ownerOnly: false,
-    devServerOnly: true,
+    devServerOnly: false,
   },
   data: new SlashCommandBuilder()
     .setName("channel")

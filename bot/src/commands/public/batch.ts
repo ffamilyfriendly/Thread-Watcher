@@ -663,7 +663,7 @@ const batch: Command = {
   gatekeeping: {
     userPermissions: [PermissionFlagsBits.ManageThreads],
     ownerOnly: false,
-    devServerOnly: true,
+    devServerOnly: false,
   },
   externalOptions: [
     {
