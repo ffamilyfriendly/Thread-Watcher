@@ -21,7 +21,7 @@ const info: Command = {
       if (subcommand === "reset") {
         settings.removeSetting(interaction.guildId ?? "", "LOGCHANNEL");
         buildBaseEmbed("Done", statusType.success, {
-          description: "set config \`LOGCHANNEL\` to default value",
+          description: "set config `LOGCHANNEL` to default value",
         });
       } else {
         const channel = interaction.options.getChannel("channel", true);
@@ -42,7 +42,7 @@ const info: Command = {
       if (subcommand === "reset") {
         settings.removeSetting(interaction.guildId ?? "", "BEHAVIOUR");
         buildBaseEmbed("Done", statusType.success, {
-          description: "set config \`BEHAVIOUR\` to default value",
+          description: "set config `BEHAVIOUR` to default value",
         });
       } else {
         const behaviour = interaction.options.getString("behaviour", true);
@@ -64,7 +64,7 @@ const info: Command = {
   gatekeeping: {
     userPermissions: [PermissionFlagsBits.ManageThreads],
     ownerOnly: false,
-    devServerOnly: true,
+    devServerOnly: false,
   },
   data: new SlashCommandBuilder()
     .setName("config")
