@@ -20,13 +20,14 @@ import { createHash } from "crypto";
 */
 
 const loadCommands = (baseDir = "../dist/commands/", dirDive = "") => {
-  let pCommands: Command[] = [];
-  let prCommands: Command[] = [];
+  const pCommands: Command[] = [];
+  const prCommands: Command[] = [];
 
   const p = path.join(__dirname, baseDir + (dirDive ? dirDive : ""));
-  for (let file of readdirSync(p)) {
+  for (const file of readdirSync(p)) {
     const fileStat = statSync(path.join(p, file));
     if (fileStat.isFile() && file.endsWith(".js")) {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const cmdReq = require(`../commands/${dirDive}/${file}`)?.default;
       if (!cmdReq) {
         console.warn(
@@ -57,7 +58,7 @@ const loadCommands = (baseDir = "../dist/commands/", dirDive = "") => {
 };
 
 export default function (
-  global: Boolean,
+  global: boolean,
   config: ConfigFile,
 ): Promise<unknown> {
   const { publicCommands, privateCommands } = loadCommands("../commands/");

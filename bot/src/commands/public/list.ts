@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 import {
   ChatInputCommandInteraction,
   PermissionFlagsBits,
@@ -108,7 +109,9 @@ const threads: Command = {
       if (!interaction.guildId) return;
       const threads = await db.getThreads(interaction.guildId);
       for (const _t of threads) {
-        const thread = await interaction.client.channels.fetch(_t.id);
+        const thread = await interaction.client.channels
+          .fetch(_t.id)
+          .catch(() => {});
         if (thread) {
           if (
             thread.type !== ChannelType.PrivateThread &&
@@ -135,7 +138,9 @@ const threads: Command = {
       const channels = await db.getChannels(interaction.guildId);
 
       for (const channelData of channels) {
-        const channel = await interaction.client.channels.fetch(channelData.id);
+        const channel = await interaction.client.channels
+          .fetch(channelData.id)
+          .catch(() => {});
         if (channel) {
           if (
             !(
