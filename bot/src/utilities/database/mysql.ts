@@ -114,7 +114,7 @@ class mysql implements Database {
     return new Promise((resolve, reject) => {
       const { id, server, regex, roles, tags } = data;
       this.connection.query(
-        "INSERT INTO channels VALUES(?,?,?,?,?)",
+        "REPLACE INTO channels VALUES(?,?,?,?,?)",
         [id, server, regex, roles.join(","), tags.join(",")],
         (err) => {
           if (err) return reject(err);

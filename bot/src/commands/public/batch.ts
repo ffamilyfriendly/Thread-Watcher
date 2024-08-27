@@ -219,6 +219,7 @@ const batch: Command = {
       return rv;
     };
 
+    // This sometimes fails? Idk why
     const sendResultsEmbed = (actions: actionsList) => {
       const resultEmbed = buildBaseEmbed("Done", statusType.success, {
         noSend: true,
