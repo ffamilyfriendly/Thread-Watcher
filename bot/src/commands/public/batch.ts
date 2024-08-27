@@ -185,6 +185,7 @@ const getDirThreads = async (
 
 const batch: Command = {
   run: async (interaction: ChatInputCommandInteraction, buildBaseEmbed) => {
+    await interaction.deferReply();
     const parent =
       interaction.options.getChannel("parent") || interaction.channel;
     const advanced = interaction.options.getBoolean("advanced");
@@ -270,8 +271,6 @@ const batch: Command = {
       });
       return;
     }
-
-    await interaction.deferReply();
 
     const threads: ThreadChannel[] = [];
 
