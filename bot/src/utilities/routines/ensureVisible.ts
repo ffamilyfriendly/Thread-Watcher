@@ -16,7 +16,6 @@ let running = false;
 const makeVisible = () => {
   const t = queue.shift();
   if (!t) return (running = false);
-
   client.channels
     .fetch(t?.id)
     .then(async (thread) => {
@@ -41,12 +40,12 @@ const makeVisible = () => {
          * or setting it to 10080 if it is anything else.
          */
         if (thread.autoArchiveDuration === 10080) {
-          thread.setAutoArchiveDuration(4320).catch(() => {
+          await thread.setAutoArchiveDuration(4320).catch(() => {
             summary.fail_could_not_edit++;
           });
           summary.worked++;
         } else {
-          thread.setAutoArchiveDuration(10080).catch(() => {
+          await thread.setAutoArchiveDuration(10080).catch(() => {
             summary.fail_could_not_edit++;
           });
           summary.worked++;

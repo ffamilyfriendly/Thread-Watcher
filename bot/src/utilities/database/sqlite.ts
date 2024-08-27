@@ -64,11 +64,11 @@ class sqlite implements Database {
   }
 
   getConfigValue(guildID: string, key: string): Promise<string> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const res = this.db
         .prepare("SELECT * FROM config WHERE server = ? AND cfg_id = ?")
         .get(guildID, key) as { server: string; cfg_id: string; value: string };
-      if (!res) return false;
+      if (!res) return reject("NO ROW FOUND");
       resolve(res.value);
     });
   }
