@@ -9,17 +9,26 @@ export default class UserSettings {
     this.cache = new Map();
   }
 
-  async getSetting(guild: string, key: string) {
-    if (this.cache.has(`${guild}/${key}`)) {
-      return this.cache.has(`${guild}/${key}`);
-    }
-    const res = await this.db.getConfigValue(guild, key);
-
-    if (res) {
-      this.cache.set(`${guild}/${key}`, res);
-    }
-
-    return res;
+  getSetting(guild: string, key: string) {
+    return new Promise((resolve, reject) => {
+      if (this.cache.has(`${guild}/${key}`)) {
+        return resolve(this.cache.get(`${guild}/${key}`));
+      }
+      this.db
+        .getConfigValue(guild, key)
+        .then((d) => {
+          this.cache.set(`${guild}/${key}`, d);
+        })
+        .catch((e) => {
+          if (e === "NO ROW FOUND") {
+            //TODO: FIX THIS
+            // IF YOU RUN INTO UD IN THE FUTURE THIS MIGHT BE A CULPRIT
+            resolve("");
+          } else {
+            reject(e);
+          }
+        });
+    });
   }
 
   async setSetting(guild: string, key: string, value: string) {

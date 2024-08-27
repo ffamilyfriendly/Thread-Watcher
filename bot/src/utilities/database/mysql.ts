@@ -104,7 +104,7 @@ class mysql implements Database {
         (err, res: { server: string; cfg_id: string; value: string }[]) => {
           if (err) return reject(err);
           if (res?.[0]) return resolve(res[0]["value"]);
-          return false;
+          return reject("NO ROW FOUND");
         },
       );
     });
