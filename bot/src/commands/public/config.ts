@@ -9,6 +9,7 @@ import { settings } from "../../bot";
 
 const info: Command = {
   run: async (interaction: ChatInputCommandInteraction, buildBaseEmbed) => {
+    await interaction.deferReply();
     const group = interaction.options.getSubcommandGroup(true);
     const subcommand = interaction.options.getSubcommand(true);
 

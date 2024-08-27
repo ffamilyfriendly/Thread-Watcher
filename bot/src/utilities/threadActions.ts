@@ -15,8 +15,10 @@ export function dueArchiveTimestamp(
   // Previously we defaulted to simply the current date which meant that if the thread was already stale
   // and the bot did not manage to get the last message it would take a few days (or a week at most) until the bot
   // actually did its job
-  const date =
-    typeof fromDate == "undefined" ? new Date(0) : fromDate || new Date();
+  let date = fromDate || new Date();
+  if (fromDate && !(fromDate instanceof Date)) {
+    date = new Date(0);
+  }
 
   return date.getTime() / 1000 + dueArchive * 60;
 }
@@ -47,6 +49,7 @@ export function bumpAutoTime(thread: ThreadChannel) {
     if (!t) return reject(`thread ${thread.id} not in thread list`);
     const newTimeStamp = dueArchiveTimestamp(
       thread.autoArchiveDuration || 0,
+      thread.lastMessage?.createdAt,
     ) as number;
     t.dueArchive = newTimeStamp;
 

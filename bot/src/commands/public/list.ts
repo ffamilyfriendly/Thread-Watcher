@@ -188,7 +188,7 @@ const threads: Command = {
         ...res.threads,
         ...res.threadsFailed,
       ]).fieldArr;
-      const chunks = Chunkable.from(fields, 20);
+      const chunks = Chunkable.from(fields, 15);
 
       let items = chunks.next();
       while (items) {
@@ -206,7 +206,7 @@ const threads: Command = {
         ...res.channels,
         ...res.channelsFailed,
       ]).fieldArr;
-      const chunks = Chunkable.from(fields, 20);
+      const chunks = Chunkable.from(fields, 15);
 
       let items = chunks.next();
       while (items) {
@@ -225,6 +225,10 @@ const threads: Command = {
         description: `I'd love to show you something here but you have not added anything that can be displayed with show set to \`${show}\``,
       });
       return;
+    }
+
+    if (embeds.length > 10) {
+      embeds.length = 10;
     }
 
     interaction.editReply({ embeds });

@@ -15,6 +15,7 @@ import { threads } from "../../bot";
 
 const watch: Command = {
   run: async (interaction: ChatInputCommandInteraction, buildBaseEmbed) => {
+    await interaction.deferReply();
     const thread =
       interaction.options.getChannel("thread") || interaction.channel;
     if (!thread) {
