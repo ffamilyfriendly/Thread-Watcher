@@ -44,10 +44,12 @@ const makeVisible = () => {
           thread.setAutoArchiveDuration(4320).catch(() => {
             summary.fail_could_not_edit++;
           });
+          summary.worked++;
         } else {
           thread.setAutoArchiveDuration(10080).catch(() => {
             summary.fail_could_not_edit++;
           });
+          summary.worked++;
         }
       } else if (!thread.manageable && thread.sendable && !thread.archived) {
         if (
@@ -67,10 +69,12 @@ const makeVisible = () => {
             },
           ]);
           thread.send({ embeds: [e] });
+          summary.worked++;
         } else {
           thread.send(
             `**Bumping thread**\nDont mind me, i'm just making sure this thread is visible under your channel 👉😎👉\n\n*prefer silent bumps? Give me \`manage threads\` in <#${thread.parentId}>*`,
           );
+          summary.worked++;
         }
       } else {
         summary.failed_perms++;

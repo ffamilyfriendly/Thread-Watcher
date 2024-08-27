@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import {
   BaseInteraction,
   ColorResolvable,
@@ -17,7 +18,7 @@ const handleCommands = (interaction: ChatInputCommandInteraction) => {
   const command = commands.get(interaction.commandName);
 
   const buildBaseEmbed = (
-    title: String,
+    title: string,
     status: statusType = statusType.info,
     misc?: baseEmbedOptions,
   ) => {
@@ -126,7 +127,7 @@ const handleCommands = (interaction: ChatInputCommandInteraction) => {
   }
 
   const errDetails = `
-Please report this issue ${config.devServerInvite && config.devServerInvite !== "https://discord.gg/server" ? `on the [support server](< ${config.devServerInvite}>)` : "on [the repo](<https://github.com/ffamilyfriendly/Thread-Watcher/issues/new>)"}. Include the following:
+Please report this issue ${config.devServerInvite && config.devServerInvite !== "https://discord.gg/server" ? `on the [support server](${config.devServerInvite})` : "on [the repo](<https://github.com/ffamilyfriendly/Thread-Watcher/issues/new>)"}. Include the following:
 \`\`\`
 command: ${command.data.name}
 guild: ${interaction.guildId}
