@@ -77,7 +77,7 @@ class sqlite implements Database {
     return new Promise((resolve) => {
       const { id, server, regex, roles, tags } = data;
       this.db
-        .prepare("INSERT INTO channels VALUES(?,?, ?, ?, ?)")
+        .prepare("REPLACE INTO channels VALUES(?,?, ?, ?, ?)")
         .run(id, server, regex, roles.join(","), tags.join(","));
       resolve();
     });

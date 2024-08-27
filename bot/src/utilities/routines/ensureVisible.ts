@@ -1,7 +1,7 @@
 import { PermissionFlagsBits, EmbedBuilder } from "discord.js";
 import { client, logger, settings, threads } from "../../bot";
 import { ThreadData } from "../../interfaces/database";
-import { bumpAutoTime } from "../threadActions";
+import { bumpAutoTime, bumpUnknown } from "../threadActions";
 
 const queue: ThreadData[] = [];
 const summary = {
@@ -84,6 +84,11 @@ const makeVisible = () => {
     })
     .catch(() => {
       summary.fail_unknown_channel++;
+      // We've many unknown channels (probably deleted).
+      // (for now) we just "snooze" those for one week but it might be attractive in the future
+      // to keep a track of how many revive cycles they've been unknown and pruning when they get
+      // over a specific number. Would require a schema change on the db tho
+      bumpUnknown(t.id);
     });
 
   if (queue.length !== 0) setTimeout(makeVisible, 1000 / 4);
