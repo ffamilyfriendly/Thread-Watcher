@@ -217,6 +217,8 @@ const batch: Command = {
       if (actions.noAction.length !== 0)
         rv += `**Threads not affected:** \`${actions.noAction.length}\`\n`;
 
+      if (rv == "") rv = "**found no threads**";
+
       return rv;
     };
 
@@ -359,7 +361,6 @@ const batch: Command = {
 
       const tagsSelect = () => {
         if (!(parent instanceof ForumChannel)) return;
-        console.log(parent.availableTags);
         const select = new TwStringSelect();
         select.select
           .setPlaceholder("select tags!")
