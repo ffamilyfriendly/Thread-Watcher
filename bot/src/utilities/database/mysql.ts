@@ -1,12 +1,12 @@
 import { ChannelData, Database, ThreadData } from "../../interfaces/database";
-import { Connection, createConnection } from "mysql";
+import { createPool, Pool } from "mysql";
 import { ConfigFile } from "../cnf";
 import mysqldump from "mysqldump";
 import { join } from "path";
 import { getBackupName } from "./DatabaseManager";
 
 class mysql implements Database {
-  connection: Connection;
+  connection: Pool;
   database: string;
   private connDetails: {
     host: string;
@@ -20,7 +20,8 @@ class mysql implements Database {
 
     this.database = database;
     this.connDetails = { host, user, password, database };
-    this.connection = createConnection({
+
+    this.connection = createPool({
       host,
       user,
       password,
@@ -29,45 +30,35 @@ class mysql implements Database {
   }
 
   createTables(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.connection.connect(async (err) => {
-        if (err) {
-          console.log(err);
-          reject(err);
-        }
-
-        this.connection.query(
-          `CREATE TABLE IF NOT EXISTS \`${this.database}\`.\`threads\` (\`id\` VARCHAR(20) NOT NULL, \`server\` VARCHAR(20) NOT NULL, \`dueArchive\` INT NOT NULL, watching BOOLEAN, PRIMARY KEY (\`ID\`));`,
-          (err) => {
-            if (err) {
-              console.error("[MYSQL] could not create table threads", err);
-              throw new Error("[MYSQL] could not create table threads");
-            }
-            this.connection.query(
-              `CREATE TABLE IF NOT EXISTS \`${this.database}\`.\`channels\` (\`id\` VARCHAR(20) NOT NULL, \`server\` VARCHAR(20) NOT NULL, \`regex\` TINYTEXT, \`roles\` TEXT, \`tags\` TEXT);`,
-              (err) => {
-                if (err) {
-                  console.error("[MYSQL] could not create table channels", err);
-                  throw new Error("[MYSQL] could not create table channels");
-                }
-                this.connection.query(
-                  `CREATE TABLE IF NOT EXISTS \`${this.database}\`.\`config\` (\`server\` VARCHAR(20) NOT NULL, \`cfg_id\` VARCHAR(20) NOT NULL, \`value\` VARCHAR(20) NOT NULL, PRIMARY KEY(\`server\`, \`cfg_id\`))`,
-                  (err) => {
-                    if (err) {
-                      console.error(
-                        "[MYSQL] could not create table config",
-                        err,
-                      );
-                      throw new Error("[MYSQL] could not create table config");
-                    }
-                    resolve();
-                  },
-                );
-              },
-            );
-          },
-        );
-      });
+    return new Promise((resolve) => {
+      this.connection.query(
+        `CREATE TABLE IF NOT EXISTS \`${this.database}\`.\`threads\` (\`id\` VARCHAR(20) NOT NULL, \`server\` VARCHAR(20) NOT NULL, \`dueArchive\` INT NOT NULL, watching BOOLEAN, PRIMARY KEY (\`ID\`));`,
+        (err) => {
+          if (err) {
+            console.error("[MYSQL] could not create table threads", err);
+            throw new Error("[MYSQL] could not create table threads");
+          }
+          this.connection.query(
+            `CREATE TABLE IF NOT EXISTS \`${this.database}\`.\`channels\` (\`id\` VARCHAR(20) NOT NULL, \`server\` VARCHAR(20) NOT NULL, \`regex\` TINYTEXT, \`roles\` TEXT, \`tags\` TEXT);`,
+            (err) => {
+              if (err) {
+                console.error("[MYSQL] could not create table channels", err);
+                throw new Error("[MYSQL] could not create table channels");
+              }
+              this.connection.query(
+                `CREATE TABLE IF NOT EXISTS \`${this.database}\`.\`config\` (\`server\` VARCHAR(20) NOT NULL, \`cfg_id\` VARCHAR(20) NOT NULL, \`value\` VARCHAR(20) NOT NULL, PRIMARY KEY(\`server\`, \`cfg_id\`))`,
+                (err) => {
+                  if (err) {
+                    console.error("[MYSQL] could not create table config", err);
+                    throw new Error("[MYSQL] could not create table config");
+                  }
+                  resolve();
+                },
+              );
+            },
+          );
+        },
+      );
     });
   }
 
@@ -176,7 +167,7 @@ class mysql implements Database {
         "SELECT * FROM channels WHERE server = ?",
         [guildID],
         (err, res: rawChannelData[]) => {
-          if (err) reject(err);
+          if (err || !res) reject(err);
 
           for (const row of res)
             returnArr.push({
