@@ -12,10 +12,16 @@ import {
   ForumChannel,
   NewsChannel,
   GuildMember,
+  ActionRowBuilder,
+  ButtonStyle,
+  ButtonBuilder,
+  Interaction,
+  ButtonInteraction,
 } from "discord.js";
-import { Command, statusType } from "../../interfaces/command";
+import { Command } from "../../interfaces/command";
 import { db, config } from "../../bot";
 import Chunkable from "../../utilities/Chunkable";
+import TwButton from "../../components/Button";
 
 interface field {
   name: string;
@@ -35,13 +41,12 @@ const fitIntoFields = (
   name: string,
   values: string[],
   totalLength = 0,
-): { fieldArr: field[]; totalLength: number; remainingValues: string[] } => {
+): { fieldArr: field[]; totalLength: number } => {
   // Embed limits https://discord.com/developers/docs/resources/channel#embed-object-embed-limits
   const MAXLENGTH = 1024;
 
   const fields: field[] = [];
   let buff = "";
-  const remainingValues: string[] = [];
 
   for (const value of values) {
     // Length of the buffer plus the string currently added to it
@@ -68,15 +73,8 @@ const fitIntoFields = (
     value: buff.substring(0, buff.length - 2),
   });
 
-  return { fieldArr: fields, totalLength, remainingValues };
+  return { fieldArr: fields, totalLength };
 };
-
-interface resObj {
-  channels: string[];
-  threads: string[];
-  threadsFailed: string[];
-  channelsFailed: string[];
-}
 
 export function getDirectTag(
   c: ThreadChannel | TextChannel | ForumChannel | NewsChannel | CategoryChannel,
@@ -84,10 +82,91 @@ export function getDirectTag(
   return `[#${c.name}](https://discord.com/channels/${c.guildId}/${c.id})`;
 }
 
+interface I_Entry {
+  text: string;
+  id: string;
+}
+interface I_DataResponse {
+  okValues: I_Entry[];
+  failValues: I_Entry[];
+}
+
+const getChannels = async (interaction: ChatInputCommandInteraction) => {
+  if (!interaction.guildId) return { okValues: [], failValues: [] };
+  const returnValues: I_DataResponse = { okValues: [], failValues: [] };
+  const channels = await db.getChannels(interaction.guildId);
+
+  for (const channelData of channels) {
+    const channel = await interaction.client.channels
+      .fetch(channelData.id)
+      .catch(() => {});
+    if (channel) {
+      if (
+        !(
+          (channel instanceof TextChannel ||
+            channel instanceof ForumChannel ||
+            channel instanceof NewsChannel ||
+            channel instanceof CategoryChannel) &&
+          interaction.member instanceof GuildMember
+        )
+      )
+        break;
+      if (
+        channel
+          .permissionsFor(interaction.member)
+          .has(PermissionFlagsBits.ViewChannel)
+      ) {
+        returnValues.okValues.push({
+          text: getDirectTag(channel),
+          id: channel.id,
+        });
+      }
+    } else {
+      returnValues.failValues.push({
+        text: `${channelData.id} (*unknown channel*)`,
+        id: channelData.id,
+      });
+    }
+  }
+  return returnValues;
+};
+
+const getThreads = async (interaction: ChatInputCommandInteraction) => {
+  if (!interaction.guildId) return { okValues: [], failValues: [] };
+  const returnValues: I_DataResponse = { okValues: [], failValues: [] };
+
+  const threads = await db.getThreads(interaction.guildId);
+  for (const _t of threads) {
+    const thread = await interaction.client.channels
+      .fetch(_t.id)
+      .catch(() => {});
+    if (thread) {
+      if (
+        thread.type !== ChannelType.PrivateThread &&
+        thread.type !== ChannelType.PublicThread
+      )
+        return;
+      if (!interaction.memberPermissions?.has(PermissionFlagsBits.ViewChannel))
+        continue;
+      if (!_t.watching) continue;
+      // This is used instead of hotlinking ( <#ID> ) as discord shows un-cached threads as #deleted-channel if not in sidebar
+      // even when thread is un-archived
+      returnValues.okValues.push({ text: getDirectTag(thread), id: thread.id });
+    } else {
+      returnValues.failValues.push({
+        text: `${_t.id} (*unknown thread*)`,
+        id: _t.id,
+      });
+    }
+  }
+
+  return returnValues;
+};
+
 const threads: Command = {
-  run: async (interaction: ChatInputCommandInteraction, buildBaseEmbed) => {
+  run: async (interaction: ChatInputCommandInteraction) => {
     let pub = interaction.options.getBoolean("public");
-    const show = interaction.options.getString("show") || "all";
+    const show = interaction.options.getString("show") || "thread";
 
     // Only allow users with ManageThreads to create public /threads messages
     if (
@@ -98,140 +177,67 @@ const threads: Command = {
 
     await interaction.deferReply({ ephemeral: !(pub || false) });
 
-    const res: resObj = {
-      channels: [],
-      threads: [],
-      threadsFailed: [],
-      channelsFailed: [],
-    };
+    const res =
+      show == "channel"
+        ? await getChannels(interaction)
+        : // This function will always return I_DataResponse.
+          ((await getThreads(interaction)) as I_DataResponse);
 
-    const getThreads = async () => {
-      if (!interaction.guildId) return;
-      const threads = await db.getThreads(interaction.guildId);
-      for (const _t of threads) {
-        const thread = await interaction.client.channels
-          .fetch(_t.id)
-          .catch(() => {});
-        if (thread) {
-          if (
-            thread.type !== ChannelType.PrivateThread &&
-            thread.type !== ChannelType.PublicThread
-          )
-            return;
-          if (
-            !interaction.memberPermissions?.has(PermissionFlagsBits.ViewChannel)
-          )
-            continue;
-          if (!_t.watching) continue;
-          // This is used instead of hotlinking ( <#ID> ) as discord shows un-cached threads as #deleted-channel if not in sidebar
-          // even when thread is un-archived
-          res.threads.push(getDirectTag(thread));
-        } else {
-          res.threadsFailed.push(`${_t.id} (*unknown thread*)`);
-        }
-      }
-    };
+    const fields = fitIntoFields(show, [
+      ...res.okValues.map((v) => v.text),
+      ...res.failValues.map((v) => v.text),
+    ]).fieldArr;
 
-    const getChannels = async () => {
-      const t = [];
-      if (!interaction.guildId) return;
-      const channels = await db.getChannels(interaction.guildId);
+    const chunks = Chunkable.from(fields, 5);
 
-      for (const channelData of channels) {
-        const channel = await interaction.client.channels
-          .fetch(channelData.id)
-          .catch(() => {});
-        if (channel) {
-          if (
-            !(
-              (channel instanceof TextChannel ||
-                channel instanceof ForumChannel ||
-                channel instanceof NewsChannel ||
-                channel instanceof CategoryChannel) &&
-              interaction.member instanceof GuildMember
-            )
-          )
-            break;
-          if (
-            channel
-              .permissionsFor(interaction.member)
-              .has(PermissionFlagsBits.ViewChannel)
-          ) {
-            res.channels.push(getDirectTag(channel));
-          }
-        } else {
-          res.channelsFailed.push(`${channelData.id} (*unknown channel*)`);
-        }
-      }
-      t.push("a");
-      return t;
-    };
-
-    if (show === "thread") await getThreads();
-    if (show === "channel") await getChannels();
-    if (show === "all") {
-      await Promise.all([getThreads(), getChannels()]);
-    }
-
-    const embeds = [];
-
-    const genEmbed = () => {
-      const e = new EmbedBuilder().setColor(
+    function display(btnInteraction?: ButtonInteraction) {
+      const embed = new EmbedBuilder().setColor(
         config.style.success.colour as ColorResolvable,
       );
 
-      return e;
-    };
+      const navCompontents = new ActionRowBuilder<ButtonBuilder>();
 
-    if (res.threads.length >= 1 || res.threadsFailed.length >= 1) {
-      const fields = fitIntoFields("Threads", [
-        ...res.threads,
-        ...res.threadsFailed,
-      ]).fieldArr;
-      const chunks = Chunkable.from(fields, 15);
+      const filter = (i: Interaction) => i.user.id === interaction.user.id;
 
-      let items = chunks.next();
-      while (items) {
-        const e = genEmbed()
-          .setDescription(
-            `Keeping \`${res.threads.length}\` threads Un-archived!`,
-          )
-          .addFields(...items);
-        embeds.push(e);
-        items = chunks.next();
-      }
-    }
-    if (res.channels.length >= 1 || res.channelsFailed.length >= 1) {
-      const fields = fitIntoFields("Channels", [
-        ...res.channels,
-        ...res.channelsFailed,
-      ]).fieldArr;
-      const chunks = Chunkable.from(fields, 15);
-
-      let items = chunks.next();
-      while (items) {
-        const e = genEmbed()
-          .setDescription(
-            `Watching \`${res.channels.length}\` channels for new threads!`,
-          )
-          .addFields(...items);
-        embeds.push(e);
-        items = chunks.next();
-      }
-    }
-
-    if (embeds.length === 0) {
-      buildBaseEmbed("Nothing to show", statusType.info, {
-        description: `I'd love to show you something here but you have not added anything that can be displayed with show set to \`${show}\``,
+      const back = new TwButton("<", ButtonStyle.Primary, {
+        disabled: chunks.currentPointer === 0,
       });
-      return;
+      back.filter = filter;
+      const forwards = new TwButton(">", ButtonStyle.Primary, {
+        disabled: chunks.currentPointer === chunks.pages - 1,
+      });
+      forwards.filter = filter;
+      navCompontents.addComponents(back.button, forwards.button);
+
+      embed.setFields(chunks.current);
+      embed.setFooter({
+        text: `Page ${chunks.currentPointer + 1}/${chunks.pages}`,
+      });
+
+      forwards.onclick((i) => {
+        chunks.next();
+        display(i);
+      });
+
+      back.onclick((i) => {
+        chunks.back();
+        display(i);
+      });
+
+      if (btnInteraction) {
+        btnInteraction.update({
+          embeds: [embed],
+          components: [navCompontents],
+        });
+      } else {
+        interaction.editReply({
+          embeds: [embed],
+          components: [navCompontents],
+        });
+      }
     }
 
-    if (embeds.length > 10) {
-      embeds.length = 10;
-    }
-
-    interaction.editReply({ embeds });
+    display();
   },
   data: new SlashCommandBuilder()
     .setName("list")
@@ -250,7 +256,6 @@ const threads: Command = {
         .addChoices(
           { name: "threads", value: "thread" },
           { name: "channels", value: "channel" },
-          { name: "both", value: "all" },
         ),
     ),
 };
