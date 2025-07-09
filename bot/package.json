@@ -1,0 +1,26 @@
+{
+  "dependencies": {
+    "discord.js": "^14.19.3",
+    "json5": "^2.2.3",
+    "neverthrow": "^8.2.0",
+    "tslog": "^4.9.3",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.35.0",
+    "eslint": "^9.30.0",
+    "eslint-plugin-neverthrow": "^1.1.4",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.34.0"
+  },
+  "scripts": {
+    "build": "npx tsc",
+    "start": "bun ./src/index.ts",
+    "deploy:dev": "bun ./src/deploy.ts -local",
+    "deploy:prod": "bun ./src/deploy.ts",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "format": "prettier --write ."
+  }
+}
