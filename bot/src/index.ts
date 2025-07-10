@@ -2,8 +2,8 @@ import { Shard, ShardingManager } from 'discord.js';
 import { read_config } from './utilities/config';
 import { Logger } from 'tslog';
 import { BaseEvent, PrivateEvent } from 'interfaces/PrivateEvents';
-import { get_file_paths, load_paths_as_modules } from 'utilities/load_files';
-import { PrivateInteraction } from 'utilities/PrivateInteraction';
+import { get_file_paths, load_module_as_and, load_paths_as_modules } from 'utilities/load_files';
+import { PrivateInteraction, ShardedIpcClient } from 'utilities/PrivateInteraction';
 
 const config_result = read_config();
 const logger = new Logger();
@@ -22,20 +22,13 @@ const sharding_manager = new ShardingManager('./src/bot.ts', {
   shardArgs: args,
 });
 
-const events = new Map<string, (data: unknown, interaction: PrivateInteraction) => void>();
+const ipc_client = new ShardedIpcClient(sharding_manager);
 async function load_events() {
-  const event_paths = get_file_paths('./src/ipcEvents/manager', { file_extention: 'ts' });
-  const event_modules_result = await load_paths_as_modules<PrivateEvent>(event_paths);
-
-  if (event_modules_result.isErr()) {
-    logger.fatal('could not load event modules!', event_modules_result.error);
-  } else {
-    const event_modules = event_modules_result.value;
-    logger.debug(`succesfully loaded ${event_modules.length} modules!`);
-    for (const event of event_modules) {
-      events.set(event.event_name, event.event_callback);
+  return load_module_as_and<PrivateEvent>('./src/ipcEvents/manager', (events_array) => {
+    for (const event of events_array) {
+      ipc_client.on(event.event_name, event.event_callback);
     }
-  }
+  });
 }
 
 load_events();
@@ -52,18 +45,7 @@ sharding_manager.on('shardCreate', (shard) => {
     shard_logger.error(`Shard died`);
   });
 
-  shard.on('message', (data: BaseEvent) => {
-    shard_logger.debug(`got IPC event with type ${data.type ?? 'UNTYPED'}`);
-    const handler = events.get(data.type);
-
-    if (handler) {
-      shard_logger.debug(`handler was registered!`);
-      const interaction = new PrivateInteraction(shard, data.request_id);
-      handler(data.data, interaction);
-    } else {
-      shard_logger.debug(`no handler was registered`);
-    }
-  });
+  ipc_client.prepare();
 });
 
 sharding_manager.spawn();

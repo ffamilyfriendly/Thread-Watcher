@@ -1,7 +1,7 @@
 import { Client, Collection, GatewayIntentBits } from 'discord.js';
 import { read_config } from './utilities/config';
 import { Logger } from 'tslog';
-import { get_file_paths, load_paths_as_modules } from './utilities/load_files';
+import { get_file_paths, load_module_as_and, load_paths_as_modules } from './utilities/load_files';
 import { Event } from './interfaces/ClientEvent';
 import { Command } from 'interfaces/Command';
 import { BaseEvent, PrivateEvent } from 'interfaces/PrivateEvents';
@@ -23,52 +23,37 @@ const client = new Client({
 });
 
 async function load_events(refresh_events = false) {
-  const event_paths = get_file_paths('./src/events', { file_extention: 'ts' });
-  const event_modules_result = await load_paths_as_modules<Event>(event_paths, refresh_events);
-
-  if (event_modules_result.isErr()) {
-    logger.fatal('could not load event modules!', event_modules_result.error);
-  } else {
-    const event_modules = event_modules_result.value;
-    logger.debug(`succesfully loaded ${event_modules.length} modules!`);
-    for (const event of event_modules) {
-      if (refresh_events) client.removeAllListeners(event.event_name);
-      client.on(event.event_name, event.event_callback);
-    }
-  }
+  return load_module_as_and<Event>(
+    './src/events',
+    (modules) => {
+      for (const event of modules) {
+        if (refresh_events) client.removeAllListeners(event.event_name);
+        client.on(event.event_name, event.event_callback);
+      }
+    },
+    refresh_events,
+  );
 }
 
 async function load_commands(refresh_commands = false) {
-  const command_paths = get_file_paths('./src/commands', { file_extention: 'ts' });
-  const command_modules_result = await load_paths_as_modules<Command>(
-    command_paths,
+  return load_module_as_and<Command>(
+    './src/commands',
+    (modules) => {
+      for (const command of modules) {
+        commands.set(command.command_data.name, command);
+      }
+    },
     refresh_commands,
   );
-
-  if (command_modules_result.isErr()) {
-    logger.fatal('could not load event modules!', command_modules_result.error);
-  } else {
-    const command_modules = command_modules_result.value;
-    for (const command of command_modules) {
-      commands.set(command.command_data.name, command);
-    }
-  }
 }
 
 const events = new Map<string, (data: unknown, interaction: PrivateInteraction) => void>();
 async function load_ipc_events() {
-  const event_paths = get_file_paths('./src/ipcEvents/bot', { file_extention: 'ts' });
-  const event_modules_result = await load_paths_as_modules<PrivateEvent>(event_paths);
-
-  if (event_modules_result.isErr()) {
-    logger.fatal('could not load event modules!', event_modules_result.error);
-  } else {
-    const event_modules = event_modules_result.value;
-    logger.debug(`succesfully loaded ${event_modules.length} modules!`);
-    for (const event of event_modules) {
+  return load_module_as_and<PrivateEvent>('./src/ipcEvents/bot', (modules) => {
+    for (const event of modules) {
       events.set(event.event_name, event.event_callback);
     }
-  }
+  });
 }
 
 load_ipc_events();
@@ -89,7 +74,7 @@ process.on('message', (data: BaseEvent) => {
     const interaction = new PrivateInteraction(client.shard, data.request_id);
     handler(data.data, interaction);
   } else {
-    logger.debug(`no handler was registered`);
+    logger.debug(`no handler was registered`, data);
   }
 });
 

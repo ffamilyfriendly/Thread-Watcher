@@ -1,12 +1,18 @@
 import { load_commands, logger } from 'bot';
 import { PrivateEvent } from 'interfaces/PrivateEvents';
+import { err, ok } from 'neverthrow';
 
 const event: PrivateEvent = {
   event_name: 'reload',
-  event_callback(_GAGNAMSTYLE, interaction) {
+  async event_callback(_GAGNAMSTYLE) {
     logger.debug('reloading commands!');
-    load_commands(true);
-    interaction.reply(true, { ok: true });
+    const res = await load_commands(true);
+
+    if (res.isOk()) {
+      return ok();
+    } else {
+      return err(res.error);
+    }
   },
 };
 

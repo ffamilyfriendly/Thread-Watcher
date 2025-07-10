@@ -1,6 +1,6 @@
 import { readdirSync, statSync } from 'fs';
 import { join as join_path, extname, isAbsolute } from 'path';
-import { Result, ResultAsync, err, ok } from 'neverthrow';
+import { Err, Result, ResultAsync, err, ok } from 'neverthrow';
 
 interface FileOptions {
   file_extention: string | string[];
@@ -66,4 +66,21 @@ export async function load_paths_as_modules<T>(
   }
 
   return ok(modules_loaded);
+}
+
+export async function load_module_as_and<T>(
+  directory: string,
+  callback: (modules: T[]) => void,
+  bypass_cache = false,
+): Promise<Result<void, unknown>> {
+  const event_paths = get_file_paths(directory, { file_extention: 'ts' });
+  const event_modules_result = await load_paths_as_modules<T>(event_paths, bypass_cache);
+
+  if (event_modules_result.isErr()) {
+    return err(event_modules_result.error);
+  } else {
+    const event_modules = event_modules_result.value;
+    callback(event_modules);
+    return ok();
+  }
 }

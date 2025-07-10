@@ -1,10 +1,5 @@
 ## IPC manager
 
-really quite a mess at the moment lol.
-
-What im thinking is:
-
-- when an event is sent from the sharding manager to a shard, that shard can (but is not required to) respond to the event.
-  - this is usefull when, for example, the sharding manager asks a shard to "watch" a thread and we might want a confirmation.
-  - we're not waiting for responses when a message is sent from shard -> shardmanager as that is not as useful
-  -
+coming along nicely! Need to work on how exactly to properly handle responses to messages. Right now we're adding callbacks to a map
+and running the callback whenever a response with the correct `request_id` comes along. Preferrably I'd like any `send(event, data)` function to return a promise
+that resolves when the response is collected. We can probably implement this
