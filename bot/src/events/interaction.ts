@@ -1,9 +1,9 @@
-import { Client, CommandInteraction, Interaction, InteractionType } from 'discord.js';
+import { ChatInputCommandInteraction, Interaction, InteractionType } from 'discord.js';
 import { commands, config, logger } from 'bot';
 import { Event } from 'interfaces/ClientEvent';
 import { get_embed_function } from 'utilities/embed';
 
-function handle_command_interaction(interaction: CommandInteraction) {
+function handle_command_interaction(interaction: ChatInputCommandInteraction) {
   const embed_builder = get_embed_function(interaction);
   const command = commands.get(interaction.commandName);
 
@@ -76,7 +76,7 @@ const event: Event<Interaction> = {
 
     switch (interaction.type) {
       case InteractionType.ApplicationCommand:
-        handle_command_interaction(interaction);
+        handle_command_interaction(interaction as ChatInputCommandInteraction);
         break;
     }
   },

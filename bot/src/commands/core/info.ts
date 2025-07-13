@@ -1,15 +1,22 @@
 import {
-  ActionRow,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  CommandInteraction,
+  ChatInputCommandInteraction,
   SlashCommandBuilder,
 } from 'discord.js';
-import { Command, CommandExecutionContext, RegistrationScope } from 'interfaces/Command';
+import {
+  Command,
+  CommandError,
+  CommandExecutionContext,
+  RegistrationScope,
+} from 'interfaces/Command';
 import { ok, Result } from 'neverthrow';
 
-function run(interaction: CommandInteraction, ctx: CommandExecutionContext): Result<void, unknown> {
+function run(
+  interaction: ChatInputCommandInteraction,
+  ctx: CommandExecutionContext,
+): Result<void, CommandError> {
   const embed = ctx.build_embed({
     title: 'Information',
     description: `Thread-Watcher is an [Open Source](https://github.com/ffamilyfriendly/thread-watcher) thread focused bot created to take your threads to the **next level**!

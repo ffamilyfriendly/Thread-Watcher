@@ -20,9 +20,15 @@ const Style = z.object({
   warning: StyleValue,
 });
 
+const Web = z.object({
+  enabled: z.boolean(),
+  port: z.number().min(0).max(65535).default(2003),
+});
+
 const Config = z.object({
   tokens: ConfigTokens,
   paywall_enabled: z.boolean(),
+  web: Web,
   clientID: z.string().nonempty('Client ID cannot be empty'),
   owners: z.array(z.string()),
   devServer: z.string().nonempty(),

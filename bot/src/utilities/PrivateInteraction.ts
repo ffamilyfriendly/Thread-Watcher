@@ -1,7 +1,7 @@
-import { Client, Shard, ShardingManager } from 'discord.js';
+import { Client, Shard, ShardClientUtil, ShardingManager } from 'discord.js';
 import { BaseEvent, Callback, ReponseEvent } from 'interfaces/PrivateEvents';
 import { randomBytes } from 'crypto';
-import { err } from 'neverthrow';
+import { err, ok, Result } from 'neverthrow';
 
 function generate_request_id() {
   return randomBytes(16).toString('hex');
@@ -13,24 +13,6 @@ function generate_message(event: string, data: unknown): BaseEvent {
     type: event,
     data,
   };
-}
-
-type Sender = {
-  send: (message: unknown) => void;
-};
-
-export class PrivateInteraction {
-  sender: Sender;
-  request_id: string;
-
-  constructor(sender: Sender, request_id: string) {
-    this.sender = sender;
-    this.request_id = request_id;
-  }
-
-  reply(status: boolean, data: unknown) {
-    this.sender.send({ ok: status, request_id: this.request_id, data, type: 'response' });
-  }
 }
 
 interface IpcClient {
@@ -51,20 +33,73 @@ class BaseClient implements IpcClient {
     this.listeners.set(event, callback);
   }
 
-  _send(shard: Shard, event: string, data: unknown, callback: ResponseCallback) {
-    const request = generate_message(event, data);
+  protected _send<T>(
+    shard: Shard | ShardClientUtil,
+    event: string,
+    data: unknown,
+  ): Promise<Result<T, unknown>> {
+    return new Promise((resolve) => {
+      const request = generate_message(event, data);
 
-    shard.send(request);
-    this.response_events.set(request.request_id, callback);
+      shard.send(request);
+      this.response_events.set(request.request_id, (data) => {
+        if (data.ok) {
+          resolve(ok(data.data as T));
+        } else {
+          resolve(err(data.data));
+        }
+      });
+    });
   }
 }
 
 export class BotIpcClient extends BaseClient {
   discord_client: Client;
+  shard: ShardClientUtil | null;
 
   constructor(client: Client) {
     super();
     this.discord_client = client;
+    this.shard = client.shard;
+
+    process.on('message', (data: BaseEvent) => {
+      this._handle_message(data);
+    });
+  }
+
+  send(event: string, data: unknown) {
+    if (!this.shard) return err('no shard');
+    return this._send(this.shard, event, data);
+  }
+
+  private async _handle_message(message: BaseEvent) {
+    if (message.type === 'response') {
+      const response_handler = this.response_events.get(message.request_id);
+      if (!response_handler) return;
+
+      response_handler(message as ReponseEvent);
+    }
+
+    const handler = this.listeners.get(message.type);
+    if (handler) {
+      const result = await handler(message.data);
+
+      if (result.isOk()) {
+        this.shard?.send({
+          type: 'response',
+          ok: true,
+          data: result.value,
+          request_id: message.request_id,
+        });
+      } else {
+        this.shard?.send({
+          type: 'response',
+          ok: false,
+          data: result.error,
+          request_id: message.request_id,
+        });
+      }
+    }
   }
 }
 
@@ -91,18 +126,21 @@ export class ShardedIpcClient extends BaseClient {
     });
   }
 
-  send_to_shard(shard_id: number, event: string, data: unknown) {
+  send_to_shard<T = unknown>(shard_id: number, event: string, data: unknown) {
     const shard = this.shards.get(shard_id);
 
     if (!shard) return err(new Error(`shard "${shard_id}" does not exist`));
 
-    this._send(shard, event, data, () => {});
+    return this._send<T>(shard, event, data);
   }
 
-  send_all(event: string, data: unknown) {
+  send_all<T = unknown>(event: string, data: unknown) {
+    const results: Promise<Result<T, unknown>>[] = [];
     this.shards.forEach((shard) => {
-      this._send(shard, event, data, () => {});
+      const result = this._send<T>(shard, event, data);
+      results.push(result);
     });
+    return results;
   }
 
   private async _handle_message(message: ShardedBaseEvent) {

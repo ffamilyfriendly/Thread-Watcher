@@ -3,7 +3,9 @@ import { read_config } from './utilities/config';
 import { Logger } from 'tslog';
 import { BaseEvent, PrivateEvent } from 'interfaces/PrivateEvents';
 import { get_file_paths, load_module_as_and, load_paths_as_modules } from 'utilities/load_files';
-import { PrivateInteraction, ShardedIpcClient } from 'utilities/PrivateInteraction';
+import { ShardedIpcClient } from 'utilities/PrivateInteraction';
+import { serve } from 'bun';
+import { create_web_server } from 'web';
 
 const config_result = read_config();
 const logger = new Logger();
@@ -33,7 +35,7 @@ async function load_events() {
 
 load_events();
 
-export { sharding_manager };
+export { sharding_manager, ipc_client, config };
 
 sharding_manager.on('shardCreate', (shard) => {
   const shard_logger = logger.getSubLogger({ name: `Shard ${shard.id}` });
@@ -47,5 +49,10 @@ sharding_manager.on('shardCreate', (shard) => {
 
   ipc_client.prepare();
 });
+
+if (config.web.enabled) {
+  logger.info(`Opening web server on port ${config.web.port}...`);
+  create_web_server();
+}
 
 sharding_manager.spawn();

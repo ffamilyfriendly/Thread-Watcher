@@ -1,4 +1,5 @@
 import {
+  ChatInputCommandInteraction,
   CommandInteraction,
   EmbedBuilder,
   PermissionResolvable,
@@ -29,12 +30,20 @@ export interface CommandExecutionContext {
   build_embed: (props: EmbedBuilderProps) => EmbedBuilder;
 }
 
+export interface CommandError {
+  message: string;
+  error: Error;
+}
+
 export interface Command {
   command_data:
     | Omit<SlashCommandBuilder, 'addSubcommandGroup' | 'addSubcommand'>
     | SlashCommandSubcommandBuilder
     | SlashCommandOptionsOnlyBuilder;
-  run: (interaction: CommandInteraction, ctx: CommandExecutionContext) => Result<void, unknown>;
+  run: (
+    interaction: ChatInputCommandInteraction,
+    ctx: CommandExecutionContext,
+  ) => Result<void, CommandError>;
   access_control: AccessControl;
   command_scope: RegistrationScope;
 }

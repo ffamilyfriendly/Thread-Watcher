@@ -30,7 +30,7 @@ async function reg_commands(commands: Command[], route: `/${string}`) {
 
 async function main() {
   const command_files = get_file_paths('./src/commands', { file_extention: 'ts' });
-  const command_modules = await load_paths_as_modules<Command>(command_files);
+  const command_modules = await load_paths_as_modules<Command>(command_files, false);
 
   if (command_modules.isErr()) {
     logger.fatal('could not load commands!', command_modules.error);

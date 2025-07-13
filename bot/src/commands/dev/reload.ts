@@ -1,16 +1,18 @@
+import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
+import { ipc_client } from 'bot';
 import {
-  ActionRow,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  CommandInteraction,
-  SlashCommandBuilder,
-} from 'discord.js';
-import { Command, CommandExecutionContext, RegistrationScope } from 'interfaces/Command';
+  Command,
+  CommandError,
+  CommandExecutionContext,
+  RegistrationScope,
+} from 'interfaces/Command';
 import { ok, Result } from 'neverthrow';
 
-function run(interaction: CommandInteraction, ctx: CommandExecutionContext): Result<void, unknown> {
-  interaction.client.shard?.send({ type: 'reload' });
+function run(
+  interaction: ChatInputCommandInteraction,
+  ctx: CommandExecutionContext,
+): Result<void, CommandError> {
+  ipc_client.send('reload', null);
 
   ctx.build_embed({
     title: 'reloaded commands!',
