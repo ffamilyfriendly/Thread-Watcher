@@ -1,39 +1,25 @@
 import { config } from 'index';
+import express, { Router } from 'express';
+import { logger } from 'bot';
+import { load_module_as_and } from 'utilities/load_files';
+import { RouteFile } from 'interfaces/Web';
 
 export function create_web_server() {
-  Bun.serve({
-    // `routes` requires Bun v1.2.3+
-    routes: {
-      // Static routes
-      '/api/status': new Response('OK'),
+  const server = express();
 
-      // Dynamic routes
-      '/users/:id': (req) => {
-        return new Response(`Hello User ${req.params.id}!`);
-      },
+  load_module_as_and<RouteFile>('./src/web/routes', (modules) => {
+    logger.info(`Found ${modules.length} modules!`);
+    for (const module of modules) {
+      server.use(module.path, module.router);
+    }
+  });
 
-      // Per-HTTP method handlers
-      '/api/posts': {
-        GET: () => new Response('List posts'),
-        POST: async (req) => {
-          const body = await req.json();
-          return Response.json({ created: true, ...body });
-        },
-      },
+  server.listen(config.web.port, (err) => {
+    if (err) {
+      logger.fatal('could not start web server', err);
+      process.exit(1);
+    }
 
-      // Wildcard route for all routes that start with "/api/" and aren't otherwise matched
-      '/api/*': Response.json({ message: 'Not found' }, { status: 404 }),
-
-      // Redirect from /blog/hello to /blog/hello/world
-      '/blog/hello': Response.redirect('/blog/hello/world'),
-    },
-
-    // (optional) fallback for unmatched routes:
-    // Required if Bun's version < 1.2.3
-    fetch(req) {
-      return new Response('Not Found', { status: 404 });
-    },
-
-    port: config.web.port,
+    logger.info(`web server listening on port ${config.web.port}`);
   });
 }

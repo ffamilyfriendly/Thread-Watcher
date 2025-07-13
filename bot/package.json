@@ -1,6 +1,8 @@
 {
   "dependencies": {
+    "@types/express": "^5.0.3",
     "discord.js": "^14.19.3",
+    "express": "^5.1.0",
     "json5": "^2.2.3",
     "neverthrow": "^8.2.0",
     "tslog": "^4.9.3",
