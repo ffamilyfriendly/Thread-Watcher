@@ -1,4 +1,4 @@
-import { logger } from 'bot';
+import { database, logger } from 'bot';
 import { GenericThread } from './type';
 
 /**
@@ -39,5 +39,10 @@ export function add_thread(thread: GenericThread) {
   );
 
   logger.debug(`thread ${thread.name} expires at: ${expires_at.toISOString()}`);
-  // do thingsv
+
+  return database.insert_thread({
+    thread_id: thread.id,
+    guild_id: thread.guildId,
+    auto_archive_duration: expires_at,
+  });
 }

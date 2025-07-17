@@ -1,6 +1,8 @@
 {
   "dependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/express": "^5.0.3",
+    "better-sqlite3": "^12.2.0",
     "discord.js": "^14.19.3",
     "express": "^5.1.0",
     "json5": "^2.2.3",

@@ -1,8 +1,9 @@
+import { SqliteError } from 'better-sqlite3';
 import { Result } from 'neverthrow';
 
-type DatabaseError = unknown;
+type DatabaseError = SqliteError | Error;
 
-interface ThreadData {
+export interface ThreadData {
   thread_id: string;
   guild_id: string;
   auto_archive_duration: Date;
@@ -30,9 +31,9 @@ interface Core {
   get_threads_in_guild: (guild_id: string) => Promise<Result<ThreadData[], DatabaseError>>;
 
   // Channel related stuff
-  insert_channel: (channel: ChannelData) => Promise<Result<void, DatabaseError>>;
+  //insert_channel: (channel: ChannelData) => Promise<Result<void, DatabaseError>>;
 }
 
 export interface Database extends Core {
-  create_tables: () => Result<void, DatabaseError>;
+  create_tables: () => Promise<Result<void, DatabaseError>>;
 }

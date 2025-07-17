@@ -25,10 +25,16 @@ const Web = z.object({
   port: z.number().min(0).max(65535).default(2003),
 });
 
+const Database = z.object({
+  flavour: z.enum(['sqlite', 'mysql']).default('sqlite'),
+  database_path: z.string().default('./data.db'),
+});
+
 const Config = z.object({
   tokens: ConfigTokens,
   paywall_enabled: z.boolean(),
   web: Web,
+  database: Database,
   clientID: z.string().nonempty('Client ID cannot be empty'),
   owners: z.array(z.string()),
   devServer: z.string().nonempty(),
