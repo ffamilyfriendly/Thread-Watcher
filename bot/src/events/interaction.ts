@@ -1,4 +1,11 @@
-import { ChatInputCommandInteraction, Interaction, InteractionType } from 'discord.js';
+import {
+  ChannelType,
+  ChatInputCommandInteraction,
+  DMChannel,
+  Interaction,
+  InteractionType,
+  PrivateThreadChannel,
+} from 'discord.js';
 import { commands, config, logger } from 'bot';
 import { Event } from 'interfaces/ClientEvent';
 import { get_embed_function } from 'utilities/embed';
@@ -23,6 +30,41 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
       new Error(`this command can only be ran by the developers of the bot`),
       'dev-only',
     );
+  }
+
+  const check_perms_in = command.access_control.channel_option_name
+    ? interaction.options.getChannel(command.access_control.channel_option_name) ||
+      interaction.channel
+    : interaction.channel;
+
+  if (command.access_control.invoker_requires_permission) {
+    if (check_perms_in && 'permissionsFor' in check_perms_in) {
+      const has_perms = interaction.memberPermissions?.has(
+        command.access_control.invoker_requires_permission,
+      );
+
+      if (!has_perms)
+        return handle_error(
+          interaction,
+          new PermissionsError(command.access_control.invoker_requires_permission, 'user'),
+        );
+    }
+  }
+
+  if (command.access_control.bot_requires_permission) {
+    const client_as_member = interaction.guild?.members.me;
+
+    if (check_perms_in && 'permissionsFor' in check_perms_in && client_as_member) {
+      const has_perms = check_perms_in
+        .permissionsFor(client_as_member)
+        .has(command.access_control.bot_requires_permission);
+
+      if (!has_perms)
+        return handle_error(
+          interaction,
+          new PermissionsError(command.access_control.bot_requires_permission, 'bot'),
+        );
+    }
   }
 
   if (config.paywall_enabled && command.access_control.required_entitlement_sku) {

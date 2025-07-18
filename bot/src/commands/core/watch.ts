@@ -28,8 +28,6 @@ async function run(
     return err(new Error('thread not instanceof threadchannel'));
   }
 
-  return err(new PermissionsError(PermissionFlagsBits.Administrator, 'bot'));
-
   const result = await add_thread(thread);
 
   if (result.isErr()) return err(result.error);
@@ -57,6 +55,7 @@ const command: Command = {
   command_scope: RegistrationScope.GLOBAL,
   access_control: {
     invoker_requires_permission: [PermissionFlagsBits.ManageThreads],
+    channel_option_name: 'thread',
   },
   command_data,
   run,

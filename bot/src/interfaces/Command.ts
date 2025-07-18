@@ -37,6 +37,8 @@ export interface AccessControl {
   developer_only?: boolean;
   bot_requires_permission?: PermissionResolvable[];
   invoker_requires_permission?: PermissionResolvable[];
+  // The name of the option that might hold the channel / thread
+  channel_option_name?: string;
   required_entitlement_sku?: string;
 }
 
