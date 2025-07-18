@@ -17,7 +17,7 @@ export function get_embed_function(interaction: CommandInteraction) {
     const style = typeof props.style === 'string' ? config.style[props.style] : props.style;
 
     const embed = new EmbedBuilder();
-    embed.setTitle(`${style.emoji} ${title}`.trim());
+    embed.setTitle(title);
     embed.setColor(style.colour as ColorResolvable);
 
     if (props.description) embed.setDescription(props.description);

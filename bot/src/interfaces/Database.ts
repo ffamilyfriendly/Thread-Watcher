@@ -1,7 +1,7 @@
 import { SqliteError } from 'better-sqlite3';
 import { Result } from 'neverthrow';
 
-type DatabaseError = SqliteError | Error;
+export type DatabaseError = SqliteError | Error;
 
 export interface ThreadData {
   thread_id: string;

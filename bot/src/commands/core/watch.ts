@@ -3,6 +3,7 @@ import {
   ChannelType,
   ChatInputCommandInteraction,
   PermissionFlagsBits,
+  PermissionsBitField,
   SlashCommandBuilder,
   ThreadChannel,
 } from 'discord.js';
@@ -11,25 +12,30 @@ import {
   Command,
   CommandError,
   CommandExecutionContext,
+  PermissionsError,
   RegistrationScope,
 } from 'interfaces/Command';
 import { err, ok, Result } from 'neverthrow';
 import { add_thread } from 'utilities/thread/thread_actions';
 
-function run(
+async function run(
   interaction: ChatInputCommandInteraction,
   ctx: CommandExecutionContext,
-): Result<void, CommandError> {
+): Promise<Result<void, CommandError>> {
   const thread = interaction.options.getChannel('thread') || interaction.channel;
 
   if (!(thread instanceof ThreadChannel)) {
-    return err({
-      message: 'yo',
-      error: new Error('thread not instanceof threadchannel'),
-    });
+    return err(new Error('thread not instanceof threadchannel'));
   }
 
-  add_thread(thread);
+  return err(new PermissionsError(PermissionFlagsBits.Administrator, 'bot'));
+
+  const result = await add_thread(thread);
+
+  if (result.isErr()) return err(result.error);
+
+  logger.info('watch result', result);
+
   return ok();
 }
 

@@ -2,68 +2,50 @@ import { ChatInputCommandInteraction, Interaction, InteractionType } from 'disco
 import { commands, config, logger } from 'bot';
 import { Event } from 'interfaces/ClientEvent';
 import { get_embed_function } from 'utilities/embed';
+import { EntitlementsError, PermissionsError } from 'interfaces/Command';
+import { handle_error } from 'utilities/handle_interaction_error';
 
-function handle_command_interaction(interaction: ChatInputCommandInteraction) {
+async function handle_command_interaction(interaction: ChatInputCommandInteraction) {
   const embed_builder = get_embed_function(interaction);
   const command = commands.get(interaction.commandName);
 
   if (!command) {
     logger.error(`no such command, ${interaction.commandName}`);
-    embed_builder({
-      title: 'Oopsie',
-      description: 'cum',
-      style: 'error',
-      auto_respond: true,
-      ephermal: true,
-    });
-    return;
+    return handle_error(
+      interaction,
+      new Error(`no command with name \`${interaction.commandName}\` could be found`),
+    );
   }
 
   if (command.access_control.developer_only && !config.owners.includes(interaction.user.id)) {
-    embed_builder({
-      title: 'Developer Only',
-      description: 'cum',
-      style: 'error',
-      auto_respond: true,
-      ephermal: true,
-    });
-    return;
+    return handle_error(
+      interaction,
+      new Error(`this command can only be ran by the developers of the bot`),
+      'dev-only',
+    );
   }
 
   if (config.paywall_enabled && command.access_control.required_entitlement_sku) {
-    const SKU_IDS = Array.isArray(command.access_control.required_entitlement_sku)
-      ? command.access_control.required_entitlement_sku
-      : [command.access_control.required_entitlement_sku];
+    const SKU_ID = command.access_control.required_entitlement_sku;
 
-    const entitlement_active = interaction.entitlements.find((entitlement) =>
-      SKU_IDS.includes(entitlement.id),
+    const entitlement_active = interaction.entitlements.find(
+      (entitlement) => entitlement.id === SKU_ID,
     );
 
-    if (!entitlement_active) {
-      embed_builder({
-        title: 'Paywall',
-        description: 'pffftttt',
-        style: 'info',
-        auto_respond: true,
-        ephermal: true,
-      });
-      return;
-    }
+    if (!entitlement_active) return handle_error(interaction, new EntitlementsError(SKU_ID));
   }
 
   const command_context = {
     build_embed: embed_builder,
   };
 
-  const result = command.run(interaction, command_context);
+  const result = await command.run(interaction, command_context);
 
   result.match(
     () => {
       logger.debug(`interaction "${interaction.id}" handled without issues!`);
     },
-    (err) => {
-      logger.error(`error encountered while handling interaction "${interaction.id}"`, err);
-    },
+    (err) => handle_error(interaction, err),
   );
 }
 

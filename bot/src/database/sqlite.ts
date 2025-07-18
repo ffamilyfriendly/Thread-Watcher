@@ -1,6 +1,6 @@
 import { Database, ThreadData } from 'interfaces/Database';
 import { err, ok } from 'neverthrow';
-import sql, { Database as SqliteDb, SqliteError } from 'better-sqlite3';
+import sql, { Database as SqliteDb, SQLiteError } from 'bun:sqlite';
 import { ConfigType } from 'utilities/config';
 
 const TABLE_CREATION_QUERIES = [
@@ -8,7 +8,7 @@ const TABLE_CREATION_QUERIES = [
 ];
 
 function handle_error(err_data: unknown) {
-  if (err_data instanceof SqliteError || err_data instanceof Error) {
+  if (err_data instanceof SQLiteError || err_data instanceof Error) {
     return err(err_data);
   } else {
     // Tenary operators get VERY beutiful with ts type checking
@@ -31,7 +31,7 @@ export default class Sqlite implements Database {
   db: SqliteDb;
 
   constructor(config: ConfigType) {
-    this.db = sql(config.database.database_path);
+    this.db = new sql(config.database.database_path);
   }
 
   async create_tables() {
@@ -53,7 +53,7 @@ export default class Sqlite implements Database {
     try {
       this.db
         .prepare('INSERT INTO threads VALUES (?, ?, ? ,?)')
-        .run(thread.thread_id, thread.guild_id, thread.auto_archive_duration);
+        .run(thread.thread_id, thread.guild_id, thread.auto_archive_duration.toDateString());
       return ok();
     } catch (err_data) {
       return handle_error(err_data);
@@ -73,7 +73,7 @@ export default class Sqlite implements Database {
     try {
       this.db
         .prepare('UPDATE threads SET due_archive = ? WHERE thread_id = ?')
-        .run(auto_archive_duration, thread_id);
+        .run(auto_archive_duration.toDateString(), thread_id);
       return ok();
     } catch (err_data) {
       return handle_error(err_data);
