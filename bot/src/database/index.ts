@@ -1,4 +1,4 @@
-import { Database } from 'interfaces/Database';
+import { Database, ThreadData } from 'interfaces/Database';
 import { ConfigType } from 'utilities/config';
 import SqliteHandler from './sqlite';
 

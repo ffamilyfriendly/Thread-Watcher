@@ -28,7 +28,6 @@ export function handle_error(
 
   const embed = embed_builder({
     title: '⚠️ Fatal Error',
-    description: 'get_one',
     style: 'error',
     auto_respond: false,
   });

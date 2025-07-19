@@ -1,11 +1,11 @@
-import { Shard, ShardingManager } from 'discord.js';
+import { ShardingManager } from 'discord.js';
 import { read_config } from './utilities/config';
 import { Logger } from 'tslog';
-import { BaseEvent, PrivateEvent } from 'interfaces/PrivateEvents';
-import { get_file_paths, load_module_as_and, load_paths_as_modules } from 'utilities/load_files';
+import { PrivateEvent } from 'interfaces/PrivateEvents';
+import { load_module_as_and } from 'utilities/load_files';
 import { ShardedIpcClient } from 'utilities/PrivateInteraction';
-import { serve } from 'bun';
 import { create_web_server } from 'web';
+import get_database_instance from 'database';
 
 const config_result = read_config();
 const logger = new Logger();
@@ -16,6 +16,9 @@ if (config_result.isErr()) {
 }
 
 const config = config_result.value;
+
+const database = get_database_instance(config);
+database.create_tables()
 
 const args = process.argv.slice(2);
 

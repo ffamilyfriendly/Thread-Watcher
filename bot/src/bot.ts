@@ -7,6 +7,8 @@ import { Command } from 'interfaces/Command';
 import { PrivateEvent } from 'interfaces/PrivateEvents';
 import { BotIpcClient } from 'utilities/PrivateInteraction';
 import get_database_instance from 'database';
+import ThreadService from 'services/ThreadService';
+import Redis from 'ioredis';
 
 const config_result = read_config();
 const logger = new Logger({ name: 'bot' });
@@ -50,6 +52,10 @@ async function load_commands(refresh_commands = false) {
 
 const ipc_client = new BotIpcClient(client);
 const database = get_database_instance(config);
+const redis = new Redis()
+
+// Services
+const thread_service = new ThreadService(database, redis)
 
 async function load_ipc_events() {
   return load_module_as_and<PrivateEvent>('./src/ipcEvents/bot', (modules) => {
@@ -59,7 +65,7 @@ async function load_ipc_events() {
   });
 }
 
-export { logger, commands, config, load_commands, client, ipc_client, database };
+export { logger, commands, config, load_commands, client, ipc_client, database, thread_service };
 
 if (client.shard) {
   load_ipc_events();

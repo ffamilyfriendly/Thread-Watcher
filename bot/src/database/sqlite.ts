@@ -2,7 +2,6 @@ import { Database, ThreadData } from 'interfaces/Database';
 import { err, ok } from 'neverthrow';
 import sql, { Database as SqliteDb, SQLiteError } from 'bun:sqlite';
 import { ConfigType } from 'utilities/config';
-
 const TABLE_CREATION_QUERIES = [
   'CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT NOT NULL, due_archive DATE, is_watched INTEGER)',
 ];
@@ -46,14 +45,14 @@ export default class Sqlite implements Database {
   }
 
   async insert_thread(thread: {
-    thread_id: string;
-    guild_id: string;
-    auto_archive_duration: Date;
+    id: string;
+    server: string;
+    due_archive: Date;
   }) {
     try {
       this.db
-        .prepare('INSERT INTO threads VALUES (?, ?, ? ,?)')
-        .run(thread.thread_id, thread.guild_id, thread.auto_archive_duration.toDateString());
+        .prepare('INSERT INTO threads VALUES (?, ?, ? ,1)')
+        .run(thread.id, thread.server, thread.due_archive.getTime());
       return ok();
     } catch (err_data) {
       return handle_error(err_data);
@@ -62,7 +61,7 @@ export default class Sqlite implements Database {
 
   async delete_thread(thread_id: string) {
     try {
-      this.db.prepare('DELETE FROM threads WHERE thread_id = ?').run(thread_id);
+      this.db.prepare('DELETE FROM threads WHERE id = ?').run(thread_id);
       return ok();
     } catch (err_data) {
       return handle_error(err_data);
@@ -72,7 +71,7 @@ export default class Sqlite implements Database {
   async set_thread_auto_archive(thread_id: string, auto_archive_duration: Date) {
     try {
       this.db
-        .prepare('UPDATE threads SET due_archive = ? WHERE thread_id = ?')
+        .prepare('UPDATE threads SET due_archive = ? WHERE id = ?')
         .run(auto_archive_duration.toDateString(), thread_id);
       return ok();
     } catch (err_data) {
@@ -83,7 +82,7 @@ export default class Sqlite implements Database {
   async set_thread_watched(thread_id: string, is_watched: boolean) {
     try {
       this.db
-        .prepare('UPDATE threads SET is_watched = ? WHERE thread_id = ?')
+        .prepare('UPDATE threads SET is_watched = ? WHERE id = ?')
         .run(is_watched, thread_id);
       return ok();
     } catch (err_data) {
@@ -91,10 +90,22 @@ export default class Sqlite implements Database {
     }
   }
 
+  async get_thread(thread_id: string) {
+    try {
+      const res = this.db.prepare("SELECT * FROM threads WHERE id = ?").get(thread_id)
+
+      return ok(
+        res as ThreadData
+      )
+    } catch(err_data) {
+      return handle_error(err_data)
+    }
+  }
+
   async get_threads_in_guild(guild_id: string) {
     try {
       return ok(
-        this.db.prepare('SELECT * FROM threads WHERE server_id = ?').all(guild_id) as ThreadData[],
+        this.db.prepare('SELECT * FROM threads WHERE server = ?').all(guild_id) as ThreadData[],
       );
     } catch (err_data) {
       return handle_error(err_data);

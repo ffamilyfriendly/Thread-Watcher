@@ -1,9 +1,8 @@
-import { logger } from 'bot';
+import { logger, thread_service } from 'bot';
 import {
   ChannelType,
   ChatInputCommandInteraction,
   PermissionFlagsBits,
-  PermissionsBitField,
   SlashCommandBuilder,
   ThreadChannel,
 } from 'discord.js';
@@ -12,11 +11,10 @@ import {
   Command,
   CommandError,
   CommandExecutionContext,
-  PermissionsError,
+  
   RegistrationScope,
 } from 'interfaces/Command';
 import { err, ok, Result } from 'neverthrow';
-import { add_thread } from 'utilities/thread/thread_actions';
 
 async function run(
   interaction: ChatInputCommandInteraction,
@@ -28,7 +26,11 @@ async function run(
     return err(new Error('thread not instanceof threadchannel'));
   }
 
-  const result = await add_thread(thread);
+  const as_data = await thread_service.get_thread(thread.id)
+
+  logger.debug("as_data", as_data)
+
+  const result = await thread_service.insert_thread(thread);
 
   if (result.isErr()) return err(result.error);
 

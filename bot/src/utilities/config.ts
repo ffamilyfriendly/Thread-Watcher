@@ -25,9 +25,18 @@ const Web = z.object({
   port: z.number().min(0).max(65535).default(2003),
 });
 
+
+const Redis = z.object({
+  user: z.string(),
+  password: z.string(),
+  host: z.string().default("127.0.0.1"),
+  port: z.number().default(6379)
+})
+
 const Database = z.object({
   flavour: z.enum(['sqlite', 'mysql']).default('sqlite'),
   database_path: z.string().default('./data.db'),
+  redis: Redis
 });
 
 const Config = z.object({
