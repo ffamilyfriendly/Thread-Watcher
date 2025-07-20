@@ -1,6 +1,5 @@
 import {
   ChatInputCommandInteraction,
-  CommandInteraction,
   EmbedBuilder,
   PermissionResolvable,
   SlashCommandBuilder,
@@ -53,6 +52,7 @@ export enum RegistrationScope {
 
 export interface CommandExecutionContext {
   build_embed: (props: EmbedBuilderProps) => EmbedBuilder;
+  send_audit: (embed_param: EmbedBuilder | EmbedBuilder[]) => void;
 }
 
 export type CommandError = DatabaseError | PermissionsError;

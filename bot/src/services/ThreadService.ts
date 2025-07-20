@@ -1,7 +1,7 @@
-import { PrivateThreadChannel, ThreadChannel } from "discord.js";
-import { Database, ThreadData } from "interfaces/Database";
-import Redis from "ioredis";
-import { ok } from "neverthrow";
+import { PrivateThreadChannel, ThreadChannel } from 'discord.js';
+import { Database, ThreadData } from 'interfaces/Database';
+import Redis from 'ioredis';
+import { ok } from 'neverthrow';
 
 export type GenericThread = ThreadChannel | PrivateThreadChannel;
 
@@ -33,85 +33,115 @@ export function get_stale_timestamp(
 }
 
 function format_thread_data(row: ThreadData) {
-    return {
-        thread_id: row.id,
-        guild_id: row.server,
-        is_watched: Boolean(row.is_watched),
-        auto_archive_duration: new Date(row.due_archive)
-    }
+  return {
+    id: row.id,
+    server: row.server,
+    is_watched: Boolean(row.is_watched),
+    due_archive: new Date(row.due_archive),
+  };
 }
 
 export default class ThreadService {
-    static readonly CACHE_TTL_SECONDS = 900;
+  static readonly CACHE_TTL_SECONDS = 900;
 
-    constructor(private db: Database, private redis: Redis) {}
+  constructor(
+    private db: Database,
+    private redis: Redis,
+  ) {}
 
-    async insert_thread(thread: GenericThread) {
-        const last_activity = thread.lastMessageId
-        ? convert_snowflake_to_date(thread.lastMessageId)
-        : thread.createdAt;
+  async insert_thread(thread: GenericThread) {
+    const last_activity = thread.lastMessageId
+      ? convert_snowflake_to_date(thread.lastMessageId)
+      : thread.createdAt;
 
-        const expires_at = get_stale_timestamp(
-            thread.autoArchiveDuration ?? 0,
-            last_activity ?? undefined,
+    const expires_at = get_stale_timestamp(
+      thread.autoArchiveDuration ?? 0,
+      last_activity ?? undefined,
+    );
+
+    const thread_data = {
+      id: thread.id,
+      server: thread.guildId,
+      due_archive: expires_at,
+    };
+
+    const res = await this.db.insert_thread(thread_data);
+
+    if (res.isOk()) {
+      this.redis.set(
+        `thread:${thread.id}`,
+        JSON.stringify(thread_data),
+        'EX',
+        ThreadService.CACHE_TTL_SECONDS,
+      );
+    }
+
+    return res;
+  }
+
+  async get_thread(thread_id: string) {
+    const cached = await this.redis.get(`thread:${thread_id}`);
+    if (cached) return ok(format_thread_data(JSON.parse(cached)));
+
+    const data = await this.db.get_thread(thread_id);
+
+    if (data.isOk()) {
+      this.redis.set(
+        `thread:${thread_id}`,
+        JSON.stringify(data.value),
+        'EX',
+        ThreadService.CACHE_TTL_SECONDS,
+      );
+      return ok(data.value ? format_thread_data(data.value) : null);
+    } else return data;
+  }
+
+  async set_thread_watch_status(thread_id: string, is_watched: boolean) {
+    const result = await this.db.set_thread_watched(thread_id, is_watched);
+
+    if (result.isOk()) {
+      const cached_value = await this.redis.get(`thread:${thread_id}`);
+
+      if (cached_value) {
+        const as_obj = format_thread_data(JSON.parse(cached_value));
+        as_obj.is_watched = is_watched;
+        this.redis.set(
+          `thread:${thread_id}`,
+          JSON.stringify(as_obj),
+          'EX',
+          ThreadService.CACHE_TTL_SECONDS,
         );
-
-        const thread_data = {
-            id: thread.id,
-            server: thread.guildId,
-            due_archive: expires_at
-        }
-
-        const res = await this.db.insert_thread(thread_data)
-
-        if(res.isOk()) {
-            this.redis.set(`thread:${thread.id}`, JSON.stringify(thread_data), "EX", ThreadService.CACHE_TTL_SECONDS)
-        }
-
-        return res
+      }
     }
 
-    async get_thread(thread_id: string) {
-        const cached = await this.redis.get(`thread:${thread_id}`)
-        if(cached) return format_thread_data(JSON.parse(cached))
+    return result;
+  }
 
-        const data = await this.db.get_thread(thread_id)
+  async watch_thread(thread: GenericThread) {
+    const db_entry = await this.get_thread(thread.id);
 
-        if(data.isOk()) {
-            this.redis.set(`thread:${thread_id}`, JSON.stringify(data.value), "EX", ThreadService.CACHE_TTL_SECONDS)
-            return ok(data.value ? format_thread_data(data.value) : null)
-        } else return data
+    if (db_entry.isOk() && db_entry.value === null) return this.insert_thread(thread);
+    else return this.set_thread_watch_status(thread.id, true);
+  }
+
+  async unwatch_thread(thread: GenericThread) {
+    return this.set_thread_watch_status(thread.id, false);
+  }
+
+  async toggle_thread_watch_status(thread: GenericThread) {
+    const db_thread_entry = await this.get_thread(thread.id);
+
+    if (db_thread_entry.isErr()) return db_thread_entry;
+
+    if (db_thread_entry.value && db_thread_entry.value.is_watched) {
+      return (await this.unwatch_thread(thread)).map((o) => false);
+    } else {
+      return (await this.watch_thread(thread)).map((o) => true);
     }
+  }
 
-    async set_thread_watch_status(thread_id: string, is_watched: boolean) {
-        const result = await this.db.set_thread_watched(thread_id, is_watched)
-        
-        if(result.isOk()) {
-            const cached_value = await this.redis.get(`thread:${thread_id}`)
-
-            if(cached_value) {
-                const as_obj = format_thread_data(JSON.parse(cached_value))
-                as_obj.is_watched = is_watched
-                this.redis.set(`thread:${thread_id}`, JSON.stringify(as_obj), "EX", ThreadService.CACHE_TTL_SECONDS)
-            }
-        }
-
-        return result
-    }
-
-    async watch_thread(thread: GenericThread) {
-        const is_in_db = await this.get_thread(thread.id)
-
-        if(!is_in_db) return this.insert_thread(thread)
-        else return this.set_thread_watch_status(thread.id, true)
-    }
-
-    async unwatch_thread(thread: GenericThread) {
-        return this.set_thread_watch_status(thread.id, false)
-    }
-
-    async delete_thread(thread_id: string) {
-        this.redis.del(`thread:${thread_id}`)
-        return this.db.delete_thread(thread_id)
-    }
+  async delete_thread(thread_id: string) {
+    this.redis.del(`thread:${thread_id}`);
+    return this.db.delete_thread(thread_id);
+  }
 }

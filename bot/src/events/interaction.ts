@@ -1,19 +1,25 @@
 import {
-  ChannelType,
+  ActionRow,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   ChatInputCommandInteraction,
-  DMChannel,
+  EmbedBuilder,
   Interaction,
   InteractionType,
-  PrivateThreadChannel,
+  messageLink,
 } from 'discord.js';
 import { commands, config, logger } from 'bot';
 import { Event } from 'interfaces/ClientEvent';
-import { get_embed_function } from 'utilities/embed';
+import { get_audit_send_function, get_embed_function } from 'utilities/embed';
 import { EntitlementsError, PermissionsError } from 'interfaces/Command';
 import { handle_error } from 'utilities/handle_interaction_error';
+import { ResultAsync } from 'neverthrow';
 
 async function handle_command_interaction(interaction: ChatInputCommandInteraction) {
   const embed_builder = get_embed_function(interaction);
+  const send_audit = get_audit_send_function(interaction);
+
   const command = commands.get(interaction.commandName);
 
   if (!command) {
@@ -79,6 +85,7 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
 
   const command_context = {
     build_embed: embed_builder,
+    send_audit,
   };
 
   const result = await command.run(interaction, command_context);

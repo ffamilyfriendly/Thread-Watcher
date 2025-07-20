@@ -1,5 +1,24 @@
-import { ColorResolvable, CommandInteraction, Embed, EmbedBuilder } from 'discord.js';
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ColorResolvable,
+  CommandInteraction,
+  EmbedBuilder,
+  messageLink,
+} from 'discord.js';
 import { config } from 'bot';
+
+export function get_tagged_embed(interaction: CommandInteraction) {
+  const embed = new EmbedBuilder();
+  embed.setAuthor({
+    iconURL: interaction.user.avatarURL() || interaction.user.defaultAvatarURL,
+    name: interaction.user.displayName,
+  });
+  embed.setTimestamp();
+
+  return embed;
+}
 
 type StyleOption = keyof typeof config.style;
 
@@ -10,6 +29,39 @@ export interface EmbedBuilderProps {
   auto_respond?: boolean;
   ephermal?: boolean;
   fields?: { name: string; value: string }[];
+}
+
+export function get_audit_send_function(interaction: CommandInteraction) {
+  return async function (embed_param: EmbedBuilder | EmbedBuilder[]) {
+    const LOGGING_CHANNEL: string | null = null; //'1063434016172290188';
+    const logging_channel = LOGGING_CHANNEL
+      ? await interaction.client.channels.fetch(LOGGING_CHANNEL)
+      : null;
+
+    const embeds = Array.isArray(embed_param) ? embed_param : [embed_param];
+
+    if (logging_channel && logging_channel.isSendable()) {
+      logging_channel.send({ embeds }).then((log_message) => {
+        const message_link = messageLink(logging_channel.id, log_message.id);
+
+        const button_row = new ActionRowBuilder<ButtonBuilder>();
+        const log_message_button = new ButtonBuilder();
+        log_message_button.setLabel('View Log');
+        log_message_button.setURL(message_link);
+        log_message_button.setStyle(ButtonStyle.Link);
+
+        button_row.addComponents(log_message_button);
+
+        interaction.reply({
+          embeds,
+          flags: ['Ephemeral'],
+          components: [button_row],
+        });
+      });
+    } else {
+      interaction.reply({ embeds });
+    }
+  };
 }
 
 export function get_embed_function(interaction: CommandInteraction) {

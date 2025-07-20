@@ -11,10 +11,10 @@ import {
   Command,
   CommandError,
   CommandExecutionContext,
-  
   RegistrationScope,
 } from 'interfaces/Command';
 import { err, ok, Result } from 'neverthrow';
+import { get_tagged_embed } from 'utilities/embed';
 
 async function run(
   interaction: ChatInputCommandInteraction,
@@ -26,15 +26,17 @@ async function run(
     return err(new Error('thread not instanceof threadchannel'));
   }
 
-  const as_data = await thread_service.get_thread(thread.id)
+  const result = await thread_service.toggle_thread_watch_status(thread);
 
-  logger.debug("as_data", as_data)
+  if (result.isErr()) {
+    interaction.reply('there is error!!!!!');
+  } else {
+    const embed = get_tagged_embed(interaction);
 
-  const result = await thread_service.insert_thread(thread);
+    embed.setTitle(`Thread ${result.value ? 'watched' : 'unwatched'}`);
 
-  if (result.isErr()) return err(result.error);
-
-  logger.info('watch result', result);
+    ctx.send_audit(embed);
+  }
 
   return ok();
 }
