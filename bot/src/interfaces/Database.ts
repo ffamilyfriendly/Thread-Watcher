@@ -47,10 +47,10 @@ interface GuildSettings {
     setting_id: string,
   ) => Promise<Result<T, DatabaseError>>;
 
-  set_guild_setting_value: (
+  set_guild_setting_value: <T>(
     guild_id: string,
     setting_id: string,
-    setting_value: unknown,
+    setting_value: T,
   ) => Promise<Result<void, DatabaseError>>;
 
   delete_guild_setting_value: (

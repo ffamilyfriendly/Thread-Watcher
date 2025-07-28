@@ -57,7 +57,7 @@ export default class SettingService {
   }
 
   async get_setting_with_default<T>(guild_id: string, setting_key: string, default_value: T) {
-    return (await this.get_setting<T>(guild_id, setting_key)).map((v) => v ?? default_value);
+    return (await this.get_setting<T>(guild_id, setting_key)).map((v) => (v ?? default_value) as T);
   }
 
   async set_setting<T>(guild_id: string, setting_key: string, setting_value: T) {
@@ -65,4 +65,8 @@ export default class SettingService {
 
     return this.db.set_guild_setting_value(guild_id, setting_key, setting_value);
   }
+}
+
+export enum SETTINGS_KEYS {
+  'logging_channel' = 'LOGGING_CHANNEL',
 }

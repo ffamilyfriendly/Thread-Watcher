@@ -7,7 +7,8 @@ import {
   EmbedBuilder,
   messageLink,
 } from 'discord.js';
-import { config } from 'bot';
+import { config, setting_service } from 'bot';
+import { SETTINGS_KEYS } from 'services/SettingService';
 
 export function get_tagged_embed(interaction: CommandInteraction) {
   const embed = new EmbedBuilder();
@@ -33,10 +34,18 @@ export interface EmbedBuilderProps {
 
 export function get_audit_send_function(interaction: CommandInteraction) {
   return async function (embed_param: EmbedBuilder | EmbedBuilder[]) {
-    const LOGGING_CHANNEL: string | null = null; //'1063434016172290188';
-    const logging_channel = LOGGING_CHANNEL
-      ? await interaction.client.channels.fetch(LOGGING_CHANNEL)
-      : null;
+    if (!interaction.guildId) return;
+
+    const LOGGING_CHANNEL = await setting_service.get_setting_with_default<string | null>(
+      interaction.guildId,
+      SETTINGS_KEYS.logging_channel,
+      null,
+    );
+
+    const logging_channel =
+      LOGGING_CHANNEL.isOk() && LOGGING_CHANNEL.value !== null
+        ? await interaction.client.channels.fetch(LOGGING_CHANNEL.value)
+        : null;
 
     const embeds = Array.isArray(embed_param) ? embed_param : [embed_param];
 

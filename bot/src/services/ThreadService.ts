@@ -86,12 +86,14 @@ export default class ThreadService {
     const data = await this.db.get_thread(thread_id);
 
     if (data.isOk()) {
-      this.redis.set(
-        `thread:${thread_id}`,
-        JSON.stringify(data.value),
-        'EX',
-        ThreadService.CACHE_TTL_SECONDS,
-      );
+      if (data.value !== null) {
+        this.redis.set(
+          `thread:${thread_id}`,
+          JSON.stringify(data.value),
+          'EX',
+          ThreadService.CACHE_TTL_SECONDS,
+        );
+      }
       return ok(data.value ? format_thread_data(data.value) : null);
     } else return data;
   }
