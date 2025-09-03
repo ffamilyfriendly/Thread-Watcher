@@ -3,7 +3,7 @@ import { Database, ThreadData } from 'interfaces/Database';
 import Redis from 'ioredis';
 import { ok } from 'neverthrow';
 
-export type GenericThread = ThreadChannel | PrivateThreadChannel;
+export type GenericThread = ThreadChannel;
 
 /**
  * This function exists as thread.lastMessage is often NULL even tho thread.lastMessageId exists.

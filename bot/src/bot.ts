@@ -10,6 +10,7 @@ import get_database_instance from 'database';
 import ThreadService from 'services/ThreadService';
 import Redis from 'ioredis';
 import SettingService from 'services/SettingService';
+import ComponentService from 'services/ComponentService';
 
 const config_result = read_config();
 const logger = new Logger({ name: 'bot' });
@@ -58,6 +59,7 @@ const redis = new Redis();
 // Services
 const thread_service = new ThreadService(database, redis);
 const setting_service = new SettingService(database, redis);
+const component_service = new ComponentService();
 
 async function load_ipc_events() {
   return load_module_as_and<PrivateEvent>('./src/ipcEvents/bot', (modules) => {
@@ -77,6 +79,7 @@ export {
   database,
   thread_service,
   setting_service,
+  component_service,
 };
 
 if (client.shard) {

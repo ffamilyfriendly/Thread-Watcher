@@ -9,7 +9,7 @@ import {
   InteractionType,
   messageLink,
 } from 'discord.js';
-import { commands, config, logger } from 'bot';
+import { commands, component_service, config, logger } from 'bot';
 import { Event } from 'interfaces/ClientEvent';
 import { get_audit_send_function, get_embed_function } from 'utilities/embed';
 import { EntitlementsError, PermissionsError } from 'interfaces/Command';
@@ -109,6 +109,8 @@ const event: Event<Interaction> = {
       case InteractionType.ApplicationCommand:
         handle_command_interaction(interaction as ChatInputCommandInteraction);
         break;
+      default:
+        component_service.recieve_interaction(interaction);
     }
   },
 };
