@@ -1,6 +1,9 @@
 import {
+  AutocompleteInteraction,
   ChatInputCommandInteraction,
   EmbedBuilder,
+  Guild,
+  Interaction,
   PermissionResolvable,
   SlashCommandBuilder,
   SlashCommandOptionsOnlyBuilder,
@@ -9,6 +12,7 @@ import {
 import { Result } from 'neverthrow';
 import { EmbedBuilderProps } from 'utilities/embed';
 import { DatabaseError } from './Database';
+import { Logger } from 'tslog';
 
 type LacksPermission = 'bot' | 'user';
 
@@ -52,10 +56,19 @@ export enum RegistrationScope {
 
 export interface CommandExecutionContext {
   build_embed: (props: EmbedBuilderProps) => EmbedBuilder;
-  send_audit: (embed_param: EmbedBuilder | EmbedBuilder[]) => void;
+  send_audit: (
+    embed_param: EmbedBuilder | EmbedBuilder[],
+    overwrite_interaction?: Interaction,
+  ) => void;
+  logger: Logger<unknown>;
 }
 
 export type CommandError = DatabaseError | PermissionsError;
+
+export interface GuildChatInteraction extends ChatInputCommandInteraction {
+  guild: Guild;
+  guildId: string;
+}
 
 export interface Command {
   command_data:
@@ -63,8 +76,11 @@ export interface Command {
     | SlashCommandSubcommandBuilder
     | SlashCommandOptionsOnlyBuilder;
   run: (
-    interaction: ChatInputCommandInteraction,
+    interaction: GuildChatInteraction,
     ctx: CommandExecutionContext,
+  ) => Result<void, CommandError> | Promise<Result<void, CommandError>>;
+  autocomplete?: (
+    interaction: AutocompleteInteraction,
   ) => Result<void, CommandError> | Promise<Result<void, CommandError>>;
   access_control: AccessControl;
   command_scope: RegistrationScope;

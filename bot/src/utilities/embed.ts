@@ -1,10 +1,15 @@
 import {
   ActionRowBuilder,
+  BaseInteraction,
   ButtonBuilder,
+  ButtonInteraction,
   ButtonStyle,
   ColorResolvable,
   CommandInteraction,
   EmbedBuilder,
+  Interaction,
+  InteractionReplyOptions,
+  InteractionUpdateOptions,
   messageLink,
 } from 'discord.js';
 import { config, setting_service } from 'bot';
@@ -29,11 +34,15 @@ export interface EmbedBuilderProps {
   style: StyleOption | { colour: string; emoji?: string };
   auto_respond?: boolean;
   ephermal?: boolean;
-  fields?: { name: string; value: string }[];
+  fields?: { name: string; value: string; inline?: boolean }[];
 }
 
-export function get_audit_send_function(interaction: CommandInteraction) {
-  return async function (embed_param: EmbedBuilder | EmbedBuilder[]) {
+export function get_audit_send_function(interaction: Interaction) {
+  return async function (
+    embed_param: EmbedBuilder | EmbedBuilder[],
+    overwrite_interaction?: Interaction,
+  ) {
+    interaction = overwrite_interaction ?? interaction;
     if (!interaction.guildId) return;
 
     const LOGGING_CHANNEL = await setting_service.get_setting_with_default<string | null>(
@@ -61,14 +70,20 @@ export function get_audit_send_function(interaction: CommandInteraction) {
 
         button_row.addComponents(log_message_button);
 
-        interaction.reply({
-          embeds,
-          flags: ['Ephemeral'],
-          components: [button_row],
-        });
+        if (interaction.isCommand()) {
+          interaction.reply({
+            embeds,
+            flags: ['Ephemeral'],
+            components: [button_row],
+          });
+        } else if (interaction.isButton()) {
+          interaction.update({
+            components: [button_row],
+          });
+        }
       });
     } else {
-      interaction.reply({ embeds });
+      if (interaction.isCommand()) interaction.reply({ embeds });
     }
   };
 }

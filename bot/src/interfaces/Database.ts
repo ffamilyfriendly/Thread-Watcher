@@ -45,7 +45,7 @@ interface GuildSettings {
   get_guild_setting_value: <T>(
     guild_id: string,
     setting_id: string,
-  ) => Promise<Result<T, DatabaseError>>;
+  ) => Promise<Result<T | null, DatabaseError>>;
 
   set_guild_setting_value: <T>(
     guild_id: string,

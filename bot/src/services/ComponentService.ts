@@ -26,10 +26,51 @@ type InteractionForComponent<T> = T extends ButtonBuilder
         ? ChannelSelectMenuInteraction
         : never;
 
+type CleanupItem = { cleanup: () => void };
+export class Vacuum {
+  to_be_cleaned: CleanupItem[] = [];
+  constructor() {}
+
+  add(...items: CleanupItem[]) {
+    for (const item of Array.isArray(items) ? items : [items]) {
+      this.to_be_cleaned.push(item);
+    }
+  }
+
+  clean() {
+    for (const trash of this.to_be_cleaned) {
+      trash.cleanup();
+    }
+  }
+}
+
 export default class ComponentService {
   // 5 minutes as a fallback timeout in case one was not supplied
   static readonly DEFAULT_TIMEOUT_IN_MS = 1000 * 60 * 60 * 5;
   private component_events = new Map<string, InternalCallbackType>();
+
+  wait_for_interaction_callback<T extends ComponentTypes>(
+    component: T,
+    filter: FilterFunction<InteractionForComponent<T>>,
+    callback: (interaction: InteractionForComponent<T>) => void,
+    timeout = ComponentService.DEFAULT_TIMEOUT_IN_MS,
+  ) {
+    const component_type_name = component.constructor.name;
+    const component_instance_id = `${component_type_name}-${crypto.randomUUID()}`;
+
+    component.setCustomId(component_instance_id);
+
+    this.component_events.set(component_instance_id, (interaction) => {
+      const interaction_typed = interaction as InteractionForComponent<T>;
+      if (!filter(interaction_typed)) return;
+      callback(interaction_typed);
+    });
+
+    return {
+      component_instance_id,
+      cleanup: () => this.component_events.delete(component_instance_id),
+    };
+  }
 
   wait_for_interaction<T extends ComponentTypes>(
     component: T,
@@ -37,22 +78,15 @@ export default class ComponentService {
     timeout = ComponentService.DEFAULT_TIMEOUT_IN_MS,
   ): Promise<Result<InteractionForComponent<T>, string>> {
     return new Promise((resolve) => {
-      const component_type_name = component.constructor.name;
-      const component_instance_id = `${component_type_name}-${crypto.randomUUID()}`;
-
-      component.setCustomId(component_instance_id);
-
       const remove_listener_timeout = setTimeout(() => {
-        this.component_events.delete(component_instance_id);
+        cleanup();
         return resolve(err('listener timed out'));
       }, timeout);
 
-      this.component_events.set(component_instance_id, (interaction) => {
-        const interaction_typed = interaction as InteractionForComponent<T>;
-        if (!filter(interaction_typed)) return;
-
+      const { cleanup } = this.wait_for_interaction_callback(component, filter, (interaction) => {
+        cleanup();
         clearTimeout(remove_listener_timeout);
-        resolve(ok(interaction_typed));
+        resolve(ok(interaction));
       });
     });
   }

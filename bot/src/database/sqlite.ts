@@ -125,6 +125,10 @@ export default class Sqlite implements Database {
         .prepare('SELECT setting_value FROM settings WHERE guild_id = ? AND setting_id = ?')
         .get(guild_id, setting_id);
 
+      if (!row) {
+        return ok(null);
+      }
+
       if (!row || typeof row !== 'object' || !('setting_value' in row)) {
         return err(new Error('Setting not found or invalid row structure'));
       }

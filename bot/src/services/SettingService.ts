@@ -1,6 +1,6 @@
 import { Database } from 'interfaces/Database';
 import Redis from 'ioredis';
-import { ok, ResultAsync } from 'neverthrow';
+import { err, ok, ResultAsync } from 'neverthrow';
 
 /**
  * Service for managing guild-specific settings with caching via Redis.
@@ -44,13 +44,18 @@ export default class SettingService {
 
   async get_setting<T>(guild_id: string, setting_key: string) {
     const cache_entry = await this.get_setting_redis(guild_id, setting_key);
-    if (cache_entry.isErr()) return cache_entry;
-    if (cache_entry.value) return ok(cache_entry.value);
+    if (cache_entry.isErr()) return err(cache_entry.error);
+    if (cache_entry.value) return ok(cache_entry.value as T);
 
     const settings_value = await this.db.get_guild_setting_value<T>(guild_id, setting_key);
 
     if (settings_value.isOk()) {
-      await this.set_setting_redis(guild_id, setting_key, settings_value.value);
+      const redis_response = await this.set_setting_redis(
+        guild_id,
+        setting_key,
+        settings_value.value,
+      );
+      if (redis_response.isErr()) return err(redis_response);
     }
 
     return settings_value;
