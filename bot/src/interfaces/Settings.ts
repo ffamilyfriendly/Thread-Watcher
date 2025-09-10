@@ -1,18 +1,71 @@
-import { ChannelSelectMenuBuilder, ChannelType, RoleSelectMenuBuilder } from 'discord.js';
-import { err, ok, Result } from 'neverthrow';
+import {
+  ButtonBuilder,
+  ButtonInteraction,
+  ChannelSelectMenuBuilder,
+  ChannelSelectMenuInteraction,
+  ChannelType,
+  MessageActionRowComponentBuilder,
+  RoleSelectMenuBuilder,
+  RoleSelectMenuInteraction,
+  StringSelectMenuBuilder,
+  StringSelectMenuInteraction,
+} from 'discord.js';
+import { Err, err, ok, Result } from 'neverthrow';
 
 export type SettingValue = number | string | boolean | string[];
 
-type DiscordComponents = RoleSelectMenuBuilder | ChannelSelectMenuBuilder;
 export type SettingType = 'number' | 'string' | 'boolean' | 'channel' | 'role';
+
+type InteractionForComponent<CT extends MessageActionRowComponentBuilder> = CT extends ButtonBuilder
+  ? ButtonInteraction
+  : CT extends RoleSelectMenuBuilder
+    ? RoleSelectMenuInteraction
+    : CT extends ChannelSelectMenuBuilder
+      ? ChannelSelectMenuInteraction
+      : CT extends StringSelectMenuBuilder
+        ? StringSelectMenuInteraction
+        : never;
+
+interface InputAdapter<T, CT extends MessageActionRowComponentBuilder> {
+  create_component(): CT;
+  parse_interaction(interaction: InteractionForComponent<CT>): Result<T, Error>;
+  into(value: unknown): Result<T, Error>;
+  display_value(value: T | null): string;
+}
+
+class ChannelSelectAdapter implements InputAdapter<string, ChannelSelectMenuBuilder> {
+  create_component() {
+    return new ChannelSelectMenuBuilder().setChannelTypes(
+      ChannelType.GuildText,
+      ChannelType.PublicThread,
+      ChannelType.PrivateThread,
+    );
+  }
+
+  into(value: unknown): Result<string, Error> {
+    if (typeof value === 'string') {
+      return ok(value);
+    } else return err(new Error(`could not turn ${typeof value} into string`));
+  }
+
+  parse_interaction(
+    interaction: InteractionForComponent<ChannelSelectMenuBuilder>,
+  ): Result<string, Error> {
+    if (!interaction.values[0]) return err(new Error('no channel was selected'));
+    return ok(interaction.values[0]);
+  }
+
+  display_value(value: string | null): string {
+    return `<#${value}>`;
+  }
+}
 
 export interface SettingSchema<T extends SettingValue> {
   key: string;
   name: string;
   default: T | null;
-  discord_input_element: () => DiscordComponents;
   type: SettingType;
-  transform_into: (value: unknown) => Result<T, Error>;
+  adapter: InputAdapter<T, MessageActionRowComponentBuilder>;
   validate: (value: unknown) => boolean;
   description: string;
 }
@@ -20,20 +73,10 @@ export interface SettingSchema<T extends SettingValue> {
 const LOGGING_CHANNEL: SettingSchema<string> = {
   key: 'LOGGING_CHANNEL',
   name: 'logging channel',
-  discord_input_element: () =>
-    new ChannelSelectMenuBuilder().setChannelTypes(
-      ChannelType.GuildText,
-      ChannelType.PublicThread,
-      ChannelType.PrivateThread,
-    ),
+  adapter: new ChannelSelectAdapter(),
   default: null,
   type: 'channel',
   validate: (value: unknown) => typeof value === 'string' || value === null,
-  transform_into: (value: unknown) => {
-    console.log(`"${value}"`, value, typeof value);
-    if (typeof value === 'string') return ok(value);
-    else return err(new Error(`can not transform ${typeof value} into string`));
-  },
   description: 'the channel where logs will be sent to',
 };
 

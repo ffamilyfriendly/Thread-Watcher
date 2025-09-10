@@ -1,4 +1,5 @@
 import {
+  AnyComponentBuilder,
   ButtonBuilder,
   ButtonInteraction,
   ChannelSelectMenuBuilder,
@@ -12,7 +13,6 @@ import {
 import { err, ok, Result } from 'neverthrow';
 
 type SelectionBuilders = StringSelectMenuBuilder | RoleSelectMenuBuilder | ChannelSelectMenuBuilder;
-type ComponentTypes = ButtonBuilder | SelectionBuilders;
 type InternalCallbackType = (arg: Interaction) => void;
 type FilterFunction<T extends Interaction> = (arg: T) => boolean;
 
@@ -49,7 +49,7 @@ export default class ComponentService {
   static readonly DEFAULT_TIMEOUT_IN_MS = 1000 * 60 * 60 * 5;
   private component_events = new Map<string, InternalCallbackType>();
 
-  wait_for_interaction_callback<T extends ComponentTypes>(
+  wait_for_interaction_callback<T extends AnyComponentBuilder>(
     component: T,
     filter: FilterFunction<InteractionForComponent<T>>,
     callback: (interaction: InteractionForComponent<T>) => void,
@@ -72,7 +72,7 @@ export default class ComponentService {
     };
   }
 
-  wait_for_interaction<T extends ComponentTypes>(
+  wait_for_interaction<T extends AnyComponentBuilder>(
     component: T,
     filter: FilterFunction<InteractionForComponent<T>>,
     timeout = ComponentService.DEFAULT_TIMEOUT_IN_MS,
