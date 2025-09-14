@@ -11,6 +11,7 @@ import ThreadService from 'services/ThreadService';
 import Redis from 'ioredis';
 import SettingService from 'services/SettingService';
 import ComponentService from 'services/ComponentService';
+import { BotContextThreadFetcher } from 'fetchers/ThreadFetcher';
 
 const config_result = read_config();
 const logger = new Logger({ name: 'bot' });
@@ -57,7 +58,7 @@ const database = get_database_instance(config);
 const redis = new Redis();
 
 // Services
-const thread_service = new ThreadService(database, redis);
+const thread_service = new ThreadService(database, redis, new BotContextThreadFetcher(client));
 const setting_service = new SettingService(database, redis);
 const component_service = new ComponentService();
 
@@ -80,6 +81,7 @@ export {
   thread_service,
   setting_service,
   component_service,
+  redis,
 };
 
 if (client.shard) {

@@ -29,11 +29,10 @@ async function run(
   const result = await thread_service.toggle_thread_watch_status(thread);
 
   if (result.isErr()) {
-    interaction.reply('there is error!!!!!');
+    return err(result.error);
   } else {
     const embed = get_tagged_embed(interaction);
-
-    embed.setTitle(`Thread ${result.value ? 'watched' : 'unwatched'}`);
+    embed.setTitle(`Thread <#${thread.id}> ${result.value ? 'watched' : 'unwatched'}`);
 
     ctx.send_audit(embed);
   }
@@ -43,11 +42,11 @@ async function run(
 
 const command_data = new SlashCommandBuilder()
   .setName('watch')
-  .setDescription("add or remove a thread from the bot's watchlist")
+  .setDescription("Add or remove a thread from the bot\'s active monitoring list")
   .addChannelOption((o) =>
     o
       .setName('thread')
-      .setDescription('thread to watch or unwatch')
+      .setDescription('The thread to start or stop monitoring')
       .addChannelTypes([
         ChannelType.AnnouncementThread,
         ChannelType.PublicThread,

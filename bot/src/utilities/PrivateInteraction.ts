@@ -1,7 +1,9 @@
 import { Client, Shard, ShardClientUtil, ShardingManager } from 'discord.js';
 import { BaseEvent, Callback, ReponseEvent } from 'interfaces/PrivateEvents';
 import { randomBytes } from 'crypto';
-import { err, ok, Result } from 'neverthrow';
+import { err, ok, Result, ResultAsync } from 'neverthrow';
+import Redis from 'ioredis';
+import { number } from 'zod';
 
 function generate_request_id() {
   return randomBytes(16).toString('hex');
@@ -106,8 +108,12 @@ export class BotIpcClient extends BaseClient {
 export class ShardedIpcClient extends BaseClient {
   manager: ShardingManager;
   shards = new Map<number, Shard>();
+  static readonly CACHE_TTL_SECONDS = 900;
 
-  constructor(manager: ShardingManager) {
+  constructor(
+    manager: ShardingManager,
+    private redis: Redis,
+  ) {
     super();
     this.manager = manager;
     this.prepare();
@@ -132,6 +138,45 @@ export class ShardedIpcClient extends BaseClient {
     if (!shard) return err(new Error(`shard "${shard_id}" does not exist`));
 
     return this._send<T>(shard, event, data);
+  }
+
+  async get_shard_from_guild_id(guild_id: string) {
+    const REDIS_KEY = `GUILD:${guild_id}:SHARD`;
+    const cached_value = await ResultAsync.fromPromise(this.redis.get(REDIS_KEY), (err) => err);
+
+    if (cached_value.isOk() && cached_value.value) {
+      return ok(Number.parseInt(cached_value.value));
+    }
+
+    const eval_result = await ResultAsync.fromPromise(
+      this.manager.broadcastEval((c, { guildId }) => [c.shard?.ids, c.guilds.cache.has(guildId)], {
+        context: { guildId: guild_id },
+      }),
+      (err) => err,
+    );
+
+    if (eval_result.isErr()) return err(eval_result.error);
+
+    const found_shard = eval_result.value.find(
+      (value): value is [number[], boolean] =>
+        Array.isArray(value) && typeof value[1] == 'boolean' && value[1] && Array.isArray(value[0]),
+    );
+
+    if (!found_shard) return err(new Error(`no shard found for Guild ID: ${guild_id}`));
+
+    const shard_id = found_shard[0][0];
+
+    this.redis.set(REDIS_KEY, shard_id, 'EX', ShardedIpcClient.CACHE_TTL_SECONDS);
+
+    return ok(shard_id);
+  }
+
+  async send_to_shard_having_guild<T = unknown>(guild_id: string, event: string, data: unknown) {
+    const shard = await this.get_shard_from_guild_id(guild_id);
+
+    if (shard.isErr()) return err(shard.error);
+
+    return this.send_to_shard<T>(shard.value, event, data);
   }
 
   send_all<T = unknown>(event: string, data: unknown) {

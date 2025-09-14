@@ -6,6 +6,9 @@ import { load_module_as_and } from 'utilities/load_files';
 import { ShardedIpcClient } from 'utilities/PrivateInteraction';
 import { create_web_server } from 'web';
 import get_database_instance from 'database';
+import Redis from 'ioredis';
+import ThreadService from 'services/ThreadService';
+import { IndexContextThreadFetcher } from 'fetchers/ThreadFetcher';
 
 const config_result = read_config();
 const logger = new Logger();
@@ -18,7 +21,7 @@ if (config_result.isErr()) {
 const config = config_result.value;
 
 const database = get_database_instance(config);
-database.create_tables()
+database.create_tables();
 
 const args = process.argv.slice(2);
 
@@ -27,7 +30,15 @@ const sharding_manager = new ShardingManager('./src/bot.ts', {
   shardArgs: args,
 });
 
-const ipc_client = new ShardedIpcClient(sharding_manager);
+const redis = new Redis();
+
+const ipc_client = new ShardedIpcClient(sharding_manager, redis);
+const thread_service = new ThreadService(
+  database,
+  redis,
+  new IndexContextThreadFetcher(ipc_client),
+);
+
 async function load_events() {
   return load_module_as_and<PrivateEvent>('./src/ipcEvents/manager', (events_array) => {
     for (const event of events_array) {

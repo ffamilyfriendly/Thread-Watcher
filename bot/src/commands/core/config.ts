@@ -149,10 +149,14 @@ async function autocomplete(interaction: AutocompleteInteraction) {
 }
 
 const command_data = new SlashCommandBuilder()
-  .setName('settings')
-  .setDescription('configure the bot :D')
+  .setName('config')
+  .setDescription('Configure bot settings and preferences')
   .addStringOption((o) =>
-    o.setName('setting').setDescription('the setting').setAutocomplete(true).setRequired(true),
+    o
+      .setName('setting')
+      .setDescription('The setting you want to configure (use autocomplete)')
+      .setAutocomplete(true)
+      .setRequired(true),
   );
 
 const command: Command = {
