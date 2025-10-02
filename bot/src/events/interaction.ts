@@ -100,8 +100,19 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
   const result = await command.run(interaction_as_guild_safe, command_context);
 
   result.match(
-    () => {
-      logger.debug(`interaction "${interaction.id}" handled without issues!`);
+    (post_exec_tasks) => {
+      logger.debug(
+        `interaction "${interaction.id}" (${interaction.commandName}) handled without issues!`,
+      );
+
+      if (post_exec_tasks) {
+        if (post_exec_tasks.cleanup) {
+          setTimeout(
+            () => post_exec_tasks.cleanup.func(interaction_as_guild_safe),
+            post_exec_tasks.cleanup.cleanup_timing,
+          );
+        }
+      }
     },
     (err) => handle_error(interaction, err),
   );

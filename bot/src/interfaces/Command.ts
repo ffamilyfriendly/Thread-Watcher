@@ -70,7 +70,13 @@ export interface GuildChatInteraction extends ChatInputCommandInteraction {
   guildId: string;
 }
 
-export type CleanupFunction = () => void;
+export type CleanupFunction = (interaction: GuildChatInteraction) => void;
+export interface PostExecutionTasks {
+  cleanup: {
+    func: CleanupFunction;
+    cleanup_timing?: number;
+  };
+}
 
 export interface Command {
   command_data:
@@ -80,7 +86,7 @@ export interface Command {
   run: (
     interaction: GuildChatInteraction,
     ctx: CommandExecutionContext,
-  ) => Result<void, CommandError> | Promise<Result<void | CleanupFunction, CommandError>>;
+  ) => Result<void, CommandError> | Promise<Result<void | PostExecutionTasks, CommandError>>;
   autocomplete?: (
     interaction: AutocompleteInteraction,
   ) => Result<void, CommandError> | Promise<Result<void, CommandError>>;

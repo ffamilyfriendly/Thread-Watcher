@@ -16,6 +16,7 @@ import {
   CommandError,
   CommandExecutionContext,
   GuildChatInteraction,
+  PostExecutionTasks,
   RegistrationScope,
 } from 'interfaces/Command';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
@@ -219,7 +220,7 @@ class PageGenerator {
 async function run(
   interaction: GuildChatInteraction,
   ctx: CommandExecutionContext,
-): Promise<Result<CleanupFunction | void, CommandError>> {
+): Promise<Result<PostExecutionTasks | void, CommandError>> {
   function filter_function(btn_interaction: Interaction) {
     return interaction.user.id === btn_interaction.user.id;
   }
@@ -309,7 +310,20 @@ async function run(
     components: [button_row, dashboard_row],
   });
 
-  return ok(() => cleaner.clean);
+  const ms_15_minutes = 1000 * 60 * 15;
+  const post_exec_task: PostExecutionTasks = {
+    cleanup: {
+      func: (int) => {
+        int.editReply({
+          components: [dashboard_row],
+        });
+        cleaner.clean();
+      },
+      cleanup_timing: ms_15_minutes,
+    },
+  };
+
+  return ok(post_exec_task);
 }
 
 const command_data = new SlashCommandBuilder()
