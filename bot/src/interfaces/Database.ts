@@ -26,7 +26,10 @@ interface Core {
     is_watched: boolean,
   ) => Promise<Result<void, DatabaseError>>;
   get_thread: (thread_id: string) => Promise<Result<ThreadData | null, DatabaseError>>;
-  get_threads_in_guild: (guild_id: string) => Promise<Result<ThreadData[], DatabaseError>>;
+  get_threads_in_guild: (
+    guild_id: string,
+    watched: boolean,
+  ) => Promise<Result<ThreadData[], DatabaseError>>;
 
   // Channel related stuff
   //insert_channel: (channel: ChannelData) => Promise<Result<void, DatabaseError>>;

@@ -158,8 +158,8 @@ export default class ThreadService {
    * this might be subject to change in the future.
    * TODO: consider caching here
    */
-  async get_threads(guild_id: string) {
-    const data = await this.db.get_threads_in_guild(guild_id);
+  async get_threads(guild_id: string, watched: boolean = true) {
+    const data = await this.db.get_threads_in_guild(guild_id, watched);
 
     if (data.isOk()) {
       return ok(data.value);

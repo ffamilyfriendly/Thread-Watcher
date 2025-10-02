@@ -95,10 +95,12 @@ export default class Sqlite implements Database {
     }
   }
 
-  async get_threads_in_guild(guild_id: string) {
+  async get_threads_in_guild(guild_id: string, watched: boolean) {
     try {
       return ok(
-        this.db.prepare('SELECT * FROM threads WHERE server = ?').all(guild_id) as ThreadData[],
+        this.db
+          .prepare('SELECT * FROM threads WHERE server = ? AND is_watched = ?')
+          .all(guild_id, watched) as ThreadData[],
       );
     } catch (err_data) {
       return handle_error(err_data);

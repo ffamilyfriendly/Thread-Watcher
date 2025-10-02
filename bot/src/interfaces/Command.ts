@@ -70,6 +70,8 @@ export interface GuildChatInteraction extends ChatInputCommandInteraction {
   guildId: string;
 }
 
+export type CleanupFunction = () => void;
+
 export interface Command {
   command_data:
     | Omit<SlashCommandBuilder, 'addSubcommandGroup' | 'addSubcommand'>
@@ -78,7 +80,7 @@ export interface Command {
   run: (
     interaction: GuildChatInteraction,
     ctx: CommandExecutionContext,
-  ) => Result<void, CommandError> | Promise<Result<void, CommandError>>;
+  ) => Result<void, CommandError> | Promise<Result<void | CleanupFunction, CommandError>>;
   autocomplete?: (
     interaction: AutocompleteInteraction,
   ) => Result<void, CommandError> | Promise<Result<void, CommandError>>;
