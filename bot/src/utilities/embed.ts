@@ -15,7 +15,7 @@ import {
 import { config, setting_service } from 'bot';
 import { SETTINGS_KEYS } from 'services/SettingService';
 
-export function get_tagged_embed(interaction: CommandInteraction) {
+export function get_tagged_embed(interaction: Interaction) {
   const embed = new EmbedBuilder();
   embed.setAuthor({
     iconURL: interaction.user.avatarURL() || interaction.user.defaultAvatarURL,
@@ -71,11 +71,18 @@ export function get_audit_send_function(interaction: Interaction) {
         button_row.addComponents(log_message_button);
 
         if (interaction.isCommand()) {
-          interaction.reply({
-            embeds,
-            flags: ['Ephemeral'],
-            components: [button_row],
-          });
+          if (interaction.replied) {
+            interaction.editReply({
+              embeds,
+              components: [button_row],
+            });
+          } else {
+            interaction.reply({
+              embeds,
+              flags: ['Ephemeral'],
+              components: [button_row],
+            });
+          }
         } else if (interaction.isButton()) {
           interaction.update({
             components: [button_row],
@@ -83,7 +90,14 @@ export function get_audit_send_function(interaction: Interaction) {
         }
       });
     } else {
-      if (interaction.isCommand()) interaction.reply({ embeds });
+      if (interaction.isCommand()) {
+        const reply_func = interaction.replied ? interaction.editReply : interaction.reply;
+        reply_func({ embeds });
+      } else if (interaction.isButton())
+        interaction.update({
+          embeds,
+          components: [],
+        });
     }
   };
 }

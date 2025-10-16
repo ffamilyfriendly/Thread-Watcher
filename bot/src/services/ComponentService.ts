@@ -4,7 +4,10 @@ import {
   ButtonInteraction,
   ChannelSelectMenuBuilder,
   ChannelSelectMenuInteraction,
+  ComponentType,
   Interaction,
+  ModalBuilder,
+  ModalSubmitInteraction,
   RoleSelectMenuBuilder,
   RoleSelectMenuInteraction,
   StringSelectMenuBuilder,
@@ -12,8 +15,8 @@ import {
 } from 'discord.js';
 import { err, ok, Result } from 'neverthrow';
 
-type SelectionBuilders = StringSelectMenuBuilder | RoleSelectMenuBuilder | ChannelSelectMenuBuilder;
 type InternalCallbackType = (arg: Interaction) => void;
+
 type FilterFunction<T extends Interaction> = (arg: T) => boolean;
 
 type InteractionForComponent<T> = T extends ButtonBuilder
@@ -24,7 +27,11 @@ type InteractionForComponent<T> = T extends ButtonBuilder
       ? RoleSelectMenuInteraction
       : T extends ChannelSelectMenuBuilder
         ? ChannelSelectMenuInteraction
-        : never;
+        : T extends ModalBuilder
+          ? ModalSubmitInteraction
+          : T extends RoleSelectMenuBuilder
+            ? RoleSelectMenuInteraction
+            : never;
 
 type CleanupItem = { cleanup: () => void };
 export class Vacuum {
@@ -44,12 +51,15 @@ export class Vacuum {
   }
 }
 
+type AnyInteractionEmitterBuilder = AnyComponentBuilder | ModalBuilder | RoleSelectMenuBuilder;
+
 export default class ComponentService {
   // 5 minutes as a fallback timeout in case one was not supplied
   static readonly DEFAULT_TIMEOUT_IN_MS = 1000 * 60 * 60 * 5;
   private component_events = new Map<string, InternalCallbackType>();
+  private named_components = new Map<string, AnyComponentBuilder[]>();
 
-  wait_for_interaction_callback<T extends AnyComponentBuilder>(
+  wait_for_interaction_callback<T extends AnyInteractionEmitterBuilder>(
     component: T,
     filter: FilterFunction<InteractionForComponent<T>>,
     callback: (interaction: InteractionForComponent<T>) => void,
@@ -72,7 +82,21 @@ export default class ComponentService {
     };
   }
 
-  wait_for_interaction<T extends AnyComponentBuilder>(
+  get_managed_components<T extends AnyComponentBuilder>(name: string) {
+    return this.named_components.get(name)?.map((comp) => comp as T);
+  }
+
+  set_managed_component(name: string, component: AnyComponentBuilder) {
+    const arr = this.named_components.get('name') ?? [];
+    arr.push(component);
+    this.named_components.set(name, arr);
+  }
+
+  set_managed_components(name: string, components: AnyComponentBuilder[]) {
+    components.forEach((component) => this.set_managed_component(name, component));
+  }
+
+  wait_for_interaction<T extends AnyInteractionEmitterBuilder>(
     component: T,
     filter: FilterFunction<InteractionForComponent<T>>,
     timeout = ComponentService.DEFAULT_TIMEOUT_IN_MS,

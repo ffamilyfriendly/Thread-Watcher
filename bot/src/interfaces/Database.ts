@@ -6,6 +6,7 @@ export type DatabaseError = SqliteError | Error;
 export interface ThreadData {
   id: string;
   server: string;
+  parent_channel_id?: string | null;
   due_archive: number;
   is_watched: boolean;
 }

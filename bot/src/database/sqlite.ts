@@ -3,7 +3,7 @@ import { err, ok, Result } from 'neverthrow';
 import sql, { Database as SqliteDb, SQLiteError, SQLQueryBindings } from 'bun:sqlite';
 import { ConfigType } from 'utilities/config';
 const TABLE_CREATION_QUERIES = [
-  'CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT NOT NULL, due_archive DATE, is_watched INTEGER)',
+  'CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT NOT NULL, parent_channel_id TEXT, due_archive DATE, is_watched INTEGER)',
   'CREATE TABLE IF NOT EXISTS settings (setting_id TEXT, guild_id TEXT, setting_value BLOB, UNIQUE(setting_id, guild_id) ON CONFLICT REPLACE)',
 ];
 
@@ -45,11 +45,21 @@ export default class Sqlite implements Database {
     }
   }
 
-  async insert_thread(thread: { id: string; server: string; due_archive: Date }) {
+  async insert_thread(thread: {
+    id: string;
+    server: string;
+    parent_channel_id?: string | null;
+    due_archive: Date;
+  }) {
     try {
       this.db
-        .prepare('INSERT INTO threads VALUES (?, ?, ? ,1)')
-        .run(thread.id, thread.server, thread.due_archive.getTime());
+        .prepare('INSERT INTO threads VALUES (?, ?, ?, ? ,1)')
+        .run(
+          thread.id,
+          thread.server,
+          thread.parent_channel_id ?? null,
+          thread.due_archive.getTime(),
+        );
       return ok();
     } catch (err_data) {
       return handle_error(err_data);

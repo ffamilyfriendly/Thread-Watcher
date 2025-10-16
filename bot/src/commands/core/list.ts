@@ -11,7 +11,6 @@ import {
 } from 'discord.js';
 
 import {
-  CleanupFunction,
   Command,
   CommandError,
   CommandExecutionContext,
@@ -86,7 +85,7 @@ async function fetch_data_from_id(data_list: { id: string }[]): Promise<FetchDat
   for (const res of await Promise.all(promise_list)) {
     if (res.isOk()) {
       // Will never happen, but skip if it does
-      if (res instanceof DMChannel) continue;
+      if (res.value instanceof DMChannel) continue;
       if (res.value) return_values.succeeded.push(res.value as GuildBasedChannel);
     } else {
       return_values.failed.push(res.error);
@@ -96,7 +95,7 @@ async function fetch_data_from_id(data_list: { id: string }[]): Promise<FetchDat
   return return_values;
 }
 
-function create_channel_link(channel: GuildBasedChannel) {
+export function create_channel_link(channel: GuildBasedChannel) {
   return `[${channel.name}](https://discord.com/channels/${channel.guildId}/${channel.id})`;
 }
 
@@ -233,7 +232,7 @@ async function run(
     ? thread_service.get_threads(interaction.guildId)
     : // CHANNEL WATCHING NOT YET IMPLEMENTED
       // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
-      (new Promise(() => ok([])) as Promise<Result<[], never>>));
+      (new Promise((resolve) => resolve(ok([]))) as Promise<Result<[], never>>));
 
   if (data_to_display.isErr()) return err(data_to_display.error);
 
@@ -258,7 +257,7 @@ async function run(
   const page_1 = await page_generator.generate_page();
 
   const embed = new EmbedBuilder();
-  embed.setTitle(display_type.toLocaleLowerCase());
+  embed.setTitle(display_type.toLowerCase());
   embed.setDescription(page_1);
 
   const state: State = {

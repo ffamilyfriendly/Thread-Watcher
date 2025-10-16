@@ -28,6 +28,19 @@ export class PermissionsError extends Error {
   }
 }
 
+export class GenericCommandError extends Error {
+  title: string;
+  message: string;
+  docs_slug?: string;
+
+  constructor(title: string, message: string, docs_slug?: string) {
+    super(message);
+    this.title = title;
+    this.message = message;
+    this.docs_slug = docs_slug;
+  }
+}
+
 export class EntitlementsError extends Error {
   sku_id: string;
   constructor(sku_id: string) {
@@ -63,7 +76,7 @@ export interface CommandExecutionContext {
   logger: Logger<unknown>;
 }
 
-export type CommandError = DatabaseError | PermissionsError;
+export type CommandError = DatabaseError | PermissionsError | GenericCommandError;
 
 export interface GuildChatInteraction extends ChatInputCommandInteraction {
   guild: Guild;

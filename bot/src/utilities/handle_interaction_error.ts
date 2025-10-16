@@ -3,6 +3,8 @@ import {
   ButtonBuilder,
   ButtonStyle,
   ChatInputCommandInteraction,
+  EmbedBuilder,
+  Interaction,
   PermissionsBitField,
 } from 'discord.js';
 import { CommandError, PermissionsError } from 'interfaces/Command';
@@ -70,5 +72,37 @@ export function handle_error(
     interaction.editReply({ embeds: [embed], components: [button_row] });
   } else {
     interaction.reply({ embeds: [embed], flags: ['Ephemeral'], components: [button_row] });
+  }
+}
+
+export function handle_error_generic(interaction: Interaction, err: CommandError) {
+  const embed = new EmbedBuilder();
+
+  embed.setFooter({
+    text: `interaction ID: ${interaction.id}`,
+  });
+
+  if ('message' in err && typeof err.message === 'string') embed.setDescription(err.message);
+  if ('title' in err && typeof err.title === 'string') embed.setTitle(err.title);
+
+  const button_row = new ActionRowBuilder<ButtonBuilder>();
+  const support_server_button = new ButtonBuilder();
+  support_server_button.setStyle(ButtonStyle.Link);
+  support_server_button.setURL('https://botsuite.co/join');
+  support_server_button.setLabel('Support Server');
+  button_row.addComponents(support_server_button);
+
+  if ('docs_slug' in err && typeof err.docs_slug === 'string') {
+    const documentation_link = new ButtonBuilder();
+    documentation_link.setStyle(ButtonStyle.Link);
+    documentation_link.setURL(`https://docs.threadwatcher.xyz/${err.docs_slug}`);
+    documentation_link.setLabel('Learn More');
+    button_row.addComponents(documentation_link);
+  }
+
+  if ('editReply' in interaction && interaction.replied) {
+    interaction.editReply({ embeds: [embed], components: [button_row] });
+  } else if (interaction.isRepliable()) {
+    interaction.reply({ embeds: [embed], components: [button_row], flags: ['Ephemeral'] });
   }
 }

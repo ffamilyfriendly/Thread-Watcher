@@ -75,6 +75,7 @@ export default class ThreadService {
     const thread_data = {
       id: thread.id,
       server: thread.guildId,
+      parent_channel_id: thread.parentId,
       due_archive: expires_at,
     };
 
