@@ -5,6 +5,7 @@ import {
   Interaction,
   PermissionFlagsBits,
   SlashCommandBuilder,
+  SlashCommandSubcommandBuilder,
 } from 'discord.js';
 
 import {
@@ -13,11 +14,12 @@ import {
   CommandExecutionContext,
   PostExecutionTasks,
   RegistrationScope,
+  SubCommand,
 } from 'interfaces/Command';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
 import { make_advanced_embed, State } from 'utilities/commands/advanced_view';
-import { create_channel_link } from './list';
+import { create_channel_link } from '../list';
 import { channel_service } from 'bot';
 
 async function handle_execution(state: State, interaction: Interaction, context: null) {
@@ -105,8 +107,8 @@ async function run(
   return ok(post_exec_tasks);
 }
 
-const command_data = new SlashCommandBuilder()
-  .setName('auto')
+export const command_data = new SlashCommandSubcommandBuilder()
+  .setName('add')
   .setDescription('automatically watch threads in channel')
   .addChannelOption((o) =>
     o
@@ -124,13 +126,14 @@ const command_data = new SlashCommandBuilder()
     opt.setName('advanced').setDescription('if u wanna use advanced options idk'),
   );
 
-const command: Command = {
+const command: SubCommand = {
   command_scope: RegistrationScope.GLOBAL,
   access_control: {
     invoker_requires_permission: [PermissionFlagsBits.ManageThreads],
     channel_option_name: 'parent',
   },
   command_data,
+  parent_command: 'auto',
   run,
 };
 

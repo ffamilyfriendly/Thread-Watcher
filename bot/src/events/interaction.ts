@@ -14,24 +14,21 @@ import {
 import { commands, component_service, config, logger } from 'bot';
 import { Event } from 'interfaces/ClientEvent';
 import { get_audit_send_function, get_embed_function } from 'utilities/embed';
-import { EntitlementsError, GuildChatInteraction, PermissionsError } from 'interfaces/Command';
+import {
+  BaseCommand,
+  Command,
+  EntitlementsError,
+  GuildChatInteraction,
+  PermissionsError,
+} from 'interfaces/Command';
 import { handle_error } from 'utilities/handle_interaction_error';
 import { ResultAsync } from 'neverthrow';
 
-async function handle_command_interaction(interaction: ChatInputCommandInteraction) {
-  const embed_builder = get_embed_function(interaction);
-  const send_audit = get_audit_send_function(interaction);
+function is_standalone_command(command?: BaseCommand): command is Command {
+  return command !== undefined && 'run' in command;
+}
 
-  const command = commands.get(interaction.commandName);
-
-  if (!command) {
-    logger.error(`no such command, ${interaction.commandName}`);
-    return handle_error(
-      interaction,
-      new Error(`no command with name \`${interaction.commandName}\` could be found`),
-    );
-  }
-
+function check_command_gatekeeping(interaction: ChatInputCommandInteraction, command: BaseCommand) {
   if (!interaction.inGuild()) {
     return handle_error(interaction, new Error(`Thread-Watcher only works in guilds`));
   }
@@ -89,6 +86,25 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
     if (!entitlement_active) return handle_error(interaction, new EntitlementsError(SKU_ID));
   }
 
+  return true;
+}
+
+async function handle_command_interaction(interaction: ChatInputCommandInteraction) {
+  const embed_builder = get_embed_function(interaction);
+  const send_audit = get_audit_send_function(interaction);
+
+  let command = commands.get(interaction.commandName);
+
+  if (!command) {
+    logger.error(`no such command, ${interaction.commandName}`);
+    return handle_error(
+      interaction,
+      new Error(`no command with name \`${interaction.commandName}\` could be found`),
+    );
+  }
+
+  if (!check_command_gatekeeping(interaction, command)) return;
+
   const command_context = {
     build_embed: embed_builder,
     send_audit,
@@ -97,8 +113,28 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
 
   const interaction_as_guild_safe = interaction as GuildChatInteraction;
 
-  const result = await command.run(interaction_as_guild_safe, command_context);
+  if (!is_standalone_command(command)) {
+    const sub_command = commands.get(
+      `${interaction.commandName}.${interaction.options.getSubcommand(true)}`,
+    );
 
+    if (!sub_command) {
+      logger.error(`no such command, ${interaction.commandName}`);
+      return handle_error(
+        interaction,
+        new Error(`no command with name \`${interaction.commandName}\` could be found`),
+      );
+    }
+    if (!check_command_gatekeeping(interaction, sub_command)) return;
+
+    command = sub_command;
+  }
+
+  if (!is_standalone_command(command)) {
+    return;
+  }
+
+  const result = await command.run(interaction_as_guild_safe, command_context);
   result.match(
     (post_exec_tasks) => {
       logger.debug(
@@ -120,6 +156,8 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
 
 async function handle_autocomplete_interaction(interaction: AutocompleteInteraction) {
   const command = commands.get(interaction.commandName);
+
+  if (!is_standalone_command(command)) return;
 
   if (!command || !command.autocomplete) {
     logger.error(`no such command, ${interaction.commandName}`);

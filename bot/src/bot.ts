@@ -3,7 +3,7 @@ import { read_config } from './utilities/config';
 import { Logger } from 'tslog';
 import { load_module_as_and } from './utilities/load_files';
 import { Event } from 'interfaces/ClientEvent';
-import { Command } from 'interfaces/Command';
+import { BaseCommand, Command } from 'interfaces/Command';
 import { PrivateEvent } from 'interfaces/PrivateEvents';
 import { BotIpcClient } from 'utilities/PrivateInteraction';
 import get_database_instance from 'database';
@@ -16,7 +16,7 @@ import { BotContextThreadFetcher } from 'fetchers/ThreadFetcher';
 
 const config_result = read_config();
 const logger = new Logger({ name: 'bot' });
-const commands = new Collection<string, Command>();
+const commands = new Collection<string, BaseCommand>();
 
 if (config_result.isErr()) {
   logger.fatal('Error when reading configuration file', config_result.error);
@@ -43,11 +43,15 @@ async function load_events(refresh_events = false) {
 }
 
 async function load_commands(refresh_commands = false) {
-  return load_module_as_and<Command>(
+  return load_module_as_and<BaseCommand>(
     './src/commands',
     (modules) => {
       for (const command of modules) {
-        commands.set(command.command_data.name, command);
+        const command_name =
+          'parent_command' in command
+            ? `${command.parent_command}.${command.command_data.name}`
+            : command.command_data.name;
+        commands.set(command_name, command);
       }
     },
     refresh_commands,

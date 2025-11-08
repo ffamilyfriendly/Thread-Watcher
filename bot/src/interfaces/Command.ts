@@ -8,6 +8,8 @@ import {
   SlashCommandBuilder,
   SlashCommandOptionsOnlyBuilder,
   SlashCommandSubcommandBuilder,
+  SlashCommandSubcommandGroupBuilder,
+  SlashCommandSubcommandsOnlyBuilder,
 } from 'discord.js';
 import { Result } from 'neverthrow';
 import { EmbedBuilderProps } from 'utilities/embed';
@@ -91,11 +93,17 @@ export interface PostExecutionTasks {
   };
 }
 
-export interface Command {
+export interface BaseCommand {
   command_data:
     | Omit<SlashCommandBuilder, 'addSubcommandGroup' | 'addSubcommand'>
-    | SlashCommandSubcommandBuilder
-    | SlashCommandOptionsOnlyBuilder;
+    | SlashCommandSubcommandsOnlyBuilder
+    | SlashCommandOptionsOnlyBuilder
+    | SlashCommandSubcommandBuilder;
+  access_control: AccessControl;
+  command_scope: RegistrationScope;
+}
+
+export interface Command extends BaseCommand {
   run: (
     interaction: GuildChatInteraction,
     ctx: CommandExecutionContext,
@@ -105,4 +113,8 @@ export interface Command {
   ) => Result<void, CommandError> | Promise<Result<void, CommandError>>;
   access_control: AccessControl;
   command_scope: RegistrationScope;
+}
+
+export interface SubCommand extends Command {
+  parent_command: string;
 }
