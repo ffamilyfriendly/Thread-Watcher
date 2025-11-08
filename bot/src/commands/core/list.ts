@@ -1,4 +1,4 @@
-import { client, component_service, config, thread_service } from 'bot';
+import { channel_service, client, component_service, config, thread_service } from 'bot';
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -230,9 +230,7 @@ async function run(
 
   const data_to_display = await (display_type === 'THREADS'
     ? thread_service.get_threads(interaction.guildId)
-    : // CHANNEL WATCHING NOT YET IMPLEMENTED
-      // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
-      (new Promise((resolve) => resolve(ok([]))) as Promise<Result<[], never>>));
+    : channel_service.get_channels(interaction.guildId));
 
   if (data_to_display.isErr()) return err(data_to_display.error);
 

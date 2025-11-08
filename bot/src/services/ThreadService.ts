@@ -1,8 +1,8 @@
-import { PrivateThreadChannel, ThreadChannel } from 'discord.js';
+import { ThreadChannel } from 'discord.js';
 import { ThreadFetcher } from 'fetchers/ThreadFetcher';
-import { Database, ThreadData } from 'interfaces/Database';
+import { Database } from 'interfaces/Database';
 import Redis from 'ioredis';
-import { err, ok, Result, ResultAsync } from 'neverthrow';
+import { err, ok, ResultAsync } from 'neverthrow';
 import { safe_parse } from 'utilities/parsing';
 import { z } from 'zod';
 

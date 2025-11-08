@@ -8,6 +8,7 @@ import { PrivateEvent } from 'interfaces/PrivateEvents';
 import { BotIpcClient } from 'utilities/PrivateInteraction';
 import get_database_instance from 'database';
 import ThreadService from 'services/ThreadService';
+import ChannelService from 'services/ChannelService';
 import Redis from 'ioredis';
 import SettingService from 'services/SettingService';
 import ComponentService from 'services/ComponentService';
@@ -61,6 +62,7 @@ const redis = new Redis();
 const thread_service = new ThreadService(database, redis, new BotContextThreadFetcher(client));
 const setting_service = new SettingService(database, redis);
 const component_service = new ComponentService();
+const channel_service = new ChannelService(database, redis);
 
 async function load_ipc_events() {
   return load_module_as_and<PrivateEvent>('./src/ipcEvents/bot', (modules) => {
@@ -81,6 +83,7 @@ export {
   thread_service,
   setting_service,
   component_service,
+  channel_service,
   redis,
 };
 

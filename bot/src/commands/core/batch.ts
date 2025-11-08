@@ -1,4 +1,4 @@
-import { client, thread_service } from 'bot';
+import { channel_service, client, thread_service } from 'bot';
 import {
   Channel,
   ChannelType,
@@ -130,9 +130,13 @@ async function handle_execution(state: State, interaction: Interaction, context:
     }
   }
 
+  if (context.watch_future) {
+    ResultAsync.fromSafePromise(channel_service.add_channel(state.target_channel, state.filters));
+  }
+
   const result_embed = state._ctx.build_embed({
     title: `${ACTION_AS_TEXT_LOOKUP_TABLE[context.action]} ${threads_actioned} threads`,
-    description: `in ${create_channel_link(state.target_channel as GuildBasedChannel)}`,
+    description: `in ${create_channel_link(state.target_channel as GuildBasedChannel)}${context.watch_future ? '\nFuture Threads will also be watched if they match the filter' : ''}`,
     style: 'success',
   });
 
@@ -146,13 +150,19 @@ async function handle_execution(state: State, interaction: Interaction, context:
 }
 
 function handle_cleanup(state: State, interaction: Interaction) {
+  state.cleaner.clean();
   if ('update' in interaction) {
     interaction.update({ components: [], content: 'cancelled' });
-  } else if (interaction.isRepliable()) {
-    const func = interaction.replied ? interaction.editReply : interaction.reply;
-    func({ components: [], content: 'cancelled' });
+    return;
   }
-  state.cleaner.clean();
+
+  if (interaction.isRepliable()) {
+    if (interaction.replied) {
+      interaction.editReply({ components: [], content: 'Cancelled' });
+    } else {
+      interaction.reply({ components: [], content: 'Cancelled', ephemeral: true });
+    }
+  }
 }
 
 async function run(
@@ -206,7 +216,7 @@ async function run(
   const ms_15_minutes = 1000 * 60 * 15;
   const post_exec_tasks: PostExecutionTasks = {
     cleanup: {
-      func: () => handle_cleanup(state as State<unknown>, interaction),
+      func: (int) => handle_cleanup(state as State<unknown>, int),
       cleanup_timing: ms_15_minutes,
     },
   };

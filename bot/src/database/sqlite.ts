@@ -1,9 +1,26 @@
-import { Database, DatabaseError, ThreadData } from 'interfaces/Database';
+import {
+  ChannelData,
+  ChannelDataWithFilters,
+  Database,
+  DatabaseError,
+  FilterData,
+  ThreadData,
+} from 'interfaces/Database';
 import { err, ok, Result } from 'neverthrow';
 import sql, { Database as SqliteDb, SQLiteError, SQLQueryBindings } from 'bun:sqlite';
 import { ConfigType } from 'utilities/config';
+
+/*
+          channel.id,
+          channel.server,
+          filters && filters.regex ? filters.regex.source : null,
+          filters && filters.role_whitelist ? filters.role_whitelist.join(',') : null,
+          filters && filters.tags ? filters.tags.join(',') : null,
+*/
+
 const TABLE_CREATION_QUERIES = [
   'CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT NOT NULL, parent_channel_id TEXT, due_archive DATE, is_watched INTEGER)',
+  'CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT NOT NULL, regex TEXT, role_whitelist TEXT, tags TEXT)',
   'CREATE TABLE IF NOT EXISTS settings (setting_id TEXT, guild_id TEXT, setting_value BLOB, UNIQUE(setting_id, guild_id) ON CONFLICT REPLACE)',
 ];
 
@@ -160,6 +177,50 @@ export default class Sqlite implements Database {
       this.db
         .prepare('DELETE FROM settings WHERE guild_id = ? AND setting_id = ?')
         .run(guild_id, setting_id);
+      return ok();
+    } catch (err_data) {
+      return handle_error(err_data);
+    }
+  }
+
+  async insert_channel(channel: ChannelData, filters?: FilterData) {
+    try {
+      this.db
+        .prepare('INSERT INTO channels VALUES(?, ?, ?, ?, ?)')
+        .run(
+          channel.id,
+          channel.server,
+          filters && filters.regex ? filters.regex.source : null,
+          filters && filters.role_whitelist ? filters.role_whitelist.join(',') : null,
+          filters && filters.tags ? filters.tags.join(',') : null,
+        );
+      return ok();
+    } catch (err_data) {
+      return handle_error(err_data);
+    }
+  }
+
+  async get_channel(channel_id: string) {
+    try {
+      const val = this.db.prepare('SELECT * FROM channels WHERE id = ?').get(channel_id);
+      return ok(val ? (val as ChannelDataWithFilters) : null);
+    } catch (err_data) {
+      return handle_error(err_data);
+    }
+  }
+
+  async get_channels_in_guild(guild_id: string) {
+    try {
+      const val = this.db.prepare('SELECT * FROM channels WHERE server = ?').all(guild_id);
+      return ok(val as ChannelDataWithFilters[]);
+    } catch (err_data) {
+      return handle_error(err_data);
+    }
+  }
+
+  async delete_channel(channel_id: string) {
+    try {
+      this.db.prepare('DELETE FROM channels WHERE id = ?').run(channel_id);
       return ok();
     } catch (err_data) {
       return handle_error(err_data);

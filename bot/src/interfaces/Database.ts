@@ -14,6 +14,19 @@ interface InsertThreadData extends Omit<ThreadData, 'is_watched' | 'due_archive'
   due_archive: Date;
 }
 
+export interface ChannelData {
+  id: string;
+  server: string;
+}
+
+export interface FilterData {
+  regex?: RegExp;
+  tags?: string[];
+  role_whitelist?: string[];
+}
+
+export type ChannelDataWithFilters = ChannelData & FilterData;
+
 interface Core {
   // Thread related stuff
   insert_thread: (thread: InsertThreadData) => Promise<Result<void, DatabaseError>>;
@@ -33,7 +46,17 @@ interface Core {
   ) => Promise<Result<ThreadData[], DatabaseError>>;
 
   // Channel related stuff
-  //insert_channel: (channel: ChannelData) => Promise<Result<void, DatabaseError>>;
+  insert_channel: (
+    channel: ChannelData,
+    filters?: FilterData,
+  ) => Promise<Result<void, DatabaseError>>;
+  delete_channel: (channel_id: string) => Promise<Result<void, DatabaseError>>;
+  get_channel: (
+    channel_id: string,
+  ) => Promise<Result<ChannelDataWithFilters | null, DatabaseError>>;
+  get_channels_in_guild: (
+    guild_id: string,
+  ) => Promise<Result<ChannelDataWithFilters[], DatabaseError>>;
 }
 
 /**

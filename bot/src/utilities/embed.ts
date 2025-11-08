@@ -1,15 +1,11 @@
 import {
   ActionRowBuilder,
-  BaseInteraction,
   ButtonBuilder,
-  ButtonInteraction,
   ButtonStyle,
   ColorResolvable,
   CommandInteraction,
   EmbedBuilder,
   Interaction,
-  InteractionReplyOptions,
-  InteractionUpdateOptions,
   messageLink,
 } from 'discord.js';
 import { config, setting_service } from 'bot';
@@ -44,6 +40,10 @@ export function get_audit_send_function(interaction: Interaction) {
   ) {
     interaction = overwrite_interaction ?? interaction;
     if (!interaction.guildId) return;
+    if (!interaction) {
+      console.log('INTERACTION IS NULL');
+      return;
+    }
 
     const LOGGING_CHANNEL = await setting_service.get_setting_with_default<string | null>(
       interaction.guildId,
@@ -91,8 +91,11 @@ export function get_audit_send_function(interaction: Interaction) {
       });
     } else {
       if (interaction.isCommand()) {
-        const reply_func = interaction.replied ? interaction.editReply : interaction.reply;
-        reply_func({ embeds });
+        if (interaction.replied || interaction.deferred) {
+          interaction.editReply({ embeds });
+        } else {
+          interaction.reply({ embeds });
+        }
       } else if (interaction.isButton())
         interaction.update({
           embeds,
