@@ -4,7 +4,6 @@ import {
   GuildBasedChannel,
   Interaction,
   PermissionFlagsBits,
-  SlashCommandBuilder,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 
@@ -29,10 +28,7 @@ async function handle_execution(state: State, interaction: Interaction, context:
     style: 'success',
   });
 
-  const did_work = await ResultAsync.fromSafePromise(
-    channel_service.add_channel(state.target_channel, state.filters),
-  );
-
+  const did_work = await channel_service.add_channel(state.target_channel, state.filters);
   if (did_work.isErr()) {
     result_embed = state._ctx.build_embed({
       title: `could not monitor for new Threads`,
@@ -79,9 +75,19 @@ async function run(
 
   await interaction.deferReply();
 
+  const existing_monitor = await channel_service.get_channel(parent.id);
+  if (existing_monitor.isErr()) {
+    return err(existing_monitor.error);
+  }
+
   const state: State<null> = {
     components: [],
-    filters: {},
+    filters: {
+      regex: existing_monitor.value?.regex,
+      tags: existing_monitor.value?.tags,
+      role_whitelist: existing_monitor.value?.role_whitelist,
+    },
+    edit_mode: existing_monitor.value != null,
     threads: [],
     cleaner: new Vacuum(),
     target_channel: parent,

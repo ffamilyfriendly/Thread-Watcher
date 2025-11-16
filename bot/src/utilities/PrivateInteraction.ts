@@ -3,7 +3,6 @@ import { BaseEvent, Callback, ReponseEvent } from 'interfaces/PrivateEvents';
 import { randomBytes } from 'crypto';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import Redis from 'ioredis';
-import { number } from 'zod';
 
 function generate_request_id() {
   return randomBytes(16).toString('hex');

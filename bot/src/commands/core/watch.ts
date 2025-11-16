@@ -32,7 +32,10 @@ async function run(
     return err(result.error);
   } else {
     const embed = get_tagged_embed(interaction);
-    embed.setTitle(`Thread <#${thread.id}> ${result.value ? 'watched' : 'unwatched'}`);
+    const thread_action = result.value ? 'watch' : 'unwatch';
+    const thread_text = ctx.t('watch.thread', {});
+    const thread_action_text = ctx.t(`watch.${thread_action}`, {});
+    embed.setTitle(`${thread_text} <#${thread.id}> ${thread_action_text}`);
 
     ctx.send_audit(embed);
   }
@@ -58,6 +61,7 @@ const command: Command = {
   command_scope: RegistrationScope.GLOBAL,
   access_control: {
     invoker_requires_permission: [PermissionFlagsBits.ManageThreads],
+    bot_requires_permission: [PermissionFlagsBits.ManageThreads],
     channel_option_name: 'thread',
   },
   command_data,

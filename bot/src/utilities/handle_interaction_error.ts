@@ -68,7 +68,7 @@ export function handle_error(
     button_row.addComponents(documentation_link);
   }
 
-  if (interaction.replied) {
+  if (interaction.replied || interaction.deferred) {
     interaction.editReply({ embeds: [embed], components: [button_row] });
   } else {
     interaction.reply({ embeds: [embed], flags: ['Ephemeral'], components: [button_row] });

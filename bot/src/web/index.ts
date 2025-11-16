@@ -1,6 +1,6 @@
 import { config } from 'index';
 import express, { Router } from 'express';
-import { logger } from 'bot';
+import { logger } from 'index';
 import { load_module_as_and } from 'utilities/load_files';
 import { RouteFile } from 'interfaces/Web';
 

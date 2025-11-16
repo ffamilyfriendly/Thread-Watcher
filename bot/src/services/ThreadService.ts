@@ -1,10 +1,11 @@
-import { ThreadChannel } from 'discord.js';
+import { Client, ThreadChannel } from 'discord.js';
 import { ThreadFetcher } from 'fetchers/ThreadFetcher';
 import { Database } from 'interfaces/Database';
 import Redis from 'ioredis';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { safe_parse } from 'utilities/parsing';
 import { z } from 'zod';
+import { AdvancedFilterOptions } from './ChannelService';
 
 export type GenericThread = ThreadChannel;
 
@@ -222,5 +223,34 @@ export default class ThreadService {
   async delete_thread(thread_id: string) {
     this.redis.del(`thread:${thread_id}`);
     return this.db.delete_thread(thread_id);
+  }
+
+  static async should_be_watched(
+    client: Client,
+    thread: ThreadChannel,
+    filters: AdvancedFilterOptions,
+  ) {
+    console.log('FILTERS', filters);
+    const name_matches_regex = filters.regex?.test(thread.name) ?? true;
+
+    const thread_guild = await ResultAsync.fromSafePromise(client.guilds.fetch(thread.guildId));
+    if (thread_guild.isErr()) return err(thread_guild.error);
+
+    const thread_owner = await ResultAsync.fromSafePromise(
+      thread_guild.value.members.fetch(thread.ownerId),
+    );
+    if (thread_owner.isErr()) return err(thread_owner.error);
+
+    const author_has_role = !!thread_owner.value.roles.cache.find((r) =>
+      filters.role_whitelist?.includes(r.id),
+    );
+
+    const tag_list_as_ids = thread.appliedTags?.map((r) => r);
+    const thread_has_tag = !!tag_list_as_ids.find((t) => filters.tags?.includes(t));
+
+    const role_thing = filters.role_whitelist ? author_has_role : true;
+    const tag_thing = filters.tags ? thread_has_tag : true;
+
+    return ok(name_matches_regex && role_thing && tag_thing);
   }
 }

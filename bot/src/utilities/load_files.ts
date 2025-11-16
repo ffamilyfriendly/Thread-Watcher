@@ -1,6 +1,6 @@
 import { readdirSync, statSync } from 'fs';
 import { join as join_path, extname, isAbsolute } from 'path';
-import { Err, Result, ResultAsync, err, ok } from 'neverthrow';
+import { Result, ResultAsync, err, ok } from 'neverthrow';
 
 interface FileOptions {
   file_extention: string | string[];

@@ -23,6 +23,7 @@ import {
 } from 'interfaces/Command';
 import { handle_error } from 'utilities/handle_interaction_error';
 import { ResultAsync } from 'neverthrow';
+import i18next from 'i18next';
 
 function is_standalone_command(command?: BaseCommand): command is Command {
   return command !== undefined && 'run' in command;
@@ -105,9 +106,13 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
 
   if (!check_command_gatekeeping(interaction, command)) return;
 
+  const t = (key: string, options: { [key: string]: unknown }) =>
+    i18next.t(key, { lng: interaction.locale, ...options });
+
   const command_context = {
     build_embed: embed_builder,
     send_audit,
+    t,
     logger: logger.getSubLogger({ name: interaction.command?.name }),
   };
 

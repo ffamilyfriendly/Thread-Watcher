@@ -1,0 +1,7 @@
+{
+  "watch": {
+    "thread": "thread",
+    "watch": "watched",
+    "unwatch": "unwatched"
+  }
+}

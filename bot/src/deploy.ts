@@ -1,5 +1,5 @@
 import { REST, Routes } from 'discord.js';
-import { Command, RegistrationScope } from 'interfaces/Command';
+import { BaseCommand, Command, RegistrationScope, SubCommand } from 'interfaces/Command';
 import { ResultAsync } from 'neverthrow';
 import { Logger } from 'tslog';
 import { read_config } from 'utilities/config';
@@ -20,9 +20,13 @@ const rest = new REST().setToken(config.tokens.discord);
 
 logger.info('registering commands!');
 
+function is_subcommand(cmd: BaseCommand): cmd is SubCommand {
+  return 'parent_command' in cmd;
+}
+
 async function reg_commands(commands: Command[], route: `/${string}`) {
   const reg_cmds_promise = rest.put(route, {
-    body: commands.map((cmd) => cmd.command_data.toJSON()),
+    body: commands.filter((cmd) => !is_subcommand(cmd)).map((cmd) => cmd.command_data.toJSON()),
   });
 
   return ResultAsync.fromPromise(reg_cmds_promise, (err) => err);

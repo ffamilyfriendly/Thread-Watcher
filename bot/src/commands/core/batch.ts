@@ -19,12 +19,9 @@ import {
 } from 'interfaces/Command';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
-import {
-  AdvancedFilterOptions,
-  make_advanced_embed,
-  State,
-} from 'utilities/commands/advanced_view';
+import { make_advanced_embed, State } from 'utilities/commands/advanced_view';
 import { create_channel_link } from './list';
+import ThreadService from 'services/ThreadService';
 
 async function fetch_all_threads_from_parent(channel: Channel) {
   let thread_list: ThreadChannel[] = [];
@@ -73,31 +70,6 @@ const ALLOWED_CHANNEL_TYPES = [
   ChannelType.GuildAnnouncement,
 ];
 
-async function should_be_watched(thread: ThreadChannel, filters: AdvancedFilterOptions) {
-  const name_matches_regex = filters.regex?.test(thread.name) ?? true;
-
-  const thread_guild = await ResultAsync.fromSafePromise(client.guilds.fetch(thread.guildId));
-  if (thread_guild.isErr()) return err(thread_guild.error);
-
-  const thread_owner = await ResultAsync.fromSafePromise(
-    thread_guild.value.members.fetch(thread.ownerId),
-  );
-  if (thread_owner.isErr()) return err(thread_owner.error);
-
-  const role_list_as_ids = filters.role_whitelist?.map((r) => r.id);
-  const author_has_role = !!thread_owner.value.roles.cache.find((r) =>
-    role_list_as_ids?.includes(r.id),
-  );
-
-  const tag_list_as_ids = thread.appliedTags?.map((r) => r);
-  const thread_has_tag = !!tag_list_as_ids.find((t) => filters.tags?.includes(t));
-
-  const role_thing = filters.role_whitelist ? author_has_role : true;
-  const tag_thing = filters.tags ? thread_has_tag : true;
-
-  return name_matches_regex && role_thing && tag_thing;
-}
-
 interface ExecutionContext {
   action: BATCH_OPTIONS;
   watch_future: boolean;
@@ -112,7 +84,7 @@ const ACTION_AS_TEXT_LOOKUP_TABLE = {
 async function handle_execution(state: State, interaction: Interaction, context: ExecutionContext) {
   let threads_actioned = 0;
   for (const thread of state.threads) {
-    const should_be_actioned = await should_be_watched(thread, state.filters);
+    const should_be_actioned = await ThreadService.should_be_watched(client, thread, state.filters);
     if (!should_be_actioned) continue;
     threads_actioned++;
 
@@ -193,6 +165,7 @@ async function run(
   const state: State<ExecutionContext> = {
     components: [],
     filters: {},
+    edit_mode: false,
     threads: [],
     cleaner: new Vacuum(),
     target_channel: parent,
@@ -269,6 +242,7 @@ const command: Command = {
   command_scope: RegistrationScope.GLOBAL,
   access_control: {
     invoker_requires_permission: [PermissionFlagsBits.ManageThreads],
+    bot_requires_permission: [PermissionFlagsBits.ManageThreads],
     channel_option_name: 'parent',
   },
   command_data,

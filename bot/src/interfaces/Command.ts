@@ -75,6 +75,13 @@ export interface CommandExecutionContext {
     embed_param: EmbedBuilder | EmbedBuilder[],
     overwrite_interaction?: Interaction,
   ) => void;
+  // i18n
+  t: (
+    key: string,
+    options: {
+      [key: string]: unknown;
+    },
+  ) => string;
   logger: Logger<unknown>;
 }
 

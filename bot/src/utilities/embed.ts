@@ -71,7 +71,7 @@ export function get_audit_send_function(interaction: Interaction) {
         button_row.addComponents(log_message_button);
 
         if (interaction.isCommand()) {
-          if (interaction.replied) {
+          if (interaction.replied || interaction.deferred) {
             interaction.editReply({
               embeds,
               components: [button_row],

@@ -3,7 +3,7 @@ import { read_config } from './utilities/config';
 import { Logger } from 'tslog';
 import { load_module_as_and } from './utilities/load_files';
 import { Event } from 'interfaces/ClientEvent';
-import { BaseCommand, Command } from 'interfaces/Command';
+import { BaseCommand } from 'interfaces/Command';
 import { PrivateEvent } from 'interfaces/PrivateEvents';
 import { BotIpcClient } from 'utilities/PrivateInteraction';
 import get_database_instance from 'database';
@@ -13,6 +13,8 @@ import Redis from 'ioredis';
 import SettingService from 'services/SettingService';
 import ComponentService from 'services/ComponentService';
 import { BotContextThreadFetcher } from 'fetchers/ThreadFetcher';
+import i18next from 'i18next';
+import { readFileSync } from 'fs';
 
 const config_result = read_config();
 const logger = new Logger({ name: 'bot' });
@@ -76,6 +78,21 @@ async function load_ipc_events() {
   });
 }
 
+const resources = {
+  'en-GB': { translation: JSON.parse(readFileSync('./locales/en/common.json', 'utf-8')) },
+  'sv-SE': { translation: JSON.parse(readFileSync('./locales/sv/common.json', 'utf-8')) },
+};
+
+i18next.init({
+  resources,
+  fallbackLng: 'en-GB',
+  interpolation: { escapeValue: false },
+});
+
+i18next.on('missingKey', (lng, ns, key) => {
+  logger.warn(`Missing translation for ${key} (${ns}) in ${lng}`);
+});
+
 export {
   logger,
   commands,
@@ -103,4 +120,6 @@ if (client.shard) {
     '"client.shard" not set. Will not attempt to login\n',
     'if you see this while running the deploy command everything is in order and you can disregard',
   );
+  console.trace();
+  process.exit(1);
 }

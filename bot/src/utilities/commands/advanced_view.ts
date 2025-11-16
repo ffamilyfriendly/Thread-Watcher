@@ -1,7 +1,6 @@
 import { component_service } from 'bot';
 import {
   ActionRowBuilder,
-  APIRole,
   ButtonBuilder,
   ButtonInteraction,
   ButtonStyle,
@@ -10,7 +9,6 @@ import {
   GuildForumTagEmoji,
   Interaction,
   ModalBuilder,
-  Role,
   RoleSelectMenuBuilder,
   RoleSelectMenuInteraction,
   StringSelectMenuBuilder,
@@ -23,16 +21,12 @@ import { CommandExecutionContext, GenericCommandError } from 'interfaces/Command
 import { handle_error_generic } from 'utilities/handle_interaction_error';
 import regex_is_safe from 'safe-regex';
 import { Vacuum } from 'services/ComponentService';
-
-export interface AdvancedFilterOptions {
-  regex?: RegExp;
-  tags?: string[];
-  role_whitelist?: (Role | APIRole)[];
-}
+import { AdvancedFilterOptions } from 'services/ChannelService';
 
 export interface State<TContext = unknown> {
   components: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder | RoleSelectMenuBuilder>[];
   filters: AdvancedFilterOptions;
+  edit_mode: boolean;
   cleaner: Vacuum;
   threads: ThreadChannel[];
   target_channel: Channel;
@@ -194,7 +188,10 @@ function create_advanced_buttons(state: State, user_id: string) {
 }
 
 function handle_role_select(state: State, interaction: RoleSelectMenuInteraction) {
-  state.filters.role_whitelist = interaction.roles.values().toArray();
+  state.filters.role_whitelist = interaction.roles
+    .values()
+    .map((r) => r.id)
+    .toArray();
   update_displayed_state(interaction, state);
 }
 
@@ -203,8 +200,7 @@ function create_role_select(state: State, user_id: string) {
   role_select.setPlaceholder('Required Role(s)');
   role_select.setMaxValues(25);
 
-  if (state.filters.role_whitelist)
-    role_select.addDefaultRoles(state.filters.role_whitelist.map((role) => role.id));
+  if (state.filters.role_whitelist) role_select.addDefaultRoles(state.filters.role_whitelist);
 
   state.cleaner.add(
     component_service.wait_for_interaction_callback(
@@ -283,7 +279,7 @@ function create_embed(state: State) {
     {
       name: 'Roles',
       value:
-        state.filters?.role_whitelist?.map((role) => `<@&${role.id}>`).join(', ') ?? NO_VALUE_TEXT,
+        state.filters?.role_whitelist?.map((role) => `<@&${role}>`).join(', ') ?? NO_VALUE_TEXT,
       inline: true,
     },
     {
@@ -293,6 +289,7 @@ function create_embed(state: State) {
     },
   ]);
   embed.setTitle('advanced test');
+  if (state.edit_mode) embed.setFooter({ text: 'Edit Mode: monitor already exists' });
   return embed;
 }
 

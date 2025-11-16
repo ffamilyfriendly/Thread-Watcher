@@ -1,8 +1,48 @@
 import { Channel } from 'discord.js';
-import { Database } from 'interfaces/Database';
+import { ChannelDataWithFilters, Database } from 'interfaces/Database';
 import Redis from 'ioredis';
-import { err, ok } from 'neverthrow';
-import { AdvancedFilterOptions } from 'utilities/commands/advanced_view';
+import { err, ok, Result } from 'neverthrow';
+import { safe_parse } from 'utilities/parsing';
+import z from 'zod';
+
+export const FormattedMonitoredChannel = z.object({
+  id: z.string(),
+  server: z.string(),
+
+  tags: z
+    .union([z.string(), z.array(z.string()), z.null()])
+    .default(null)
+    .transform<string[] | undefined>((val) => {
+      if (!val) return undefined;
+      if (val instanceof Array) return val;
+      return val.split(',').map((t) => t.trim());
+    }),
+
+  role_whitelist: z
+    .union([z.string(), z.array(z.string()), z.null()])
+    .default(null)
+    .transform<string[] | undefined>((val) => {
+      if (!val) return undefined;
+      if (val instanceof Array) return val;
+      return val.split(',').map((t) => t.trim());
+    }),
+
+  regex: z
+    .union([z.string(), z.null()])
+    .default(null)
+    .transform<RegExp | undefined>((val) => {
+      if (!val) return undefined;
+      return new RegExp(val.trim());
+    }),
+});
+
+export type FormattedChannel = z.infer<typeof FormattedMonitoredChannel>;
+
+export interface AdvancedFilterOptions {
+  regex?: RegExp;
+  tags?: string[];
+  role_whitelist?: string[];
+}
 
 export default class ChannelService {
   static readonly CACHE_TTL_SECONDS = 900;
@@ -15,7 +55,7 @@ export default class ChannelService {
   async get_channel(channel_id: string) {
     const cached = await this.redis.get(`channel:${channel_id}`);
     if (cached) {
-      const parsed = JSON.parse(cached);
+      const parsed = safe_parse(FormattedMonitoredChannel, JSON.parse(cached));
       if (parsed.isErr()) return err(parsed.error);
       else return ok(parsed.value);
     }
@@ -24,7 +64,7 @@ export default class ChannelService {
     if (data.isErr()) return err(data.error);
 
     const channel = data.value;
-    if (!channel) return null;
+    if (!channel) return ok(null);
 
     this.redis.set(
       `channel:${channel.id}`,
@@ -32,6 +72,10 @@ export default class ChannelService {
       'EX',
       ChannelService.CACHE_TTL_SECONDS,
     );
+
+    const parsed = safe_parse(FormattedMonitoredChannel, channel);
+    if (parsed.isErr()) return err(parsed.error);
+    else return ok(parsed.value);
   }
 
   async get_channels(guild_id: string) {
@@ -52,8 +96,8 @@ export default class ChannelService {
 
     const filter_data = {
       tags: filters?.tags,
-      role_whitelist: filters?.role_whitelist?.map((role) => role.id),
-      regex: filters?.regex,
+      role_whitelist: filters?.role_whitelist,
+      regex: filters?.regex?.source,
     };
 
     const res = await this.db.insert_channel(channel_data, filter_data);
@@ -70,5 +114,10 @@ export default class ChannelService {
     }
 
     return res;
+  }
+
+  async remove_channel(channel_id: string) {
+    await this.redis.del(`channel:${channel_id}`);
+    return await this.db.delete_channel(channel_id);
   }
 }

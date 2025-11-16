@@ -21,7 +21,12 @@ if (config_result.isErr()) {
 const config = config_result.value;
 
 const database = get_database_instance(config);
-database.create_tables();
+database.create_tables().then((res) => {
+  if (res.isErr()) {
+    logger.error('Could not create tables!', res.error);
+    process.exit(1);
+  }
+});
 
 const args = process.argv.slice(2);
 
@@ -49,7 +54,7 @@ async function load_events() {
 
 load_events();
 
-export { sharding_manager, ipc_client, config };
+export { sharding_manager, ipc_client, config, logger };
 
 sharding_manager.on('shardCreate', (shard) => {
   const shard_logger = logger.getSubLogger({ name: `Shard ${shard.id}` });
@@ -70,3 +75,6 @@ if (config.web.enabled) {
 }
 
 sharding_manager.spawn();
+function readFileSync(arg0: string, arg1: string): string {
+  throw new Error('Function not implemented.');
+}

@@ -186,11 +186,11 @@ export default class Sqlite implements Database {
   async insert_channel(channel: ChannelData, filters?: FilterData) {
     try {
       this.db
-        .prepare('INSERT INTO channels VALUES(?, ?, ?, ?, ?)')
+        .prepare('INSERT OR REPLACE INTO channels VALUES(?, ?, ?, ?, ?)')
         .run(
           channel.id,
           channel.server,
-          filters && filters.regex ? filters.regex.source : null,
+          filters && filters.regex ? filters.regex : null,
           filters && filters.role_whitelist ? filters.role_whitelist.join(',') : null,
           filters && filters.tags ? filters.tags.join(',') : null,
         );

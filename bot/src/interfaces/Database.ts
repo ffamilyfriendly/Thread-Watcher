@@ -20,7 +20,7 @@ export interface ChannelData {
 }
 
 export interface FilterData {
-  regex?: RegExp;
+  regex?: string;
   tags?: string[];
   role_whitelist?: string[];
 }
