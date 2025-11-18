@@ -78,7 +78,7 @@ export interface CommandExecutionContext {
   // i18n
   t: (
     key: string,
-    options: {
+    options?: {
       [key: string]: unknown;
     },
   ) => string;

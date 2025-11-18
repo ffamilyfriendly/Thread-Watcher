@@ -1,7 +1,35 @@
 {
-  "watch": {
-    "thread": "thread",
-    "watch": "watched",
-    "unwatch": "unwatched"
+  "commands": {
+    "watch": {
+      "thread": "thread",
+      "watch": "watched",
+      "unwatch": "unwatched"
+    },
+    "batch": {
+      "fetching_title": "🔍 Fetching Threads...",
+      "fetching_body": "Hang tight! I'm gathering all threads in **{{channel_link}}** (including archived ones)\n*This may take a moment if there's many threads...*",
+      "cancelled": "cancelled",
+      "result_title": "{{action}} {{action_amount}} threads",
+      "will_watch_future": "Future Threads will also be watched if they match the filter",
+      "in_channel": "in {{channel_link}}"
+    }
+  },
+  "advanced": {
+    "embed_title": "Advanced",
+    "regex_modal_title": "Advanced",
+    "no_value": "`no value`",
+    "edit_mode": "Edit Mode: current monitor will be overwritten",
+    "regex_helper": "**Regex (Regular Expression) Tips**\nRegex lets you match thread names using patterns. Here are some simple examples to get started:\n\n> **Match threads containing a word:**\n> \\`._bug._\\` → Matches threads with \"bug\" anywhere in the name (e.g., \"report-bug\", \"bug fix\").\n> \\`^help\\` → Matches threads **starting with** \"help\" (e.g., \"help-me\", \"help-desired\").\n\n> **Match exact phrases:** > \\`^bug report$\\` → Matches _only_ threads named exactly \"bug report\".\n\n> **Exclude threads:**\n> Add \\`!\\` at the start to invert the match (e.g., \\`!._wip._\\` ignores threads with \"wip\").\n\n📖 **[Full Regex Guide](https://docs.threadwatcher.xyz/usage/advanced-filtering#regex)**\n✨ **[AI Regex Generator](https://rgx.tools/)** (External)\n🔗 **[Regex Cheat Sheet](https://www.rexegg.com/regex-quickstart.html)** (External)\n💡 _Need help? Try your pattern with the **Test Regex** button!_",
+    "required_roles": "Required Role(s)",
+    "required_tags": "Required Tag(s)",
+    "roles": "Roles",
+    "tags": "Tags",
+    "button": {
+      "proceed": "Proceed",
+      "cancel": "Cancel",
+      "set_regex": "Set Regex",
+      "clear_regex": "Clear Regex",
+      "test_regex": "Test Regex"
+    }
   }
 }

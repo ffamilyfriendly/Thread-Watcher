@@ -11,4 +11,5 @@ WOOOOOOOOO WELCOME TO THE REWRITE!!! :D :D
 - `cd bot`
 - edit `_config.json5` so that it is correct (you've got this! :D) and rename it to `config.json5`
 - `npm run deploy:dev` (to deploy commands to ur dev server) or `npm run deploy:prod` (to deploy commands to everywhere)
+- `npm run gen_docs` to inject all markdown translations into main i18n files
 - `npm run start` to start the bot and yeahhhh thats it for now :D

@@ -27,6 +27,7 @@
   "scripts": {
     "build": "npx tsc",
     "start": "bun ./src/index.ts",
+    "gen_docs": "bun ./src/gen_docs.ts",
     "deploy:dev": "bun ./src/deploy.ts -local",
     "deploy:prod": "bun ./src/deploy.ts",
     "lint": "eslint . --ext .ts",

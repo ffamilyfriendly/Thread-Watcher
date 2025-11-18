@@ -106,9 +106,15 @@ async function handle_execution(state: State, interaction: Interaction, context:
     ResultAsync.fromSafePromise(channel_service.add_channel(state.target_channel, state.filters));
   }
 
+  const t = state._ctx.t;
+  const result_title = t('commands.batch.result_title', {
+    action: ACTION_AS_TEXT_LOOKUP_TABLE[context.action],
+    action_amount: threads_actioned,
+  });
+  const channel_link = create_channel_link(state.target_channel as GuildBasedChannel);
   const result_embed = state._ctx.build_embed({
-    title: `${ACTION_AS_TEXT_LOOKUP_TABLE[context.action]} ${threads_actioned} threads`,
-    description: `in ${create_channel_link(state.target_channel as GuildBasedChannel)}${context.watch_future ? '\nFuture Threads will also be watched if they match the filter' : ''}`,
+    title: result_title,
+    description: `${t('in_channel', { channel_link })}${context.watch_future ? `\n${t('will_watch_future', {})}` : ''}`,
     style: 'success',
   });
 
@@ -123,16 +129,17 @@ async function handle_execution(state: State, interaction: Interaction, context:
 
 function handle_cleanup(state: State, interaction: Interaction) {
   state.cleaner.clean();
+  const cancelled_str = state._ctx.t('commands.batch.cancelled', {});
   if ('update' in interaction) {
-    interaction.update({ components: [], content: 'cancelled' });
+    interaction.update({ components: [], content: cancelled_str });
     return;
   }
 
   if (interaction.isRepliable()) {
     if (interaction.replied) {
-      interaction.editReply({ components: [], content: 'Cancelled' });
+      interaction.editReply({ components: [], content: cancelled_str });
     } else {
-      interaction.reply({ components: [], content: 'Cancelled', ephemeral: true });
+      interaction.reply({ components: [], content: cancelled_str, ephemeral: true });
     }
   }
 }
@@ -154,11 +161,10 @@ async function run(
   }
 
   const waiting_embed = ctx.build_embed({
-    title: '🔍 Fetching Threads...',
-    description: `
-    Hang tight! I'm gathering all threads in **${create_channel_link(parent)}** (including archived ones)
-    *This may take a moment if there's many threads...*
-    `,
+    title: ctx.t('commands.batch.fetching_title', {}),
+    description: ctx.t('commands.batch.fetching_body', {
+      channel_link: create_channel_link(parent),
+    }),
     style: 'info',
   });
 

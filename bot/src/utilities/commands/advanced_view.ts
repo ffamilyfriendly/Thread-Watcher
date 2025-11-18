@@ -43,25 +43,6 @@ function update_displayed_state(interaction: Interaction, state: State) {
   }
 }
 
-const REGEX_HELPER = `**Regex (Regular Expression) Tips**
-Regex lets you match thread names using patterns. Here are some simple examples to get started:
-
-> **Match threads containing a word:**
-> \`.*bug.*\` → Matches threads with "bug" anywhere in the name (e.g., "report-bug", "bug fix").
-> \`^help\` → Matches threads **starting with** "help" (e.g., "help-me", "help-desired").
-
-> **Match exact phrases:**
-> \`^bug report$\` → Matches *only* threads named exactly "bug report".
-
-> **Exclude threads:**
-> Add \`!\` at the start to invert the match (e.g., \`!.*wip.*\` ignores threads with "wip").
-
-📖 **[Full Regex Guide](https://docs.threadwatcher.xyz/usage/advanced-filtering#regex)**
-✨ **[AI Regex Generator](https://rgx.tools/)** (External)
-🔗 **[Regex Cheat Sheet](https://www.rexegg.com/regex-quickstart.html)** (External)
-💡 *Need help? Try your pattern with the **Test Regex** button!*
-`;
-
 function create_regex_modal(state: State) {
   const modal = new ModalBuilder();
   const text_input = new TextInputBuilder();
@@ -70,9 +51,12 @@ function create_regex_modal(state: State) {
   text_input.setStyle(TextInputStyle.Short);
   text_input.setRequired(true);
 
+  const regex_helper_text = state._ctx.t('advanced.regex_helper', {});
+  const regex_modal_title_text = state._ctx.t('advanced.regex_modal_title', {});
+
   modal.addLabelComponents((c) => c.setLabel('Regex').setTextInputComponent(text_input));
-  modal.addTextDisplayComponents((t) => t.setContent(REGEX_HELPER));
-  modal.setTitle('Advanced');
+  modal.addTextDisplayComponents((t) => t.setContent(regex_helper_text));
+  modal.setTitle(regex_modal_title_text);
 
   return modal;
 }
@@ -154,11 +138,13 @@ function create_button(label: string, style: ButtonStyle) {
 function create_advanced_buttons(state: State, user_id: string) {
   const buttons: ButtonBuilder[] = [];
 
-  const save_button = create_button('Proceed', ButtonStyle.Success);
-  const cancel_button = create_button('Cancel', ButtonStyle.Secondary);
-  const set_regex = create_button('Set Regex', ButtonStyle.Success);
-  const clear_regex = create_button('Clear Regex', ButtonStyle.Danger);
-  const test_regex = create_button('Test Regex', ButtonStyle.Secondary);
+  const t = state._ctx.t;
+
+  const save_button = create_button(t('advanced.button.proceed'), ButtonStyle.Success);
+  const cancel_button = create_button(t('advanced.button.cancel'), ButtonStyle.Secondary);
+  const set_regex = create_button(t('advanced.button.set_regex'), ButtonStyle.Success);
+  const clear_regex = create_button(t('advanced.button.clear_regex'), ButtonStyle.Danger);
+  const test_regex = create_button(t('advanced.button.test_regex'), ButtonStyle.Secondary);
 
   const filter = (int: ButtonInteraction) => int.user.id === user_id;
 
@@ -197,7 +183,7 @@ function handle_role_select(state: State, interaction: RoleSelectMenuInteraction
 
 function create_role_select(state: State, user_id: string) {
   const role_select = new RoleSelectMenuBuilder();
-  role_select.setPlaceholder('Required Role(s)');
+  role_select.setPlaceholder(state._ctx.t('advanced.required_roles'));
   role_select.setMaxValues(25);
 
   if (state.filters.role_whitelist) role_select.addDefaultRoles(state.filters.role_whitelist);
@@ -223,7 +209,7 @@ function handle_tags_select(state: State, interaction: StringSelectMenuInteracti
 
 function create_tags_select(state: State, user_id: string) {
   const tag_select = new StringSelectMenuBuilder();
-  tag_select.setPlaceholder('Required Tag(s)');
+  tag_select.setPlaceholder(state._ctx.t('advanced.required_tags'));
 
   if ('availableTags' in state.target_channel) {
     tag_select.setMaxValues(Math.min(25, state.target_channel.availableTags.length));
@@ -270,26 +256,27 @@ function resolve_tags(state: State) {
 
 function create_embed(state: State) {
   const embed = new EmbedBuilder();
-  const NO_VALUE_TEXT = '`Not Set`';
+  const t = state._ctx.t;
+  const NO_VALUE_TEXT = t('advanced.no_value');
 
   const regex_text = state.filters.regex ? `\`${state.filters.regex.source}\`` : NO_VALUE_TEXT;
 
   embed.addFields([
     { name: 'Regex', value: regex_text, inline: true },
     {
-      name: 'Roles',
+      name: t('advanced.roles'),
       value:
         state.filters?.role_whitelist?.map((role) => `<@&${role}>`).join(', ') ?? NO_VALUE_TEXT,
       inline: true,
     },
     {
-      name: 'Tags',
+      name: t('advanced.tags'),
       value: resolve_tags(state)?.join(',') ?? NO_VALUE_TEXT,
       inline: true,
     },
   ]);
-  embed.setTitle('advanced test');
-  if (state.edit_mode) embed.setFooter({ text: 'Edit Mode: monitor already exists' });
+  embed.setTitle(t('advanced.embed_title'));
+  if (state.edit_mode) embed.setFooter({ text: t('advanced.edit_mode') });
   return embed;
 }
 

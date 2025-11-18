@@ -106,7 +106,7 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
 
   if (!check_command_gatekeeping(interaction, command)) return;
 
-  const t = (key: string, options: { [key: string]: unknown }) =>
+  const t = (key: string, options?: { [key: string]: unknown }) =>
     i18next.t(key, { lng: interaction.locale, ...options });
 
   const command_context = {
