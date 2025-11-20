@@ -19,7 +19,7 @@ import { ConfigType } from 'utilities/config';
 */
 
 const TABLE_CREATION_QUERIES = [
-  'CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT NOT NULL, parent_channel_id TEXT, due_archive DATE, is_watched INTEGER)',
+  'CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT NOT NULL, parent_channel_id TEXT, due_archive DATE, is_watched INTEGER, is_managed TEXT)',
   'CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT NOT NULL, regex TEXT, role_whitelist TEXT, tags TEXT)',
   'CREATE TABLE IF NOT EXISTS settings (setting_id TEXT, guild_id TEXT, setting_value BLOB, UNIQUE(setting_id, guild_id) ON CONFLICT REPLACE)',
 ];
@@ -67,15 +67,17 @@ export default class Sqlite implements Database {
     server: string;
     parent_channel_id?: string | null;
     due_archive: Date;
+    is_managed: boolean;
   }) {
     try {
       this.db
-        .prepare('INSERT INTO threads VALUES (?, ?, ?, ? ,1)')
+        .prepare('INSERT INTO threads VALUES (?, ?, ?, ? ,1, ?)')
         .run(
           thread.id,
           thread.server,
           thread.parent_channel_id ?? null,
           thread.due_archive.getTime(),
+          thread.is_managed,
         );
       return ok();
     } catch (err_data) {
@@ -96,7 +98,7 @@ export default class Sqlite implements Database {
     try {
       this.db
         .prepare('UPDATE threads SET due_archive = ? WHERE id = ?')
-        .run(auto_archive_duration.toDateString(), thread_id);
+        .run(auto_archive_duration.getTime(), thread_id);
       return ok();
     } catch (err_data) {
       return handle_error(err_data);
@@ -128,6 +130,23 @@ export default class Sqlite implements Database {
         this.db
           .prepare('SELECT * FROM threads WHERE server = ? AND is_watched = ?')
           .all(guild_id, watched) as ThreadData[],
+      );
+    } catch (err_data) {
+      return handle_error(err_data);
+    }
+  }
+
+  static STALE_BUFFER_MINUTES = 5;
+  static STALE_BUFFER_MS = this.STALE_BUFFER_MINUTES * 60 * 1000;
+  async get_stale_threads(buffer_in_ms = Sqlite.STALE_BUFFER_MS) {
+    const now = Date.now();
+    const stale_thresh = now + buffer_in_ms;
+
+    try {
+      return ok(
+        this.db
+          .prepare('SELECT * FROM threads WHERE due_archive <= ? AND is_watched = 1')
+          .all(stale_thresh) as ThreadData[],
       );
     } catch (err_data) {
       return handle_error(err_data);

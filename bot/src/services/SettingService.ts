@@ -74,4 +74,5 @@ export default class SettingService {
 
 export enum SETTINGS_KEYS {
   'logging_channel' = 'LOGGING_CHANNEL',
+  'bump_behaviour' = 'BUMP_BEHAVIOUR',
 }

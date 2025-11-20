@@ -33,8 +33,8 @@ async function run(
   } else {
     const embed = get_tagged_embed(interaction);
     const thread_action = result.value ? 'watch' : 'unwatch';
-    const thread_text = ctx.t('watch.thread', {});
-    const thread_action_text = ctx.t(`watch.${thread_action}`, {});
+    const thread_text = ctx.t('commands.watch.thread', {});
+    const thread_action_text = ctx.t(`commands.watch.${thread_action}`, {});
     embed.setTitle(`${thread_text} <#${thread.id}> ${thread_action_text}`);
 
     ctx.send_audit(embed);

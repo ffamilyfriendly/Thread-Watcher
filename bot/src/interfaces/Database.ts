@@ -9,6 +9,7 @@ export interface ThreadData {
   parent_channel_id?: string | null;
   due_archive: number;
   is_watched: boolean;
+  is_managed: boolean;
 }
 interface InsertThreadData extends Omit<ThreadData, 'is_watched' | 'due_archive'> {
   due_archive: Date;
@@ -44,6 +45,7 @@ interface Core {
     guild_id: string,
     watched: boolean,
   ) => Promise<Result<ThreadData[], DatabaseError>>;
+  get_stale_threads: () => Promise<Result<ThreadData[], DatabaseError>>;
 
   // Channel related stuff
   insert_channel: (

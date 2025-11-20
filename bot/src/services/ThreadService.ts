@@ -40,6 +40,7 @@ export const FormattedThreadDataSchema = z.object({
   id: z.string(),
   server: z.string(),
   is_watched: z.coerce.boolean(),
+  is_managed: z.coerce.boolean(),
   due_archive: z.coerce.date(),
 });
 
@@ -63,7 +64,7 @@ export default class ThreadService {
     private fetcher: ThreadFetcher,
   ) {}
 
-  async insert_thread(thread: GenericThread) {
+  async insert_thread(thread: GenericThread, is_managed = false) {
     const last_activity = thread.lastMessageId
       ? convert_snowflake_to_date(thread.lastMessageId)
       : thread.createdAt;
@@ -78,6 +79,7 @@ export default class ThreadService {
       server: thread.guildId,
       parent_channel_id: thread.parentId,
       due_archive: expires_at,
+      is_managed,
     };
 
     const res = await this.db.insert_thread(thread_data);
@@ -168,6 +170,14 @@ export default class ThreadService {
     } else return err(data.error);
   }
 
+  async get_stale_threads() {
+    const data = await this.db.get_stale_threads();
+
+    if (data.isOk()) {
+      return ok(data.value);
+    } else return err(data.error);
+  }
+
   async set_thread_watch_status(thread_id: string, is_watched: boolean) {
     const result = await this.db.set_thread_watched(thread_id, is_watched);
     if (result.isOk()) {
@@ -191,10 +201,41 @@ export default class ThreadService {
     return result;
   }
 
-  async watch_thread(thread: GenericThread) {
+  async bump_thread_time(thread: GenericThread) {
+    const expires_at = get_stale_timestamp(thread.autoArchiveDuration ?? 0, new Date());
+    const result = await this.db.set_thread_auto_archive(thread.id, expires_at);
+
+    if (result.isOk()) {
+      const cached_value = await this.redis.get(`thread:${thread.id}`);
+
+      if (cached_value) {
+        const parsed = safe_parse(FormattedThreadDataSchema, JSON.parse(cached_value));
+        if (parsed.isErr()) return err(parsed.error);
+        const as_obj = parsed.value;
+
+        as_obj.due_archive = expires_at;
+        this.redis.set(
+          `thread:${thread.id}`,
+          JSON.stringify(as_obj),
+          'EX',
+          ThreadService.CACHE_TTL_SECONDS,
+        );
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   *
+   * @param is_managed_by_parent if the thread was watched as a result of a channel monitor
+   * @returns
+   */
+  async watch_thread(thread: GenericThread, is_managed_by_parent = false) {
     const db_entry = await this.get_thread(thread.id);
 
-    if (db_entry.isOk() && db_entry.value === null) return this.insert_thread(thread);
+    if (db_entry.isOk() && db_entry.value === null)
+      return this.insert_thread(thread, is_managed_by_parent);
     else return this.set_thread_watch_status(thread.id, true);
   }
 
@@ -230,7 +271,6 @@ export default class ThreadService {
     thread: ThreadChannel,
     filters: AdvancedFilterOptions,
   ) {
-    console.log('FILTERS', filters);
     const name_matches_regex = filters.regex?.test(thread.name) ?? true;
 
     const thread_guild = await ResultAsync.fromSafePromise(client.guilds.fetch(thread.guildId));

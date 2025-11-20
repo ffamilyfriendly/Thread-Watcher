@@ -19,7 +19,7 @@ const event: Event<ThreadChannel> = {
     if (should_be_watched.isErr()) return l.error('thing');
 
     if (should_be_watched.value) {
-      const watch_res = await thread_service.watch_thread(thread);
+      const watch_res = await thread_service.watch_thread(thread, true);
       if (watch_res.isErr()) return l.error(`could not watch thread`);
       l.info(`watched ${thread.id}`);
     }

@@ -7,10 +7,12 @@ import {
   MessageActionRowComponentBuilder,
   RoleSelectMenuBuilder,
   RoleSelectMenuInteraction,
+  SelectMenuComponentOptionData,
   StringSelectMenuBuilder,
   StringSelectMenuInteraction,
 } from 'discord.js';
 import { Err, err, ok, Result } from 'neverthrow';
+import { string } from 'zod';
 
 export type SettingValue = number | string | boolean | string[];
 
@@ -60,6 +62,31 @@ class ChannelSelectAdapter implements InputAdapter<string, ChannelSelectMenuBuil
   }
 }
 
+class StringSelectAdapter implements InputAdapter<string, StringSelectMenuBuilder> {
+  constructor(private values: SelectMenuComponentOptionData[]) {}
+
+  create_component() {
+    return new StringSelectMenuBuilder().addOptions(this.values);
+  }
+
+  into(value: unknown): Result<string, Error> {
+    if (typeof value === 'string') {
+      return ok(value);
+    } else return err(new Error(`could not turn ${typeof value} into string`));
+  }
+
+  parse_interaction(
+    interaction: InteractionForComponent<StringSelectMenuBuilder>,
+  ): Result<string, Error> {
+    if (!interaction.values[0]) return err(new Error('no string was selected'));
+    return ok(interaction.values[0]);
+  }
+
+  display_value(value: string | null): string {
+    return value ?? '<hello>';
+  }
+}
+
 export interface SettingSchema<T extends SettingValue> {
   key: string;
   name: string;
@@ -80,6 +107,26 @@ const LOGGING_CHANNEL: SettingSchema<string> = {
   description: 'the channel where logs will be sent to',
 };
 
-const settings_map = new Map([['LOGGING_CHANNEL', LOGGING_CHANNEL]]);
+const BUMP_BEHAVIOUR: SettingSchema<string> = {
+  key: 'BUMP_BEHAVIOUR',
+  name: 'bump behaviour',
+  adapter: new StringSelectAdapter([
+    {
+      label: 'Bump and Un-Archive',
+      value: 'BUMP_AND_UNARCHIVE',
+      description: 'keep thread un-archived and active',
+    },
+    { label: 'Un-Archive', value: 'UNARCHIVE_ONLY', description: 'Only un-archive the thread' },
+  ]),
+  default: 'BUMP_AND_UNARCHIVE',
+  type: 'string',
+  validate: (value: unknown) => typeof value === 'string' || value === null,
+  description: 'the behaviour of the bot idk',
+};
+
+const settings_map = new Map([
+  ['LOGGING_CHANNEL', LOGGING_CHANNEL],
+  ['BUMP_BEHAVIOUR', BUMP_BEHAVIOUR],
+]);
 
 export default settings_map;
