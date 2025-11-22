@@ -1,0 +1,45 @@
+{
+  tokens: {
+    // You wanna keep this very secret frfr
+    discord: 'YOUR_DISCORD_BOT_TOKEN',
+    topgg: 'secret',
+  },
+  // You probably want to disable this
+  paywall_enabled: true,
+  web: {
+    enabled: true,
+    port: 2003,
+    hostname: 'https://threadwatcher.xyz',
+  },
+  // Change "286224826170081290" to your user ID
+  owners: ['286224826170081290'],
+  // Client ID of the bot account. Used for web
+  clientID: '1202623821010436147',
+  // your server
+  devServer: '1063430373394100335',
+  database: {
+    flavour: 'sqlite',
+    redis: {
+      user: 'username',
+      password: 'password',
+    },
+  },
+  style: {
+    error: {
+      colour: '#D00000',
+      emoji: '<:statusurgent:960959148848214017>',
+    },
+    success: {
+      colour: '#4C9F70',
+      emoji: '<:statusgood:960960196425957447>',
+    },
+    info: {
+      colour: '#197BBD',
+      emoji: '<:statusinfo:960960247571300353>',
+    },
+    warning: {
+      colour: '#F18F01',
+      emoji: '⚠️',
+    },
+  },
+}

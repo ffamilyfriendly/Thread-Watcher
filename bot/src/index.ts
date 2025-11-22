@@ -75,6 +75,3 @@ if (config.web.enabled) {
 }
 
 sharding_manager.spawn();
-function readFileSync(arg0: string, arg1: string): string {
-  throw new Error('Function not implemented.');
-}
