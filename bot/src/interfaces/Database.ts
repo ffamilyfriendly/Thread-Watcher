@@ -28,38 +28,26 @@ export interface FilterData {
 
 export type ChannelDataWithFilters = ChannelData & FilterData;
 
-interface Core {
-  // Thread related stuff
-  insert_thread: (thread: InsertThreadData) => Promise<Result<void, DatabaseError>>;
-  delete_thread: (thread_id: string) => Promise<Result<void, DatabaseError>>;
-  set_thread_auto_archive: (
-    thread_id: string,
-    auto_archive_duration: Date,
-  ) => Promise<Result<void, DatabaseError>>;
-  set_thread_watched: (
-    thread_id: string,
-    is_watched: boolean,
-  ) => Promise<Result<void, DatabaseError>>;
-  get_thread: (thread_id: string) => Promise<Result<ThreadData | null, DatabaseError>>;
-  get_threads_in_guild: (
-    guild_id: string,
-    watched: boolean,
-  ) => Promise<Result<ThreadData[], DatabaseError>>;
-  get_stale_threads: () => Promise<Result<ThreadData[], DatabaseError>>;
+type DBResult<T = void> = Promise<Result<T, DatabaseError>>;
 
-  // Channel related stuff
-  insert_channel: (
-    channel: ChannelData,
-    filters?: FilterData,
-  ) => Promise<Result<void, DatabaseError>>;
-  delete_channel: (channel_id: string) => Promise<Result<void, DatabaseError>>;
-  get_channel: (
-    channel_id: string,
-  ) => Promise<Result<ChannelDataWithFilters | null, DatabaseError>>;
-  get_channels_in_guild: (
-    guild_id: string,
-  ) => Promise<Result<ChannelDataWithFilters[], DatabaseError>>;
+interface CoreThread {
+  insert_thread: (thread: InsertThreadData) => DBResult;
+  delete_thread: (thread_id: string) => DBResult;
+  set_thread_auto_archive: (thread_id: string, auto_archive_duration: Date) => DBResult;
+  set_thread_watched: (thread_id: string, is_watched: boolean) => DBResult;
+  get_thread: (thread_id: string) => DBResult<ThreadData | null>;
+  get_threads_in_guild: (guild_id: string, watched: boolean) => DBResult<ThreadData[]>;
+  get_stale_threads: () => DBResult<ThreadData[]>;
 }
+
+interface CoreChannel {
+  insert_channel: (channel: ChannelData, filters?: FilterData) => DBResult;
+  delete_channel: (channel_id: string) => DBResult;
+  get_channel: (channel_id: string) => DBResult<ChannelDataWithFilters | null>;
+  get_channels_in_guild: (guild_id: string) => DBResult<ChannelDataWithFilters[]>;
+}
+
+type Core = CoreThread & CoreChannel;
 
 /**
  *
@@ -71,23 +59,34 @@ interface Core {
  * (if a future employer reads this: i am can be rule abiding not cool guy for sufficient pay)
  */
 interface GuildSettings {
-  get_guild_setting_value: <T>(
-    guild_id: string,
-    setting_id: string,
-  ) => Promise<Result<T | null, DatabaseError>>;
+  get_guild_setting_value: <T>(guild_id: string, setting_id: string) => DBResult<T | null>;
 
-  set_guild_setting_value: <T>(
-    guild_id: string,
-    setting_id: string,
-    setting_value: T,
-  ) => Promise<Result<void, DatabaseError>>;
+  set_guild_setting_value: <T>(guild_id: string, setting_id: string, setting_value: T) => DBResult;
 
-  delete_guild_setting_value: (
-    guild_id: string,
-    setting_id: string,
-  ) => Promise<Result<void, DatabaseError>>;
+  delete_guild_setting_value: (guild_id: string, setting_id: string) => DBResult;
 }
 
-export interface Database extends Core, GuildSettings {
-  create_tables: () => Promise<Result<void, DatabaseError>>;
+export interface AuditData {
+  id: number;
+  guild_id: string;
+  executor_id: string;
+  target_id?: string;
+  old_value?: string;
+  new_value?: string;
+  reason?: string;
+  error?: string;
+  exec_time_ms?: number;
+  command_name?: string;
+  timestamp: number;
+  audit_type: string;
+}
+
+interface Audit {
+  insert_audit_log: (log: Omit<AuditData, 'id' | 'timestamp'>) => DBResult;
+  get_audit_logs: (guild_id: string, limit: number, page?: number) => DBResult<AuditData[]>;
+  get_audit_log: (id: number) => DBResult<AuditData>;
+}
+
+export interface Database extends Core, GuildSettings, Audit {
+  create_tables: () => DBResult;
 }

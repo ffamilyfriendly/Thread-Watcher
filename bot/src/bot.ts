@@ -16,6 +16,7 @@ import { BotContextThreadFetcher } from 'fetchers/ThreadFetcher';
 import i18next from 'i18next';
 import { readFileSync } from 'fs';
 import ThreadBumper from 'services/ThreadBumper';
+import AuditService from 'services/AuditService';
 
 const config_result = read_config();
 const logger = new Logger({ name: 'bot' });
@@ -71,6 +72,7 @@ const setting_service = new SettingService(database, redis);
 const component_service = new ComponentService();
 const channel_service = new ChannelService(database, redis);
 const thread_bumper_service = new ThreadBumper();
+const audit_service = new AuditService(database);
 
 async function load_ipc_events() {
   return load_module_as_and<PrivateEvent>('./src/ipcEvents/bot', (modules) => {
@@ -109,6 +111,7 @@ export {
   channel_service,
   redis,
   thread_bumper_service,
+  audit_service,
 };
 
 if (client.shard) {

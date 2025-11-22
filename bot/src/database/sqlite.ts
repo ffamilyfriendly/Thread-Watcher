@@ -1,4 +1,5 @@
 import {
+  AuditData,
   ChannelData,
   ChannelDataWithFilters,
   Database,
@@ -9,19 +10,13 @@ import {
 import { err, ok, Result } from 'neverthrow';
 import sql, { Database as SqliteDb, SQLiteError, SQLQueryBindings } from 'bun:sqlite';
 import { ConfigType } from 'utilities/config';
-
-/*
-          channel.id,
-          channel.server,
-          filters && filters.regex ? filters.regex.source : null,
-          filters && filters.role_whitelist ? filters.role_whitelist.join(',') : null,
-          filters && filters.tags ? filters.tags.join(',') : null,
-*/
+import { with_error_handling } from 'database';
 
 const TABLE_CREATION_QUERIES = [
   'CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT NOT NULL, parent_channel_id TEXT, due_archive DATE, is_watched INTEGER, is_managed TEXT)',
   'CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT NOT NULL, regex TEXT, role_whitelist TEXT, tags TEXT)',
   'CREATE TABLE IF NOT EXISTS settings (setting_id TEXT, guild_id TEXT, setting_value BLOB, UNIQUE(setting_id, guild_id) ON CONFLICT REPLACE)',
+  'CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY AUTOINCREMENT, error TEXT, command_name TEXT, exec_time_ms INTEGER, audit_type TEXT NOT NULL, guild_id TEXT NOT NULL, executor_id TEXT NOT NULL, target_id TEXT, old_value TEXT, new_value TEXT, reason TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)',
 ];
 
 function handle_error(err_data: unknown) {
@@ -30,6 +25,7 @@ function handle_error(err_data: unknown) {
   } else {
     // Tenary operators get VERY beutiful with ts type checking
     // You, the reader, is most welcome. I wrote this shit at 21:00 2025-07-17 btw fun fact!!! :D :D :D
+    // > Thank you, past me, for this nice message. I wrote this reply at 01:58 2025-11-22
     const message =
       err_data &&
       typeof err_data === 'object' &&
@@ -244,5 +240,59 @@ export default class Sqlite implements Database {
     } catch (err_data) {
       return handle_error(err_data);
     }
+  }
+
+  /*
+interface AuditData {
+  id: number;
+  guild_id: string;
+  executor_id: string;
+  target_id?: string;
+  old_value?: string;
+  new_value?: string;
+  reason?: string;
+  error?: string;
+  exec_ms?: number;
+  cmd_name?: string;
+  timestamp: number;
+  audit_type: string;
+}
+*/
+
+  @with_error_handling
+  async insert_audit_log(log: Omit<AuditData, 'id' | 'timestamp'>) {
+    this.db
+      .prepare(
+        'INSERT INTO audit(audit_type, guild_id, executor_id, target_id, old_value, new_value, reason, error, exec_time_ms, command_name) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      )
+      .run(
+        log.audit_type,
+        log.guild_id,
+        log.executor_id,
+        log.target_id ?? null,
+        log.old_value ?? null,
+        log.new_value ?? null,
+        log.reason ?? null,
+        log.error ?? null,
+        log.exec_time_ms ?? null,
+        log.command_name ?? null,
+      );
+    return ok();
+  }
+
+  @with_error_handling
+  async get_audit_logs(guild_id: string, limit: number, page: number = 1) {
+    const offset = (page - 1) * limit;
+    const value = this.db
+      .prepare('SELECT * FROM audit WHERE guild_id = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?')
+      .all(guild_id, limit, offset);
+    return ok(value as AuditData[]);
+  }
+
+  @with_error_handling
+  async get_audit_log(id: number) {
+    const value = this.db.prepare('SELECT * FROM audit WHERE id = ?').get(id);
+    if (!value) return err(new Error('not found'));
+    return ok(value as AuditData);
   }
 }
