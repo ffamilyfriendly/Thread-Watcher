@@ -2,7 +2,6 @@ import { ThreadChannel } from 'discord.js';
 import { channel_service, client, logger, thread_service } from 'bot';
 import { Event } from 'interfaces/ClientEvent';
 import ThreadService from 'services/ThreadService';
-import { AdvancedFilterOptions } from 'services/ChannelService';
 
 const event: Event<ThreadChannel> = {
   event_name: 'threadCreate',

@@ -3,6 +3,7 @@ import { ThreadData } from 'interfaces/Database';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { SETTINGS_KEYS } from './SettingService';
 import { setting_service, client as d_client, logger, thread_service } from 'bot';
+import { map_err } from 'utilities/error';
 
 export default class ThreadBumper {
   static DEFAULT_INTERVAL = 500;
@@ -18,7 +19,10 @@ export default class ThreadBumper {
 
   private async bump_thread(thread_data: ThreadData) {
     this.l.debug('Fetching thread ', thread_data.id);
-    const thread_res = await ResultAsync.fromSafePromise(d_client.channels.fetch(thread_data.id));
+    const thread_res = await ResultAsync.fromPromise(
+      d_client.channels.fetch(thread_data.id),
+      map_err,
+    );
     if (thread_res.isErr()) return err(thread_res.error);
     if (!thread_res.value) return err('no thread returned');
     const thread = thread_res.value;
@@ -35,8 +39,9 @@ export default class ThreadBumper {
     if (!bump_behaviour_res.value) return err('bump_behaviour was null');
     const bump_behaviour = bump_behaviour_res.value;
     if (thread.archived && thread.unarchivable) {
-      const set_archived_res = await ResultAsync.fromSafePromise<unknown>(
+      const set_archived_res = await ResultAsync.fromPromise<unknown, Error>(
         thread.setArchived(false),
+        map_err,
       );
 
       if (set_archived_res.isErr())
@@ -52,12 +57,18 @@ export default class ThreadBumper {
       this.l.debug(`Setting autoarchive to ${new_duration}`);
       const set_auto_archive_promise = thread.setAutoArchiveDuration(new_duration);
 
-      const auto_archive_res = await ResultAsync.fromSafePromise<unknown>(set_auto_archive_promise);
+      const auto_archive_res = await ResultAsync.fromPromise<unknown, Error>(
+        set_auto_archive_promise,
+        map_err,
+      );
       if (auto_archive_res.isErr())
         this.l.error(`could not bump thread w/ edit ${thread.id}`, auto_archive_res.error);
     } else if (thread.sendable && !thread.archived) {
       this.l.debug('bumping thread via text...');
-      const send_bump_msg_res = await ResultAsync.fromSafePromise(thread.send('bumping thread.'));
+      const send_bump_msg_res = await ResultAsync.fromPromise(
+        thread.send('bumping thread.'),
+        map_err,
+      );
       if (send_bump_msg_res.isErr())
         this.l.error(`could not bump thread w/ msg ${thread.id}`, send_bump_msg_res.error);
     }

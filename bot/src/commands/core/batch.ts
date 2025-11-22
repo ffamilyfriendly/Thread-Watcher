@@ -22,6 +22,7 @@ import { Vacuum } from 'services/ComponentService';
 import { make_advanced_embed, State } from 'utilities/commands/advanced_view';
 import { create_channel_link } from './list';
 import ThreadService from 'services/ThreadService';
+import { map_err } from 'utilities/error';
 
 async function fetch_all_threads_from_parent(channel: Channel) {
   let thread_list: ThreadChannel[] = [];
@@ -38,12 +39,14 @@ async function fetch_all_threads_from_parent(channel: Channel) {
       thread_list.push(...child_of_channel_threads.value);
     }
   } else if ('threads' in channel) {
-    const active_threads_in_channel = await ResultAsync.fromSafePromise(
+    const active_threads_in_channel = await ResultAsync.fromPromise(
       channel.threads.fetchActive(),
+      map_err,
     );
 
-    const archived_threads_in_channel = await ResultAsync.fromSafePromise(
+    const archived_threads_in_channel = await ResultAsync.fromPromise(
       channel.threads.fetchArchived(),
+      map_err,
     );
 
     if (active_threads_in_channel.isErr()) return err(active_threads_in_channel.error);
@@ -91,19 +94,22 @@ async function handle_execution(state: State, interaction: Interaction, context:
     // TODO: handle cases where the thread_service returns err. We don't rn
     switch (context.action) {
       case 'WATCH':
-        ResultAsync.fromSafePromise(thread_service.watch_thread(thread));
+        ResultAsync.fromPromise(thread_service.watch_thread(thread), map_err);
         break;
       case 'UNWATCH':
-        ResultAsync.fromSafePromise(thread_service.unwatch_thread(thread));
+        ResultAsync.fromPromise(thread_service.unwatch_thread(thread), map_err);
         break;
       case 'TOGGLE':
-        ResultAsync.fromSafePromise(thread_service.toggle_thread_watch_status(thread));
+        ResultAsync.fromPromise(thread_service.toggle_thread_watch_status(thread), map_err);
         break;
     }
   }
 
   if (context.watch_future) {
-    ResultAsync.fromSafePromise(channel_service.add_channel(state.target_channel, state.filters));
+    ResultAsync.fromPromise(
+      channel_service.add_channel(state.target_channel, state.filters),
+      map_err,
+    );
   }
 
   const t = state._ctx.t;

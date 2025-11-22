@@ -6,6 +6,7 @@ import { err, ok, ResultAsync } from 'neverthrow';
 import { safe_parse } from 'utilities/parsing';
 import { z } from 'zod';
 import { AdvancedFilterOptions } from './ChannelService';
+import { map_err } from 'utilities/error';
 
 export type GenericThread = ThreadChannel;
 
@@ -273,11 +274,15 @@ export default class ThreadService {
   ) {
     const name_matches_regex = filters.regex?.test(thread.name) ?? true;
 
-    const thread_guild = await ResultAsync.fromSafePromise(client.guilds.fetch(thread.guildId));
+    const thread_guild = await ResultAsync.fromPromise(
+      client.guilds.fetch(thread.guildId),
+      map_err,
+    );
     if (thread_guild.isErr()) return err(thread_guild.error);
 
-    const thread_owner = await ResultAsync.fromSafePromise(
+    const thread_owner = await ResultAsync.fromPromise(
       thread_guild.value.members.fetch(thread.ownerId),
+      map_err,
     );
     if (thread_owner.isErr()) return err(thread_owner.error);
 

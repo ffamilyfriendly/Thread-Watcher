@@ -1,6 +1,7 @@
 import { Database } from 'interfaces/Database';
 import Redis from 'ioredis';
 import { err, ok, ResultAsync } from 'neverthrow';
+import { map_err } from 'utilities/error';
 
 /**
  * Service for managing guild-specific settings with caching via Redis.
@@ -26,19 +27,21 @@ export default class SettingService {
   ) {}
 
   private async get_setting_redis<T>(guild_id: string, setting_key: string) {
-    return ResultAsync.fromSafePromise(this.redis.get(`settings:${guild_id}:${setting_key}`)).map(
-      (ok_val) => (ok_val !== null ? (JSON.parse(ok_val) as T) : null),
-    );
+    return ResultAsync.fromPromise(
+      this.redis.get(`settings:${guild_id}:${setting_key}`),
+      map_err,
+    ).map((ok_val) => (ok_val !== null ? (JSON.parse(ok_val) as T) : null));
   }
 
   private set_setting_redis(guild_id: string, setting_key: string, setting_value: unknown) {
-    return ResultAsync.fromSafePromise(
+    return ResultAsync.fromPromise(
       this.redis.set(
         `settings:${guild_id}:${setting_key}`,
         JSON.stringify(setting_value),
         'EX',
         SettingService.CACHE_TTL_SECONDS,
       ),
+      map_err,
     );
   }
 
