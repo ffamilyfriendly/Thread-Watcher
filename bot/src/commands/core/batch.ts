@@ -1,4 +1,4 @@
-import { channel_service, client, thread_service } from 'bot';
+import { audit_service, channel_service, client, thread_service } from 'bot';
 import {
   Channel,
   ChannelType,
@@ -86,6 +86,13 @@ const ACTION_AS_TEXT_LOOKUP_TABLE = {
 
 async function handle_execution(state: State, interaction: Interaction, context: ExecutionContext) {
   let threads_actioned = 0;
+
+  const builder = audit_service
+    .get_builder(interaction.guildId!, interaction.user.id, 'BATCH_ACTION')
+    .with_timestamp()
+    .set_reason(context.action)
+    .set_target_ids(state.threads);
+
   for (const thread of state.threads) {
     const should_be_actioned = await ThreadService.should_be_watched(client, thread, state.filters);
     if (!should_be_actioned) continue;
@@ -105,11 +112,18 @@ async function handle_execution(state: State, interaction: Interaction, context:
     }
   }
 
+  builder.commit();
+
   if (context.watch_future) {
     ResultAsync.fromPromise(
       channel_service.add_channel(state.target_channel, state.filters),
       map_err,
     );
+    audit_service.log_event('CHANNEL_MONITOR_START', interaction.guildId!, interaction.user.id, {
+      target_id: state.target_channel.id,
+      reason: JSON.stringify(state.filters),
+      command_name: interaction.isCommand() ? interaction.commandName : 'batch',
+    });
   }
 
   const t = state._ctx.t;
@@ -120,7 +134,7 @@ async function handle_execution(state: State, interaction: Interaction, context:
   const channel_link = create_channel_link(state.target_channel as GuildBasedChannel);
   const result_embed = state._ctx.build_embed({
     title: result_title,
-    description: `${t('in_channel', { channel_link })}${context.watch_future ? `\n${t('will_watch_future', {})}` : ''}`,
+    description: `${t('commands.batch.in_channel', { channel_link })}${context.watch_future ? `\n${t('commands.batch.will_watch_future', {})}` : ''}`,
     style: 'success',
   });
 
@@ -135,6 +149,7 @@ async function handle_execution(state: State, interaction: Interaction, context:
 
 function handle_cleanup(state: State, interaction: Interaction) {
   state.cleaner.clean();
+
   const cancelled_str = state._ctx.t('commands.batch.cancelled', {});
   if ('update' in interaction) {
     interaction.update({ components: [], content: cancelled_str });
@@ -198,11 +213,11 @@ async function run(
     handle_execution(state as State<unknown>, interaction, { action, watch_future });
   }
 
-  const ms_15_minutes = 1000 * 60 * 15;
+  const ms_10_minutes = 1000 * 60 * 10;
   const post_exec_tasks: PostExecutionTasks = {
     cleanup: {
       func: (int) => handle_cleanup(state as State<unknown>, int),
-      cleanup_timing: ms_15_minutes,
+      cleanup_timing: ms_10_minutes,
     },
   };
 

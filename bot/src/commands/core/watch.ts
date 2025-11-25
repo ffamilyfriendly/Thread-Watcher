@@ -1,4 +1,4 @@
-import { logger, thread_service } from 'bot';
+import { audit_service, logger, thread_service } from 'bot';
 import {
   ChannelType,
   ChatInputCommandInteraction,
@@ -14,6 +14,7 @@ import {
   RegistrationScope,
 } from 'interfaces/Command';
 import { err, ok, Result } from 'neverthrow';
+import { AuditType } from 'services/AuditService';
 import { get_tagged_embed } from 'utilities/embed';
 
 async function run(
@@ -32,7 +33,15 @@ async function run(
     return err(result.error);
   } else {
     const embed = get_tagged_embed(interaction);
-    const thread_action = result.value ? 'watch' : 'unwatch';
+
+    const [thread_action, audit_type] = result.value
+      ? ['watch', 'WATCH_THREAD' as AuditType]
+      : ['unwatch', 'UNWATCH_THREAD' as AuditType];
+
+    audit_service.log_event(audit_type, interaction.guildId!, interaction.user.id, {
+      command_name: interaction.commandName,
+    });
+
     const thread_text = ctx.t('commands.watch.thread', {});
     const thread_action_text = ctx.t(`commands.watch.${thread_action}`, {});
     embed.setTitle(`${thread_text} <#${thread.id}> ${thread_action_text}`);

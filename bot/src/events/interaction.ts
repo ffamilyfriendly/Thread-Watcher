@@ -1,17 +1,10 @@
 import {
-  ActionRow,
-  ActionRowBuilder,
   AutocompleteInteraction,
-  ButtonBuilder,
-  ButtonStyle,
   ChatInputCommandInteraction,
-  EmbedBuilder,
-  Guild,
   Interaction,
   InteractionType,
-  messageLink,
 } from 'discord.js';
-import { commands, component_service, config, logger } from 'bot';
+import { audit_service, commands, component_service, config, logger } from 'bot';
 import { Event } from 'interfaces/ClientEvent';
 import { get_audit_send_function, get_embed_function } from 'utilities/embed';
 import {
@@ -22,22 +15,18 @@ import {
   PermissionsError,
 } from 'interfaces/Command';
 import { handle_error } from 'utilities/handle_interaction_error';
-import { ResultAsync } from 'neverthrow';
 import i18next from 'i18next';
+import { map_err } from 'utilities/error';
 
 function is_standalone_command(command?: BaseCommand): command is Command {
   return command !== undefined && 'run' in command;
 }
 
 function check_command_gatekeeping(interaction: ChatInputCommandInteraction, command: BaseCommand) {
-  if (!interaction.inGuild()) {
-    return handle_error(interaction, new Error(`Thread-Watcher only works in guilds`));
-  }
-
   if (command.access_control.developer_only && !config.owners.includes(interaction.user.id)) {
     return handle_error(
-      interaction,
       new Error(`this command can only be ran by the developers of the bot`),
+      interaction,
       'dev-only',
     );
   }
@@ -55,8 +44,8 @@ function check_command_gatekeeping(interaction: ChatInputCommandInteraction, com
 
       if (!has_perms)
         return handle_error(
-          interaction,
           new PermissionsError(command.access_control.invoker_requires_permission, 'user'),
+          interaction,
         );
     }
   }
@@ -71,8 +60,8 @@ function check_command_gatekeeping(interaction: ChatInputCommandInteraction, com
 
       if (!has_perms)
         return handle_error(
-          interaction,
           new PermissionsError(command.access_control.bot_requires_permission, 'bot'),
+          interaction,
         );
     }
   }
@@ -84,23 +73,30 @@ function check_command_gatekeeping(interaction: ChatInputCommandInteraction, com
       (entitlement) => entitlement.id === SKU_ID,
     );
 
-    if (!entitlement_active) return handle_error(interaction, new EntitlementsError(SKU_ID));
+    if (!entitlement_active) return handle_error(new EntitlementsError(SKU_ID), interaction);
   }
 
   return true;
 }
 
 async function handle_command_interaction(interaction: ChatInputCommandInteraction) {
+  if (!interaction.inGuild()) {
+    return handle_error(new Error(`Thread-Watcher only works in guilds`), interaction);
+  }
+
   const embed_builder = get_embed_function(interaction);
   const send_audit = get_audit_send_function(interaction);
 
   let command = commands.get(interaction.commandName);
+  const audit_builder = audit_service.get_builder_from_command_interaction(interaction);
+  audit_builder.with_timestamp();
+  const handle_err = audit_builder.bind_err_func(handle_error);
 
   if (!command) {
     logger.error(`no such command, ${interaction.commandName}`);
-    return handle_error(
-      interaction,
+    return handle_err(
       new Error(`no command with name \`${interaction.commandName}\` could be found`),
+      interaction,
     );
   }
 
@@ -125,9 +121,9 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
 
     if (!sub_command) {
       logger.error(`no such command, ${interaction.commandName}`);
-      return handle_error(
-        interaction,
+      return handle_err(
         new Error(`no command with name \`${interaction.commandName}\` could be found`),
+        interaction,
       );
     }
     if (!check_command_gatekeeping(interaction, sub_command)) return;
@@ -145,17 +141,19 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
       logger.debug(
         `interaction "${interaction.id}" (${interaction.commandName}) handled without issues!`,
       );
+      audit_builder.commit().then((res) => {
+        if (res.isErr()) logger.error('could not log audit?', res.error);
+      });
 
       if (post_exec_tasks) {
         if (post_exec_tasks.cleanup) {
-          setTimeout(
-            () => post_exec_tasks.cleanup.func(interaction_as_guild_safe),
-            post_exec_tasks.cleanup.cleanup_timing,
-          );
+          setTimeout(() => {
+            post_exec_tasks.cleanup.func(interaction_as_guild_safe);
+          }, post_exec_tasks.cleanup.cleanup_timing);
         }
       }
     },
-    (err) => handle_error(interaction, err),
+    (err) => handle_err(map_err(err), interaction),
   );
 }
 

@@ -12,7 +12,7 @@
   <a href="https://botsuite.co/join">
     <img src="https://img.shields.io/badge/discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" />
   </a>
-  <a href="https://botsuite.co/join">
+  <a href="https://botsuite.co">
     <img src="https://img.shields.io/badge/Website-b82ada?style=for-the-badge&logo=firefoxbrowser&logoColor=white" />
   </a>
 </p>

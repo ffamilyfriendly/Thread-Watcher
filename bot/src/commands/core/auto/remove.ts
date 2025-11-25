@@ -1,4 +1,4 @@
-import { channel_service } from 'bot';
+import { audit_service, channel_service } from 'bot';
 import {
   ChannelType,
   ChatInputCommandInteraction,
@@ -24,6 +24,11 @@ async function run(
   const res = await channel_service.remove_channel(target?.id);
 
   if (res.isErr()) return err(res.error);
+
+  audit_service.log_event('CHANNEL_MONITOR_END', interaction.guildId!, interaction.user.id, {
+    command_name: 'auto remove',
+    target_id: target.id,
+  });
 
   const embed = ctx.build_embed({
     title: 'Removed Monitor',

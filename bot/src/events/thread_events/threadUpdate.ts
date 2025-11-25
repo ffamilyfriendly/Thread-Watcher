@@ -1,11 +1,11 @@
 import { AuditLogEvent, ThreadChannel } from 'discord.js';
-import { channel_service, client, logger, thread_service } from 'bot';
+import { audit_service, channel_service, client, logger, thread_service } from 'bot';
 import { Event } from 'interfaces/ClientEvent';
 import ThreadService from 'services/ThreadService';
 import { Logger } from 'tslog';
 import { ResultAsync } from 'neverthrow';
 
-async function check_should_be_watched(thread: ThreadChannel, l: Logger<unknown>) {
+export async function check_should_be_watched(thread: ThreadChannel, l: Logger<unknown>) {
   if (!thread.parentId) return;
   const res = await channel_service.get_channel(thread.parentId);
   if (res.isErr()) return l.error(res.error);
@@ -24,8 +24,16 @@ async function check_should_be_watched(thread: ThreadChannel, l: Logger<unknown>
   if (should_be_watched.value) {
     const watch_res = await thread_service.watch_thread(thread);
     if (watch_res.isErr()) return l.error(`could not watch thread`);
+    audit_service.log_event('THREAD_WATCHED', thread.guildId, '@self', {
+      target_id: thread.id,
+      reason: 'thread fullfills filters of monitor!',
+    });
     l.info(`watched ${thread.id}`);
   } else {
+    audit_service.log_event('THREAD_UNWATCHED', thread.guildId, '@self', {
+      target_id: thread.id,
+      reason: 'thread no longer fullfills monitor filters of monitor',
+    });
     thread_service.unwatch_thread(thread);
   }
 }
@@ -66,6 +74,15 @@ const event: Event<ThreadChannel, ThreadChannel> = {
         `Thread ${thread.id} was unwatched due to manual archival by ${audit_entry?.executorId}`,
       );
       thread_service.unwatch_thread(thread);
+      audit_service.log_event(
+        'THREAD_UNWATCHED',
+        thread.guildId!,
+        audit_entry?.executorId ?? 'UNKNOWN',
+        {
+          target_id: thread.id,
+          reason: 'thread was manually closed',
+        },
+      );
 
       return;
     }

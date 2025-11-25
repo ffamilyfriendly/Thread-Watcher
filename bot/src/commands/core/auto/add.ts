@@ -19,7 +19,7 @@ import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
 import { make_advanced_embed, State } from 'utilities/commands/advanced_view';
 import { create_channel_link } from '../list';
-import { channel_service } from 'bot';
+import { audit_service, channel_service } from 'bot';
 
 async function handle_execution(state: State, interaction: Interaction, context: null) {
   let result_embed = state._ctx.build_embed({
@@ -34,6 +34,12 @@ async function handle_execution(state: State, interaction: Interaction, context:
       title: `could not monitor for new Threads`,
       description: `in ${create_channel_link(state.target_channel as GuildBasedChannel)}`,
       style: 'error',
+    });
+  } else {
+    audit_service.log_event('CHANNEL_MONITOR_START', interaction.guildId!, interaction.user.id, {
+      reason: JSON.stringify(state.filters),
+      command_name: 'auto add',
+      target_id: state.target_channel.id,
     });
   }
 

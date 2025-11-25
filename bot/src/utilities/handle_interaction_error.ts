@@ -21,8 +21,8 @@ function find_perm(permission: BigInt) {
 }
 
 export function handle_error(
-  interaction: ChatInputCommandInteraction,
   err: CommandError,
+  interaction: ChatInputCommandInteraction,
   docs_slug: string | null = null,
 ) {
   logger.error(`error encountered while handling interaction "${interaction.id}"`, err);
