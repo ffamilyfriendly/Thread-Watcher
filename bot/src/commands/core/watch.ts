@@ -7,19 +7,15 @@ import {
   ThreadChannel,
 } from 'discord.js';
 
-import {
-  Command,
-  CommandError,
-  CommandExecutionContext,
-  RegistrationScope,
-} from 'interfaces/Command';
+import { Command, CommandError, RegistrationScope } from 'interfaces/Command';
 import { err, ok, Result } from 'neverthrow';
 import { AuditType } from 'services/AuditService';
+import { CommandContext } from 'utilities/command_context';
 import { get_tagged_embed } from 'utilities/embed';
 
 async function run(
   interaction: ChatInputCommandInteraction,
-  ctx: CommandExecutionContext,
+  ctx: CommandContext,
 ): Promise<Result<void, CommandError>> {
   const thread = interaction.options.getChannel('thread') || interaction.channel;
 
@@ -49,7 +45,7 @@ async function run(
     ctx.send_audit(embed);
   }
 
-  return ok();
+  return ctx.ok();
 }
 
 const command_data = new SlashCommandBuilder()

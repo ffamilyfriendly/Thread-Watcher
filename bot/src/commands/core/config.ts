@@ -8,16 +8,11 @@ import {
   MessageActionRowComponentBuilder,
   SlashCommandBuilder,
 } from 'discord.js';
-import {
-  Command,
-  CommandError,
-  CommandExecutionContext,
-  GuildChatInteraction,
-  RegistrationScope,
-} from 'interfaces/Command';
+import { Command, CommandError, GuildChatInteraction, RegistrationScope } from 'interfaces/Command';
 import settings_map from 'interfaces/Settings';
 import { err, ok, Result } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
+import { CommandContext } from 'utilities/command_context';
 import {
   create_initial_state,
   generate_embed,
@@ -43,7 +38,7 @@ function create_buttons() {
 
 async function run(
   interaction: GuildChatInteraction,
-  ctx: CommandExecutionContext,
+  ctx: CommandContext,
 ): Promise<Result<void, CommandError>> {
   const cleaner = new Vacuum();
   const filter = (int: Interaction) => int.user.id === interaction.user.id;
@@ -86,6 +81,7 @@ async function run(
     cleaner.add(
       component_service.wait_for_interaction_callback(apply_button, filter, (response) => {
         handle_apply_callback(response, ctx, setting, state);
+        ctx.ok();
         cleaner.clean();
         resolve(ok());
       }),
@@ -125,6 +121,8 @@ async function run(
       embeds: [embed],
       components: [action_row, input_row],
     });
+
+    return ctx.get_execution_promise();
   });
 }
 

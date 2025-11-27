@@ -10,19 +10,14 @@ import {
   ThreadChannel,
 } from 'discord.js';
 
-import {
-  Command,
-  CommandError,
-  CommandExecutionContext,
-  PostExecutionTasks,
-  RegistrationScope,
-} from 'interfaces/Command';
+import { Command, CommandError, PostExecutionTasks, RegistrationScope } from 'interfaces/Command';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
 import { make_advanced_embed, State } from 'utilities/commands/advanced_view';
 import { create_channel_link } from './list';
 import ThreadService from 'services/ThreadService';
 import { map_err } from 'utilities/error';
+import { CommandContext } from 'utilities/command_context';
 
 async function fetch_all_threads_from_parent(channel: Channel) {
   let thread_list: ThreadChannel[] = [];
@@ -145,6 +140,7 @@ async function handle_execution(state: State, interaction: Interaction, context:
   });
 
   state._ctx.send_audit(result_embed, interaction);
+  state._ctx.ok();
 }
 
 function handle_cleanup(state: State, interaction: Interaction) {
@@ -167,8 +163,8 @@ function handle_cleanup(state: State, interaction: Interaction) {
 
 async function run(
   interaction: ChatInputCommandInteraction,
-  ctx: CommandExecutionContext,
-): Promise<Result<PostExecutionTasks, CommandError>> {
+  ctx: CommandContext,
+): Promise<Result<void, CommandError>> {
   const parent = interaction.options.getChannel('parent') || interaction.channel;
 
   const action: BATCH_OPTIONS =
@@ -221,7 +217,7 @@ async function run(
     },
   };
 
-  return ok(post_exec_tasks);
+  return ctx.get_execution_promise();
 }
 
 const command_data = new SlashCommandBuilder()

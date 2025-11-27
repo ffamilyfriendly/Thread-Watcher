@@ -5,17 +5,13 @@ import {
   ChatInputCommandInteraction,
   SlashCommandBuilder,
 } from 'discord.js';
-import {
-  Command,
-  CommandError,
-  CommandExecutionContext,
-  RegistrationScope,
-} from 'interfaces/Command';
+import { Command, CommandError, RegistrationScope } from 'interfaces/Command';
 import { ok, Result } from 'neverthrow';
+import { CommandContext } from 'utilities/command_context';
 
 function run(
   interaction: ChatInputCommandInteraction,
-  ctx: CommandExecutionContext,
+  ctx: CommandContext,
 ): Result<void, CommandError> {
   const embed = ctx.build_embed({
     title: 'Information',
@@ -49,6 +45,7 @@ We hope that you'll find Thread-Watcher to be a great companion in your server a
     embeds: [embed],
     components: [button_row],
   });
+
   return ok();
 }
 

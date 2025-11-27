@@ -10,7 +10,6 @@ import {
 import {
   Command,
   CommandError,
-  CommandExecutionContext,
   PostExecutionTasks,
   RegistrationScope,
   SubCommand,
@@ -20,6 +19,7 @@ import { Vacuum } from 'services/ComponentService';
 import { make_advanced_embed, State } from 'utilities/commands/advanced_view';
 import { create_channel_link } from '../list';
 import { audit_service, channel_service } from 'bot';
+import { CommandContext } from 'utilities/command_context';
 
 async function handle_execution(state: State, interaction: Interaction, context: null) {
   let result_embed = state._ctx.build_embed({
@@ -50,6 +50,7 @@ async function handle_execution(state: State, interaction: Interaction, context:
   });
 
   state._ctx.send_audit(result_embed, interaction);
+  state._ctx.ok();
 }
 
 function handle_cleanup(state: State, interaction: Interaction) {
@@ -70,8 +71,8 @@ function handle_cleanup(state: State, interaction: Interaction) {
 
 async function run(
   interaction: ChatInputCommandInteraction,
-  ctx: CommandExecutionContext,
-): Promise<Result<PostExecutionTasks, CommandError>> {
+  ctx: CommandContext,
+): Promise<Result<void, CommandError>> {
   const parent = interaction.options.getChannel('parent') || interaction.channel;
   const advanced = !!interaction.options.getBoolean('advanced');
 
@@ -108,15 +109,7 @@ async function run(
     handle_execution(state as State<unknown>, interaction, null);
   }
 
-  const ms_15_minutes = 1000 * 60 * 15;
-  const post_exec_tasks: PostExecutionTasks = {
-    cleanup: {
-      func: (int) => handle_cleanup(state as State<unknown>, int),
-      cleanup_timing: ms_15_minutes,
-    },
-  };
-
-  return ok(post_exec_tasks);
+  return ctx.get_execution_promise();
 }
 
 export const command_data = new SlashCommandSubcommandBuilder()

@@ -10,16 +10,10 @@ import {
   SlashCommandBuilder,
 } from 'discord.js';
 
-import {
-  Command,
-  CommandError,
-  CommandExecutionContext,
-  GuildChatInteraction,
-  PostExecutionTasks,
-  RegistrationScope,
-} from 'interfaces/Command';
+import { Command, CommandError, GuildChatInteraction, RegistrationScope } from 'interfaces/Command';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
+import { CommandContext } from 'utilities/command_context';
 
 function create_buttons(guild_id: string) {
   const btn_back = new ButtonBuilder().setStyle(ButtonStyle.Secondary).setEmoji('⏪');
@@ -218,8 +212,8 @@ class PageGenerator {
 
 async function run(
   interaction: GuildChatInteraction,
-  ctx: CommandExecutionContext,
-): Promise<Result<PostExecutionTasks | void, CommandError>> {
+  ctx: CommandContext,
+): Promise<Result<void, CommandError>> {
   function filter_function(btn_interaction: Interaction) {
     return interaction.user.id === btn_interaction.user.id;
   }
@@ -307,20 +301,7 @@ async function run(
     components: [button_row, dashboard_row],
   });
 
-  const ms_15_minutes = 1000 * 60 * 15;
-  const post_exec_task: PostExecutionTasks = {
-    cleanup: {
-      func: (int) => {
-        int.editReply({
-          components: [dashboard_row],
-        });
-        cleaner.clean();
-      },
-      cleanup_timing: ms_15_minutes,
-    },
-  };
-
-  return ok(post_exec_task);
+  return ok();
 }
 
 const command_data = new SlashCommandBuilder()

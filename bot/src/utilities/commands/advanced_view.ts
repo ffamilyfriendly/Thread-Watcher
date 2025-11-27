@@ -17,11 +17,12 @@ import {
   TextInputStyle,
   ThreadChannel,
 } from 'discord.js';
-import { CommandExecutionContext, GenericCommandError } from 'interfaces/Command';
+import { GenericCommandError } from 'interfaces/Command';
 import { handle_error_generic } from 'utilities/handle_interaction_error';
 import regex_is_safe from 'safe-regex';
 import { Vacuum } from 'services/ComponentService';
 import { AdvancedFilterOptions } from 'services/ChannelService';
+import { CommandContext } from 'utilities/command_context';
 
 export interface State<TContext = unknown> {
   components: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder | RoleSelectMenuBuilder>[];
@@ -30,7 +31,7 @@ export interface State<TContext = unknown> {
   cleaner: Vacuum;
   threads: ThreadChannel[];
   target_channel: Channel;
-  _ctx: CommandExecutionContext;
+  _ctx: CommandContext;
   on_save: [(state: State, interaction: Interaction, context: TContext) => void, TContext];
   on_cleanup: (state: State, interaction: ButtonInteraction) => void;
 }

@@ -4,18 +4,14 @@ import {
   ChatInputCommandInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import {
-  CommandError,
-  CommandExecutionContext,
-  RegistrationScope,
-  SubCommand,
-} from 'interfaces/Command';
+import { CommandError, RegistrationScope, SubCommand } from 'interfaces/Command';
 import { err, ok, Result } from 'neverthrow';
 import { create_channel_link } from '../list';
+import { CommandContext } from 'utilities/command_context';
 
 async function run(
   interaction: ChatInputCommandInteraction,
-  ctx: CommandExecutionContext,
+  ctx: CommandContext,
 ): Promise<Result<void, CommandError>> {
   const target = interaction.options.getChannel('parent') ?? interaction.channel;
 
@@ -37,7 +33,7 @@ async function run(
   });
 
   ctx.send_audit(embed);
-  return ok();
+  return ctx.ok();
 }
 
 export const command_data = new SlashCommandSubcommandBuilder()

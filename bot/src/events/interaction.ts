@@ -17,6 +17,7 @@ import {
 import { handle_error } from 'utilities/handle_interaction_error';
 import i18next from 'i18next';
 import { map_err } from 'utilities/error';
+import { CommandContext } from 'utilities/command_context';
 
 function is_standalone_command(command?: BaseCommand): command is Command {
   return command !== undefined && 'run' in command;
@@ -84,9 +85,6 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
     return handle_error(new Error(`Thread-Watcher only works in guilds`), interaction);
   }
 
-  const embed_builder = get_embed_function(interaction);
-  const send_audit = get_audit_send_function(interaction);
-
   let command = commands.get(interaction.commandName);
   const audit_builder = audit_service.get_builder_from_command_interaction(interaction);
   audit_builder.with_timestamp();
@@ -102,15 +100,7 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
 
   if (!check_command_gatekeeping(interaction, command)) return;
 
-  const t = (key: string, options?: { [key: string]: unknown }) =>
-    i18next.t(key, { lng: interaction.locale, ...options });
-
-  const command_context = {
-    build_embed: embed_builder,
-    send_audit,
-    t,
-    logger: logger.getSubLogger({ name: interaction.command?.name }),
-  };
+  const command_context = new CommandContext(interaction);
 
   const interaction_as_guild_safe = interaction as GuildChatInteraction;
 
@@ -136,25 +126,11 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
   }
 
   const result = await command.run(interaction_as_guild_safe, command_context);
-  result.match(
-    (post_exec_tasks) => {
-      logger.debug(
-        `interaction "${interaction.id}" (${interaction.commandName}) handled without issues!`,
-      );
-      audit_builder.commit().then((res) => {
-        if (res.isErr()) logger.error('could not log audit?', res.error);
-      });
-
-      if (post_exec_tasks) {
-        if (post_exec_tasks.cleanup) {
-          setTimeout(() => {
-            post_exec_tasks.cleanup.func(interaction_as_guild_safe);
-          }, post_exec_tasks.cleanup.cleanup_timing);
-        }
-      }
-    },
-    (err) => handle_err(map_err(err), interaction),
-  );
+  if (result.isErr()) {
+    handle_err(map_err(result.error), interaction);
+  } else {
+    logger.debug(`Command interaction with id ${interaction.id} handled without issues!`);
+  }
 }
 
 async function handle_autocomplete_interaction(interaction: AutocompleteInteraction) {

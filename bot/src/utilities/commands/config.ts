@@ -1,7 +1,7 @@
 import { setting_service } from 'bot';
 import { ButtonInteraction } from 'discord.js';
-import { CommandExecutionContext } from 'interfaces/Command';
 import { SettingSchema, SettingValue } from 'interfaces/Settings';
+import { CommandContext } from 'utilities/command_context';
 
 interface State<T = SettingValue> {
   value: T | null;
@@ -16,7 +16,7 @@ export function create_initial_state<T = SettingValue>(value: T | null): State<T
 }
 
 export function generate_embed<T extends SettingValue>(
-  ctx: CommandExecutionContext,
+  ctx: CommandContext,
   setting: SettingSchema<T>,
   state: State<T>,
 ) {
@@ -33,7 +33,7 @@ export function generate_embed<T extends SettingValue>(
 
 export function handle_apply_callback<T extends SettingValue>(
   response: ButtonInteraction,
-  ctx: CommandExecutionContext,
+  ctx: CommandContext,
   setting: SettingSchema<T>,
   state: State<T>,
 ) {
@@ -78,7 +78,7 @@ export function handle_default_button<T extends SettingValue>(
   response: ButtonInteraction,
   setting: SettingSchema<T>,
   state: State<T>,
-  ctx: CommandExecutionContext,
+  ctx: CommandContext,
 ) {
   state.value = setting.default;
   const embed = generate_embed(ctx, setting, state);
