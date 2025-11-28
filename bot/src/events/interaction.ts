@@ -6,7 +6,6 @@ import {
 } from 'discord.js';
 import { audit_service, commands, component_service, config, logger } from 'bot';
 import { Event } from 'interfaces/ClientEvent';
-import { get_audit_send_function, get_embed_function } from 'utilities/embed';
 import {
   BaseCommand,
   Command,
@@ -15,7 +14,6 @@ import {
   PermissionsError,
 } from 'interfaces/Command';
 import { handle_error } from 'utilities/handle_interaction_error';
-import i18next from 'i18next';
 import { map_err } from 'utilities/error';
 import { CommandContext } from 'utilities/command_context';
 

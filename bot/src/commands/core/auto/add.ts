@@ -14,42 +14,34 @@ import {
   RegistrationScope,
   SubCommand,
 } from 'interfaces/Command';
-import { err, ok, Result, ResultAsync } from 'neverthrow';
+import { err, Result } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
-import { make_advanced_embed, State } from 'utilities/commands/advanced_view';
+import { make_advanced_embed, State } from 'commands/core/_shared/advanced_view';
 import { create_channel_link } from '../list';
 import { audit_service, channel_service } from 'bot';
 import { CommandContext } from 'utilities/command_context';
+import { map_err } from 'utilities/error';
 
 async function handle_execution(state: State, interaction: Interaction, context: null) {
-  let result_embed = state._ctx.build_embed({
-    title: `Monitoring for new Threads`,
-    description: `in ${create_channel_link(state.target_channel as GuildBasedChannel)}`,
-    style: 'success',
-  });
-
   const did_work = await channel_service.add_channel(state.target_channel, state.filters);
   if (did_work.isErr()) {
-    result_embed = state._ctx.build_embed({
-      title: `could not monitor for new Threads`,
-      description: `in ${create_channel_link(state.target_channel as GuildBasedChannel)}`,
-      style: 'error',
-    });
-  } else {
-    audit_service.log_event('CHANNEL_MONITOR_START', interaction.guildId!, interaction.user.id, {
+    return state._ctx.err(map_err(did_work.error));
+  }
+
+  const audit_res = await audit_service.log_event(
+    'CHANNEL_MONITOR_START',
+    interaction.guildId!,
+    interaction.user.id,
+    {
       reason: JSON.stringify(state.filters),
       command_name: 'auto add',
       target_id: state.target_channel.id,
-    });
-  }
+    },
+  );
 
-  result_embed.setTimestamp();
-  result_embed.setAuthor({
-    iconURL: interaction.user.avatarURL() ?? interaction.user.defaultAvatarURL,
-    name: interaction.user.username,
-  });
+  if (audit_res.isErr()) return state._ctx.err(audit_res.error);
 
-  state._ctx.send_audit(result_embed, interaction);
+  state._ctx.send_audit(audit_res.value, interaction);
   state._ctx.ok();
 }
 

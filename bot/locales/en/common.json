@@ -31,5 +31,20 @@
       "clear_regex": "Clear Regex",
       "test_regex": "Test Regex"
     }
+  },
+  "audit": {
+    "view_log": "View Log",
+    "config_embed_title": "Configuration Changed",
+    "config_desc": "for setting `{{setting_key}}`",
+    "cant_send_in_log_channel": "-# I can't create messages in {{channel_link}}. Please give me perms or change the logging channel with `/config`",
+    "config_embed_from": "Old Value",
+    "config_embed_to": "New Value",
+    "batch_title": "{{action}}ed {{action_amount}} threads",
+    "monitor_title": "Channel Monitor",
+    "monitor_start": "Started",
+    "monitor_end": "Stopped",
+    "monitor_desc": "{{action}} monitoring threads in {{channel_link}}",
+    "thread_watch_title": "Thread Watch Status Changed",
+    "thread_watch_desc": "Thread {{channel_link}} was {{action}}"
   }
 }

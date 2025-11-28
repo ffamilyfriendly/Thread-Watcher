@@ -19,7 +19,7 @@ import {
   handle_apply_callback,
   handle_cancel_button,
   handle_default_button,
-} from 'utilities/commands/config';
+} from 'commands/core/_shared/config';
 
 function create_buttons() {
   const apply_button = new ButtonBuilder().setStyle(ButtonStyle.Primary).setLabel('Save');
@@ -120,6 +120,7 @@ async function run(
     interaction.reply({
       embeds: [embed],
       components: [action_row, input_row],
+      flags: 'Ephemeral',
     });
 
     return ctx.get_execution_promise();

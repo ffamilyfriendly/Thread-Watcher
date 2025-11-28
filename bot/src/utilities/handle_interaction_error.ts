@@ -3,13 +3,13 @@ import {
   ButtonBuilder,
   ButtonStyle,
   ChatInputCommandInteraction,
+  ColorResolvable,
   EmbedBuilder,
   Interaction,
   PermissionsBitField,
 } from 'discord.js';
 import { CommandError, PermissionsError } from 'interfaces/Command';
-import { get_embed_function } from './embed';
-import { logger } from 'bot';
+import { config, logger } from 'bot';
 
 function find_perm(permission: BigInt) {
   for (const perm of Object.keys(PermissionsBitField.Flags)) {
@@ -26,13 +26,11 @@ export function handle_error(
   docs_slug: string | null = null,
 ) {
   logger.error(`error encountered while handling interaction "${interaction.id}"`, err);
-  const embed_builder = get_embed_function(interaction);
 
-  const embed = embed_builder({
+  const embed = new EmbedBuilder({
     title: '⚠️ Fatal Error',
-    style: 'error',
-    auto_respond: false,
   });
+  embed.setColor(config.style.error.colour as ColorResolvable);
 
   let doc_link: string | null = docs_slug;
 

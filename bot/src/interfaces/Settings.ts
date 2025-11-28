@@ -11,8 +11,7 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuInteraction,
 } from 'discord.js';
-import { Err, err, ok, Result } from 'neverthrow';
-import { string } from 'zod';
+import { err, ok, Result } from 'neverthrow';
 
 export type SettingValue = number | string | boolean | string[];
 

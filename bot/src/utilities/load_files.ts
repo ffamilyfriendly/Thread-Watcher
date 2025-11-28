@@ -18,7 +18,7 @@ export function get_file_paths(path: string, options?: FileOptions): string[] {
     const info = statSync(file_path);
 
     if (info.isDirectory()) {
-      paths_arr.push(...get_file_paths(file_path, options));
+      if (!file.startsWith('_')) paths_arr.push(...get_file_paths(file_path, options));
     } else {
       if (options?.file_extention) {
         const allowed_extentions = Array.isArray(options.file_extention)

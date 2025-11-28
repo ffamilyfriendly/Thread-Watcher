@@ -13,11 +13,12 @@ import {
 import { Command, CommandError, PostExecutionTasks, RegistrationScope } from 'interfaces/Command';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
-import { make_advanced_embed, State } from 'utilities/commands/advanced_view';
+import { make_advanced_embed, State } from 'commands/core/_shared/advanced_view';
 import { create_channel_link } from './list';
 import ThreadService from 'services/ThreadService';
 import { map_err } from 'utilities/error';
 import { CommandContext } from 'utilities/command_context';
+import { PartialAuditObject } from 'services/AuditService';
 
 async function fetch_all_threads_from_parent(channel: Channel) {
   let thread_list: ThreadChannel[] = [];
@@ -107,39 +108,33 @@ async function handle_execution(state: State, interaction: Interaction, context:
     }
   }
 
-  builder.commit();
+  const log = await builder.commit();
+
+  if (log.isErr()) return state._ctx.err(log.error);
+  const logged_events: PartialAuditObject[] = [log.value];
 
   if (context.watch_future) {
     ResultAsync.fromPromise(
       channel_service.add_channel(state.target_channel, state.filters),
       map_err,
     );
-    audit_service.log_event('CHANNEL_MONITOR_START', interaction.guildId!, interaction.user.id, {
-      target_id: state.target_channel.id,
-      reason: JSON.stringify(state.filters),
-      command_name: interaction.isCommand() ? interaction.commandName : 'batch',
-    });
+
+    const channel_monitor_log = await audit_service.log_event(
+      'CHANNEL_MONITOR_START',
+      interaction.guildId!,
+      interaction.user.id,
+      {
+        target_id: state.target_channel.id,
+        reason: JSON.stringify(state.filters),
+        command_name: interaction.isCommand() ? interaction.commandName : 'batch',
+      },
+    );
+
+    if (channel_monitor_log.isErr()) return state._ctx.err(channel_monitor_log.error);
+    logged_events.push(channel_monitor_log.value);
   }
 
-  const t = state._ctx.t;
-  const result_title = t('commands.batch.result_title', {
-    action: ACTION_AS_TEXT_LOOKUP_TABLE[context.action],
-    action_amount: threads_actioned,
-  });
-  const channel_link = create_channel_link(state.target_channel as GuildBasedChannel);
-  const result_embed = state._ctx.build_embed({
-    title: result_title,
-    description: `${t('commands.batch.in_channel', { channel_link })}${context.watch_future ? `\n${t('commands.batch.will_watch_future', {})}` : ''}`,
-    style: 'success',
-  });
-
-  result_embed.setTimestamp();
-  result_embed.setAuthor({
-    iconURL: interaction.user.avatarURL() ?? interaction.user.defaultAvatarURL,
-    name: interaction.user.username,
-  });
-
-  state._ctx.send_audit(result_embed, interaction);
+  state._ctx.send_audit(logged_events, interaction);
   state._ctx.ok();
 }
 

@@ -38,6 +38,7 @@ async function load_events(refresh_events = false) {
     './src/events',
     (modules) => {
       for (const event of modules) {
+        logger.silly(`Registering d.js handler for: `, event.event_name);
         if (refresh_events) client.removeAllListeners(event.event_name);
         client.on(event.event_name, event.event_callback);
       }
@@ -55,6 +56,7 @@ async function load_commands(refresh_commands = false) {
           'parent_command' in command
             ? `${command.parent_command}.${command.command_data.name}`
             : command.command_data.name;
+        logger.silly(`Registering command handler for: `, command_name);
         commands.set(command_name, command);
       }
     },
@@ -77,6 +79,7 @@ const audit_service = new AuditService(database);
 async function load_ipc_events() {
   return load_module_as_and<PrivateEvent>('./src/ipcEvents/bot', (modules) => {
     for (const event of modules) {
+      logger.silly(`Registering IPC handler for: `, event.event_name);
       ipc_client.on(event.event_name, event.event_callback);
     }
   });
@@ -115,9 +118,14 @@ export {
 };
 
 if (client.shard) {
-  load_ipc_events();
-  load_events();
-  load_commands();
+  Promise.all([load_ipc_events(), load_events(), load_commands()]).then((res) => {
+    for (const result of res) {
+      if (result.isErr()) {
+        logger.error(result.error);
+        process.exit(1);
+      }
+    }
+  });
   client.login(config.tokens.discord).catch((err) => {
     logger.fatal('Could not authenticate', err);
   });

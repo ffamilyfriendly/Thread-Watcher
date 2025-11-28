@@ -1,5 +1,5 @@
 import { ThreadChannel } from 'discord.js';
-import { audit_service, logger, thread_service } from 'bot';
+import { audit_service, thread_service } from 'bot';
 import { Event } from 'interfaces/ClientEvent';
 
 const event: Event<ThreadChannel> = {

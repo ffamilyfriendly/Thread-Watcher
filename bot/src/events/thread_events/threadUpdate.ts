@@ -4,6 +4,7 @@ import { Event } from 'interfaces/ClientEvent';
 import ThreadService from 'services/ThreadService';
 import { Logger } from 'tslog';
 import { ResultAsync } from 'neverthrow';
+import { log_event_in_log_channel, try_log } from 'utilities/log_channel_stuff';
 
 export async function check_should_be_watched(thread: ThreadChannel, l: Logger<unknown>) {
   if (!thread.parentId) return;
@@ -23,18 +24,19 @@ export async function check_should_be_watched(thread: ThreadChannel, l: Logger<u
 
   if (should_be_watched.value) {
     const watch_res = await thread_service.watch_thread(thread);
-    if (watch_res.isErr()) return l.error(`could not watch thread`);
+    if (watch_res.isErr()) return l.error(`could not watch thread:`, watch_res.error);
     audit_service.log_event('THREAD_WATCHED', thread.guildId, '@self', {
       target_id: thread.id,
       reason: 'thread fullfills filters of monitor!',
     });
     l.info(`watched ${thread.id}`);
   } else {
+    const unwatch_res = await thread_service.unwatch_thread(thread);
+    if (unwatch_res.isErr()) return l.error('could not unwatch thread:', unwatch_res.error);
     audit_service.log_event('THREAD_UNWATCHED', thread.guildId, '@self', {
       target_id: thread.id,
       reason: 'thread no longer fullfills monitor filters of monitor',
     });
-    thread_service.unwatch_thread(thread);
   }
 }
 
@@ -73,8 +75,9 @@ const event: Event<ThreadChannel, ThreadChannel> = {
       l.info(
         `Thread ${thread.id} was unwatched due to manual archival by ${audit_entry?.executorId}`,
       );
-      thread_service.unwatch_thread(thread);
-      audit_service.log_event(
+      const unwatch_res = await thread_service.unwatch_thread(thread);
+      if (unwatch_res.isErr()) return l.error('could not unwatch thread:', unwatch_res.error);
+      const unwatch_event = audit_service.log_event(
         'THREAD_UNWATCHED',
         thread.guildId!,
         audit_entry?.executorId ?? 'UNKNOWN',
@@ -83,6 +86,8 @@ const event: Event<ThreadChannel, ThreadChannel> = {
           reason: 'thread was manually closed',
         },
       );
+
+      try_log(unwatch_event, l);
 
       return;
     }

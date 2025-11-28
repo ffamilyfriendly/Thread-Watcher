@@ -1,20 +1,15 @@
 import {
   AutocompleteInteraction,
   ChatInputCommandInteraction,
-  EmbedBuilder,
   Guild,
-  Interaction,
   PermissionResolvable,
   SlashCommandBuilder,
   SlashCommandOptionsOnlyBuilder,
   SlashCommandSubcommandBuilder,
-  SlashCommandSubcommandGroupBuilder,
   SlashCommandSubcommandsOnlyBuilder,
 } from 'discord.js';
 import { Result } from 'neverthrow';
-import { EmbedBuilderProps } from 'utilities/embed';
 import { DatabaseError } from './Database';
-import { Logger } from 'tslog';
 import { CommandContext } from 'utilities/command_context';
 
 type LacksPermission = 'bot' | 'user';

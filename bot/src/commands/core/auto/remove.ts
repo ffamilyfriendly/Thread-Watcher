@@ -21,18 +21,20 @@ async function run(
 
   if (res.isErr()) return err(res.error);
 
-  audit_service.log_event('CHANNEL_MONITOR_END', interaction.guildId!, interaction.user.id, {
-    command_name: 'auto remove',
-    target_id: target.id,
-  });
+  const log = await audit_service.log_event(
+    'CHANNEL_MONITOR_END',
+    interaction.guildId!,
+    interaction.user.id,
+    {
+      command_name: 'auto remove',
+      target_id: target.id,
+    },
+  );
 
-  const embed = ctx.build_embed({
-    title: 'Removed Monitor',
-    style: 'success',
-    description: `Removed channel monitor for ${create_channel_link(target)}`,
-  });
+  if (log.isErr()) return ctx.err(log.error);
 
-  ctx.send_audit(embed);
+  ctx.send_audit(log.value);
+
   return ctx.ok();
 }
 

@@ -1,4 +1,4 @@
-import { audit_service, logger, thread_service } from 'bot';
+import { audit_service, thread_service } from 'bot';
 import {
   ChannelType,
   ChatInputCommandInteraction,
@@ -8,10 +8,9 @@ import {
 } from 'discord.js';
 
 import { Command, CommandError, RegistrationScope } from 'interfaces/Command';
-import { err, ok, Result } from 'neverthrow';
+import { err, Result } from 'neverthrow';
 import { AuditType } from 'services/AuditService';
 import { CommandContext } from 'utilities/command_context';
-import { get_tagged_embed } from 'utilities/embed';
 
 async function run(
   interaction: ChatInputCommandInteraction,
@@ -28,21 +27,21 @@ async function run(
   if (result.isErr()) {
     return err(result.error);
   } else {
-    const embed = get_tagged_embed(interaction);
+    const audit_type: AuditType = result.value ? 'THREAD_WATCHED' : 'THREAD_UNWATCHED';
 
-    const [thread_action, audit_type] = result.value
-      ? ['watch', 'WATCH_THREAD' as AuditType]
-      : ['unwatch', 'UNWATCH_THREAD' as AuditType];
+    const log = await audit_service.log_event(
+      audit_type,
+      interaction.guildId!,
+      interaction.user.id,
+      {
+        command_name: interaction.commandName,
+        target_id: thread.id,
+      },
+    );
 
-    audit_service.log_event(audit_type, interaction.guildId!, interaction.user.id, {
-      command_name: interaction.commandName,
-    });
+    if (log.isErr()) return ctx.err(log.error);
 
-    const thread_text = ctx.t('commands.watch.thread', {});
-    const thread_action_text = ctx.t(`commands.watch.${thread_action}`, {});
-    embed.setTitle(`${thread_text} <#${thread.id}> ${thread_action_text}`);
-
-    ctx.send_audit(embed);
+    ctx.send_audit(log.value);
   }
 
   return ctx.ok();
