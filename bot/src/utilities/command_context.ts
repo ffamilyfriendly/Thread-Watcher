@@ -169,6 +169,12 @@ export class CommandContext {
     if (props.description) embed.setDescription(props.description);
     if (props.fields) embed.addFields(props.fields);
 
+    if (auto_respond) {
+      ResultAsync.fromPromise(this.interaction.reply({ embeds: [embed] }), map_err).then((res) => {
+        if (res.isErr()) this.logger.error(`could not auto_respond:`, res.error);
+      });
+    }
+
     return embed;
   }
 

@@ -202,12 +202,12 @@ export default class ThreadService {
     return result;
   }
 
-  async bump_thread_time(thread: GenericThread) {
-    const expires_at = get_stale_timestamp(thread.autoArchiveDuration ?? 0, new Date());
-    const result = await this.db.set_thread_auto_archive(thread.id, expires_at);
+  async set_bump_thread_time(thread_id: string, auto_archive_duration: number) {
+    const expires_at = get_stale_timestamp(auto_archive_duration, new Date());
+    const result = await this.db.set_thread_auto_archive(thread_id, expires_at);
 
     if (result.isOk()) {
-      const cached_value = await this.redis.get(`thread:${thread.id}`);
+      const cached_value = await this.redis.get(`thread:${thread_id}`);
 
       if (cached_value) {
         const parsed = safe_parse(FormattedThreadDataSchema, JSON.parse(cached_value));
@@ -216,7 +216,7 @@ export default class ThreadService {
 
         as_obj.due_archive = expires_at;
         this.redis.set(
-          `thread:${thread.id}`,
+          `thread:${thread_id}`,
           JSON.stringify(as_obj),
           'EX',
           ThreadService.CACHE_TTL_SECONDS,
@@ -225,6 +225,10 @@ export default class ThreadService {
     }
 
     return result;
+  }
+
+  async bump_thread_time(thread: GenericThread) {
+    return this.set_bump_thread_time(thread.id, thread.autoArchiveDuration ?? 0);
   }
 
   /**

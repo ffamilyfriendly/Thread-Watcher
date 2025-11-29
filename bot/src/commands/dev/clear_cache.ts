@@ -1,16 +1,12 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { ipc_client, redis } from 'bot';
-import {
-  Command,
-  CommandError,
-  CommandExecutionContext,
-  RegistrationScope,
-} from 'interfaces/Command';
-import { Err, err, ok, Result, ResultAsync } from 'neverthrow';
+import { redis } from 'bot';
+import { Command, CommandError, RegistrationScope } from 'interfaces/Command';
+import { err, Result, ResultAsync } from 'neverthrow';
+import { CommandContext } from 'utilities/command_context';
 
 async function run(
   interaction: ChatInputCommandInteraction,
-  ctx: CommandExecutionContext,
+  ctx: CommandContext,
 ): Promise<Result<void, CommandError>> {
   const key_to_remove = interaction.options.getString('key');
   let action_result;
@@ -33,7 +29,7 @@ async function run(
     style: 'success',
     auto_respond: true,
   });
-  return ok();
+  return ctx.ok();
 }
 
 const command_data = new SlashCommandBuilder()

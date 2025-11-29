@@ -149,39 +149,37 @@ export default class Sqlite implements Database {
     }
   }
 
-  async set_guild_setting_value<T>(
+  async set_guild_setting_value(
     guild_id: string,
     setting_id: string,
-    setting_value: T,
+    setting_value: string,
   ): Promise<Result<void, DatabaseError>> {
     try {
-      const serialized = JSON.stringify(setting_value);
-      this.db.prepare('INSERT INTO settings VALUES(?,?,?)').run(guild_id, setting_id, serialized);
+      this.db
+        .prepare('INSERT INTO settings(guild_id, setting_id, setting_value) VALUES(?,?,?)')
+        .run(guild_id, setting_id, setting_value);
       return ok();
     } catch (err_data) {
       return handle_error(err_data);
     }
   }
 
-  async get_guild_setting_value<T>(guild_id: string, setting_id: string) {
+  async get_guild_setting_value(guild_id: string, setting_id: string) {
     try {
       const row = this.db
         .prepare('SELECT setting_value FROM settings WHERE guild_id = ? AND setting_id = ?')
         .get(guild_id, setting_id);
 
-      if (!row) {
-        return ok(null);
-      }
+      if (!row) return ok(null);
 
       if (!row || typeof row !== 'object' || !('setting_value' in row)) {
         return err(new Error('Setting not found or invalid row structure'));
       }
 
       const settings_value = row.setting_value;
-      const parsed_json = JSON.parse(settings_value as string);
+      if (typeof settings_value !== 'string') return err(new Error(`setting value was not string`));
 
-      if (typeof parsed_json === 'object') return ok(parsed_json as T);
-      else return ok(settings_value as T);
+      return ok(settings_value);
     } catch (err_data) {
       return handle_error(err_data);
     }

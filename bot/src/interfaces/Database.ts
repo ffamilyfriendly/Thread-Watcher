@@ -59,9 +59,13 @@ type Core = CoreThread & CoreChannel;
  * (if a future employer reads this: i am can be rule abiding not cool guy for sufficient pay)
  */
 interface GuildSettings {
-  get_guild_setting_value: <T>(guild_id: string, setting_id: string) => DBResult<T | null>;
+  get_guild_setting_value: (guild_id: string, setting_id: string) => DBResult<string | null>;
 
-  set_guild_setting_value: <T>(guild_id: string, setting_id: string, setting_value: T) => DBResult;
+  set_guild_setting_value: (
+    guild_id: string,
+    setting_id: string,
+    setting_value: string,
+  ) => DBResult;
 
   delete_guild_setting_value: (guild_id: string, setting_id: string) => DBResult;
 }

@@ -20,6 +20,7 @@ import {
   handle_cancel_button,
   handle_default_button,
 } from 'commands/core/_shared/config';
+import { map_err } from 'utilities/error';
 
 function create_buttons() {
   const apply_button = new ButtonBuilder().setStyle(ButtonStyle.Primary).setLabel('Save');
@@ -58,8 +59,7 @@ async function run(
     );
 
     if (current_value.isErr()) {
-      ctx.logger.error(current_value.error);
-      return resolve(err(new Error('could not fetch current settings value')));
+      return resolve(err(map_err(current_value.error)));
     }
 
     let converted_value;

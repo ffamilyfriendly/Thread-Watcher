@@ -11,7 +11,7 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuInteraction,
 } from 'discord.js';
-import { err, ok, Result } from 'neverthrow';
+import { err, Ok, ok, Result } from 'neverthrow';
 
 export type SettingValue = number | string | boolean | string[];
 
@@ -31,6 +31,8 @@ interface InputAdapter<T, CT extends MessageActionRowComponentBuilder> {
   create_component(): CT;
   parse_interaction(interaction: InteractionForComponent<CT>): Result<T, Error>;
   into(value: unknown): Result<T, Error>;
+  to_string(value: T): Result<string, Error>;
+  is_type(value: unknown): value is T;
   display_value(value: T | null): string;
 }
 
@@ -49,11 +51,19 @@ class ChannelSelectAdapter implements InputAdapter<string, ChannelSelectMenuBuil
     } else return err(new Error(`could not turn ${typeof value} into string`));
   }
 
+  to_string(value: string): Result<string, Error> {
+    return ok(value);
+  }
+
   parse_interaction(
     interaction: InteractionForComponent<ChannelSelectMenuBuilder>,
   ): Result<string, Error> {
     if (!interaction.values[0]) return err(new Error('no channel was selected'));
     return ok(interaction.values[0]);
+  }
+
+  is_type(value: unknown): value is string {
+    return typeof value == 'string';
   }
 
   display_value(value: string | null): string {
@@ -72,6 +82,14 @@ class StringSelectAdapter implements InputAdapter<string, StringSelectMenuBuilde
     if (typeof value === 'string') {
       return ok(value);
     } else return err(new Error(`could not turn ${typeof value} into string`));
+  }
+
+  to_string(value: string): Result<string, Error> {
+    return ok(value);
+  }
+
+  is_type(value: unknown): value is string {
+    return typeof value == 'string';
   }
 
   parse_interaction(

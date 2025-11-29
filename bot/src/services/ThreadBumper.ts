@@ -80,6 +80,10 @@ export default class ThreadBumper {
    * Parameters:
    * - thread_data: ThreadData — minimal thread descriptor containing at least id and server/guild id.
    *
+   * Remarks:
+   * - **DOES NOT** set the new bump time within this function. That's handled within the event handlers (threadUpdate, messageCreate)\
+   *   This is because these handlers will update the thread's stale time anyhow and if we bump the thread via msg/editing those events will be taken care of automatically
+   *
    * Returns:
    * - A result-style value (ok()/err()) indicating success or carrying an error value describing the failure.
    */
