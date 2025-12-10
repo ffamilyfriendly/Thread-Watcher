@@ -30,6 +30,10 @@ export type ChannelDataWithFilters = ChannelData & FilterData;
 
 type DBResult<T = void> = Promise<Result<T, DatabaseError>>;
 
+interface CoreUtils {
+  create_backup_file: (base_dir?: string) => DBResult<{ full_path: string; file_name: string }>;
+}
+
 interface CoreThread {
   insert_thread: (thread: InsertThreadData) => DBResult;
   delete_thread: (thread_id: string) => DBResult;
@@ -47,7 +51,7 @@ interface CoreChannel {
   get_channels_in_guild: (guild_id: string) => DBResult<ChannelDataWithFilters[]>;
 }
 
-type Core = CoreThread & CoreChannel;
+type Core = CoreUtils & CoreThread & CoreChannel;
 
 /**
  *

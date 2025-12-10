@@ -4,7 +4,7 @@ import { Event } from 'interfaces/ClientEvent';
 import ThreadService from 'services/ThreadService';
 import { Logger } from 'tslog';
 import { ResultAsync } from 'neverthrow';
-import { log_event_in_log_channel, try_log } from 'utilities/log_channel_stuff';
+import { try_log } from 'utilities/log_channel_stuff';
 
 export async function check_should_be_watched(thread: ThreadChannel, l: Logger<unknown>) {
   if (!thread.parentId) return;
@@ -23,7 +23,7 @@ export async function check_should_be_watched(thread: ThreadChannel, l: Logger<u
   if (should_be_watched.isErr()) return l.error('thing');
 
   if (should_be_watched.value) {
-    const watch_res = await thread_service.watch_thread(thread);
+    const watch_res = await thread_service.watch_thread(thread, true);
     if (watch_res.isErr()) return l.error(`could not watch thread:`, watch_res.error);
     audit_service.log_event('THREAD_WATCHED', thread.guildId, '@self', {
       target_id: thread.id,

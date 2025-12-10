@@ -1,4 +1,4 @@
-import { Database, DatabaseError, ThreadData } from 'interfaces/Database';
+import { Database, DatabaseError } from 'interfaces/Database';
 import { ConfigType } from 'utilities/config';
 import SqliteHandler from './sqlite';
 import { err, ok, Result } from 'neverthrow';

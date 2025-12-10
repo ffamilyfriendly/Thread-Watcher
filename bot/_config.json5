@@ -1,28 +1,32 @@
 {
   tokens: {
-    // You wanna keep this very secret frfr
-    discord: 'YOUR_DISCORD_BOT_TOKEN',
+    discord: 'SECRET AF',
     topgg: 'secret',
   },
-  // You probably want to disable this
   paywall_enabled: true,
   web: {
     enabled: true,
     port: 2003,
     hostname: 'https://threadwatcher.xyz',
   },
-  // Change "286224826170081290" to your user ID
   owners: ['286224826170081290'],
-  // Client ID of the bot account. Used for web
   clientID: '1202623821010436147',
-  // your server
   devServer: '1063430373394100335',
   database: {
     flavour: 'sqlite',
     redis: {
-      user: 'username',
-      password: 'password',
+      user: 'secret',
+      password: 'secret',
     },
+    backup_path: './backups',
+    backup_interval: '* * * * *',
+    upload_backup_to_bucket: false,
+    keep_local_files_amount: 5,
+  },
+  bucket_storage: {
+    url: 'secret',
+    secret_access_key: 'secret',
+    access_key_id: 'secret',
   },
   style: {
     error: {

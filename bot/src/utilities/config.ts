@@ -36,7 +36,21 @@ const Redis = z.object({
 const Database = z.object({
   flavour: z.enum(['sqlite', 'mysql']).default('sqlite'),
   database_path: z.string().default('./data.db'),
+  backup_path: z.string().default('./backups'),
+  backup_interval: z
+    .string()
+    .regex(
+      /^((((\d+,)+\d+|(\d+(\/|-|#)\d+)|\d+L?|\*(\/\d+)?|L(-\d+)?|\?|[A-Z]{3}(-[A-Z]{3})?) ?){5,7})|(@(annually|yearly|monthly|weekly|daily|hourly|reboot))|(@every (\d+(ns|us|µs|ms|s|m|h))+)$/gm,
+    ),
+  upload_backup_to_bucket: z.boolean(),
+  keep_local_files_amount: z.number(),
   redis: Redis,
+});
+
+const BucketStorage = z.object({
+  url: z.string().url(),
+  secret_access_key: z.string(),
+  access_key_id: z.string(),
 });
 
 const Config = z.object({
@@ -44,6 +58,7 @@ const Config = z.object({
   paywall_enabled: z.boolean(),
   web: Web,
   database: Database,
+  bucket_storage: BucketStorage,
   clientID: z.string().nonempty('Client ID cannot be empty'),
   owners: z.array(z.string()),
   devServer: z.string().nonempty(),

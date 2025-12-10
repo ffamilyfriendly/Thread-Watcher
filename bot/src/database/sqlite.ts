@@ -7,13 +7,16 @@ import {
   FilterData,
   ThreadData,
 } from 'interfaces/Database';
-import { err, ok, Result } from 'neverthrow';
+import { err, ok, Result, ResultAsync } from 'neverthrow';
 import sql, { Database as SqliteDb, SQLiteError, SQLQueryBindings } from 'bun:sqlite';
 import { ConfigType } from 'utilities/config';
 import { with_error_handling } from 'database';
+import { join, resolve as resolve_path } from 'path';
+import { create as create_tar } from 'tar';
+import { map_err } from 'utilities/error';
 
 const TABLE_CREATION_QUERIES = [
-  'CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT NOT NULL, parent_channel_id TEXT, due_archive DATE, is_watched INTEGER, is_managed TEXT)',
+  'CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT NOT NULL, parent_channel_id TEXT, due_archive DATE, is_watched INTEGER, is_managed INTEGER)',
   'CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT NOT NULL, regex TEXT, role_whitelist TEXT, tags TEXT)',
   'CREATE TABLE IF NOT EXISTS settings (setting_id TEXT, guild_id TEXT, setting_value BLOB, UNIQUE(setting_id, guild_id) ON CONFLICT REPLACE)',
   'CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY AUTOINCREMENT, error TEXT, command_name TEXT, exec_time_ms INTEGER, audit_type TEXT NOT NULL, guild_id TEXT NOT NULL, executor_id TEXT NOT NULL, target_id TEXT, old_value TEXT, new_value TEXT, reason TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)',
@@ -26,6 +29,7 @@ function handle_error(err_data: unknown) {
     // Tenary operators get VERY beutiful with ts type checking
     // You, the reader, is most welcome. I wrote this shit at 21:00 2025-07-17 btw fun fact!!! :D :D :D
     // > Thank you, past me, for this nice message. I wrote this reply at 01:58 2025-11-22
+    // >> Thank you both. Idk for what. Did not touch this code. I wrote this at 01:33 2025-12-10
     const message =
       err_data &&
       typeof err_data === 'object' &&
@@ -42,9 +46,11 @@ function handle_error(err_data: unknown) {
 
 export default class Sqlite implements Database {
   db: SqliteDb;
+  private _config: ConfigType;
 
   constructor(config: ConfigType) {
     this.db = new sql(config.database.database_path);
+    this._config = config;
   }
 
   async create_tables() {
@@ -292,5 +298,25 @@ interface AuditData {
     const value = this.db.prepare('SELECT * FROM audit WHERE id = ?').get(id);
     if (!value) return err(new Error('not found'));
     return ok(value as AuditData);
+  }
+
+  @with_error_handling
+  async create_backup_file(backup_dir: string = this._config.database.backup_path) {
+    const backup_file_name = new Date().toISOString() + '.tgz';
+    const backup_file_full_path = join(backup_dir, backup_file_name);
+
+    const tar_promise = create_tar(
+      {
+        gzip: true,
+        file: backup_file_full_path,
+      },
+      [this.db.filename],
+    );
+
+    const tar_result = await ResultAsync.fromPromise(tar_promise, map_err);
+
+    if (tar_result.isErr()) return err(tar_result.error);
+
+    return ok({ full_path: resolve_path(backup_file_full_path), file_name: backup_file_name });
   }
 }

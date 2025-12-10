@@ -9,6 +9,8 @@ import get_database_instance from 'database';
 import Redis from 'ioredis';
 import ThreadService from 'services/ThreadService';
 import { IndexContextThreadFetcher } from 'fetchers/ThreadFetcher';
+import { start_db_backup_routine } from 'routines/do_db_backup';
+import { S3Client } from 'bun';
 
 const config_result = read_config();
 const logger = new Logger();
@@ -37,6 +39,13 @@ const sharding_manager = new ShardingManager('./src/bot.ts', {
 
 const redis = new Redis();
 
+const bucket_storage = new S3Client({
+  region: 'auto',
+  endpoint: config.bucket_storage.url,
+  accessKeyId: config.bucket_storage.access_key_id,
+  secretAccessKey: config.bucket_storage.secret_access_key,
+});
+
 const ipc_client = new ShardedIpcClient(sharding_manager, redis);
 const thread_service = new ThreadService(
   database,
@@ -52,9 +61,10 @@ async function load_events() {
   });
 }
 
+start_db_backup_routine();
 load_events();
 
-export { sharding_manager, ipc_client, config, logger };
+export { sharding_manager, ipc_client, config, logger, database, bucket_storage };
 
 sharding_manager.on('shardCreate', (shard) => {
   const shard_logger = logger.getSubLogger({ name: `Shard ${shard.id}` });

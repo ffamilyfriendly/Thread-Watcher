@@ -60,9 +60,6 @@ If you wish to place code into any of these folders but do not wish it to be loa
 > **Hello there explorer!**\
 > This is my _"Debug Duck"_ section. It's pretty much just notes I leave at the end of a coding session of stuff I need to do so I don't forget the next session.
 
-- Fix config values randomly resetting
-  - cache issue?
-  - log db calls / cache calls. Something is up
 - Test, test, and test again
   - we want this to run without crashing, yes? Weird perms **WILL** crash the bot
   - find and check edge cases (EDGE4LIFE 😎)
