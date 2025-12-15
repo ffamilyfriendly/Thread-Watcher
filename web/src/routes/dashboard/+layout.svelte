@@ -1,11 +1,16 @@
 <script lang="ts">
     import logo from "$lib/assets/thread_watcher_icon.png"
-    import { page } from "$app/stores"
+    import { page } from "$app/state"
     import DropDown from "$lib/components/ui/DropDown.svelte";
-    import { signIn, signOut } from "@auth/sveltekit/client";
+    import { signOut } from "@auth/sveltekit/client";
     import list_style from "$lib/style/list.module.scss"
+    import { sidebar_open } from "$lib/stores/sidebar";
+	import Hamburger from "$lib/components/ui/Hamburger.svelte";
+
+
 </script>
 <nav class="top_nav">
+    <Hamburger class={"hamburger"} width={40} open={$sidebar_open} aria_label="open navbar" on_click={() => $sidebar_open = !$sidebar_open} />
     <div class="branding">
         <img alt="Logo" src={logo} />
         <span>Thread-Watcher</span>
@@ -14,8 +19,8 @@
     <DropDown>
         {#snippet parent_item()}
             <div class="account">
-                <img src={$page.data.session?.user?.image} alt="profile pic" />
-                <span>{$page.data.session?.user?.name}</span>
+                <img src={page.data.session?.user?.image} alt="profile pic" />
+                <span>{page.data.session?.user?.name}</span>
             </div>
         {/snippet}
 
@@ -40,11 +45,16 @@
 <style lang="scss">
     @use "../../lib/style/colours.scss";
 
-
+    :global(.hamburger) {
+        @media (min-width: 500px) {
+            display: none !important;
+        }
+    }
 
     .top_nav {
         @extend .bg-background-600;
         display: flex;
+        align-items: center;
         width: 100%;
         padding: 1em;
         justify-content: space-between;
@@ -65,6 +75,12 @@
         img {
             height: 30px;
             border-radius: 50%;
+        }
+
+        @media (max-width: 500px) {
+            span {
+                display: none;
+            }
         }
     }
 

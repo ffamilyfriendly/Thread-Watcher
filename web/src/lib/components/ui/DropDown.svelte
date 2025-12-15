@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onDestroy, type Snippet } from 'svelte';
-    import { ChevronDown, Eclipse } from "@lucide/svelte";
+    import { ChevronDown } from "@lucide/svelte";
 	import {  fly } from 'svelte/transition';
 	import { browser } from '$app/environment';
     let show_content = $state(false);
