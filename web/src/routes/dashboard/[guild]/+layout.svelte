@@ -1,9 +1,9 @@
 <script lang="ts">
     import "$lib/style/app.scss"
-    import logo from "$lib/assets/thread_watcher_icon.png"
-
     import { page } from "$app/stores"
     import { Activity, Cog, Eye, LayoutDashboard, PanelBottom, Skull, Spool, TicketCheck, TicketMinus, type Icon as IconType } from "@lucide/svelte"
+	import { onDestroy, onMount, tick } from "svelte";
+	import { browser } from "$app/environment";
 
     type MenuItem = {
         name: string;
@@ -11,15 +11,23 @@
         icon: typeof IconType
     }
 
+    const guild_id = $page.params.guild;
+
+    function link_to(page: string) {
+        // we dont prepend a slash to an empty page string as we want the matching to work for the dashboard page (/dashboard/guildid)
+        let safe_page = !page.startsWith("/") && page ? "/" + page : page
+        return `/dashboard/${guild_id}${safe_page}`
+    }
+
     const other_items: MenuItem[] = [
         {
             name: "Dashboard",
-            href: "./",
+            href: link_to(""),
             icon: LayoutDashboard
         },
         {
             name: "Settings",
-            href: "./settings",
+            href: link_to("settings"),
             icon: Cog
         }
     ]
@@ -27,17 +35,17 @@
     const core_items: MenuItem[] = [
         {
             name: "Watch & Monitor",
-            href: "./core",
+            href: link_to("core"),
             icon: Activity
         },
         {
             name: "Watched Threads",
-            href: "./threads",
+            href: link_to("threads"),
             icon: Spool
         },
         {
             name: "Channel Monitors",
-            href: "./monitors",
+            href: link_to("monitors"),
             icon: Eye
         }
     ]
@@ -45,29 +53,50 @@
     const ticket_items: MenuItem[] = [
         {
             name: "Panels",
-            href: "./ticket-panels",
+            href: link_to("ticket-panels"),
             icon: PanelBottom
         },
         {
             name: "Open Tickets",
-            href: "./open-tickets",
+            href: link_to("open-tickets"),
             icon: TicketCheck
         },
         {
             name: "Closed Tickets",
-            href: "./closed-tickets",
+            href: link_to("closed-tickets"),
             icon: TicketMinus
         },
     ]
 
     function is_active(item: MenuItem): boolean {
-        const current_path = "." + /\/dashboard\/\d*(\/(.*)|$)/gm.exec($page.url.pathname)?.[1]
+        const current_path = $page.url.pathname
         return current_path === item.href
     }
+
+    let sidebar_ref: HTMLElement
+
+    function update_sidebar_height() {
+        if(sidebar_ref) {
+            const pos = sidebar_ref.getBoundingClientRect()
+
+            const height = window.innerHeight - pos.top
+            sidebar_ref.style.height = height + "px"
+        }
+    }
+
+    onMount(async () => {
+        await tick()
+        update_sidebar_height()
+        if(browser) window.addEventListener("resize", update_sidebar_height)
+    })
+
+    onDestroy(() => {
+        if(browser) window.removeEventListener("resize", update_sidebar_height)
+    })
 </script>
 
 <div class="container">
-    <nav class="sidebar">
+    <aside bind:this={sidebar_ref} class="sidebar">
         {#each other_items as item}
             { @const Icon = item.icon }
             <a class="module {is_active(item) ? "active" : ""}" href={item.href}>
@@ -92,7 +121,7 @@
                 <span>{item.name}</span>
             </a>
         {/each}
-    </nav>
+    </aside>
     
     <main>
         <slot />
@@ -114,9 +143,9 @@
     }
 
     .sidebar {
-        @extend .bg-background-100;
+        @extend .bg-background-600;
+        height: 100%;
         padding: 1em;
-        height: 100vh;
         min-width: min(25%, 20em);
 
         .module {
@@ -134,9 +163,10 @@
             }
 
             &.active {
-                @extend .bg-background-300;
+                @extend .bg-background-800;
                 color: white;
                 font-weight: bold;
+                box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
             }
         }
     }

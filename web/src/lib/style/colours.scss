@@ -12,21 +12,22 @@ $colours: (
 :root {
 	@each $name, $base in $colours {
 		@for $i from 0 through 10 {
-			$percent: $i * 5%;
-			--#{$name}-#{$i * 100}: #{colour-variant($base, $percent)};
+			$step: ($i - 5) * 5%;
+			--#{$name}-#{$i * 100}: #{colour-variant($base, $step)};
 		}
 	}
 }
 
 @each $name, $base in $colours {
 	@for $i from 0 through 10 {
-		$percent: $i * 5%;
+		$step: ($i - 5) * 5%;
+
 		.bg-#{$name}-#{$i * 100} {
-			background-color: colour-variant($base, $percent);
+			background-color: colour-variant($base, $step);
 		}
 
 		.text-#{$name}-#{$i * 100} {
-			color: colour-variant($base, $percent);
+			color: colour-variant($base, $step);
 		}
 	}
 }

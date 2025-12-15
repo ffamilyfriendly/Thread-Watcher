@@ -1,0 +1,39 @@
+@use 'sass:color';
+
+.list {
+	display: flex;
+	flex-direction: column;
+	padding: 0.5rem;
+	width: 100%;
+
+	button {
+		background-color: transparent;
+		border-color: transparent;
+		padding: 0;
+		margin: 0;
+	}
+
+	button,
+	a {
+		font-size: medium;
+		text-align: left;
+		cursor: pointer;
+		width: 100%;
+		transition: 0.3 ease-in-out;
+		display: block;
+		gap: 1rem;
+		text-decoration: none;
+		color: color.adjust(white, $lightness: -20%);
+		padding: 0.5rem;
+		border-radius: 0.5rem;
+
+		&:hover {
+			background-color: rgba(255, 255, 255, 0.1);
+		}
+	}
+}
+
+.heading {
+	font-size: smaller;
+	padding: 0.5rem;
+}

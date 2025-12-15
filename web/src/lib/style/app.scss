@@ -1,5 +1,5 @@
+@use './colours.scss';
 @import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,200..800;1,200..800&family=Changa+One:ital@0;1&display=swap');
-@import './colours.scss';
 
 *,
 *::before,
@@ -20,8 +20,9 @@ h5 {
 }
 
 body {
-	background-color: #090110;
+	@extend .bg-background-500;
 	color: white;
+	min-height: 100vh;
 }
 
 @mixin atkinson($weight, $italic: false) {
@@ -29,7 +30,7 @@ body {
 	font-optical-sizing: auto;
 	font-weight: $weight;
 	// Shows error but its valid. Cant seem to make VSC shut up
-	font-style: if(sass($italic): italic; else: normal);
+	font-style: if($italic, italic, normal);
 }
 
 @for $i from 2 through 8 {
