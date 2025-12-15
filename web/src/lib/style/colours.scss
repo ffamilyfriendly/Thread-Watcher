@@ -1,0 +1,32 @@
+@use 'sass:color';
+
+$colours: (
+	'background': #090110,
+	'alt': #090110
+);
+
+@function colour-variant($base, $percentage) {
+	@return color.adjust($base, $lightness: $percentage);
+}
+
+:root {
+	@each $name, $base in $colours {
+		@for $i from 0 through 10 {
+			$percent: $i * 5%;
+			--#{$name}-#{$i * 100}: #{colour-variant($base, $percent)};
+		}
+	}
+}
+
+@each $name, $base in $colours {
+	@for $i from 0 through 10 {
+		$percent: $i * 5%;
+		.bg-#{$name}-#{$i * 100} {
+			background-color: colour-variant($base, $percent);
+		}
+
+		.text-#{$name}-#{$i * 100} {
+			color: colour-variant($base, $percent);
+		}
+	}
+}

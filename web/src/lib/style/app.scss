@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,200..800;1,200..800&family=Changa+One:ital@0;1&display=swap');
+@import './colours.scss';
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+	padding: 0;
+	margin: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+	font-family: 'Changa One', sans-serif;
+	font-weight: 400;
+	font-style: normal;
+}
+
+body {
+	background-color: #090110;
+	color: white;
+}
+
+@mixin atkinson($weight, $italic: false) {
+	font-family: 'Atkinson Hyperlegible Next', sans-serif;
+	font-optical-sizing: auto;
+	font-weight: $weight;
+	// Shows error but its valid. Cant seem to make VSC shut up
+	font-style: if(sass($italic): italic; else: normal);
+}
+
+@for $i from 2 through 8 {
+	$_i: $i * 100;
+	.atkinson-#{$_i} {
+		@include atkinson($_i);
+	}
+}
+
+@for $i from 2 through 8 {
+	$_i: $i * 100;
+	.atkinson-#{$_i}i {
+		@include atkinson($_i, true);
+	}
+}

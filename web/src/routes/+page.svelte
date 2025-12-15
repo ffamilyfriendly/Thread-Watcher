@@ -1,12 +1,8 @@
 <script lang="ts">
-    let counter = 2
 
-    function clicked() {
-        counter += 1
-    }
 </script>
 
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<h1>Hello guys</h1>
+welcome to the thread watcher dashboard
 
-<button on:click={clicked}>{counter}</button>
+<marquee>this shit barely works</marquee>
