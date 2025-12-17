@@ -3,7 +3,7 @@ import { read_config } from './utilities/config';
 import { Logger } from 'tslog';
 import { PrivateEvent } from 'interfaces/PrivateEvents';
 import { load_module_as_and } from 'utilities/load_files';
-import { ShardedIpcClient } from 'utilities/PrivateInteraction';
+import { ShardedIpcClient } from 'utilities/ipc_clients';
 import { create_web_server } from 'web';
 import get_database_instance from 'database';
 import Redis from 'ioredis';

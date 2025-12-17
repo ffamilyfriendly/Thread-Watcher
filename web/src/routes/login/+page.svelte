@@ -1,12 +1,13 @@
-<script>
-	import { signIn, signOut } from "@auth/sveltekit/client";
-	import { page } from "$app/stores"
+<script lang="ts">
+	import { signIn } from "@auth/sveltekit/client";
+	import { page } from "$app/state"
+	import { redirect } from "@sveltejs/kit";
 </script>
 
 <div id="cum">
 	<div>
 		<h1>Sign in cuh</h1>
-		<button on:click={() => signIn("discord")}>Sign In with Discord</button>
+		<button on:click={() => signIn("discord", { redirectTo: "/dashboard/" })}>Sign In with Discord</button>
 	</div>
 </div>
 

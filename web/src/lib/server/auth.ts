@@ -9,11 +9,25 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 			clientSecret: DISCORD_CLIENT_SECRET,
 			authorization: {
 				params: {
-					scope: 'guilds'
+					scope: 'identify guilds'
 				}
 			}
 		})
 	],
 	secret: AUTH_SECRET,
-	trustHost: true
+	trustHost: true,
+
+	callbacks: {
+		async jwt({ token, account }) {
+			if (account) {
+				token.access_token = account.access_token;
+			}
+			return token;
+		},
+
+		async session({ session, token }) {
+			session.access_token = token.access_token;
+			return session;
+		}
+	}
 });

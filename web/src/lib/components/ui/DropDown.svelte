@@ -19,7 +19,6 @@
 
     function calc_position() {
         if(btn_elem && child_elem) {
-            console.log("hi")
             const btn = btn_elem.getBoundingClientRect();
             const child = child_elem.getBoundingClientRect();
 

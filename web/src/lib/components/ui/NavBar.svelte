@@ -1,5 +1,4 @@
 <script lang="ts">
-    import "$lib/style/app.scss"
     import { page } from "$app/state"
     import { Activity, Cog, Eye, LayoutDashboard, PanelBottom, Skull, Spool, TicketCheck, TicketMinus, type Icon as IconType } from "@lucide/svelte"
 	import { onDestroy, onMount, tick } from "svelte";
@@ -80,7 +79,7 @@
         return current_path === item.href
     }
 
-    let sidebar_ref: HTMLElement
+    let sidebar_ref: HTMLElement | null = $state(null)
 
     function update_sidebar_height() {
         if(sidebar_ref) {

@@ -24,6 +24,7 @@ const Web = z.object({
   enabled: z.boolean(),
   port: z.number().min(0).max(65535).default(2003),
   hostname: z.string().url(),
+  shared_secret: z.string(),
 });
 
 const Redis = z.object({

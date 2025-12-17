@@ -88,7 +88,6 @@ export default class ThreadBumper {
    * - A result-style value (ok()/err()) indicating success or carrying an error value describing the failure.
    */
   private async bump_thread(thread_data: ThreadData) {
-    this.l.debug('Fetching thread ', thread_data.id);
     const thread_res = await ResultAsync.fromPromise(
       d_client.channels.fetch(thread_data.id),
       map_err,
@@ -118,13 +117,12 @@ export default class ThreadBumper {
         this.l.error(`could not un-archive thread ${thread.id}`, set_archived_res.error);
     }
 
-    this.l.debug('Guild has BUMP_BEHAVIOUR: ', bump_behaviour);
+    this.l.silly('Guild has BUMP_BEHAVIOUR: ', bump_behaviour);
     if (bump_behaviour === 'UNARCHIVE_ONLY') return ok();
 
     if (!thread.locked && thread.manageable) {
       const new_duration = thread.autoArchiveDuration === 10080 ? 4320 : 10080;
 
-      this.l.debug(`Setting autoarchive to ${new_duration}`);
       const set_auto_archive_promise = thread.setAutoArchiveDuration(new_duration);
 
       const auto_archive_res = await ResultAsync.fromPromise<unknown, Error>(
@@ -134,7 +132,6 @@ export default class ThreadBumper {
       if (auto_archive_res.isErr())
         this.l.error(`could not bump thread w/ edit ${thread.id}`, auto_archive_res.error);
     } else if (thread.sendable && !thread.archived) {
-      this.l.debug('bumping thread via text...');
       const send_bump_msg_res = await ResultAsync.fromPromise(
         thread.send('bumping thread.'),
         map_err,
@@ -143,7 +140,6 @@ export default class ThreadBumper {
         this.l.error(`could not bump thread w/ msg ${thread.id}`, send_bump_msg_res.error);
     }
 
-    this.l.debug(thread_data.id, ' was handled!');
     return ok();
   }
 

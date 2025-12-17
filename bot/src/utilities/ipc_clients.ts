@@ -1,8 +1,10 @@
 import { Client, Shard, ShardClientUtil, ShardingManager } from 'discord.js';
 import { BaseEvent, Callback, ReponseEvent } from 'interfaces/PrivateEvents';
 import { randomBytes } from 'crypto';
-import { err, ok, Result, ResultAsync } from 'neverthrow';
+import { err, Ok, ok, Result, ResultAsync } from 'neverthrow';
 import Redis from 'ioredis';
+import { map_err } from './error';
+import { r } from 'tar';
 
 function generate_request_id() {
   return randomBytes(16).toString('hex');
@@ -178,13 +180,45 @@ export class ShardedIpcClient extends BaseClient {
     return this.send_to_shard<T>(shard.value, event, data);
   }
 
-  send_all<T = unknown>(event: string, data: unknown) {
+  /**
+   * Sends an IPC event to all shard instances and collects responses
+   *
+   * - returns an array of promises for each subsequent shard IPC call
+   *
+   * @param event event IPC event name
+   * @param data data payload sent to each shard
+   */
+  send_all<T = unknown>(event: string, data: unknown): Promise<Result<T, unknown>>[] {
     const results: Promise<Result<T, unknown>>[] = [];
     this.shards.forEach((shard) => {
       const result = this._send<T>(shard, event, data);
       results.push(result);
     });
     return results;
+  }
+
+  /**
+   * Sends an IPC event to all shard instances and collects responses.
+   *
+   * - Executes in parallel
+   * - fails if any shard returns an error
+   * - returns an array of successful results
+   *
+   * @param event event IPC event name
+   * @param data data payload sent to each shard
+   */
+  async send_all_flat<T = unknown>(event: string, data: unknown) {
+    const ipc_reqs = this.send_all(event, data);
+    const r_safe = await ResultAsync.fromPromise(Promise.all(ipc_reqs), map_err);
+
+    if (r_safe.isErr()) {
+      return err(r_safe.error);
+    }
+
+    const contains_error = r_safe.value.find((r) => r.isErr());
+    if (contains_error) return err(contains_error.error);
+
+    return ok(r_safe.value.filter((r) => r.isOk()).map((r) => r.value as T));
   }
 
   private async _handle_message(message: ShardedBaseEvent) {

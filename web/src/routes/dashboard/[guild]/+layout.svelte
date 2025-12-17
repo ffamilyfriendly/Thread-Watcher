@@ -5,6 +5,7 @@
 	import { onMount } from "svelte";
 
     let should_be_open = $state(false)
+    let { children} = $props();
 
     onMount(() => {
         if(browser) {
@@ -31,7 +32,7 @@
     <NavBar open={should_be_open} />
     
     <main>
-        <slot />
+        {@render children()}
     </main>
 </div>
 

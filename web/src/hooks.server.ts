@@ -1,4 +1,4 @@
-import { handle as auth_handle } from '$lib/server/auth';
+import { handle as auth_handle, signIn } from '$lib/server/auth';
 import { redirect, type Handle, type ResolveOptions } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 
@@ -7,6 +7,11 @@ const authorization_handle: Handle = async ({ event, resolve }) => {
 		const session = await event.locals.auth();
 
 		if (!session) {
+			event.cookies.set('redirect_to', event.url.pathname, {
+				path: '/',
+				httpOnly: true,
+				maxAge: 60 * 5
+			});
 			throw redirect(303, '/login');
 		}
 	}

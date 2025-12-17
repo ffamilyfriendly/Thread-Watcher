@@ -5,7 +5,7 @@ import { load_module_as_and } from './utilities/load_files';
 import { Event } from 'interfaces/ClientEvent';
 import { BaseCommand } from 'interfaces/Command';
 import { PrivateEvent } from 'interfaces/PrivateEvents';
-import { BotIpcClient } from 'utilities/PrivateInteraction';
+import { BotIpcClient } from 'utilities/ipc_clients';
 import get_database_instance from 'database';
 import ThreadService from 'services/ThreadService';
 import ChannelService from 'services/ChannelService';
@@ -38,7 +38,6 @@ async function load_events(refresh_events = false) {
     './src/events',
     (modules) => {
       for (const event of modules) {
-        logger.silly(`Registering d.js handler for: `, event.event_name);
         if (refresh_events) client.removeAllListeners(event.event_name);
         client.on(event.event_name, event.event_callback);
       }
@@ -56,7 +55,6 @@ async function load_commands(refresh_commands = false) {
           'parent_command' in command
             ? `${command.parent_command}.${command.command_data.name}`
             : command.command_data.name;
-        logger.silly(`Registering command handler for: `, command_name);
         commands.set(command_name, command);
       }
     },

@@ -1,6 +1,6 @@
 import { Client, ThreadChannel } from 'discord.js';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { ShardedIpcClient } from 'utilities/PrivateInteraction';
+import { ShardedIpcClient } from 'utilities/ipc_clients';
 
 export interface ThreadFetcher {
   fetch_thread_details(guild_id: string, thread_id: string): Promise<Result<ThreadChannel, Error>>;
