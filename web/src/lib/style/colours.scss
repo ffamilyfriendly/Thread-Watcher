@@ -2,7 +2,9 @@
 
 $colours: (
 	'background': #090110,
-	'alt': #090110
+	'alt': #090110,
+	'primary': blue,
+	'secondary': black
 );
 
 @function colour-variant($base, $percentage) {

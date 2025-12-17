@@ -32,16 +32,26 @@
     <h1>Select a server</h1>
     <div class="guild_list">
         {#each data.guilds.sort(sort_by_boolean_prop) as guild}
-        {@const icon = `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`}
+        {@const icon = guild.icon && `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`}
             <div class="guild">
                 <div class="hero">
                     <div style="--icon_link: url({icon})"></div>
-                    <img src="{icon}" alt="guild icon" />
+                    {#if icon}
+                        <img src="{icon}" class="icon" alt="guild icon" />
+                    {:else}
+                        <p class="icon">a</p>
+                    {/if}
                 </div>
 
                 <div class="meta">
-                    {guild.name}
-                    <a class={bstyle.button} href={guild.action_link}> { guild.guild_has_bot ? "Go" : "Setup" } </a>
+                    <div>
+                        <p>{guild.name}</p>
+                    </div>
+                    {#if guild.guild_has_bot}
+                        <a class={[bstyle.button, "bg-primary-700", "cta_button"]} href={guild.action_link}> Go </a>
+                    {:else}
+                        <a class={[bstyle.button, bstyle.tetriary, "cta_button"]} href={guild.action_link}> Invite </a>
+                    {/if}
                 </div>
             </div>
         {/each}
@@ -58,11 +68,10 @@
     }
 
     .guild {
-        width: 20rem;
         .hero {
             position: relative;
             width: 100%;
-            height: 152px;
+            height: 130px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -74,21 +83,32 @@
                 inset: 0px;
                 z-index: -1;
                 background: var(--icon_link) center center / cover no-repeat;
-                transform: scale(1.4);
+                background-color: var(--secondary-700);
+                transform: scale(1.5);
                 filter: blur(10px);
-                opacity: 0.3;
+                opacity: 0.33;
             }
 
-            img {
-                width: 80px;
+            $size: 80px;
+
+            .icon {
+                width: $size;
                 height: auto;
                 border-radius: 50%;
                 outline: 2px solid rgba(128, 128, 128, 0.2);
                 aspect-ratio: 1/1;
             }
+
+            p.icon {
+                background-color: var(--secondary-700);
+                text-align: center;
+                line-height: $size;
+            }
         }
 
         .meta {
+            padding-top: .75rem;
+            gap: .5rem;
             display: flex;
             justify-content: space-between;
         }
@@ -96,7 +116,7 @@
 
     .guild_list {
         display: grid;
-        gap: 1rem;
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+        gap: 2rem;
     }
 </style>

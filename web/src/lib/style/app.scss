@@ -19,6 +19,11 @@ h5 {
 	font-style: normal;
 }
 
+h1 {
+	padding-top: 1rem;
+	padding-bottom: 1rem;
+}
+
 body {
 	@extend .bg-background-500;
 	color: white;

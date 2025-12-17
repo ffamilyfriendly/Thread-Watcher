@@ -80,6 +80,7 @@
 
     .child_container {
         @extend .bg-background-700;
+        z-index: 1337;
         min-width: 15em;
         border-radius: .5rem;
         position: absolute;

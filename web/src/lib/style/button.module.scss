@@ -1,7 +1,17 @@
 @use './colours.scss';
 
 .button {
-	background-color: green;
+	display: block;
+	height: fit-content;
+	padding: 0.5rem 1rem 0.5rem 1rem;
+	text-align: center;
+	cursor: pointer;
+	text-decoration: none;
+	border-radius: 0.5rem;
 	color: white;
 	border: none;
+}
+
+.tetriary {
+	border: 1px solid rgba(169, 169, 169, 0.2);
 }
