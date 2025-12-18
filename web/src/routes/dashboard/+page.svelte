@@ -1,31 +1,13 @@
 <script lang="ts"> 
     import bstyle from "$lib/style/button.module.scss";
+    import type { PageData } from "./$types";
 
-    function sort_by_boolean_prop(g1: DiscordGuildExpanded, g2: DiscordGuildExpanded) {
+    type ObjWithHasBot = { guild_has_bot: boolean }
+    function sort_by_boolean_prop(g1: ObjWithHasBot, g2: ObjWithHasBot) {
         return (g1.guild_has_bot === g2.guild_has_bot)? 0 : g1.guild_has_bot ? -1 : 1
     }
 
-    interface Props {
-        data: {
-            guilds: DiscordGuildExpanded[]
-        }
-    }
-
-    let { data }: Props = $props()
-
-    function handle_click(link: string, guild_id: string) {
-        if(link.startsWith("/")) window.location.href = link
-
-        const popup = window.open(link, "_blank", "width=500, height=800")
-        
-        const chk_close_int = setInterval(() => {
-            if(popup?.closed) {
-                clearInterval(chk_close_int)
-
-                window.location.href = `/dashboard/${guild_id}`
-            }
-        }, 500)
-    }
+    let { data }: { data: PageData } = $props()
 </script>
 
 <main>

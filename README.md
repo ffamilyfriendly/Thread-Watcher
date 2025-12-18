@@ -52,6 +52,14 @@
 5. Start the bot:
    - `npm run start`
 
+## 🌐 Dashboard
+
+The dashboard code exists in [the web directory](./web) along with more information on how it works (soon). For now, enjoy this sleep deprived TL;DR:
+
+the web dashboard runs with sveltekit and handles user authentication and authorization. The API exposed by the shard manager does not provide direct user authorization or authentication and can therefore **NEVER** be exposed to the wider internet. Sveltekit serves as the gatekeeper and makes authenticated requests to the API using the `SHARED_API_SECRET` variable in it's `.env` file.
+
+I think(?) this should be safe enough. But idk. Im just a guy :D
+
 ## 🤓 Development
 
 > [!NOTE]

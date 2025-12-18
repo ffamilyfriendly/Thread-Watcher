@@ -9,13 +9,15 @@ export function create_web_server() {
   const server = express();
 
   server.use((req, res, next) => {
-    const auth = req.headers.authorization;
+    const auth = req.header('X-Internal-Auth');
     if (!auth) {
       return res.status(401).json({
         code: 401,
         message: 'Unauthorized',
       });
     }
+
+    req.user_id = req.header('X-User-Id');
 
     if (auth !== config.web.shared_secret) {
       return res.status(403).json({

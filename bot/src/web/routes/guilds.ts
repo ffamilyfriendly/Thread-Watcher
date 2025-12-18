@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { ipc_client } from 'index';
 import { RouteFile } from 'interfaces/Web';
+import { enforce_policy } from 'web/auth/auth';
+import { Policies } from 'web/auth/policies';
 
 const router = Router();
 
@@ -23,6 +25,8 @@ router.post('/viewable', async (req, res) => {
 
   res.json(guilds.value.flat());
 });
+
+router.get('/:guild_id', enforce_policy(Policies.is_bot_owner), (req, res) => {});
 
 const route: RouteFile = {
   path: '/guilds',
