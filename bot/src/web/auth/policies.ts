@@ -95,6 +95,7 @@ export namespace Policies {
       });
 
       if (r.isErr()) {
+        console.log('ISSUE', r.error);
         return err(r.error as Error);
       }
 
@@ -109,9 +110,6 @@ export namespace Policies {
    * Here we can define common Policy combinations / configs so we dont have to rewrite them every time
    */
   export namespace Common {
-    export const admin_and_owner = and(
-      has_discord_perm(PermissionFlagsBits.Administrator),
-      is_bot_owner,
-    );
+    export const admin_and_owner = and(has_discord_perm('Administrator'), is_bot_owner);
   }
 }

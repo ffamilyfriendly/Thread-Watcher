@@ -171,6 +171,10 @@ export default class ThreadService {
     } else return err(data.error);
   }
 
+  async get_count_threads(guild_id: string) {
+    return await this.db.get_watched_threads_count(guild_id);
+  }
+
   async get_stale_threads() {
     const data = await this.db.get_stale_threads();
 

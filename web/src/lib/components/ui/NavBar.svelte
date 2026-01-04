@@ -144,6 +144,7 @@
         height: 100%;
         padding: 1em;
         min-width: min(25%, 20em);
+        z-index: 1336;
 
         .module {
             transition: .3 ease-in-out;

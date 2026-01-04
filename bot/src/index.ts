@@ -11,6 +11,9 @@ import ThreadService from 'services/ThreadService';
 import { IndexContextThreadFetcher } from 'fetchers/ThreadFetcher';
 import { start_db_backup_routine } from 'routines/do_db_backup';
 import { S3Client } from 'bun';
+import ChannelService from 'services/ChannelService';
+import { ResultAsync } from 'neverthrow';
+import { map_err } from 'utilities/error';
 
 const config_result = read_config();
 const logger = new Logger();
@@ -52,6 +55,7 @@ const thread_service = new ThreadService(
   redis,
   new IndexContextThreadFetcher(ipc_client),
 );
+const channel_service = new ChannelService(database, redis);
 
 async function load_events() {
   return load_module_as_and<PrivateEvent>('./src/ipcEvents/manager', (events_array) => {
@@ -64,7 +68,16 @@ async function load_events() {
 start_db_backup_routine();
 load_events();
 
-export { sharding_manager, ipc_client, config, logger, database, bucket_storage };
+export {
+  sharding_manager,
+  ipc_client,
+  config,
+  logger,
+  database,
+  bucket_storage,
+  thread_service,
+  channel_service,
+};
 
 sharding_manager.on('shardCreate', (shard) => {
   const shard_logger = logger.getSubLogger({ name: `Shard ${shard.id}` });
@@ -85,3 +98,35 @@ if (config.web.enabled) {
 }
 
 sharding_manager.spawn();
+
+async function shutdown() {
+  logger.info('SHUTTING DOWN...');
+
+  const redis_res = await ResultAsync.fromPromise(redis.quit(), map_err);
+
+  if (redis_res.isErr()) {
+    logger.error('Failed to close redis connection', redis_res.error);
+  } else {
+    logger.info('👍 closed redis connection');
+  }
+
+  const db_res = await database.close();
+  if (db_res.isErr()) {
+    logger.error('Failed to close database connection', db_res.error);
+  } else {
+    logger.info('👍 closed database connection');
+  }
+
+  // kill the shards so we dont leave orphans
+  for (const [id, shard] of sharding_manager.shards) {
+    logger.info(`💀 Killing shard ${id}`);
+    shard.kill();
+  }
+
+  logger.info('👋 bye bye');
+  process.exit(0);
+}
+
+process.on('SIGABRT', shutdown);
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);

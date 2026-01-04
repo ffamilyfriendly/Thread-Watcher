@@ -86,6 +86,10 @@ export default class ChannelService {
     } else return err(data.error);
   }
 
+  async get_count_channels(guild_id: string) {
+    return await this.db.get_monitored_channels_count(guild_id);
+  }
+
   async add_channel(channel: Channel, filters?: AdvancedFilterOptions) {
     if (!('guild' in channel)) return err('wont happen');
 

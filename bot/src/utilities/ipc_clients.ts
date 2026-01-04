@@ -1,10 +1,9 @@
 import { Client, Shard, ShardClientUtil, ShardingManager } from 'discord.js';
 import { BaseEvent, Callback, ReponseEvent } from 'interfaces/PrivateEvents';
 import { randomBytes } from 'crypto';
-import { err, Ok, ok, Result, ResultAsync } from 'neverthrow';
+import { err, ok, Result, ResultAsync } from 'neverthrow';
 import Redis from 'ioredis';
 import { map_err } from './error';
-import { r } from 'tar';
 
 function generate_request_id() {
   return randomBytes(16).toString('hex');
@@ -41,10 +40,16 @@ class BaseClient implements IpcClient {
     event: string,
     data: unknown,
   ): Promise<Result<T, unknown>> {
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
       const request = generate_message(event, data);
 
-      shard.send(request);
+      const send_res = await ResultAsync.fromPromise(shard.send(request) as Promise<any>, map_err);
+
+      if (send_res.isErr()) {
+        console.log(request);
+        return resolve(err(send_res.error));
+      }
+
       this.response_events.set(request.request_id, (data) => {
         if (data.ok) {
           resolve(ok(data.data as T));

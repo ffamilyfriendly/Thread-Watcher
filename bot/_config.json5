@@ -1,6 +1,6 @@
 {
   tokens: {
-    discord: 'SECRET AF',
+    discord: 'SECRET',
     topgg: 'secret',
   },
   paywall_enabled: true,
@@ -8,6 +8,7 @@
     enabled: true,
     port: 2003,
     hostname: 'https://threadwatcher.xyz',
+    shared_secret: 'SECRET',
   },
   owners: ['286224826170081290'],
   clientID: '1202623821010436147',
@@ -15,18 +16,18 @@
   database: {
     flavour: 'sqlite',
     redis: {
-      user: 'secret',
+      user: 'threadwatcher',
       password: 'secret',
     },
     backup_path: './backups',
-    backup_interval: '* * * * *',
+    backup_interval: '0 0 * * *',
     upload_backup_to_bucket: false,
     keep_local_files_amount: 5,
   },
   bucket_storage: {
-    url: 'secret',
-    secret_access_key: 'secret',
-    access_key_id: 'secret',
+    url: 'SECRET',
+    secret_access_key: 'SECRET',
+    access_key_id: 'SECRET',
   },
   style: {
     error: {

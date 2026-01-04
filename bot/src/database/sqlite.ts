@@ -30,6 +30,7 @@ function handle_error(err_data: unknown) {
     // You, the reader, is most welcome. I wrote this shit at 21:00 2025-07-17 btw fun fact!!! :D :D :D
     // > Thank you, past me, for this nice message. I wrote this reply at 01:58 2025-11-22
     // >> Thank you both. Idk for what. Did not touch this code. I wrote this at 01:33 2025-12-10
+    // >>> hello both! I have effectivly removed this code in favour for the decorator. I wrote this at 01:46 2026-01-04 ✌️
     const message =
       err_data &&
       typeof err_data === 'object' &&
@@ -53,17 +54,21 @@ export default class Sqlite implements Database {
     this._config = config;
   }
 
+  @with_error_handling
   async create_tables() {
-    try {
-      for (const query of TABLE_CREATION_QUERIES) {
-        this.db.prepare(query).run();
-      }
-      return ok();
-    } catch (err_data) {
-      return handle_error(err_data);
+    for (const query of TABLE_CREATION_QUERIES) {
+      this.db.prepare(query).run();
     }
+    return ok();
   }
 
+  @with_error_handling
+  async close() {
+    this.db.close();
+    return ok();
+  }
+
+  @with_error_handling
   async insert_thread(thread: {
     id: string;
     server: string;
@@ -71,179 +76,158 @@ export default class Sqlite implements Database {
     due_archive: Date;
     is_managed: boolean;
   }) {
-    try {
-      this.db
-        .prepare('INSERT INTO threads VALUES (?, ?, ?, ? ,1, ?)')
-        .run(
-          thread.id,
-          thread.server,
-          thread.parent_channel_id ?? null,
-          thread.due_archive.getTime(),
-          thread.is_managed,
-        );
-      return ok();
-    } catch (err_data) {
-      return handle_error(err_data);
-    }
-  }
-
-  async delete_thread(thread_id: string) {
-    try {
-      this.db.prepare('DELETE FROM threads WHERE id = ?').run(thread_id);
-      return ok();
-    } catch (err_data) {
-      return handle_error(err_data);
-    }
-  }
-
-  async set_thread_auto_archive(thread_id: string, auto_archive_duration: Date) {
-    try {
-      this.db
-        .prepare('UPDATE threads SET due_archive = ? WHERE id = ?')
-        .run(auto_archive_duration.getTime(), thread_id);
-      return ok();
-    } catch (err_data) {
-      return handle_error(err_data);
-    }
-  }
-
-  async set_thread_watched(thread_id: string, is_watched: boolean) {
-    try {
-      this.db.prepare('UPDATE threads SET is_watched = ? WHERE id = ?').run(is_watched, thread_id);
-      return ok();
-    } catch (err_data) {
-      return handle_error(err_data);
-    }
-  }
-
-  async get_thread(thread_id: string) {
-    try {
-      const res = this.db.prepare('SELECT * FROM threads WHERE id = ?').get(thread_id);
-
-      return ok(res as ThreadData);
-    } catch (err_data) {
-      return handle_error(err_data);
-    }
-  }
-
-  async get_threads_in_guild(guild_id: string, watched: boolean) {
-    try {
-      return ok(
-        this.db
-          .prepare('SELECT * FROM threads WHERE server = ? AND is_watched = ?')
-          .all(guild_id, watched) as ThreadData[],
+    this.db
+      .prepare('INSERT INTO threads VALUES (?, ?, ?, ? ,1, ?)')
+      .run(
+        thread.id,
+        thread.server,
+        thread.parent_channel_id ?? null,
+        thread.due_archive.getTime(),
+        thread.is_managed,
       );
-    } catch (err_data) {
-      return handle_error(err_data);
-    }
+    return ok();
+  }
+
+  @with_error_handling
+  async delete_thread(thread_id: string) {
+    this.db.prepare('DELETE FROM threads WHERE id = ?').run(thread_id);
+    return ok();
+  }
+
+  @with_error_handling
+  async set_thread_auto_archive(thread_id: string, auto_archive_duration: Date) {
+    this.db
+      .prepare('UPDATE threads SET due_archive = ? WHERE id = ?')
+      .run(auto_archive_duration.getTime(), thread_id);
+    return ok();
+  }
+
+  @with_error_handling
+  async set_thread_watched(thread_id: string, is_watched: boolean) {
+    this.db.prepare('UPDATE threads SET is_watched = ? WHERE id = ?').run(is_watched, thread_id);
+    return ok();
+  }
+
+  @with_error_handling
+  async get_thread(thread_id: string) {
+    const res = this.db.prepare('SELECT * FROM threads WHERE id = ?').get(thread_id);
+
+    return ok(res as ThreadData);
+  }
+
+  @with_error_handling
+  async get_threads_in_guild(guild_id: string, watched: boolean) {
+    return ok(
+      this.db
+        .prepare('SELECT * FROM threads WHERE server = ? AND is_watched = ?')
+        .all(guild_id, watched) as ThreadData[],
+    );
+  }
+
+  @with_error_handling
+  async get_watched_threads_count(guild_id: string) {
+    return ok(
+      (
+        this.db
+          .prepare('SELECT COUNT(*) FROM threads WHERE server = ? AND is_watched = 1')
+          .get(guild_id) as { 'COUNT(*)': number }
+      )['COUNT(*)'],
+    );
   }
 
   static STALE_BUFFER_MINUTES = 5;
   static STALE_BUFFER_MS = this.STALE_BUFFER_MINUTES * 60 * 1000;
+  @with_error_handling
   async get_stale_threads(buffer_in_ms = Sqlite.STALE_BUFFER_MS) {
     const now = Date.now();
     const stale_thresh = now + buffer_in_ms;
 
-    try {
-      return ok(
-        this.db
-          .prepare('SELECT * FROM threads WHERE due_archive <= ? AND is_watched = 1')
-          .all(stale_thresh) as ThreadData[],
-      );
-    } catch (err_data) {
-      return handle_error(err_data);
-    }
+    return ok(
+      this.db
+        .prepare('SELECT * FROM threads WHERE due_archive <= ? AND is_watched = 1')
+        .all(stale_thresh) as ThreadData[],
+    );
   }
 
+  @with_error_handling
   async set_guild_setting_value(
     guild_id: string,
     setting_id: string,
     setting_value: string,
   ): Promise<Result<void, DatabaseError>> {
-    try {
-      this.db
-        .prepare('INSERT INTO settings(guild_id, setting_id, setting_value) VALUES(?,?,?)')
-        .run(guild_id, setting_id, setting_value);
-      return ok();
-    } catch (err_data) {
-      return handle_error(err_data);
-    }
+    this.db
+      .prepare('INSERT INTO settings(guild_id, setting_id, setting_value) VALUES(?,?,?)')
+      .run(guild_id, setting_id, setting_value);
+    return ok();
   }
 
+  @with_error_handling
   async get_guild_setting_value(guild_id: string, setting_id: string) {
-    try {
-      const row = this.db
-        .prepare('SELECT setting_value FROM settings WHERE guild_id = ? AND setting_id = ?')
-        .get(guild_id, setting_id);
+    const row = this.db
+      .prepare('SELECT setting_value FROM settings WHERE guild_id = ? AND setting_id = ?')
+      .get(guild_id, setting_id);
 
-      if (!row) return ok(null);
+    if (!row) return ok(null);
 
-      if (!row || typeof row !== 'object' || !('setting_value' in row)) {
-        return err(new Error('Setting not found or invalid row structure'));
-      }
-
-      const settings_value = row.setting_value;
-      if (typeof settings_value !== 'string') return err(new Error(`setting value was not string`));
-
-      return ok(settings_value);
-    } catch (err_data) {
-      return handle_error(err_data);
+    if (!row || typeof row !== 'object' || !('setting_value' in row)) {
+      return err(new Error('Setting not found or invalid row structure'));
     }
+
+    const settings_value = row.setting_value;
+    if (typeof settings_value !== 'string') return err(new Error(`setting value was not string`));
+
+    return ok(settings_value);
   }
 
+  @with_error_handling
   async delete_guild_setting_value(guild_id: string, setting_id: string) {
-    try {
-      this.db
-        .prepare('DELETE FROM settings WHERE guild_id = ? AND setting_id = ?')
-        .run(guild_id, setting_id);
-      return ok();
-    } catch (err_data) {
-      return handle_error(err_data);
-    }
+    this.db
+      .prepare('DELETE FROM settings WHERE guild_id = ? AND setting_id = ?')
+      .run(guild_id, setting_id);
+    return ok();
   }
 
+  @with_error_handling
   async insert_channel(channel: ChannelData, filters?: FilterData) {
-    try {
-      this.db
-        .prepare('INSERT OR REPLACE INTO channels VALUES(?, ?, ?, ?, ?)')
-        .run(
-          channel.id,
-          channel.server,
-          filters && filters.regex ? filters.regex : null,
-          filters && filters.role_whitelist ? filters.role_whitelist.join(',') : null,
-          filters && filters.tags ? filters.tags.join(',') : null,
-        );
-      return ok();
-    } catch (err_data) {
-      return handle_error(err_data);
-    }
+    this.db
+      .prepare('INSERT OR REPLACE INTO channels VALUES(?, ?, ?, ?, ?)')
+      .run(
+        channel.id,
+        channel.server,
+        filters && filters.regex ? filters.regex : null,
+        filters && filters.role_whitelist ? filters.role_whitelist.join(',') : null,
+        filters && filters.tags ? filters.tags.join(',') : null,
+      );
+    return ok();
   }
 
+  @with_error_handling
   async get_channel(channel_id: string) {
-    try {
-      const val = this.db.prepare('SELECT * FROM channels WHERE id = ?').get(channel_id);
-      return ok(val ? (val as ChannelDataWithFilters) : null);
-    } catch (err_data) {
-      return handle_error(err_data);
-    }
+    const val = this.db.prepare('SELECT * FROM channels WHERE id = ?').get(channel_id);
+    return ok(val ? (val as ChannelDataWithFilters) : null);
   }
 
+  @with_error_handling
   async get_channels_in_guild(guild_id: string) {
-    try {
-      const val = this.db.prepare('SELECT * FROM channels WHERE server = ?').all(guild_id);
-      return ok(val as ChannelDataWithFilters[]);
-    } catch (err_data) {
-      return handle_error(err_data);
-    }
+    const val = this.db.prepare('SELECT * FROM channels WHERE server = ?').all(guild_id);
+    return ok(val as ChannelDataWithFilters[]);
   }
 
+  @with_error_handling
   async delete_channel(channel_id: string) {
-    try {
-      this.db.prepare('DELETE FROM channels WHERE id = ?').run(channel_id);
-      return ok();
-    } catch (err_data) {
-      return handle_error(err_data);
-    }
+    this.db.prepare('DELETE FROM channels WHERE id = ?').run(channel_id);
+    return ok();
+  }
+
+  @with_error_handling
+  async get_monitored_channels_count(guild_id: string) {
+    return ok(
+      (
+        this.db.prepare('SELECT COUNT(*) FROM channels WHERE server = ?').get(guild_id) as {
+          'COUNT(*)': number;
+        }
+      )['COUNT(*)'],
+    );
   }
 
   /*

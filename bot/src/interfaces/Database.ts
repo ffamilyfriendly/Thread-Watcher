@@ -32,6 +32,7 @@ type DBResult<T = void> = Promise<Result<T, DatabaseError>>;
 
 interface CoreUtils {
   create_backup_file: (base_dir?: string) => DBResult<{ full_path: string; file_name: string }>;
+  close: () => DBResult<void>;
 }
 
 interface CoreThread {
@@ -41,6 +42,7 @@ interface CoreThread {
   set_thread_watched: (thread_id: string, is_watched: boolean) => DBResult;
   get_thread: (thread_id: string) => DBResult<ThreadData | null>;
   get_threads_in_guild: (guild_id: string, watched: boolean) => DBResult<ThreadData[]>;
+  get_watched_threads_count: (guild_id: string) => DBResult<number>;
   get_stale_threads: () => DBResult<ThreadData[]>;
 }
 
@@ -49,6 +51,7 @@ interface CoreChannel {
   delete_channel: (channel_id: string) => DBResult;
   get_channel: (channel_id: string) => DBResult<ChannelDataWithFilters | null>;
   get_channels_in_guild: (guild_id: string) => DBResult<ChannelDataWithFilters[]>;
+  get_monitored_channels_count: (guild_id: string) => DBResult<number>;
 }
 
 type Core = CoreUtils & CoreThread & CoreChannel;

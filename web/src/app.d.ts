@@ -1,9 +1,13 @@
 import { DefaultSession } from '@auth/sveltekit';
 import { JWT } from '@auth/core/jwt';
+import { User } from '@auth/core/types';
 
 declare module '@auth/core/types' {
 	interface Session {
 		access_token?: string;
+		user: User & {
+			id: string;
+		};
 	}
 }
 

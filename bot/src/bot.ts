@@ -17,6 +17,8 @@ import i18next from 'i18next';
 import { readFileSync } from 'fs';
 import ThreadBumper from 'services/ThreadBumper';
 import AuditService from 'services/AuditService';
+import { ResultAsync } from 'neverthrow';
+import { map_err } from 'utilities/error';
 
 const config_result = read_config();
 const logger = new Logger({ name: 'bot' });
@@ -135,3 +137,29 @@ if (client.shard) {
   console.trace();
   process.exit(1);
 }
+
+async function shutdown() {
+  logger.info('SHUTTING DOWN...');
+
+  const redis_res = await ResultAsync.fromPromise(redis.quit(), map_err);
+
+  if (redis_res.isErr()) {
+    logger.error('Failed to close redis connection', redis_res.error);
+  } else {
+    logger.info('👍 closed redis connection');
+  }
+
+  const db_res = await database.close();
+  if (db_res.isErr()) {
+    logger.error('Failed to close database connection', db_res.error);
+  } else {
+    logger.info('👍 closed database connection');
+  }
+
+  logger.info('👋 bye bye');
+  process.exit(0);
+}
+
+process.on('SIGABRT', shutdown);
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);

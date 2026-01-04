@@ -1,13 +1,17 @@
-interface DiscordGuild {
-	id: string;
-	name: string;
-	icon: string | null;
-	banner: string | null;
-	owner: boolean;
-	permissions: number;
-	permissions_new: number;
-	features: unknown[];
-}
+import * as z from 'zod';
+
+export const ZDiscordGuild = z.object({
+	id: z.string(),
+	name: z.string(),
+	icon: z.string().nullable(),
+	banner: z.string().nullable(),
+	owner: z.boolean(),
+	permissions: z.number(),
+	permissions_new: z.string(),
+	features: z.unknown().array()
+});
+
+export type DiscordGuild = z.infer<typeof ZDiscordGuild>;
 
 interface DiscordGuildExpanded extends DiscordGuild {
 	can_add: boolean;
@@ -15,3 +19,16 @@ interface DiscordGuildExpanded extends DiscordGuild {
 	should_not_show: boolean;
 	action_link: string;
 }
+
+const ZDiscordUser = z.object({
+	id: z.string(),
+	username: z.string(),
+	avatar: z.string(),
+	global_name: z.string()
+});
+
+export const ZDiscordIdentifyData = z.object({
+	user: ZDiscordUser
+});
+
+export type DiscordUser = z.infer<typeof ZDiscordIdentifyData>;
