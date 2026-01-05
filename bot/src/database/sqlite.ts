@@ -8,7 +8,7 @@ import {
   ThreadData,
 } from 'interfaces/Database';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import sql, { Database as SqliteDb, SQLiteError, SQLQueryBindings } from 'bun:sqlite';
+import sql, { Database as SqliteDb, SQLiteError } from 'bun:sqlite';
 import { ConfigType } from 'utilities/config';
 import { with_error_handling } from 'database';
 import { join, resolve as resolve_path } from 'path';
@@ -230,23 +230,6 @@ export default class Sqlite implements Database {
     );
   }
 
-  /*
-interface AuditData {
-  id: number;
-  guild_id: string;
-  executor_id: string;
-  target_id?: string;
-  old_value?: string;
-  new_value?: string;
-  reason?: string;
-  error?: string;
-  exec_ms?: number;
-  cmd_name?: string;
-  timestamp: number;
-  audit_type: string;
-}
-*/
-
   @with_error_handling
   async insert_audit_log(log: Omit<AuditData, 'id' | 'timestamp'>) {
     this.db
@@ -269,12 +252,25 @@ interface AuditData {
   }
 
   @with_error_handling
-  async get_audit_logs(guild_id: string, limit: number, page: number = 1) {
-    const offset = (page - 1) * limit;
-    const value = this.db
-      .prepare('SELECT * FROM audit WHERE guild_id = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?')
-      .all(guild_id, limit, offset);
-    return ok(value as AuditData[]);
+  async get_audit_logs(guild_id: string, limit: number, before_id?: number) {
+    let logs_query;
+    let logs: AuditData[];
+
+    if (before_id) {
+      logs_query = this.db.prepare(
+        'SELECT * FROM audit WHERE guild_id = ? AND id < ? ORDER BY id DESC LIMIT ?',
+      );
+      logs = logs_query.all(guild_id, before_id, limit) as AuditData[];
+    } else {
+      logs_query = this.db.prepare(
+        'SELECT * FROM audit WHERE guild_id = ? ORDER BY id DESC LIMIT ?',
+      );
+      logs = logs_query.all(guild_id, limit) as AuditData[];
+    }
+
+    const next_cursor = logs.length ? logs[logs.length - 1].id : null;
+
+    return ok({ logs, next_cursor });
   }
 
   @with_error_handling

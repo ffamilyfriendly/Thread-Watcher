@@ -1,6 +1,6 @@
 <script lang="ts">
     import { page } from "$app/state"
-    import { Activity, Cog, Eye, LayoutDashboard, PanelBottom, Skull, Spool, TicketCheck, TicketMinus, type Icon as IconType } from "@lucide/svelte"
+    import { Activity, Cog, Eye, LayoutDashboard, Logs, PanelBottom, Skull, Spool, TicketCheck, TicketMinus, type Icon as IconType } from "@lucide/svelte"
 	import { onDestroy, onMount, tick } from "svelte";
 	import { browser } from "$app/environment";
 	import { fly } from "svelte/transition";
@@ -35,6 +35,11 @@
             name: "Settings",
             href: link_to("settings"),
             icon: Cog
+        },
+        {
+            name: "Logs",
+            href: link_to("logs"),
+            icon: Logs
         }
     ]
 

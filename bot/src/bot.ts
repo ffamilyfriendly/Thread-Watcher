@@ -32,7 +32,7 @@ if (config_result.isErr()) {
 const config = config_result.value;
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
 });
 
 async function load_events(refresh_events = false) {

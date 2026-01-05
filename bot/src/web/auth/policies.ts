@@ -106,6 +106,31 @@ export namespace Policies {
     };
   }
 
+  export async function is_bot_master(req: RequestWithUser): Promise<Result<PolicyResult, Error>> {
+    const guild_id = req.params.guild_id || req.body.guild_id;
+    if (!guild_id) {
+      return err(new Error(`route does not have a 'guild_id' parameter!`));
+    }
+
+    const r = await ipc_client.send_to_shard_having_guild<boolean>(
+      guild_id,
+      'check_user_bot_master',
+      {
+        guild_id,
+        user_id: req.user_id,
+      },
+    );
+
+    if (r.isErr()) {
+      return err(r.error as Error);
+    }
+
+    return ok({
+      passes: r.value,
+      message: `'${req.user_id}' is not a bot master`,
+    });
+  }
+
   /**
    * Here we can define common Policy combinations / configs so we dont have to rewrite them every time
    */

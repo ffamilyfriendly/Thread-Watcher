@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { RequestWithUser, SecurityPolicy } from './policies';
+import { config, logger } from 'index';
 
 export function enforce_policy(policy: SecurityPolicy) {
   return async function auth(req: Request, res: Response, next: NextFunction) {
@@ -10,9 +11,15 @@ export function enforce_policy(policy: SecurityPolicy) {
       });
     }
 
+    const is_owner = config.owners.includes(req.user_id);
+    if (is_owner) {
+      return next();
+    }
+
     const policy_result = await policy(req as RequestWithUser);
 
     if (policy_result.isErr()) {
+      logger.error(`Failed to run policy '${policy.name}'`, policy_result.error);
       return res.status(500).json({
         code: 500,
         message: 'failed to run security policy',

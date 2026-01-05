@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { channel_service, ipc_client, sharding_manager, thread_service } from 'index';
+import { audit_service, channel_service, ipc_client, thread_service } from 'index';
 import { RouteFile } from 'interfaces/Web';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
@@ -28,13 +28,7 @@ router.post('/viewable', async (req, res) => {
   res.json(guilds.value.flat());
 });
 
-/*
-	threads_watched: z.number(),
-	monitors_active: z.number(),
-	owned_by_shard: z.number()
-*/
-
-router.get('/:guild_id', enforce_policy(Policies.Common.admin_and_owner), async (req, res) => {
+router.get('/:guild_id', enforce_policy(Policies.is_bot_master), async (req, res) => {
   const guild_id = req.params.guild_id;
 
   const p = await ResultAsync.fromPromise(
@@ -61,12 +55,6 @@ router.get('/:guild_id', enforce_policy(Policies.Common.admin_and_owner), async 
 
   const [threads_watched, monitors_active, owned_by_shard] = p.value;
 
-  console.log({
-    threads_watched,
-    monitors_active,
-    owned_by_shard,
-  });
-
   res.json({
     threads_watched,
     monitors_active,
@@ -74,6 +62,55 @@ router.get('/:guild_id', enforce_policy(Policies.Common.admin_and_owner), async 
   });
 });
 
+router.get('/:guild_id/audit', enforce_policy(Policies.is_bot_master), async (req, res) => {
+  const before_id = req.query.before_id;
+  const cursor = before_id ? Number(before_id) : undefined;
+  const audit_logs = await audit_service.get_audit_logs(req.params.guild_id, 5, cursor);
+
+  if (audit_logs.isErr()) {
+    return res.status(500).json({
+      code: 500,
+      message: 'something went wrong',
+    });
+  }
+
+  res.json(audit_logs.value);
+});
+
+router.get('/:guild_id/channels', enforce_policy(Policies.is_bot_master), async (req, res) => {
+  const guild_id = req.params.guild_id;
+  const channels_res = await ipc_client.send_to_shard_having_guild(guild_id, 'fetch_channels', {
+    guild_id,
+  });
+
+  if (channels_res.isErr()) {
+    console.log(channels_res.error);
+    return res.status(500).json({
+      code: 500,
+      message: 'something went wrong',
+    });
+  }
+
+  console.log(channels_res.value);
+  res.json(channels_res.value);
+});
+
+router.get('/:guild_id/roles', enforce_policy(Policies.is_bot_master), async (req, res) => {
+  const guild_id = req.params.guild_id;
+  const roles_res = await ipc_client.send_to_shard_having_guild(guild_id, 'fetch_roles', {
+    guild_id,
+  });
+
+  if (roles_res.isErr()) {
+    return res.status(500).json({
+      code: 500,
+      message: 'something went wrong',
+    });
+  }
+
+  console.log(roles_res.value);
+  res.json(roles_res.value);
+});
 const route: RouteFile = {
   path: '/guilds',
   router,

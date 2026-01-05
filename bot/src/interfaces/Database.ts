@@ -94,7 +94,11 @@ export interface AuditData {
 
 interface Audit {
   insert_audit_log: (log: Omit<AuditData, 'id' | 'timestamp'>) => DBResult;
-  get_audit_logs: (guild_id: string, limit: number, page?: number) => DBResult<AuditData[]>;
+  get_audit_logs: (
+    guild_id: string,
+    limit: number,
+    before_id?: number,
+  ) => DBResult<{ logs: AuditData[]; next_cursor: number | null }>;
   get_audit_log: (id: number) => DBResult<AuditData>;
 }
 

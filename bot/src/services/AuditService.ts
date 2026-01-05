@@ -1,4 +1,4 @@
-import { CommandInteraction, EmbedBuilder, Interaction, User } from 'discord.js';
+import { CommandInteraction, EmbedBuilder, User } from 'discord.js';
 import i18next from 'i18next';
 import { AuditData, Database, DatabaseError } from 'interfaces/Database';
 import { err, ok, Result } from 'neverthrow';
@@ -37,7 +37,13 @@ export default class AuditService {
       exec_time_ms,
     };
 
-    return (await this.db.insert_audit_log(log_obj)).map((_is_ok) => log_obj);
+    const insert_res = await this.db.insert_audit_log(log_obj);
+
+    if (insert_res.isErr()) {
+      return err(insert_res.error);
+    }
+
+    return ok(log_obj);
   }
 
   get_builder(guild_id: string, executor_id: string, audit_type: AuditType) {
@@ -53,6 +59,10 @@ export default class AuditService {
     );
     builder.set_command_name(interaction.commandName);
     return builder;
+  }
+
+  async get_audit_logs(guild_id: string, page_size: number, before_id?: number) {
+    return await this.db.get_audit_logs(guild_id, page_size, before_id);
   }
 }
 

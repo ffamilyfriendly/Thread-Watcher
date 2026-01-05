@@ -117,7 +117,6 @@ export default class ThreadBumper {
         this.l.error(`could not un-archive thread ${thread.id}`, set_archived_res.error);
     }
 
-    this.l.silly('Guild has BUMP_BEHAVIOUR: ', bump_behaviour);
     if (bump_behaviour === 'UNARCHIVE_ONLY') return ok();
 
     if (!thread.locked && thread.manageable) {
@@ -171,7 +170,9 @@ export default class ThreadBumper {
       (thread) => !this.queued_threads.has(thread.id) && d_client.guilds.cache.has(thread.server),
     );
 
-    this.l.debug(`adding ${threads_to_bump.length} stale threads to queue...`);
+    if (threads_to_bump.length > 0)
+      this.l.debug(`adding ${threads_to_bump.length} stale threads to queue...`);
+
     threads_to_bump.forEach((thread) => {
       this.queued_threads.add(thread.id);
       this.queue.add(async () => {

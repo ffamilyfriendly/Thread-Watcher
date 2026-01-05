@@ -14,7 +14,10 @@ export async function get_cached_or<T>(
 ) {
 	const cache_result = await get_cached<T>(key, schema);
 
-	if (cache_result.isErr()) return err(cache_result.error);
+	if (cache_result.isErr()) {
+		console.error('failed :(', cache_result.error);
+		return err(cache_result.error);
+	}
 
 	if (cache_result.isOk() && cache_result.value) {
 		console.log(`'${key}' is a cache hit!`);
@@ -46,6 +49,7 @@ export async function get_cached<T>(
 	const as_schema = schema.safeParse(JSON.parse(cache_result.value));
 
 	if (!as_schema.success) {
+		redis_client.del(key);
 		return err(as_schema.error);
 	}
 

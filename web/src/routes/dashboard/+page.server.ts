@@ -47,7 +47,7 @@ export async function load({ locals }) {
 		};
 	}
 
-	const key = `${session.access_token}.guilds`;
+	const key = `${session.access_token}:guilds`;
 	const parsed = await get_cached_or(
 		key,
 		z.array(ZDiscordGuild),

@@ -71,6 +71,38 @@ class ChannelSelectAdapter implements InputAdapter<string, ChannelSelectMenuBuil
   }
 }
 
+class RoleSelectAdapter implements InputAdapter<string, RoleSelectMenuBuilder> {
+  create_component() {
+    return new RoleSelectMenuBuilder();
+  }
+
+  into(value: unknown): Result<string, Error> {
+    console.log('VALUE', value);
+    if (typeof value === 'string') {
+      return ok(value);
+    } else return err(new Error(`could not turn ${typeof value} into string`));
+  }
+
+  to_string(value: string): Result<string, Error> {
+    return ok(value);
+  }
+
+  parse_interaction(
+    interaction: InteractionForComponent<RoleSelectMenuBuilder>,
+  ): Result<string, Error> {
+    if (!interaction.values[0]) return err(new Error('no channel was selected'));
+    return ok(interaction.values[0]);
+  }
+
+  is_type(value: unknown): value is string {
+    return typeof value == 'string';
+  }
+
+  display_value(value: string | null): string {
+    return `<@&${value}>`;
+  }
+}
+
 class StringSelectAdapter implements InputAdapter<string, StringSelectMenuBuilder> {
   constructor(private values: SelectMenuComponentOptionData[]) {}
 
@@ -116,7 +148,7 @@ export interface SettingSchema<T extends SettingValue> {
 
 const LOGGING_CHANNEL: SettingSchema<string> = {
   key: 'LOGGING_CHANNEL',
-  name: 'logging channel',
+  name: 'Logging Channel',
   adapter: new ChannelSelectAdapter(),
   default: null,
   type: 'channel',
@@ -126,7 +158,7 @@ const LOGGING_CHANNEL: SettingSchema<string> = {
 
 const BUMP_BEHAVIOUR: SettingSchema<string> = {
   key: 'BUMP_BEHAVIOUR',
-  name: 'bump behaviour',
+  name: 'Bump Behaviour',
   adapter: new StringSelectAdapter([
     {
       label: 'Bump and Un-Archive',
@@ -141,9 +173,20 @@ const BUMP_BEHAVIOUR: SettingSchema<string> = {
   description: 'the behaviour of the bot idk',
 };
 
+const BOT_MASTER_ROLE: SettingSchema<string> = {
+  key: 'BOT_MASTER_ROLE',
+  name: 'Bot Master Role',
+  adapter: new RoleSelectAdapter(),
+  default: null,
+  type: 'string',
+  validate: (value: unknown) => typeof value === 'string' || value === null,
+  description: 'The role which allows dashboard access',
+};
+
 const settings_map = new Map([
   ['LOGGING_CHANNEL', LOGGING_CHANNEL],
   ['BUMP_BEHAVIOUR', BUMP_BEHAVIOUR],
+  ['BOT_MASTER_ROLE', BOT_MASTER_ROLE],
 ]);
 
 export default settings_map;

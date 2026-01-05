@@ -14,6 +14,7 @@ import { S3Client } from 'bun';
 import ChannelService from 'services/ChannelService';
 import { ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
+import AuditService from 'services/AuditService';
 
 const config_result = read_config();
 const logger = new Logger();
@@ -56,6 +57,7 @@ const thread_service = new ThreadService(
   new IndexContextThreadFetcher(ipc_client),
 );
 const channel_service = new ChannelService(database, redis);
+const audit_service = new AuditService(database);
 
 async function load_events() {
   return load_module_as_and<PrivateEvent>('./src/ipcEvents/manager', (events_array) => {
@@ -77,6 +79,7 @@ export {
   bucket_storage,
   thread_service,
   channel_service,
+  audit_service,
 };
 
 sharding_manager.on('shardCreate', (shard) => {

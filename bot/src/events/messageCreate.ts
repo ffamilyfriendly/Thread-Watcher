@@ -11,7 +11,6 @@ async function check_msg_should_bump_thread(msg: Message) {
       return null;
     },
   );
-
   if (res_thread) thread_service.bump_thread_time(msg.channel);
 }
 

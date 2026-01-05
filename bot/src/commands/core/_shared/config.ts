@@ -25,8 +25,16 @@ export function generate_embed<T extends SettingValue>(
     description: setting.description,
     style: 'info',
     fields: [
-      { name: 'Current', value: setting.adapter.display_value(state.value), inline: true },
-      { name: 'Default', value: setting.adapter.display_value(setting.default), inline: true },
+      {
+        name: 'Current',
+        value: state.value ? setting.adapter.display_value(state.value) : '`null`',
+        inline: true,
+      },
+      {
+        name: 'Default',
+        value: setting.default ? setting.adapter.display_value(setting.default) : '`null`',
+        inline: true,
+      },
     ],
   });
 }
@@ -38,7 +46,20 @@ export async function handle_apply_callback<T extends SettingValue>(
   state: State<T>,
 ) {
   if (!response.inGuild()) return;
-  setting_service.set_setting(response.guildId, setting.key, state.value);
+  let setting_result;
+
+  // If the new setting value is null we're deleting the row instead of setting the value to null
+  if (state.value) {
+    setting_result = await setting_service.set_setting(response.guildId, setting.key, state.value);
+  } else {
+    setting_result = await setting_service.remove_setting(response.guildId, setting.key);
+  }
+
+  if (setting_result.isErr()) {
+    ctx.logger.error('Could not set config value', setting_result.error);
+    return ctx.err(setting_result.error);
+  }
+
   const log = await audit_service.log_event('CONFIG_UPDATE', response.guildId, response.user.id, {
     old_value: setting.adapter.display_value(state.old_value),
     new_value: setting.adapter.display_value(state.value),

@@ -3,8 +3,8 @@ import * as z from 'zod';
 export const ZDiscordGuild = z.object({
 	id: z.string(),
 	name: z.string(),
-	icon: z.string().nullable(),
-	banner: z.string().nullable(),
+	icon: z.string().nullish(),
+	banner: z.string().nullish(),
 	owner: z.boolean(),
 	permissions: z.number(),
 	permissions_new: z.string(),

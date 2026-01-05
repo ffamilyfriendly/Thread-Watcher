@@ -103,7 +103,11 @@ export default class SettingService {
 
     const settings_value = await this.db.get_guild_setting_value(guild_id, setting_key);
 
-    if (settings_value.isOk() && settings_value.value) {
+    if (settings_value.isErr()) {
+      return err(settings_value.error);
+    }
+
+    if (settings_value.value) {
       const redis_response = await this.set_setting_redis(
         guild_id,
         setting_key,
@@ -112,7 +116,7 @@ export default class SettingService {
       if (redis_response.isErr()) return err(redis_response);
     }
 
-    return settings_value.map((e) => (e ? adapter.into(e) : null));
+    return ok(settings_value.value);
   }
 
   /**
@@ -153,9 +157,25 @@ export default class SettingService {
       );
     const value_as_str = adapter.to_string(setting_value);
     if (value_as_str.isErr()) return err(value_as_str.error);
-    this.set_setting_redis(guild_id, setting_key, value_as_str.value);
 
-    return this.db.set_guild_setting_value(guild_id, setting_key, value_as_str.value);
+    const data_promise = ResultAsync.fromPromise(
+      Promise.all([
+        this.set_setting_redis(guild_id, setting_key, value_as_str.value),
+        this.db.set_guild_setting_value(guild_id, setting_key, value_as_str.value),
+      ]),
+      map_err,
+    );
+
+    return data_promise;
+  }
+
+  async remove_setting(guild_id: string, setting_key: string) {
+    const promises = Promise.all([
+      this.db.delete_guild_setting_value(guild_id, setting_key),
+      this.redis.del(`settings:${guild_id}:${setting_key}`),
+    ]);
+
+    return ResultAsync.fromPromise(promises, map_err);
   }
 }
 
