@@ -75,7 +75,7 @@ export async function load({ locals, params }) {
 	const [channels, roles] = promises.value;
 
 	if (channels.isErr()) {
-		console.log(channels.error);
+		console.log('CANT GET CHANNELS', channels.error);
 		return error(500, 'could not get channels');
 	}
 

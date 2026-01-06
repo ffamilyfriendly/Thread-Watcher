@@ -71,6 +71,31 @@ export namespace Policies {
     };
   }
 
+  export function cached(policy: SecurityPolicy, cache_duration_seconds: 60, policy_name?: string) {
+    return async function (req: RequestWithUser): Promise<Result<PolicyResult, Error>> {
+      const guild_id = req.params.guild_id || req.body.guild_id;
+      if (!guild_id) {
+        return err(new Error(`route does not have a 'guild_id' parameter!`));
+      }
+      const p_name = policy_name ?? policy.name;
+      const cache_key = `policy:${p_name}:${guild_id}:${req.user_id}`;
+      const cached = await redis.get(cache_key);
+      if (cached !== null) {
+        return ok({
+          passes: cached === 'true',
+          message: cached === 'true' ? undefined : `'${req.user_id}' does not fullfill '${p_name}'`,
+        } as PolicyResult);
+      }
+
+      const policy_result = await policy(req);
+      if (policy_result.isErr()) return err(policy_result.error);
+
+      await redis.set(cache_key, String(policy_result.value.passes), 'EX', cache_duration_seconds);
+
+      return ok(policy_result.value);
+    };
+  }
+
   export function is_bot_owner(req: RequestWithUser): PolicyFunctionReturnType {
     const is_owner = config.owners.includes(req.user_id);
 
@@ -106,19 +131,43 @@ export namespace Policies {
     };
   }
 
-  export async function is_bot_master(req: RequestWithUser): Promise<Result<PolicyResult, Error>> {
+  /**
+   * @description This policy checks if the user:
+   * - is Guild Owner
+   * - has the Administrator perm
+   * - has the Manage Server perm
+   */
+  export async function has_universal_guild_access(
+    req: RequestWithUser,
+  ): Promise<Result<PolicyResult, Error>> {
     const guild_id = req.params.guild_id || req.body.guild_id;
     if (!guild_id) {
       return err(new Error(`route does not have a 'guild_id' parameter!`));
     }
 
-    const cache_key = `policy:bot_master:${guild_id}:${req.user_id}`;
-    const cached = await redis.get(cache_key);
-    if (cached !== null) {
-      return ok({
-        passes: cached === 'true',
-        message: cached === 'true' ? undefined : `'${req.user_id}' is not a bot master (cached)`,
-      } as PolicyResult);
+    const r = await ipc_client.send_to_shard_having_guild<boolean>(
+      guild_id,
+      'check_user_guild_master',
+      {
+        guild_id,
+        user_id: req.user_id,
+      },
+    );
+
+    if (r.isErr()) {
+      return err(r.error as Error);
+    }
+
+    return ok({
+      passes: r.value,
+      message: `'${req.user_id}' is not a guild master`,
+    });
+  }
+
+  export async function is_bot_master(req: RequestWithUser): Promise<Result<PolicyResult, Error>> {
+    const guild_id = req.params.guild_id || req.body.guild_id;
+    if (!guild_id) {
+      return err(new Error(`route does not have a 'guild_id' parameter!`));
     }
 
     const r = await ipc_client.send_to_shard_having_guild<boolean>(
@@ -134,8 +183,6 @@ export namespace Policies {
       return err(r.error as Error);
     }
 
-    await redis.set(cache_key, String(r.value), 'EX', 60);
-
     return ok({
       passes: r.value,
       message: `'${req.user_id}' is not a bot master`,
@@ -147,5 +194,10 @@ export namespace Policies {
    */
   export namespace Common {
     export const admin_and_owner = and(has_discord_perm('Administrator'), is_bot_owner);
+    export const bot_master_or_guild_master = cached(
+      or(is_bot_master, has_universal_guild_access),
+      60,
+      'bot_dash_access',
+    );
   }
 }

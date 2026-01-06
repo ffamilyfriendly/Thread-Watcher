@@ -1,11 +1,11 @@
-import { Channel, GuildChannel } from 'discord.js';
+import { Channel, Entitlement, GuildChannel } from 'discord.js';
 import { Router } from 'express';
-import { audit_service, channel_service, ipc_client, thread_service } from 'index';
+import { audit_service, channel_service, config, ipc_client, thread_service } from 'index';
 import { RouteFile } from 'interfaces/Web';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import { enforce_policy } from 'web/auth/auth';
-import { Policies } from 'web/auth/policies';
+import { Policies, RequestWithUser } from 'web/auth/policies';
 
 const router = Router();
 
@@ -29,70 +29,110 @@ router.post('/viewable', async (req, res) => {
   res.json(guilds.value.flat());
 });
 
-router.get('/:guild_id', enforce_policy(Policies.is_bot_master), async (req, res) => {
+router.get(
+  '/:guild_id',
+  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  async (req, res) => {
+    const guild_id = req.params.guild_id;
+
+    const p = await ResultAsync.fromPromise(
+      Promise.all([
+        thread_service.get_count_threads(guild_id),
+        channel_service.get_count_channels(guild_id),
+        ipc_client.get_shard_from_guild_id(guild_id),
+        ipc_client.send_to_shard_having_guild<Entitlement[]>(guild_id, 'get_entitlements', {
+          guild_id,
+        }),
+      ]),
+      map_err,
+    ).andThen(([threads_res, channels_res, shard_res, entitlement_res]) => {
+      if (threads_res.isErr()) return err(threads_res.error);
+      if (channels_res.isErr()) return err(channels_res.error);
+      if (shard_res.isErr()) return err(shard_res.error);
+      if (entitlement_res.isErr()) return err(entitlement_res.error);
+      return ok([threads_res.value, channels_res.value, shard_res.value, entitlement_res.value]);
+    });
+
+    if (p.isErr()) {
+      console.error(p.error);
+      return res.status(500).json({
+        code: 500,
+        message: 'something went wrong',
+      });
+    }
+
+    const [threads_watched, monitors_active, owned_by_shard, entitlements] = p.value;
+
+    res.json({
+      threads_watched,
+      monitors_active,
+      owned_by_shard,
+    });
+  },
+);
+
+router.get(
+  '/:guild_id/audit',
+  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  async (req, res) => {
+    const before_id = req.query.before_id;
+    const cursor = before_id ? Number(before_id) : undefined;
+    const audit_logs = await audit_service.get_audit_logs(req.params.guild_id, 25, cursor);
+
+    if (audit_logs.isErr()) {
+      return res.status(500).json({
+        code: 500,
+        message: 'something went wrong',
+      });
+    }
+
+    res.json(audit_logs.value);
+  },
+);
+
+router.get(
+  '/:guild_id/channels',
+  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  async (req, res) => {
+    const guild_id = req.params.guild_id;
+    const channels_res = await ipc_client.send_to_shard_having_guild(guild_id, 'fetch_channels', {
+      guild_id,
+    });
+
+    if (channels_res.isErr()) {
+      console.log(channels_res.error);
+      return res.status(500).json({
+        code: 500,
+        message: 'something went wrong',
+      });
+    }
+
+    res.json(channels_res.value);
+  },
+);
+
+router.get('/:guild_id/@me', async (req, res) => {
   const guild_id = req.params.guild_id;
 
-  const p = await ResultAsync.fromPromise(
-    Promise.all([
-      thread_service.get_count_threads(guild_id),
-      channel_service.get_count_channels(guild_id),
-      ipc_client.get_shard_from_guild_id(guild_id),
-    ]),
-    map_err,
-  ).andThen(([threads_res, channels_res, shard_res]) => {
-    if (threads_res.isErr()) return err(threads_res.error);
-    if (channels_res.isErr()) return err(channels_res.error);
-    if (shard_res.isErr()) return err(shard_res.error);
-    return ok([threads_res.value, channels_res.value, shard_res.value]);
-  });
+  if (!req.user_id) {
+    return res.status(400).json({
+      code: 400,
+      message: "'user_id' is required",
+    });
+  }
+  const result = await Policies.Common.bot_master_or_guild_master(req as RequestWithUser);
 
-  if (p.isErr()) {
-    console.error(p.error);
+  if (result.isErr()) {
     return res.status(500).json({
       code: 500,
-      message: 'something went wrong',
+      message: 'could not check if user is bot master',
     });
   }
 
-  const [threads_watched, monitors_active, owned_by_shard] = p.value;
-
-  res.json({
-    threads_watched,
-    monitors_active,
-    owned_by_shard,
+  return res.json({
+    bot_master: result.value,
+    is_bot_owner: config.owners.includes(req.user_id),
   });
-});
-
-router.get('/:guild_id/audit', enforce_policy(Policies.is_bot_master), async (req, res) => {
-  const before_id = req.query.before_id;
-  const cursor = before_id ? Number(before_id) : undefined;
-  const audit_logs = await audit_service.get_audit_logs(req.params.guild_id, 25, cursor);
-
-  if (audit_logs.isErr()) {
-    return res.status(500).json({
-      code: 500,
-      message: 'something went wrong',
-    });
-  }
-
-  res.json(audit_logs.value);
-});
-
-router.get('/:guild_id/channels', enforce_policy(Policies.is_bot_master), async (req, res) => {
-  const guild_id = req.params.guild_id;
-  const channels_res = await ipc_client.send_to_shard_having_guild(guild_id, 'fetch_channels', {
-    guild_id,
-  });
-
-  if (channels_res.isErr()) {
-    console.log(channels_res.error);
-    return res.status(500).json({
-      code: 500,
-      message: 'something went wrong',
-    });
-  }
-
-  res.json(channels_res.value);
 });
 
 /*
@@ -105,7 +145,7 @@ router.get('/:guild_id/channels', enforce_policy(Policies.is_bot_master), async 
 */
 router.get(
   '/:guild_id/channel/:channel_id',
-  enforce_policy(Policies.is_bot_master),
+  enforce_policy(Policies.Common.bot_master_or_guild_master),
   async (req, res) => {
     const { guild_id, channel_id } = req.params;
 
@@ -144,21 +184,25 @@ router.get(
   },
 );
 
-router.get('/:guild_id/roles', enforce_policy(Policies.is_bot_master), async (req, res) => {
-  const guild_id = req.params.guild_id;
-  const roles_res = await ipc_client.send_to_shard_having_guild(guild_id, 'fetch_roles', {
-    guild_id,
-  });
-
-  if (roles_res.isErr()) {
-    return res.status(500).json({
-      code: 500,
-      message: 'something went wrong',
+router.get(
+  '/:guild_id/roles',
+  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  async (req, res) => {
+    const guild_id = req.params.guild_id;
+    const roles_res = await ipc_client.send_to_shard_having_guild(guild_id, 'fetch_roles', {
+      guild_id,
     });
-  }
 
-  res.json(roles_res.value);
-});
+    if (roles_res.isErr()) {
+      return res.status(500).json({
+        code: 500,
+        message: 'something went wrong',
+      });
+    }
+
+    res.json(roles_res.value);
+  },
+);
 
 const route: RouteFile = {
   path: '/guilds',
