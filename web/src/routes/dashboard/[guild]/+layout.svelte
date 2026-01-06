@@ -43,10 +43,13 @@
     .container {
         display: flex;
         gap: 1rem;
+        align-items: stretch;
+        height: calc(100vh - 62px);
     }
 
     main {
         flex-grow: 1;
         padding: 1em;
+        overflow-y: scroll;
     }
 </style>

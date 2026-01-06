@@ -14,7 +14,7 @@ const event: PrivateEvent<{
 
     if (channels.isErr()) return err(channels.error);
 
-    return ok(channels.value.channels.cache.filter((c) => !c.isThread()).map((c) => c.toJSON()));
+    return ok(channels.value.channels.cache.map((c) => c.toJSON()));
   },
 };
 

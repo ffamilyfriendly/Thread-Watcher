@@ -1,5 +1,5 @@
 @use './colours.scss';
-@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,200..800;1,200..800&family=Changa+One:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Atkinson+Hyperlegible+Next:ital,wght@0,200..800;1,200..800&display=swap');
 
 *,
 *::before,
@@ -14,7 +14,7 @@ h2,
 h3,
 h4,
 h5 {
-	font-family: 'Changa One', sans-serif;
+	font-family: 'Archivo Black', sans-serif;
 	font-weight: 400;
 	font-style: normal;
 }

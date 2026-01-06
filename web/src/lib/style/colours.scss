@@ -4,7 +4,8 @@ $colours: (
 	'background': #090110,
 	'alt': #090110,
 	'primary': blue,
-	'secondary': black
+	'secondary': black,
+	'error': red
 );
 
 @function colour-variant($base, $percentage) {

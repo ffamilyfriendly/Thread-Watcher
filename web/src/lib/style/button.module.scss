@@ -10,8 +10,13 @@
 	border-radius: 0.5rem;
 	color: white;
 	border: none;
+	background-color: transparent;
 }
 
 .tetriary {
 	border: 1px solid rgba(169, 169, 169, 0.2);
+}
+
+.primary {
+	background-color: var(--primary-300);
 }

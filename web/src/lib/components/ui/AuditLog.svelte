@@ -1,14 +1,17 @@
 <script lang="ts">
-	import type { AuditLog, DiscordChannel, DiscordRole } from "$lib/types/internal_api";
+	import type { DiscordChannel, DiscordRole, ExpandedAuditLog } from "$lib/types/internal_api";
+
+	import Channel from "./discord/Channel.svelte";
 	import Role from "./discord/Role.svelte";
     interface Props {
-        log: AuditLog,
+        log: ExpandedAuditLog,
         roles: DiscordRole[],
-        channels: DiscordChannel[]
+        channels: DiscordChannel[],
+        guild_id: string
     }
 
-    const { log, roles, channels }: Props = $props()
-    const { audit_type, executor_id, timestamp, old_value, new_value, reason, ...rest } = log
+    const { log, roles, channels, guild_id }: Props = $props()
+    const { audit_type, executor_id, timestamp, old_value, new_value, reason, executing_user, ...rest } = log
 
 
     type RenderOption = "ROLE" | "CHANNEL" | "NULL" | "STRING"
@@ -30,13 +33,9 @@
 
         if(value.startsWith("<#")) {
             const channel_id = value.substring(2, value.length - 1)
-            
+
             if(channel_id === "null") {
                 return "NULL"
-            }
-
-            if(!channels.find(c => c.id === channel_id)) {
-                return "STRING"
             }
 
             return "CHANNEL"
@@ -50,13 +49,16 @@
         return roles.find(r => r.id === role_id)
     }
 
-    function get_channel_from_id(value: string) {
+    function get_channel_from_id(value?: string|null) {
+        if(!value) return undefined
         const channel_id = value.substring(2, value.length - 1)
         return channels.find(c => c.id === channel_id)
     }
 
     let render_old_as = old_value ? render_as(old_value) : false
     let render_new_as = new_value ? render_as(new_value) : false
+    let user_pfp = executing_user.avatar ? `https://cdn.discordapp.com/avatars/${executing_user.id}/${executing_user.avatar}?size=24` : executing_user.defaultAvatarURL
+    const time_as_date = new Date(timestamp)
 </script>
 
 {#snippet render_value(render_as: RenderOption | false, value?: string|null)}
@@ -64,14 +66,25 @@
         <p>null</p>
     {:else if (render_as === "ROLE")}
         <Role role={get_role_from_id(value)!} />
+    {:else if (render_as === "CHANNEL")}
+        <Channel channel={get_channel_from_id(value)} channel_id={value.substring(2, value.length - 1)} guild_id={guild_id} />
     {:else}
         {value}
     {/if}
 {/snippet}
 
+{#snippet target_channel()}
+    {#if (rest.target_id)}
+        <Channel channel={get_channel_from_id(rest.target_id)} channel_id={rest.target_id} guild_id={guild_id} />
+    {:else}
+        {rest.target_id}
+    {/if}
+{/snippet}
+
 <div class="audit">
     {#if (audit_type == "CONFIG_UPDATE")}
-        <h3>{reason}</h3>
+        <h3>Config Value Changed</h3>
+        <b>{reason}</b>
         <div class="changes">
             <div>
                 <p>From</p>
@@ -82,20 +95,95 @@
                 {@render render_value(render_new_as, new_value)}
             </div>
         </div>
-    {/if}
+    {:else if (audit_type == "CHANNEL_MONITOR_START")}
 
-    <div>
-        <time>{timestamp}</time> {rest.id}
+        <h3>Channel Monitor Added</h3>
+        {@render target_channel()}
+    {:else if (audit_type == "CHANNEL_MONITOR_END")}
+
+        <h3>Channel Monitor Removed</h3>
+        {@render target_channel()}
+    {:else if (audit_type == "COMMAND_EXEC")}
+        <h3>Command Executed</h3>
+        Command <code>/{rest.command_name}</code> executed.
+        
+        {#if (rest.error)}
+            <div class="cmd_error">
+                {rest.error}
+                <small>Command Error</small>
+            </div>
+        {/if}
+    {:else if (audit_type == "THREAD_UNWATCHED")}
+        <h3>Thread Unwatched</h3>
+        {@render target_channel()}
+    {:else if (audit_type == "THREAD_WATCHED")}
+        <h3>Thread Watched</h3>
+        {@render target_channel()}
+    {:else if (audit_type == "BATCH_ACTION")}
+        <h3>Batch {reason}</h3>
+        affected <code>{rest.target_id?.split(",").length}</code> threads
+    {/if}
+    
+
+
+    <div class="meta">
+        <div class="user" title={executing_user.id} data-user-id={executing_user.id}>
+            <img src={user_pfp} alt="{executing_user.username}'s icon" />
+            <p>{executing_user.username}</p>
+        </div>
+        <time datetime={time_as_date.toISOString()}>
+            {time_as_date.toLocaleString()}
+        </time>
+        <small class="id">#{rest.id}</small>
     </div>
 </div>
 
 <style lang="scss">
+    @use 'sass:color';
+    @use "../../../lib/style/colours.scss";
+
     .audit {
         outline: 1px solid rgba(128, 128, 128, 0.3);
         padding: .5rem;
+        border-radius: .5rem;
     }
+
+    .user {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+
+        img {
+            border-radius: 50%;
+        }
+    }
+
+    .meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-top: .5rem;
+    }
+
     .changes {
         display: flex;
         gap: 1rem;
+    }
+
+    .cmd_error {
+        @extend .bg-error-100;
+        display: flex;
+        flex-direction: column;
+        width: fit-content;
+        padding: .5rem;
+        border-radius: .5rem;
+
+        & small {
+            opacity: .7;
+        }
+    }
+
+    .id {
+        opacity: .5;
     }
 </style>

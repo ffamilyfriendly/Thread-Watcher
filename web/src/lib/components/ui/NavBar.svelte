@@ -1,8 +1,6 @@
 <script lang="ts">
     import { page } from "$app/state"
     import { Activity, Cog, Eye, LayoutDashboard, Logs, PanelBottom, Skull, Spool, TicketCheck, TicketMinus, type Icon as IconType } from "@lucide/svelte"
-	import { onDestroy, onMount, tick } from "svelte";
-	import { browser } from "$app/environment";
 	import { fly } from "svelte/transition";
 
     type MenuItem = {
@@ -83,31 +81,10 @@
         const current_path = page.url.pathname
         return current_path === item.href
     }
-
-    let sidebar_ref: HTMLElement | null = $state(null)
-
-    function update_sidebar_height() {
-        if(sidebar_ref) {
-            const pos = sidebar_ref.getBoundingClientRect()
-
-            const height = window.innerHeight - pos.top
-            sidebar_ref.style.height = height + "px"
-        }
-    }
-
-    onMount(async () => {
-        await tick()
-        update_sidebar_height()
-        if(browser) window.addEventListener("resize", update_sidebar_height)
-    })
-
-    onDestroy(() => {
-        if(browser) window.removeEventListener("resize", update_sidebar_height)
-    })
 </script>
 
 {#if open}
-<aside bind:this={sidebar_ref} class="sidebar {open ? "open" : ""}" in:fly={{ duration: 200, opacity: 0, x:-8 }} out:fly={{ duration: 200, opacity: 0, x: -8 }}>
+<aside class="sidebar {open ? "open" : ""}" in:fly={{ duration: 200, opacity: 0, x:-8 }} out:fly={{ duration: 200, opacity: 0, x: -8 }}>
     {#each other_items as item}
         {@const Icon = item.icon }
         <a class="module {is_active(item) ? "active" : ""}" href={item.href}>
@@ -139,14 +116,8 @@
     @use 'sass:color';
     @use "../../../lib/style/colours.scss";
 
-    .container {
-        display: flex;
-        gap: 1rem;
-    }
-
     .sidebar {
         @extend .bg-background-600;
-        height: 100%;
         padding: 1em;
         min-width: min(25%, 20em);
         z-index: 1336;
