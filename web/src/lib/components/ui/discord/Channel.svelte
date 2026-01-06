@@ -15,10 +15,6 @@
     let channel_name = $state(channel?.name)
     let Icon = $state(Hash)
 
-    if(!channel) {
-        console.log("NO CHANNEL!")
-    }
-
     set_icon(channel?.type)
 
     function set_icon(type: number = 0) {
@@ -44,7 +40,7 @@
 
     onMount(async () => {
         if(!channel) {
-            const fetch_res = await ResultAsync.fromPromise(fetch(`/api/fetch_channel?channel_id=${channel_id}&guild_id=${guild_id}`), (e) => new Error(e?.toString()))
+            const fetch_res = await ResultAsync.fromPromise(fetch(`/api/fetch_channel?channel_id=${channel_id}&guild_id=${guild_id}`, { cache: "force-cache" }), (e) => new Error(e?.toString()))
 
             if(fetch_res.isErr()) {
                 return console.error(fetch_res.error)

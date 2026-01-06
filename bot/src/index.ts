@@ -80,6 +80,7 @@ export {
   thread_service,
   channel_service,
   audit_service,
+  redis,
 };
 
 sharding_manager.on('shardCreate', (shard) => {

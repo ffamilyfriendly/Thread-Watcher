@@ -1,6 +1,6 @@
 import { err, Ok, ok, Result, ResultAsync } from 'neverthrow';
 import { Request } from 'express';
-import { config, ipc_client } from 'index';
+import { config, ipc_client, redis } from 'index';
 import { PermissionFlagsBits, PermissionResolvable } from 'discord.js';
 
 export type RequestWithUser = Request & { user_id: string };
@@ -112,6 +112,15 @@ export namespace Policies {
       return err(new Error(`route does not have a 'guild_id' parameter!`));
     }
 
+    const cache_key = `policy:bot_master:${guild_id}:${req.user_id}`;
+    const cached = await redis.get(cache_key);
+    if (cached !== null) {
+      return ok({
+        passes: cached === 'true',
+        message: cached === 'true' ? undefined : `'${req.user_id}' is not a bot master (cached)`,
+      } as PolicyResult);
+    }
+
     const r = await ipc_client.send_to_shard_having_guild<boolean>(
       guild_id,
       'check_user_bot_master',
@@ -124,6 +133,8 @@ export namespace Policies {
     if (r.isErr()) {
       return err(r.error as Error);
     }
+
+    await redis.set(cache_key, String(r.value), 'EX', 60);
 
     return ok({
       passes: r.value,
