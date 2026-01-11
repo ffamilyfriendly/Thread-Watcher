@@ -6,7 +6,7 @@
     }
     const { role }: Props = $props()
 
-    const role_colour = role.color === 0 ? "e3e3e3" : (role.color).toString(16).padStart(6, '0')
+    const role_colour = $derived(role.color === 0 ? "e3e3e3" : (role.color).toString(16).padStart(6, '0'))
 </script>
 
 <p style="--colour: #{role_colour}">@{role.name}</p>

@@ -5,6 +5,7 @@ import {
   Database,
   DatabaseError,
   FilterData,
+  RawSetting,
   ThreadData,
 } from 'interfaces/Database';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
@@ -177,6 +178,15 @@ export default class Sqlite implements Database {
     if (typeof settings_value !== 'string') return err(new Error(`setting value was not string`));
 
     return ok(settings_value);
+  }
+
+  @with_error_handling
+  async get_guild_settings(guild_id: string) {
+    const rows = this.db
+      .prepare('SELECT * FROM settings WHERE guild_id = ?')
+      .all(guild_id) as RawSetting[];
+
+    return ok(rows);
   }
 
   @with_error_handling

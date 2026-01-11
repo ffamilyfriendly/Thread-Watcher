@@ -56,6 +56,8 @@ interface CoreChannel {
 
 type Core = CoreUtils & CoreThread & CoreChannel;
 
+export type RawSetting = { setting_id: string; guild_id: string; setting_value: string };
+
 /**
  *
  * I will not be following data normalization rules here.
@@ -67,6 +69,8 @@ type Core = CoreUtils & CoreThread & CoreChannel;
  */
 interface GuildSettings {
   get_guild_setting_value: (guild_id: string, setting_id: string) => DBResult<string | null>;
+
+  get_guild_settings: (guild_id: string) => DBResult<RawSetting[]>;
 
   set_guild_setting_value: (
     guild_id: string,

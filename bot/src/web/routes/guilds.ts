@@ -1,8 +1,16 @@
-import { Channel, Entitlement, GuildChannel } from 'discord.js';
+import { Channel, Entitlement, GuildChannel, Role } from 'discord.js';
 import { Router } from 'express';
-import { audit_service, channel_service, config, ipc_client, thread_service } from 'index';
+import {
+  audit_service,
+  channel_service,
+  config,
+  ipc_client,
+  settings_service,
+  thread_service,
+} from 'index';
+import { RawSetting } from 'interfaces/Database';
 import { RouteFile } from 'interfaces/Web';
-import { err, ok, ResultAsync } from 'neverthrow';
+import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import { enforce_policy } from 'web/auth/auth';
 import { Policies, RequestWithUser } from 'web/auth/policies';
@@ -40,17 +48,20 @@ router.get(
         thread_service.get_count_threads(guild_id),
         channel_service.get_count_channels(guild_id),
         ipc_client.get_shard_from_guild_id(guild_id),
+        settings_service.get_guild_settings(guild_id),
         ipc_client.send_to_shard_having_guild<Entitlement[]>(guild_id, 'get_entitlements', {
           guild_id,
         }),
       ]),
       map_err,
-    ).andThen(([threads_res, channels_res, shard_res, entitlement_res]) => {
-      if (threads_res.isErr()) return err(threads_res.error);
-      if (channels_res.isErr()) return err(channels_res.error);
-      if (shard_res.isErr()) return err(shard_res.error);
-      if (entitlement_res.isErr()) return err(entitlement_res.error);
-      return ok([threads_res.value, channels_res.value, shard_res.value, entitlement_res.value]);
+    ).andThen((results) => {
+      return Result.combine(results).map(([threads, channels, shard, settings, entitlements]) => ({
+        threads_watched: threads,
+        monitors_active: channels,
+        owned_by_shard: shard,
+        guild_settings: settings,
+        entitlements: entitlements,
+      }));
     });
 
     if (p.isErr()) {
@@ -61,12 +72,20 @@ router.get(
       });
     }
 
-    const [threads_watched, monitors_active, owned_by_shard, entitlements] = p.value;
+    const { threads_watched, monitors_active, owned_by_shard, guild_settings, entitlements } =
+      p.value;
+
+    const dict: { [index: string]: string } = {};
+    for (const setting of guild_settings) {
+      dict[setting.setting_id] = setting.setting_value;
+    }
 
     res.json({
       threads_watched,
       monitors_active,
       owned_by_shard,
+      guild_settings: dict,
+      entitlements,
     });
   },
 );
@@ -185,11 +204,45 @@ router.get(
 );
 
 router.get(
+  '/:guild_id/role/:role_id',
+  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  async (req, res) => {
+    const { guild_id, role_id } = req.params;
+
+    const role_res = await ipc_client.send_to_shard_having_guild<GuildChannel | null>(
+      guild_id,
+      'fetch_role',
+      {
+        guild_id,
+        role_id,
+      },
+    );
+
+    if (role_res.isErr()) {
+      console.log(role_res.error);
+      return res.status(500).json({
+        code: 500,
+        message: 'something went wrong',
+      });
+    }
+
+    if (!role_res.value) {
+      return res.status(404).json({
+        code: 404,
+        message: 'channel not found',
+      });
+    }
+
+    res.json(role_res.value);
+  },
+);
+
+router.get(
   '/:guild_id/roles',
   enforce_policy(Policies.Common.bot_master_or_guild_master),
   async (req, res) => {
     const guild_id = req.params.guild_id;
-    const roles_res = await ipc_client.send_to_shard_having_guild(guild_id, 'fetch_roles', {
+    const roles_res = await ipc_client.send_to_shard_having_guild<Role[]>(guild_id, 'fetch_roles', {
       guild_id,
     });
 
@@ -200,7 +253,7 @@ router.get(
       });
     }
 
-    res.json(roles_res.value);
+    res.json(roles_res.value.filter((r) => r.name !== '@everyone'));
   },
 );
 

@@ -18,13 +18,22 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 	trustHost: true,
 
 	callbacks: {
-		async jwt({ token, account, profile }) {
+		async jwt({ token, account }) {
 			if (account) {
-				token.access_token = account.access_token;
+				return {
+					...token,
+					access_token: account.access_token,
+					expires_at: account.expires_at,
+					refresh_token: account.refresh_token,
+					id: account.providerAccountId
+				};
 			}
 
-			if (profile) {
-				token.id = profile.id;
+			const now = Math.floor(Date.now() / 1000);
+			if (now > (token.expires_at as number)) {
+				// Could not get refresh endpoint working :(
+				// Users will have to deal with getting logged out once in a while (about once per week)
+				return { ...token, error: 'AccessTokenExpired' };
 			}
 
 			return token;
@@ -32,6 +41,9 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 
 		async session({ session, token }) {
 			session.access_token = token.access_token;
+			if (token.error) {
+				session.error = token.error;
+			}
 			if (token.id) {
 				session.user.id = token.id as string;
 			}

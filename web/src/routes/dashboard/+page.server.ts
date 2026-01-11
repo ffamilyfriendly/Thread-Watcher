@@ -47,7 +47,7 @@ export async function load({ locals }) {
 		};
 	}
 
-	const key = `${session.access_token}:guilds`;
+	const key = `${session.user.id}:guilds`;
 	const parsed = await get_cached_or(
 		key,
 		z.array(ZDiscordGuild),
@@ -56,7 +56,10 @@ export async function load({ locals }) {
 	);
 
 	if (parsed.isErr()) {
-		console.log(parsed.error);
+		if (parsed.error instanceof Response) {
+			const as_json = await parsed.error.json();
+			console.log(as_json);
+		}
 		return error(500, "Could not query discord's API for your guilds");
 	}
 

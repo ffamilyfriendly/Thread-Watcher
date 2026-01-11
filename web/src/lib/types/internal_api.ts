@@ -1,9 +1,36 @@
 import z from 'zod';
 
+export const ZRawSetting = z.object({
+	setting_id: z.string(),
+	guild_id: z.string(),
+	setting_value: z.string()
+});
+
+export const ZMappedSettings = z.object({
+	LOGGING_CHANNEL: z.string().nullish(),
+	BUMP_BEHAVIOUR: z.string().nullish().default('BUMP_AND_UNARCHIVE'),
+	BOT_MASTER_ROLE: z.string().nullish()
+});
+
+export const ZDiscordEntitlement = z.object({
+	consumed: z.boolean(),
+	deleted: z.boolean(),
+	endsAt: z.date().nullish(),
+	endsTimestamp: z.number().nullish(),
+	guild: z.string().nullish(),
+	guildId: z.string().nullish(),
+	id: z.string().nullish(),
+	skuId: z.string(),
+	startsAt: z.date().nullish(),
+	startsTimestamp: z.number().nullish()
+});
+
 export const ZGuildOverview = z.object({
 	threads_watched: z.number(),
 	monitors_active: z.number(),
-	owned_by_shard: z.number()
+	owned_by_shard: z.number(),
+	guild_settings: ZMappedSettings,
+	entitlements: z.array(ZDiscordEntitlement)
 });
 
 export type GuildOverview = z.output<typeof ZGuildOverview>;

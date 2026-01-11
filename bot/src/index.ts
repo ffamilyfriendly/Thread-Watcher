@@ -15,6 +15,7 @@ import ChannelService from 'services/ChannelService';
 import { ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import AuditService from 'services/AuditService';
+import SettingService from 'services/SettingService';
 
 const config_result = read_config();
 const logger = new Logger();
@@ -57,6 +58,7 @@ const thread_service = new ThreadService(
   new IndexContextThreadFetcher(ipc_client),
 );
 const channel_service = new ChannelService(database, redis);
+const settings_service = new SettingService(database, redis);
 const audit_service = new AuditService(database);
 
 async function load_events() {
@@ -80,6 +82,7 @@ export {
   thread_service,
   channel_service,
   audit_service,
+  settings_service,
   redis,
 };
 

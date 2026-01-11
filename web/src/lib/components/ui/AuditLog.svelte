@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { DiscordChannel, DiscordRole, ExpandedAuditLog } from "$lib/types/internal_api";
 
-	import Channel from "./discord/Channel.svelte";
+	import Channel from "./discord/FallBackChannel.svelte";
 	import Role from "./discord/Role.svelte";
     interface Props {
         log: ExpandedAuditLog,

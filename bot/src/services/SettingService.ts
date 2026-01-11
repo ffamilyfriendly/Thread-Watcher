@@ -119,6 +119,14 @@ export default class SettingService {
     return ok(settings_value.value);
   }
 
+  async get_guild_settings(guild_id: string) {
+    const settings = await this.db.get_guild_settings(guild_id);
+
+    if (settings.isErr()) return err(settings.error);
+
+    return ok(settings.value);
+  }
+
   /**
    * Get a setting for a guild, returning a default when the setting is null or undefined.
    *

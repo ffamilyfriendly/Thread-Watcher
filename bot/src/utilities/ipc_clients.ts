@@ -51,6 +51,7 @@ class BaseClient implements IpcClient {
       }
 
       this.response_events.set(request.request_id, (data) => {
+        this.response_events.delete(request.request_id);
         if (data.ok) {
           resolve(ok(data.data as T));
         } else {

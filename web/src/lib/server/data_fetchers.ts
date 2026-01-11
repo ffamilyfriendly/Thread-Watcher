@@ -1,6 +1,7 @@
 import {
 	ZAuditLogResponse,
 	ZDiscordChannel,
+	ZDiscordRole,
 	ZDiscordUser,
 	ZExpandedAuditLog,
 	type ExpandedAuditLog
@@ -109,6 +110,29 @@ export function fetch_channel(guild_id: string, user_id: string, channel_id: str
 		`dash:${guild_id}:${channel_id}`,
 		ZDiscordChannel,
 		() => _fetch_channel(guild_id, user_id, channel_id),
+		500
+	);
+}
+
+export async function _fetch_role(guild_id: string, user_id: string, role_id: string) {
+	const users_res = await json_fetch(
+		`/guilds/${guild_id}/role/${role_id}`,
+		{
+			user_id
+		},
+		ZDiscordRole
+	);
+
+	if (users_res.isErr()) return err(users_res.error);
+
+	return ok(users_res.value);
+}
+
+export function fetch_role(guild_id: string, user_id: string, role_id: string) {
+	return get_cached_or(
+		`dash:${guild_id}:${role_id}`,
+		ZDiscordRole,
+		() => _fetch_role(guild_id, user_id, role_id),
 		500
 	);
 }

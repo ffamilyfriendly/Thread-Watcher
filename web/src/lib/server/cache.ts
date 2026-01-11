@@ -2,7 +2,7 @@ import Redis from 'ioredis';
 import { REDIS_USER, REDIS_PASSWORD } from '$env/static/private';
 import type z from 'zod';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { map_err } from './error_helper';
+import { map_err } from '../error_helper';
 
 export const redis_client = new Redis();
 

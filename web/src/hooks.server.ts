@@ -6,12 +6,13 @@ const authorization_handle: Handle = async ({ event, resolve }) => {
 	if (event.url.pathname.startsWith('/dashboard')) {
 		const session = await event.locals.auth();
 
-		if (!session) {
+		if (!session || session.error) {
 			event.cookies.set('redirect_to', event.url.pathname, {
 				path: '/',
 				httpOnly: true,
 				maxAge: 60 * 5
 			});
+
 			throw redirect(303, '/login');
 		}
 	}

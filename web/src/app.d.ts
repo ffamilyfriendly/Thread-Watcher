@@ -5,15 +5,20 @@ import { User } from '@auth/core/types';
 declare module '@auth/core/types' {
 	interface Session {
 		access_token?: string;
+		error?: string;
 		user: User & {
 			id: string;
-		};
+		} & DefaultSession['user'];
 	}
 }
 
 declare module '@auth/core/jwt' {
 	interface JWT {
 		access_token?: string;
+		expires_at?: number;
+		refresh_token?: string;
+		error?: string;
+		id?: string;
 	}
 }
 
