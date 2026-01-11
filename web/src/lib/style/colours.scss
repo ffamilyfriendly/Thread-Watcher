@@ -5,7 +5,8 @@ $colours: (
 	'alt': #090110,
 	'primary': blue,
 	'secondary': black,
-	'error': red
+	'error': red,
+	'success': green
 );
 
 @function colour-variant($base, $percentage) {

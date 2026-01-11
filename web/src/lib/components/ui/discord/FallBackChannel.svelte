@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { fetch_as_json } from "$lib/client/fetch";
+	import { add_toast_from_error } from "$lib/state/toasts.svelte";
 	import { ZDiscordChannel, type DiscordChannel } from "$lib/types/internal_api";
 	import Channel from "./Channel.svelte";
 
@@ -20,6 +21,7 @@
             fetch_as_json(`/api/fetch_channel?guild_id=${guild_id}&channel_id=${channel_id}`, undefined, ZDiscordChannel)
             .then(res => {
                 if(res.isErr()) {
+                    add_toast_from_error(res.error)
                     console.error("could not fetch channel", res.error)
                     return
                 }

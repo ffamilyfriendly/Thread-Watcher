@@ -3,6 +3,7 @@
 	import { fly } from "svelte/transition";
 	import type { Snippet } from "svelte";
 	import type { Result } from "neverthrow";
+	import { add_toast_from_error } from "$lib/state/toasts.svelte";
 
     interface Props {
         items: T[]
@@ -23,6 +24,7 @@
             fetcher(value)
             .then(res => {
                 if(res.isErr()) {
+                    add_toast_from_error(res.error)
                     console.error("Could not fetch item", res.error)
                     return
                 }

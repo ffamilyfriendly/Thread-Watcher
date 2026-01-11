@@ -3,6 +3,7 @@
 	import RolePicker from '$lib/components/ui/settings/RolePicker.svelte';
 	import SettingsBox from '$lib/components/ui/settings/SettingBox.svelte';
 	import StringPicker from '$lib/components/ui/settings/StringPicker.svelte';
+	import { add_toast, add_toast_from_error } from '$lib/state/toasts.svelte.js';
 
     const { data } = $props()
 
@@ -26,5 +27,8 @@
 </SettingsBox>
 
 {#if is_dirty}
+    <button onclick={() => add_toast({ message: "hi", label: "you just lost" })}>info</button>
+    <button onclick={() => add_toast_from_error(new Error("something went right :D"))}>error</button>
+    <button onclick={() => add_toast({ message: "hi", label: "the game", type: "success" })}>success</button>
 WERE DIRTY :D
 {/if}
