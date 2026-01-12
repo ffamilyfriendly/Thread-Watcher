@@ -8,6 +8,8 @@
     import style from "$lib/style/button.module.scss"
 	import { fetch_as_json } from '$lib/client/fetch.js';
 	import z from 'zod';
+	import { invalidateAll } from '$app/navigation';
+	import { ChannelTypes } from '$lib/types/discord.js';
 
     const { data } = $props()
 
@@ -35,8 +37,6 @@
             return
         }
 
-        console.log("PATCH", patch)
-
         const save_res = await fetch_as_json("/api/update_settings", { body: JSON.stringify({updated_settings: patch, guild_id: data.guild_id}), method: "POST" }, z.object({ code: z.number(), message: z.string() }))
 
         if(save_res.isErr()) {
@@ -45,6 +45,7 @@
             return
         }
 
+        await invalidateAll()
         Object.assign(compare_to, settings)
         is_loading = false;
         add_toast({
@@ -58,12 +59,12 @@
 
 <main class="main">
     <div class="settings">
-    <SettingsBox name="Bot Master" description="Select the role that can access the bot dashboard." disclaimer="Any roll with Administrator will be considered a Bot Master">
+    <SettingsBox name="Bot Master" description="Select the role that can access the bot dashboard." disclaimer="Any role with Administrator will be considered a Bot Master">
         <RolePicker guild_id={data.guild_id} roles={data.roles} bind:value={settings.BOT_MASTER_ROLE} />
     </SettingsBox>
     
     <SettingsBox name="Logging Channel" description="Choose the channel where Thread-Watcher will send its logs.">
-        <ChannelPicker guild_id={data.guild_id} channels={data.channels} bind:value={settings.LOGGING_CHANNEL} />
+        <ChannelPicker only_with_types={[ChannelTypes.GUILD_ANNOUNCEMENT, ChannelTypes.GUILD_TEXT, ChannelTypes.PUBLIC_THREAD, ChannelTypes.PRIVATE_THREAD]} guild_id={data.guild_id} channels={data.channels} bind:value={settings.LOGGING_CHANNEL} />
     </SettingsBox>
     
     <SettingsBox name="Bump Behaviour" description="Determine how the bot should handle threads that are becoming inactive.">

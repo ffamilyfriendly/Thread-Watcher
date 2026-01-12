@@ -1,12 +1,37 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
+	import { fetch_as_json } from '$lib/client/fetch.js';
+	import RolePicker from '$lib/components/ui/settings/RolePicker.svelte';
+	import SettingBox from '$lib/components/ui/settings/SettingBox.svelte';
+	import { add_toast, add_toast_from_error } from '$lib/state/toasts.svelte.js';
 	import { EyeIcon, SailboatIcon, SpoolIcon } from '@lucide/svelte';
+	import z from 'zod';
 
     const { data } = $props()
     const guild = data.guild
+
+    let bot_master_role = $state<string|null>()
+
+    async function update_bot_master_role() {
+        const save_res = await fetch_as_json("/api/update_settings", { body: JSON.stringify({updated_settings: { BOT_MASTER_ROLE: bot_master_role }, guild_id: data.guild_id}), method: "POST" }, z.object({ code: z.number(), message: z.string() }))
+    
+        if(save_res.isErr()) return add_toast_from_error(save_res.error)
+        
+        await invalidateAll()
+        add_toast({
+            label: "Good Job!",
+            message: "Added Bot Master",
+            timeout: 5000,
+            type: "success"
+        })
+    }
+
+    $effect(() => {
+        if(!bot_master_role) return
+        const timeout = setTimeout(update_bot_master_role, 1500)
+        return () => clearTimeout(timeout)
+    })
 </script>
-
-{#if guild}
-
 <div class="card_container">
     <div class="card">
         <SpoolIcon />
@@ -31,7 +56,12 @@
     </div>
 </div>
 
+{#if !guild.guild_settings.BOT_MASTER_ROLE}
+    <SettingBox name="Bot Master" description="Select the role that can access the bot dashboard." disclaimer="Any role with Administrator will be considered a Bot Master">
+        <RolePicker bind:value={bot_master_role} roles={data.roles} guild_id={data.guild_id} />
+    </SettingBox>
 {/if}
+
 hello
 
 <style lang="scss">

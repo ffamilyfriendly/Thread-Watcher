@@ -19,6 +19,8 @@ import ThreadBumper from 'services/ThreadBumper';
 import AuditService from 'services/AuditService';
 import { ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
+import { AuditData } from 'interfaces/Database';
+import { log_event_in_log_channel } from 'utilities/log_channel_stuff';
 
 const config_result = read_config();
 const logger = new Logger({ name: 'bot' });

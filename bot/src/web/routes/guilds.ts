@@ -275,6 +275,15 @@ router.post(
     }
 
     const { guild_id: _, ...settings_to_save } = body.data;
+    const old_settings = await settings_service.get_guild_settings(guild_id);
+    if (old_settings.isErr()) {
+      return res.status(500).json({
+        code: 500,
+        message: 'something went wrong',
+        _details: old_settings.error,
+      });
+    }
+
     const update_result = await settings_service.set_settings(guild_id, settings_to_save);
 
     if (update_result.isErr()) {
@@ -283,6 +292,32 @@ router.post(
         message: update_result.error.message,
         _details: update_result.error,
       });
+    }
+
+    const old_values: Record<string, string> = {};
+    for (const v of old_settings.value) {
+      old_values[v.setting_id] = v.setting_value;
+    }
+
+    for (const [key, value] of Object.entries(settings_to_save)) {
+      const adapter = settings_service.get_adapter(key);
+      if (!adapter) {
+        console.log('CANT GET ADAPTER!');
+        continue;
+      }
+
+      const old_value = old_values[key];
+      if (typeof old_value != 'string') continue;
+
+      const audit_res = await audit_service.log_event('CONFIG_UPDATE', guild_id, req.user_id!, {
+        new_value: adapter.display_value(value as string),
+        old_value: adapter.display_value(old_value),
+        reason: key,
+      });
+
+      if (audit_res.isOk()) {
+        ipc_client.send_to_shard_having_guild(guild_id, 'audit_log', audit_res.value);
+      }
     }
 
     res.json({
