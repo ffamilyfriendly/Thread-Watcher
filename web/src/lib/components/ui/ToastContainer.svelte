@@ -12,7 +12,7 @@
                 {@const Icon = toast.icon}
                 <Icon color="var(--accent)" />
             {/if}
-            <div>
+            <div class="text">
                 {#if toast.label} <small>{toast.label}</small> {/if}
                 <p>{toast.message}</p>
             </div>
@@ -24,10 +24,16 @@
 <style lang="scss">
 
     .dismiss {
-        height: 100%;
-        padding: 0;
-        vertical-align: top;
-        align-self: flex-start;
+        position: absolute;
+        top: .5rem;
+        right: .5rem;
+    }
+
+    .text {
+        p {
+            margin: 0;
+            word-break: break-word;
+        }
     }
 
     .toast_container {
@@ -38,6 +44,7 @@
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
+        align-items: flex-end;
     }
 
     .toast {
@@ -47,11 +54,14 @@
         background: color-mix(in srgb, var(--accent) 20%, transparent);
         border-left: 4px solid var(--accent);
         display: flex;
+        gap: .5rem;
         align-items: center;
-        justify-content: space-between;
         min-width: 250px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         backdrop-filter: blur(10px);
+
+        max-width: min(500px, 90%);
+        width: fit-content;
 
         small {
             font-weight: 500;

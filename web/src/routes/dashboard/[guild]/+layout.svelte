@@ -49,7 +49,7 @@
 
     main {
         flex-grow: 1;
-        padding: 1em;
+        padding: var(--main_padding);
         overflow-y: scroll;
     }
 </style>

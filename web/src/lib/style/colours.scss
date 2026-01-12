@@ -1,37 +1,46 @@
 @use 'sass:color';
 
 $colours: (
-	'background': #090110,
-	'alt': #090110,
-	'primary': blue,
-	'secondary': black,
-	'error': red,
-	'success': green
+	'background': #0f051a,
+	'alt': #130a1d,
+	'primary': #1c2d69,
+	'secondary': #211a2e,
+	'error': #ef4444,
+	'success': #22c55e
 );
 
-@function colour-variant($base, $percentage) {
-	@return color.adjust($base, $lightness: $percentage);
+@function colour-variant($base, $i) {
+	// i is 0 through 10
+	// We want the '500' (i=5) to be exactly our base color
+	$distance: $i - 5;
+
+	@if $distance > 0 {
+		// Lighten gradually for 600-1000
+		@return color.adjust($base, $lightness: $distance * 3%);
+	} @else if $distance < 0 {
+		// Darken for 0-400
+		@return color.adjust($base, $lightness: $distance * 2%);
+	}
+
+	@return $base;
 }
 
 :root {
 	@each $name, $base in $colours {
 		@for $i from 0 through 10 {
-			$step: ($i - 5) * 5%;
-			--#{$name}-#{$i * 100}: #{colour-variant($base, $step)};
+			--#{$name}-#{$i * 100}: #{colour-variant($base, $i)};
 		}
 	}
 }
 
 @each $name, $base in $colours {
 	@for $i from 0 through 10 {
-		$step: ($i - 5) * 5%;
-
 		.bg-#{$name}-#{$i * 100} {
-			background-color: colour-variant($base, $step);
+			background-color: colour-variant($base, $i);
 		}
 
 		.text-#{$name}-#{$i * 100} {
-			color: colour-variant($base, $step);
+			color: colour-variant($base, $i);
 		}
 	}
 }

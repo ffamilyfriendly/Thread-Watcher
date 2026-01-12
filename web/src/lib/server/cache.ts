@@ -56,6 +56,10 @@ export async function get_cached<T>(
 	return ok(as_schema.data);
 }
 
+export async function del_from_cache(id: string) {
+	return ResultAsync.fromPromise(redis_client.del(id), map_err);
+}
+
 export async function set_cached(
 	key: string,
 	data: unknown,

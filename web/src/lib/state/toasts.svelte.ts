@@ -11,7 +11,7 @@ interface Toast {
 	message: string;
 	label?: string;
 	type: ToastType;
-	timeout?: number;
+	timeout?: number | null;
 	icon?: Component<IconProps, {}, ''>;
 }
 
@@ -25,16 +25,16 @@ type ToastInit = Partial<Omit<Toast, 'id'>>;
 
 const DEFAULT_TOAST: Omit<Toast, 'id'> = {
 	message: 'toast message',
-	type: 'info'
+	type: 'info',
+	timeout: 3000
 };
 
 export function add_toast(toast_init: ToastInit) {
 	const id = get_id();
-	const init_with_required = Object.assign({ ...DEFAULT_TOAST }, toast_init);
-	const toast: Toast = { id, ...init_with_required };
+	const toast: Toast = { id, ...DEFAULT_TOAST, ...toast_init };
 	toast_list.push(toast);
 
-	if (toast.timeout) {
+	if (typeof toast.timeout === 'number' && toast.timeout > 0) {
 		setTimeout(() => remove_toast(toast.id), toast.timeout);
 	}
 }
@@ -44,10 +44,14 @@ export function add_toast_from_error(e: Error) {
 		message: e.message,
 		label: e.name,
 		type: 'error',
-		icon: LucideMessageCircleWarning
+		icon: LucideMessageCircleWarning,
+		timeout: null
 	});
 }
 
 export function remove_toast(id: string) {
-	toast_list = toast_list.filter((t) => t.id != id);
+	const index = toast_list.findIndex((t) => t.id === id);
+	if (index !== -1) {
+		toast_list.splice(index, 1);
+	}
 }

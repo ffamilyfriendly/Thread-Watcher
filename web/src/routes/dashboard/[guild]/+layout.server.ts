@@ -13,6 +13,7 @@ import {
 import { error } from '@sveltejs/kit';
 import { err, ok, ResultAsync, type Result } from 'neverthrow';
 import z from 'zod';
+import { get_guild_info } from '$lib/server/data_fetchers';
 
 async function get_channels(
 	guild_id: string,
@@ -42,21 +43,6 @@ async function get_roles(
 	}
 
 	return ok(res.value);
-}
-
-async function get_guild_info(
-	guild_id: string,
-	user_id: string
-): Promise<Result<GuildOverview, Error | Response>> {
-	const guilds_res = await json_fetch<GuildOverview>(
-		`/guilds/${guild_id}`,
-		{ user_id },
-		ZGuildOverview
-	);
-
-	if (guilds_res.isErr()) return err(guilds_res.error);
-
-	return ok(guilds_res.value);
 }
 
 export async function load({ locals, params }) {

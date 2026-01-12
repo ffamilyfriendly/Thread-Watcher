@@ -82,7 +82,7 @@
             <button onclick={() => {
                     show_item_picker = false;
                     value = item.value
-                }} class="btn_select_role">
+                }} class="btn_select_role {value == item.value ? "selected" : ""}">
                 {@render render_item(item)}
             </button>
             {/each}
@@ -101,6 +101,8 @@
         text-align: inherit;
         font-size: inherit;
         cursor: pointer;
+        padding: .5rem;
+        border-radius: .5rem;
     }
 
     .settings_option {
@@ -140,6 +142,10 @@
         gap: .3rem;
         max-height: 500px;
         overflow-y: scroll;
+    }
+
+    .selected {
+        background-color: var(--background-800);
     }
 
     .options {

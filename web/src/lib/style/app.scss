@@ -1,6 +1,11 @@
 @use './colours.scss';
 @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Atkinson+Hyperlegible+Next:ital,wght@0,200..800;1,200..800&display=swap');
 
+:root {
+	--navbar_height: 62px;
+	--main_padding: 1rem;
+}
+
 *,
 *::before,
 *::after {
@@ -25,7 +30,7 @@ h1 {
 }
 
 body {
-	@extend .bg-background-500;
+	@extend .bg-background-400;
 	color: white;
 	min-height: 100vh;
 }

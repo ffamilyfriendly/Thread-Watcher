@@ -7,26 +7,35 @@ export async function GET({ locals, url }) {
 	const guild_id = url.searchParams.get('guild_id');
 
 	if (!channel_id || !guild_id) {
-		return json({
-			code: 400,
-			message: 'missing required parameters'
-		});
+		return json(
+			{
+				code: 400,
+				message: 'missing required parameters'
+			},
+			{ status: 400 }
+		);
 	}
 
 	if (!auth?.user.id) {
-		return json({
-			code: 401,
-			message: 'you are not logged in'
-		});
+		return json(
+			{
+				code: 401,
+				message: 'you are not logged in'
+			},
+			{ status: 401 }
+		);
 	}
 
 	const channel_res = await fetch_channel(guild_id, auth.user.id, channel_id);
 	if (channel_res.isErr()) {
 		console.log(channel_res.error);
-		return json({
-			code: 500,
-			message: 'something went wrong'
-		});
+		return json(
+			{
+				code: 500,
+				message: 'something went wrong'
+			},
+			{ status: 500 }
+		);
 	}
 
 	return json(channel_res.value);

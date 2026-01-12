@@ -1,7 +1,7 @@
 import { SHARED_API_SECRET, API_URI } from '$env/static/private';
+import { map_err } from '$lib/error_helper';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import type z from 'zod';
-import type { ZodSchema } from 'zod/v3';
 
 export function safe_fetch(input: string | URL | Request, init?: RequestInit) {
 	const _wrapped_fetch = Result.fromThrowable(fetch);
@@ -52,6 +52,23 @@ export async function api_fetch(
 	});
 }
 
+async function write_nice_error(req: Response) {
+	const text_res = await ResultAsync.fromPromise(req.text(), map_err);
+	if (text_res.isErr()) return text_res.error;
+	const body_text = text_res.value;
+
+	try {
+		const json = JSON.parse(body_text);
+		if (json && typeof json === 'object' && 'message' in json) {
+			return new Error(String(json.message));
+		}
+	} catch {
+		return new Error(body_text.substring(0, 500) || req.statusText);
+	}
+
+	return new Error(req.statusText);
+}
+
 export async function json_fetch<T>(
 	endpoint: `/${string}`,
 	init?: ExtraDetails,
@@ -65,8 +82,8 @@ export async function json_fetch<T>(
 
 	const response = res.value;
 
-	if (response.status !== 200) {
-		return err(response);
+	if (!response.ok) {
+		return err(await write_nice_error(response));
 	}
 
 	return ResultAsync.fromPromise(response.json(), (e) =>

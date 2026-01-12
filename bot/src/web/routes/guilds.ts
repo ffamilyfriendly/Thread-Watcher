@@ -14,6 +14,7 @@ import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import { enforce_policy } from 'web/auth/auth';
 import { Policies, RequestWithUser } from 'web/auth/policies';
+import { z } from 'zod';
 
 const router = Router();
 
@@ -254,6 +255,40 @@ router.get(
     }
 
     res.json(roles_res.value.filter((r) => r.name !== '@everyone'));
+  },
+);
+
+const settings_schema = z.record(z.string(), z.unknown());
+router.post(
+  '/:guild_id/settings',
+  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  async (req, res) => {
+    const guild_id = req.params.guild_id;
+    const body = settings_schema.safeParse(req.body);
+
+    if (!body.success) {
+      return res.status(500).json({
+        code: 500,
+        message: body.error.message,
+        _details: body.error,
+      });
+    }
+
+    const { guild_id: _, ...settings_to_save } = body.data;
+    const update_result = await settings_service.set_settings(guild_id, settings_to_save);
+
+    if (update_result.isErr()) {
+      return res.status(500).json({
+        code: 500,
+        message: update_result.error.message,
+        _details: update_result.error,
+      });
+    }
+
+    res.json({
+      code: 200,
+      message: 'updated!',
+    });
   },
 );
 

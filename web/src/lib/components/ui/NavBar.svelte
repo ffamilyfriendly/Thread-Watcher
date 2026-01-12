@@ -81,6 +81,7 @@
         const current_path = page.url.pathname
         return current_path === item.href
     }
+
 </script>
 
 {#if open}

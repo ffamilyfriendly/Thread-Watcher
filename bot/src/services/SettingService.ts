@@ -174,7 +174,26 @@ export default class SettingService {
       map_err,
     );
 
+    // Invalidate browser cache
+    // We don't mind if this crashes.
+    await ResultAsync.fromPromise(this.redis.del(`${guild_id}:overviewInfo`), map_err);
+
     return data_promise;
+  }
+
+  async set_settings(guild_id: string, settings: Record<string, unknown>) {
+    const update_promises = Object.entries(settings).map(([key, value]) => {
+      if (!this.get_adapter(key)) return ok(null);
+      return this.set_setting(guild_id, key, value);
+    });
+
+    const results = await Promise.all(update_promises);
+
+    for (const res of results) {
+      if (res.isErr()) return err(res.error);
+    }
+
+    return ok();
   }
 
   async remove_setting(guild_id: string, setting_key: string) {

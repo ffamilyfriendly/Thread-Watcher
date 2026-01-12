@@ -53,11 +53,11 @@
 
     .top_nav {
         @extend .bg-background-600;
-        height: 62px;
+        height: var(--navbar_height);
         display: flex;
         align-items: center;
         width: 100%;
-        padding: 1em;
+        padding: 1rem;
         justify-content: space-between;
     }
 
