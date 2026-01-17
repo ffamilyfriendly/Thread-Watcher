@@ -4,9 +4,11 @@ import {
   Database,
   DatabaseError,
   FilterData,
+  Guild,
   RawSetting,
   ZAuditData,
   ZChannelDataWithFilters,
+  ZGuild,
   ZThreadData,
 } from 'interfaces/Database';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
@@ -24,6 +26,7 @@ const TABLE_CREATION_QUERIES = [
   'CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT NOT NULL, regex TEXT, role_whitelist TEXT, tags TEXT, is_suspended INTEGER DEFAULT 0)',
   'CREATE TABLE IF NOT EXISTS settings (setting_id TEXT, guild_id TEXT, setting_value TEXT, UNIQUE(setting_id, guild_id) ON CONFLICT REPLACE)',
   'CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY AUTOINCREMENT, error TEXT, command_name TEXT, exec_time_ms INTEGER, audit_type TEXT NOT NULL, guild_id TEXT NOT NULL, executor_id TEXT NOT NULL, target_id TEXT, old_value TEXT, new_value TEXT, reason TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)',
+  'CREATE TABLE IF NOT EXISTS guilds (guild_id INTEGER PRIMARY KEY, left_at TIMESTAMP, granted_SKU TEXT)',
 ];
 
 export default class Sqlite implements Database {
@@ -301,6 +304,66 @@ export default class Sqlite implements Database {
     `;
     this.db.run(sql);
     return ok();
+  }
+
+  async get_guild_info(guild_id: string) {
+    return this.query_one(ZGuild, 'SELECT * FROM guilds WHERE guild_id = ?', guild_id);
+  }
+
+  @with_error_handling
+  async upsert_guild_info(guild_id: string, data: Omit<Guild, 'guild_id'>) {
+    const sql = `
+    INSERT INTO guilds (guild_id, left_at, granted_SKU)
+    VALUES (?, ?, ?)
+    ON CONFLICT(guild_id) DO UPDATE SET
+      left_at = excluded.left_at,
+      granted_SKU = COALESCE(excluded.granted_SKU, guilds.granted_SKU)
+  `;
+
+    this.db
+      .prepare(sql)
+      .run(guild_id, data.left_at ? data.left_at.toISOString() : null, data.granted_sku ?? null);
+    return ok();
+  }
+
+  @with_error_handling
+  async remove_data_from_inactive_guilds(
+    inactive_time_in_seconds = this._config.database.keep_dead_servers_in_db_seconds,
+  ) {
+    const inactive_guilds_query = `
+      SELECT guild_id FROM guilds 
+      WHERE left_at IS NOT NULL 
+      AND unixepoch(left_at) < unixepoch('now') - ${inactive_time_in_seconds}
+    `;
+
+    this.db.prepare(`DELETE FROM threads WHERE server IN (${inactive_guilds_query})`).run();
+    this.db.prepare(`DELETE FROM channels WHERE server IN (${inactive_guilds_query})`).run();
+    this.db.prepare(`DELETE FROM settings WHERE guild_id IN (${inactive_guilds_query})`).run();
+    this.db.prepare(`DELETE FROM audit WHERE guild_id IN (${inactive_guilds_query})`).run();
+    this.db.prepare(`DELETE FROM guilds WHERE guild_id IN (${inactive_guilds_query})`).run();
+
+    return ok();
+  }
+
+  /*
+  count_watched_threads: () => DBResult<number>;
+  count_monitored_channels: () => DBResult<number>;
+  */
+
+  @with_error_handling
+  async count_watched_threads() {
+    const res = this.db
+      .prepare('SELECT COUNT(*) AS count FROM threads WHERE is_watched = 1')
+      .get() as { count: number };
+    return ok(res.count);
+  }
+
+  @with_error_handling
+  async count_monitored_channels() {
+    const res = this.db
+      .prepare('SELECT COUNT(*) AS count FROM channels WHERE is_suspended = 0')
+      .get() as { count: number };
+    return ok(res.count);
   }
 
   @with_error_handling

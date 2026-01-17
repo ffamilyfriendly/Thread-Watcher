@@ -78,6 +78,14 @@ export const ZAuditData = z.object({
 });
 export type AuditData = z.output<typeof ZAuditData>;
 
+/* 'CREATE TABLE IF NOT EXISTS guilds (guild_id INTEGER PRIMARY KEY, left_at TIMESTAMP, granted_SKU TEXT)', */
+export const ZGuild = z.object({
+  guild_id: z.string(),
+  left_at: z.coerce.date().nullish(),
+  granted_sku: z.string().nullish(),
+});
+export type Guild = z.output<typeof ZGuild>;
+
 export type DBResult<T = void> = Promise<Result<T, DatabaseError>>;
 
 interface CoreUtils {
@@ -94,6 +102,7 @@ interface CoreThread {
   get_threads_in_guild: (guild_id: string, watched: boolean) => DBResult<ThreadData[]>;
   get_watched_threads_count: (guild_id: string) => DBResult<number>;
   get_stale_threads: () => DBResult<ThreadData[]>;
+  count_watched_threads: () => DBResult<number>;
 }
 
 interface CoreChannel {
@@ -102,6 +111,7 @@ interface CoreChannel {
   get_channel: (channel_id: string) => DBResult<ChannelDataWithFilters | null>;
   get_channels_in_guild: (guild_id: string) => DBResult<ChannelDataWithFilters[]>;
   get_monitored_channels_count: (guild_id: string) => DBResult<number>;
+  count_monitored_channels: () => DBResult<number>;
 }
 
 type Core = CoreUtils & CoreThread & CoreChannel;
@@ -142,6 +152,14 @@ interface Audit {
   clean_expired_logs: () => DBResult;
 }
 
-export interface Database extends Core, GuildSettings, Audit {
+/* 'CREATE TABLE IF NOT EXISTS guilds (guild_id INTEGER PRIMARY KEY, left_at TIMESTAMP, granted_SKU TEXT)', */
+
+interface Guilds {
+  get_guild_info: (guild_id: string) => DBResult<Guild | null>;
+  remove_data_from_inactive_guilds: (inactive_time_in_seconds?: number) => DBResult;
+  upsert_guild_info: (guild_id: string, data: Omit<Guild, 'guild_id'>) => DBResult;
+}
+
+export interface Database extends Core, GuildSettings, Audit, Guilds {
   create_tables: () => DBResult;
 }

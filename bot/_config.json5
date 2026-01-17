@@ -1,33 +1,60 @@
 {
   tokens: {
+    // Keep this very very secret
     discord: 'SECRET',
+    // This is only required if you have a top.gg bot page you want to keep updated with bot statistics
     topgg: 'secret',
   },
+  // You would probably want to disable this
   paywall_enabled: true,
+  // This is required for the dashboard to work.
+  // The bot will work without it but some features may be missing
   web: {
     enabled: true,
     port: 2003,
     hostname: 'https://threadwatcher.xyz',
-    shared_secret: 'SECRET',
+    // This is a secret you need to set in both this config file and the .env for sveltekit.
+    // If it does not match the API will refuse any requests.
+    shared_secret: 'xX_1tz_4_5hared_5crit_Xx',
   },
+  // These users will have absolute privledges. You want to insert your discord ID here
   owners: ['286224826170081290'],
+  // Client ID of the bot user
   clientID: '1202623821010436147',
+  // ID of the development server. You want to put in your own server ID here
   devServer: '1063430373394100335',
   database: {
+    // Options:
+    // - Sqlite
+    // - MySql (soon)
+    // I'd suggest Sqlite for an easier experience
     flavour: 'sqlite',
+    // Credentials for your redis instance
+    // (Currently not used)
     redis: {
-      user: 'threadwatcher',
-      password: 'secret',
+      user: 'stigman',
+      password: 'hunter1',
     },
+    // The folder that local database dumps will be saved to. Relative to the directory this file is in
     backup_path: './backups',
+    // cron expression for how often you want the bot to create backups
+    // use https://crontab.cronhub.io/ if unsure on syntax
     backup_interval: '0 0 * * *',
+    // Wheter or not you want the backups to be uploaded to the S3 bucket (configured below)
     upload_backup_to_bucket: false,
+    // cron expression for how often you want to run the cleanup task
+    // - Clears audit logs older than the guild set max limit
+    // - Deletes data from stale guilds
+    run_cleanup_tasks: '0 * * * *',
+    // How many local database dumbs to keep. Will delete the oldest first
     keep_local_files_amount: 5,
+    // How long the bot has to have been abscent from a guild before we delete its data
+    keep_dead_servers_in_db_seconds: 2592000,
   },
   bucket_storage: {
-    url: 'SECRET',
-    secret_access_key: 'SECRET',
-    access_key_id: 'SECRET',
+    url: 'https://xdxdxdxd.r2.cloudflarestorage.com',
+    secret_access_key: 'REPLACE_ME',
+    access_key_id: 'REPLACE_ME',
   },
   style: {
     error: {

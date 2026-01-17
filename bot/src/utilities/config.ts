@@ -48,6 +48,7 @@ const Database = z.object({
   upload_backup_to_bucket: z.boolean(),
   keep_local_files_amount: z.number(),
   run_cleanup_tasks: ZCronTab,
+  keep_dead_servers_in_db_seconds: z.number(),
   redis: Redis,
 });
 

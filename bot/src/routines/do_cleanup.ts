@@ -9,12 +9,23 @@ async function clean_logs() {
   if (res.isErr()) {
     l.error('Could not clean expired audit logs!', res.error);
   } else {
-    l.debug('Cleaned expired audit logs!');
+    l.silly('Cleaned expired audit logs!');
+  }
+}
+
+async function clean_abandoned_servers() {
+  const res = await database.remove_data_from_inactive_guilds();
+  if (res.isErr()) {
+    l.error('Could not remove data from abandoned servers!', res.error);
+  }
+  {
+    l.silly('Removed data from abandoned servers!');
   }
 }
 
 function run_cleaners() {
   clean_logs();
+  clean_abandoned_servers();
 }
 
 export function start_cleanup_interval() {
