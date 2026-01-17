@@ -42,10 +42,9 @@ export async function log_event_in_log_channel(
     embeds = [as_embed.value];
   } else embeds = event_or_embed;
 
-  const LOGGING_CHANNEL = await setting_service.get_setting_with_default<string | null>(
+  const LOGGING_CHANNEL = await setting_service.get_setting<string>(
     g_id,
     SETTINGS_KEYS.logging_channel,
-    null,
   );
 
   if (LOGGING_CHANNEL.isErr()) return err(map_err(LOGGING_CHANNEL.error));

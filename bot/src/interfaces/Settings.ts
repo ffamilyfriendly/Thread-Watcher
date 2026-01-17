@@ -12,6 +12,7 @@ import {
   StringSelectMenuInteraction,
 } from 'discord.js';
 import { err, Ok, ok, Result } from 'neverthrow';
+import { z } from 'zod';
 
 export type SettingValue = number | string | boolean | string[];
 
@@ -142,7 +143,7 @@ export interface SettingSchema<T extends SettingValue> {
   default: T | null;
   type: SettingType;
   adapter: InputAdapter<T, MessageActionRowComponentBuilder>;
-  validate: (value: unknown) => boolean;
+  schema: z.ZodType<T>;
   description: string;
 }
 
@@ -152,7 +153,7 @@ const LOGGING_CHANNEL: SettingSchema<string> = {
   adapter: new ChannelSelectAdapter(),
   default: null,
   type: 'channel',
-  validate: (value: unknown) => typeof value === 'string' || value === null,
+  schema: z.string(),
   description: 'the channel where logs will be sent to',
 };
 
@@ -169,7 +170,7 @@ const BUMP_BEHAVIOUR: SettingSchema<string> = {
   ]),
   default: 'BUMP_AND_UNARCHIVE',
   type: 'string',
-  validate: (value: unknown) => typeof value === 'string' || value === null,
+  schema: z.enum(['BUMP_AND_UNARCHIVE', 'UNARCHIVE_ONLY']),
   description: 'the behaviour of the bot idk',
 };
 
@@ -179,14 +180,38 @@ const BOT_MASTER_ROLE: SettingSchema<string> = {
   adapter: new RoleSelectAdapter(),
   default: null,
   type: 'string',
-  validate: (value: unknown) => typeof value === 'string' || value === null,
+  schema: z.string(),
   description: 'The role which allows dashboard access',
+};
+
+const AUDIT_LOG_RETENTION: SettingSchema<string> = {
+  key: 'AUDIT_LOG_RETENTION',
+  name: 'Audit Log Retention',
+  adapter: new StringSelectAdapter([
+    {
+      label: '24 Hours',
+      value: '86400',
+    },
+    {
+      label: '30 Days',
+      value: '2592000',
+    },
+    {
+      label: '1 Year',
+      value: '31536000',
+    },
+  ]),
+  default: '86400',
+  schema: z.enum(['86400', '2592000', '31536000']),
+  type: 'string',
+  description: 'How long to retain audit logs for your server',
 };
 
 const settings_map = new Map([
   ['LOGGING_CHANNEL', LOGGING_CHANNEL],
   ['BUMP_BEHAVIOUR', BUMP_BEHAVIOUR],
   ['BOT_MASTER_ROLE', BOT_MASTER_ROLE],
+  ['AUDIT_LOG_RETENTION', AUDIT_LOG_RETENTION],
 ]);
 
 export default settings_map;

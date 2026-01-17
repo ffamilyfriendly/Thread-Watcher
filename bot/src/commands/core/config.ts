@@ -21,6 +21,7 @@ import {
   handle_default_button,
 } from 'commands/core/_shared/config';
 import { map_err } from 'utilities/error';
+import { safe_parse } from 'utilities/parsing';
 
 function create_buttons() {
   const apply_button = new ButtonBuilder().setStyle(ButtonStyle.Primary).setLabel('Save');
@@ -52,26 +53,16 @@ async function run(
 
     if (!setting) return resolve(err(new Error(`\`${settings_key}\` is not a valid setting`)));
 
-    const current_value = await setting_service.get_setting_with_default(
-      interaction.guildId,
-      setting.key,
-      setting.default,
-    );
+    const current_value = await setting_service.get_setting(interaction.guildId, setting.key);
 
     if (current_value.isErr()) {
       return resolve(err(map_err(current_value.error)));
     }
 
-    let converted_value;
-    if (current_value.value) {
-      const transform_result = setting.adapter.into(current_value.value);
-      if (transform_result.isErr()) return resolve(err(transform_result.error));
-      converted_value = transform_result.value;
-    } else {
-      converted_value = null;
-    }
-
-    const state = create_initial_state(converted_value);
+    const current_val = (
+      await setting_service.get_setting(interaction.guildId, setting.key)
+    ).unwrapOr(setting.default);
+    const state = create_initial_state(current_val);
 
     const { apply_button, reset_button, cancel_button, action_row } = create_buttons();
     let component = setting.adapter.create_component();
@@ -95,23 +86,18 @@ async function run(
       }),
 
       component_service.wait_for_interaction_callback(component, filter, (response) => {
-        const value = setting.adapter.parse_interaction(response);
-
-        if (value.isErr()) {
-          return resolve(err(value.error));
-        }
-
-        if (!setting.validate(value.value)) {
-          return resolve(err(new Error('validation failed')));
-        }
-
-        state.value = value.value;
-
-        const embed = generate_embed(ctx, setting, state);
-
-        response.update({
-          embeds: [embed],
-        });
+        setting.adapter
+          .parse_interaction(response)
+          .andThen((val) => safe_parse(setting.schema, val))
+          .match(
+            (validated_val) => {
+              state.value = validated_val;
+              response.update({ embeds: [generate_embed(ctx, setting, state)] });
+            },
+            (error) => {
+              ctx.err(error);
+            },
+          );
       }),
     );
 

@@ -1,10 +1,12 @@
 import {
 	ZAuditLogResponse,
+	ZChannelMonitor,
 	ZDiscordChannel,
 	ZDiscordRole,
 	ZDiscordUser,
 	ZExpandedAuditLog,
 	ZGuildOverview,
+	type ChannelMonitor,
 	type ExpandedAuditLog,
 	type GuildOverview
 } from '$lib/types/internal_api';
@@ -152,4 +154,15 @@ export async function get_guild_info(
 	if (guilds_res.isErr()) return err(guilds_res.error);
 
 	return ok(guilds_res.value);
+}
+
+export async function get_monitors(
+	guild_id: string,
+	user_id: string
+): Promise<Result<ChannelMonitor[], Error | Response>> {
+	return await json_fetch<ChannelMonitor[]>(
+		`/guild/${guild_id}/monitors`,
+		{ user_id },
+		z.array(ZChannelMonitor)
+	);
 }

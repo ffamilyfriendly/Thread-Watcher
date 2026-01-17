@@ -12,15 +12,12 @@ import ChannelService from 'services/ChannelService';
 import Redis from 'ioredis';
 import SettingService from 'services/SettingService';
 import ComponentService from 'services/ComponentService';
-import { BotContextThreadFetcher } from 'fetchers/ThreadFetcher';
 import i18next from 'i18next';
 import { readFileSync } from 'fs';
 import ThreadBumper from 'services/ThreadBumper';
 import AuditService from 'services/AuditService';
 import { ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
-import { AuditData } from 'interfaces/Database';
-import { log_event_in_log_channel } from 'utilities/log_channel_stuff';
 
 const config_result = read_config();
 const logger = new Logger({ name: 'bot' });
@@ -71,7 +68,7 @@ const database = get_database_instance(config);
 const redis = new Redis();
 
 // Services
-const thread_service = new ThreadService(database, redis, new BotContextThreadFetcher(client));
+const thread_service = new ThreadService(database, redis);
 const setting_service = new SettingService(database, redis);
 const component_service = new ComponentService();
 const channel_service = new ChannelService(database, redis);

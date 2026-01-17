@@ -62,7 +62,7 @@ export const ZAuditLog = z.object({
 	error: z.string().nullable(),
 	exec_time_ms: z.number().nullable(),
 	command_name: z.string().nullable(),
-	timestamp: z.string(),
+	timestamp: z.number(),
 	audit_type: z.string()
 });
 export type AuditLog = z.output<typeof ZAuditLog>;
@@ -135,3 +135,40 @@ export const ZExpandedAuditLog = ZAuditLog.extend({
 	executing_user: ZDiscordUser
 });
 export type ExpandedAuditLog = z.output<typeof ZExpandedAuditLog>;
+
+/*
+
+export interface ChannelData {
+  id: string;
+  server: string;
+}
+
+export interface FilterData {
+  regex?: string;
+  tags?: string[];
+  role_whitelist?: string[];
+
+*/
+
+export const ZRegex = z
+	.union([z.string(), z.instanceof(RegExp), z.null(), z.undefined()])
+	.transform((val) => {
+		if (!val) return val;
+		if (val instanceof RegExp) return val;
+
+		try {
+			return new RegExp(val.trim());
+		} catch (e) {
+			throw new Error('Invalid regular expression format');
+		}
+	});
+
+export const ZChannelMonitor = z.object({
+	id: z.string(),
+	server: z.string(),
+	regex: ZRegex,
+	tags: z.array(z.string()).nullish(),
+	role_whitelist: z.array(z.string()).nullish()
+});
+
+export type ChannelMonitor = z.output<typeof ZChannelMonitor>;

@@ -1,8 +1,10 @@
 import { Database } from 'interfaces/Database';
-import settings_map from 'interfaces/Settings';
+import settings_map, { SettingValue } from 'interfaces/Settings';
 import Redis from 'ioredis';
-import { err, ok, ResultAsync } from 'neverthrow';
+import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
+import { safe_parse } from 'utilities/parsing';
+import RedisWrapper from 'utilities/redis';
 
 /**
  * Service responsible for reading and writing guild-scoped settings with a Redis cache layer.
@@ -26,97 +28,37 @@ export default class SettingService {
    * @remarks Adjust this constant to change cache TTL for all settings operations.
    */
   static readonly CACHE_TTL_SECONDS = 900;
+  private r: RedisWrapper;
 
   constructor(
     private db: Database,
     private redis: Redis,
-  ) {}
+  ) {
+    this.r = new RedisWrapper(redis, SettingService.CACHE_TTL_SECONDS, 'settings');
+  }
 
   get_adapter(settings_key: string) {
     return settings_map.get(settings_key)?.adapter;
   }
 
-  /**
-   * Internal helper: read a single setting from Redis.
-   *
-   * @internal
-   * @template T The expected parsed type returned from the cache.
-   * @param guild_id The guild identifier.
-   * @param setting_key The setting key.
-   * @returns A ResultAsync that resolves to the parsed value (T) or null if not found, or an error if the Redis call fails.
-   */
-  private async get_setting_redis<T>(guild_id: string, setting_key: string) {
-    const adapter = this.get_adapter(setting_key);
-    if (!adapter) return err(new Error(`no adapter could be found for '${setting_key}'`));
-    return ResultAsync.fromPromise(
-      this.redis.get(`settings:${guild_id}:${setting_key}`),
-      map_err,
-    ).match(
-      (ok_val) => {
-        return ok_val ? adapter.into(ok_val) : ok(null);
-      },
-      (error) => err(error),
-    );
-  }
+  async get_setting<T extends SettingValue>(
+    guild_id: string,
+    setting_key: string,
+  ): Promise<Result<T | null, unknown>> {
+    const config = settings_map.get(setting_key);
+    if (!config) return err(new Error(`Unknown setting: ${setting_key}`));
 
-  /**
-   * Internal helper: write a single setting to Redis with an expiration.
-   *
-   * @internal
-   * @param guild_id The guild identifier.
-   * @param setting_key The setting key.
-   * @param setting_value The value to serialize and store in Redis.
-   * @returns A ResultAsync that resolves when the Redis SET completes or an error if the Redis call fails.
-   */
-  private set_setting_redis(guild_id: string, setting_key: string, setting_value: string) {
-    return ResultAsync.fromPromise(
-      this.redis.set(
-        `settings:${guild_id}:${setting_key}`,
-        setting_value,
-        'EX',
-        SettingService.CACHE_TTL_SECONDS,
-      ),
-      map_err,
-    );
-  }
+    const cached = await this.r.get([guild_id, setting_key], config.schema);
+    if (cached.isOk() && cached.value) return ok(cached.value as T);
 
-  /**
-   * Get a setting for a guild.
-   *
-   * This method:
-   * - Tries the Redis cache first.
-   * - If the cache contains a value, returns it immediately.
-   * - On cache miss, queries the Database and, if successful, updates Redis with the DB value.
-   *
-   * @template T The expected return type of the setting.
-   * @param guild_id The guild identifier whose setting is being requested.
-   * @param setting_key The key identifying the setting.
-   * @returns A Promise resolving to a neverthrow Result containing the setting value (possibly null if not set) on success,
-   *          or an error result if either Redis or the Database operation failed.
-   */
-  async get_setting<T>(guild_id: string, setting_key: string) {
-    const adapter = this.get_adapter(setting_key);
-    if (!adapter) return err(new Error(`no adapter could be found for '${setting_key}'`));
-    const cache_entry = await this.get_setting_redis(guild_id, setting_key);
-    if (cache_entry.isErr()) return err(cache_entry.error);
-    if (cache_entry.value) return ok(cache_entry.value as T);
+    const db_res = await this.db.get_guild_setting_value(guild_id, setting_key);
+    if (db_res.isErr()) return err(db_res.error);
+    if (!db_res.value) return ok(config.default as T);
 
-    const settings_value = await this.db.get_guild_setting_value(guild_id, setting_key);
-
-    if (settings_value.isErr()) {
-      return err(settings_value.error);
-    }
-
-    if (settings_value.value) {
-      const redis_response = await this.set_setting_redis(
-        guild_id,
-        setting_key,
-        settings_value.value,
-      );
-      if (redis_response.isErr()) return err(redis_response);
-    }
-
-    return ok(settings_value.value);
+    return safe_parse(config.schema, db_res.value).map((parsed) => {
+      this.r.set([guild_id, setting_key], parsed, config.schema);
+      return parsed as T;
+    });
   }
 
   async get_guild_settings(guild_id: string) {
@@ -125,22 +67,6 @@ export default class SettingService {
     if (settings.isErr()) return err(settings.error);
 
     return ok(settings.value);
-  }
-
-  /**
-   * Get a setting for a guild, returning a default when the setting is null or undefined.
-   *
-   * Convenience wrapper around get_setting that maps null/undefined to the provided default_value.
-   *
-   * @template T The expected return type of the setting.
-   * @param guild_id The guild identifier.
-   * @param setting_key The key identifying the setting.
-   * @param default_value The value to return when the stored setting is null or undefined.
-   * @returns A Promise resolving to a neverthrow Result containing either the stored value or default_value on success,
-   *          or an error result if the underlying operations fail.
-   */
-  async get_setting_with_default<T>(guild_id: string, setting_key: string, default_value: T) {
-    return (await this.get_setting<T>(guild_id, setting_key)).map((v) => (v ?? default_value) as T);
   }
 
   /**
@@ -157,28 +83,28 @@ export default class SettingService {
    * @returns A Promise resolving to a neverthrow Result indicating success or failure of the Database write.
    */
   async set_setting(guild_id: string, setting_key: string, setting_value: unknown) {
-    const adapter = this.get_adapter(setting_key);
-    if (!adapter) return err(new Error(`no adapter could be found for '${setting_key}'`));
-    if (!adapter.is_type(setting_value))
+    const config = settings_map.get(setting_key);
+    if (!config) return err(new Error(`Unknown setting: ${setting_key}`));
+
+    const parse_res = config.schema.safeParse(setting_value);
+    if (!parse_res.success)
       return err(
         new Error(`value '${setting_value}' is not the expected type for '${setting_key}'`),
       );
-    const value_as_str = adapter.to_string(setting_value);
+
+    const value_as_str = config.adapter.to_string(parse_res.data);
     if (value_as_str.isErr()) return err(value_as_str.error);
 
-    const data_promise = ResultAsync.fromPromise(
-      Promise.all([
-        this.set_setting_redis(guild_id, setting_key, value_as_str.value),
-        this.db.set_guild_setting_value(guild_id, setting_key, value_as_str.value),
-      ]),
-      map_err,
-    );
+    const db_res = await this.db.set_guild_setting_value(guild_id, setting_key, value_as_str.value);
+    if (db_res.isOk()) {
+      this.r.set([guild_id, setting_key], setting_value, config.schema);
+    }
 
     // Invalidate browser cache
     // We don't mind if this crashes.
     await ResultAsync.fromPromise(this.redis.del(`${guild_id}:overviewInfo`), map_err);
 
-    return data_promise;
+    return db_res;
   }
 
   async set_settings(guild_id: string, settings: Record<string, unknown>) {
@@ -199,7 +125,7 @@ export default class SettingService {
   async remove_setting(guild_id: string, setting_key: string) {
     const promises = Promise.all([
       this.db.delete_guild_setting_value(guild_id, setting_key),
-      this.redis.del(`settings:${guild_id}:${setting_key}`),
+      this.r.del([guild_id, setting_key]),
     ]);
 
     return ResultAsync.fromPromise(promises, map_err);

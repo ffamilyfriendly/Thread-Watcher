@@ -127,6 +127,7 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
   if (result.isErr()) {
     handle_err(map_err(result.error), interaction);
   } else {
+    audit_builder.commit();
     logger.debug(`Command interaction with id ${interaction.id} handled without issues!`);
   }
 }

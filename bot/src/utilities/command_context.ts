@@ -21,28 +21,21 @@ import {
   ButtonBuilder,
   ButtonInteraction,
   ButtonStyle,
-  Channel,
   ColorResolvable,
   CommandInteraction,
   EmbedBuilder,
-  GuildTextBasedChannel,
   Interaction,
   Message,
   messageLink,
-  TextBasedChannel,
-  TextChannel,
 } from 'discord.js';
 import i18next from 'i18next';
 import { CommandError } from 'interfaces/Command';
 import { ok, err, Result, ResultAsync } from 'neverthrow';
 
-import { config, logger, setting_service } from 'bot';
+import { config, logger } from 'bot';
 import { Logger } from 'tslog';
-import { AuditEventBuilder, get_audit_embed, PartialAuditObject } from 'services/AuditService';
-import { SETTINGS_KEYS } from 'services/SettingService';
+import { get_audit_embed, PartialAuditObject } from 'services/AuditService';
 import { map_err } from './error';
-import { bot_can_send_embed } from './permissions';
-import { create_channel_link } from 'commands/core/list';
 import { log_event_in_log_channel } from './log_channel_stuff';
 
 type StyleOption = keyof typeof config.style;

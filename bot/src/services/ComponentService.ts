@@ -55,7 +55,7 @@ type AnyInteractionEmitterBuilder = AnyComponentBuilder | ModalBuilder | RoleSel
 
 export default class ComponentService {
   // 5 minutes as a fallback timeout in case one was not supplied
-  static readonly DEFAULT_TIMEOUT_IN_MS = 1000 * 60 * 60 * 5;
+  static readonly DEFAULT_TIMEOUT_IN_MS = 1000 * 60 * 5;
   private component_events = new Map<string, InternalCallbackType>();
   private named_components = new Map<string, AnyComponentBuilder[]>();
 
@@ -70,6 +70,15 @@ export default class ComponentService {
 
     component.setCustomId(component_instance_id);
 
+    const auto_cleanup = setTimeout(() => {
+      this.component_events.delete(component_instance_id);
+    }, timeout);
+
+    const cleanup = () => {
+      clearTimeout(auto_cleanup);
+      this.component_events.delete(component_instance_id);
+    };
+
     this.component_events.set(component_instance_id, (interaction) => {
       const interaction_typed = interaction as InteractionForComponent<T>;
       if (!filter(interaction_typed)) return;
@@ -78,7 +87,7 @@ export default class ComponentService {
 
     return {
       component_instance_id,
-      cleanup: () => this.component_events.delete(component_instance_id),
+      cleanup,
     };
   }
 
@@ -87,7 +96,7 @@ export default class ComponentService {
   }
 
   set_managed_component(name: string, component: AnyComponentBuilder) {
-    const arr = this.named_components.get('name') ?? [];
+    const arr = this.named_components.get(name) ?? [];
     arr.push(component);
     this.named_components.set(name, arr);
   }

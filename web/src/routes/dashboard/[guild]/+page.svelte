@@ -32,6 +32,8 @@
         return () => clearTimeout(timeout)
     })
 </script>
+<h1>Welcome, <span class="username">{data.session?.user.name}</span></h1>
+
 <div class="card_container">
     <div class="card">
         <SpoolIcon />
@@ -65,6 +67,11 @@
 hello
 
 <style lang="scss">
+
+    .username {
+        color: var(--primary-900);
+    }
+
     .card {
         display: flex;
         gap: 1rem;
@@ -87,10 +94,6 @@ hello
 
         @media (max-width: 500px) {
             flex-direction: column;
-            
-            & svg {
-                display: none;
-            }
         }
     }
 

@@ -43,7 +43,7 @@
 
     const core_items: MenuItem[] = [
         {
-            name: "Watch & Monitor",
+            name: "Core",
             href: link_to("core"),
             icon: Activity
         },

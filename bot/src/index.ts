@@ -8,7 +8,6 @@ import { create_web_server } from 'web';
 import get_database_instance from 'database';
 import Redis from 'ioredis';
 import ThreadService from 'services/ThreadService';
-import { IndexContextThreadFetcher } from 'fetchers/ThreadFetcher';
 import { start_db_backup_routine } from 'routines/do_db_backup';
 import { S3Client } from 'bun';
 import ChannelService from 'services/ChannelService';
@@ -16,6 +15,7 @@ import { ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import AuditService from 'services/AuditService';
 import SettingService from 'services/SettingService';
+import { start_cleanup_interval } from 'routines/do_cleanup';
 
 const config_result = read_config();
 const logger = new Logger();
@@ -52,11 +52,7 @@ const bucket_storage = new S3Client({
 });
 
 const ipc_client = new ShardedIpcClient(sharding_manager, redis);
-const thread_service = new ThreadService(
-  database,
-  redis,
-  new IndexContextThreadFetcher(ipc_client),
-);
+const thread_service = new ThreadService(database, redis);
 const channel_service = new ChannelService(database, redis);
 const settings_service = new SettingService(database, redis);
 const audit_service = new AuditService(database);
@@ -70,6 +66,7 @@ async function load_events() {
 }
 
 start_db_backup_routine();
+start_cleanup_interval();
 load_events();
 
 export {

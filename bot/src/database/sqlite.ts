@@ -1,50 +1,30 @@
 import {
   AuditData,
   ChannelData,
-  ChannelDataWithFilters,
   Database,
   DatabaseError,
   FilterData,
   RawSetting,
-  ThreadData,
+  ZAuditData,
+  ZChannelDataWithFilters,
+  ZThreadData,
 } from 'interfaces/Database';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import sql, { Database as SqliteDb, SQLiteError } from 'bun:sqlite';
+import sql, { Database as SqliteDb } from 'bun:sqlite';
 import { ConfigType } from 'utilities/config';
 import { with_error_handling } from 'database';
 import { join, resolve as resolve_path } from 'path';
 import { create as create_tar } from 'tar';
 import { map_err } from 'utilities/error';
+import { z } from 'zod';
+import { safe_parse } from 'utilities/parsing';
 
 const TABLE_CREATION_QUERIES = [
   'CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT NOT NULL, parent_channel_id TEXT, due_archive DATE, is_watched INTEGER, is_managed INTEGER)',
-  'CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT NOT NULL, regex TEXT, role_whitelist TEXT, tags TEXT)',
-  'CREATE TABLE IF NOT EXISTS settings (setting_id TEXT, guild_id TEXT, setting_value BLOB, UNIQUE(setting_id, guild_id) ON CONFLICT REPLACE)',
+  'CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT NOT NULL, regex TEXT, role_whitelist TEXT, tags TEXT, is_suspended INTEGER DEFAULT 0)',
+  'CREATE TABLE IF NOT EXISTS settings (setting_id TEXT, guild_id TEXT, setting_value TEXT, UNIQUE(setting_id, guild_id) ON CONFLICT REPLACE)',
   'CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY AUTOINCREMENT, error TEXT, command_name TEXT, exec_time_ms INTEGER, audit_type TEXT NOT NULL, guild_id TEXT NOT NULL, executor_id TEXT NOT NULL, target_id TEXT, old_value TEXT, new_value TEXT, reason TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)',
 ];
-
-function handle_error(err_data: unknown) {
-  if (err_data instanceof SQLiteError || err_data instanceof Error) {
-    return err(err_data);
-  } else {
-    // Tenary operators get VERY beutiful with ts type checking
-    // You, the reader, is most welcome. I wrote this shit at 21:00 2025-07-17 btw fun fact!!! :D :D :D
-    // > Thank you, past me, for this nice message. I wrote this reply at 01:58 2025-11-22
-    // >> Thank you both. Idk for what. Did not touch this code. I wrote this at 01:33 2025-12-10
-    // >>> hello both! I have effectivly removed this code in favour for the decorator. I wrote this at 01:46 2026-01-04 ✌️
-    const message =
-      err_data &&
-      typeof err_data === 'object' &&
-      'message' in err_data &&
-      typeof err_data.message === 'string'
-        ? err_data.message
-        : 'unknown error idk bro';
-
-    const unknown_error = new Error(message);
-
-    return err(unknown_error);
-  }
-}
 
 export default class Sqlite implements Database {
   db: SqliteDb;
@@ -53,6 +33,31 @@ export default class Sqlite implements Database {
   constructor(config: ConfigType) {
     this.db = new sql(config.database.database_path);
     this._config = config;
+  }
+
+  private query_one<T extends z.ZodTypeAny>(
+    schema: T,
+    sql: string,
+    ...params: any[]
+  ): Result<z.output<T> | null, Error> {
+    return Result.fromThrowable(() => this.db.prepare(sql).get(...params), map_err)().andThen(
+      (val) => {
+        if (!val) return ok(null);
+        return safe_parse(schema, val);
+      },
+    );
+  }
+
+  private query_all<T extends z.ZodTypeAny>(
+    schema: T,
+    sql: string,
+    ...params: any[]
+  ): Result<z.output<T>[], Error> {
+    return Result.fromThrowable(() => this.db.prepare(sql).all(...params), map_err)().andThen(
+      (val) => {
+        return safe_parse(z.array(schema), val);
+      },
+    );
   }
 
   @with_error_handling
@@ -109,19 +114,16 @@ export default class Sqlite implements Database {
     return ok();
   }
 
-  @with_error_handling
   async get_thread(thread_id: string) {
-    const res = this.db.prepare('SELECT * FROM threads WHERE id = ?').get(thread_id);
-
-    return ok(res as ThreadData);
+    return this.query_one(ZThreadData, 'SELECT * FROM threads WHERE id = ?', thread_id);
   }
 
-  @with_error_handling
   async get_threads_in_guild(guild_id: string, watched: boolean) {
-    return ok(
-      this.db
-        .prepare('SELECT * FROM threads WHERE server = ? AND is_watched = ?')
-        .all(guild_id, watched) as ThreadData[],
+    return this.query_all(
+      ZThreadData,
+      'SELECT * FROM threads WHERE server = ? AND is_watched = ?',
+      guild_id,
+      watched,
     );
   }
 
@@ -143,10 +145,10 @@ export default class Sqlite implements Database {
     const now = Date.now();
     const stale_thresh = now + buffer_in_ms;
 
-    return ok(
-      this.db
-        .prepare('SELECT * FROM threads WHERE due_archive <= ? AND is_watched = 1')
-        .all(stale_thresh) as ThreadData[],
+    return this.query_all(
+      ZThreadData,
+      'SELECT * FROM threads WHERE due_archive <= ? AND is_watched = 1',
+      stale_thresh,
     );
   }
 
@@ -200,27 +202,32 @@ export default class Sqlite implements Database {
   @with_error_handling
   async insert_channel(channel: ChannelData, filters?: FilterData) {
     this.db
-      .prepare('INSERT OR REPLACE INTO channels VALUES(?, ?, ?, ?, ?)')
+      .prepare('INSERT OR REPLACE INTO channels VALUES(?, ?, ?, ?, ?, ?)')
       .run(
         channel.id,
         channel.server,
-        filters && filters.regex ? filters.regex : null,
-        filters && filters.role_whitelist ? filters.role_whitelist.join(',') : null,
-        filters && filters.tags ? filters.tags.join(',') : null,
+        filters?.regex?.source ?? null,
+        filters?.role_whitelist?.join(',') ?? null,
+        filters?.tags?.join(',') ?? null,
+        channel.is_suspended,
       );
     return ok();
   }
 
-  @with_error_handling
   async get_channel(channel_id: string) {
-    const val = this.db.prepare('SELECT * FROM channels WHERE id = ?').get(channel_id);
-    return ok(val ? (val as ChannelDataWithFilters) : null);
+    return this.query_one(
+      ZChannelDataWithFilters,
+      'SELECT * FROM channels WHERE id = ?',
+      channel_id,
+    );
   }
 
-  @with_error_handling
   async get_channels_in_guild(guild_id: string) {
-    const val = this.db.prepare('SELECT * FROM channels WHERE server = ?').all(guild_id);
-    return ok(val as ChannelDataWithFilters[]);
+    return this.query_all(
+      ZChannelDataWithFilters,
+      'SELECT * FROM channels WHERE server = ?',
+      guild_id,
+    );
   }
 
   @with_error_handling
@@ -261,33 +268,39 @@ export default class Sqlite implements Database {
     return ok();
   }
 
-  @with_error_handling
   async get_audit_logs(guild_id: string, limit: number, before_id?: number) {
-    let logs_query;
-    let logs: AuditData[];
+    const query = before_id
+      ? 'SELECT * FROM audit WHERE guild_id = ? AND id < ? ORDER BY id DESC LIMIT ?'
+      : 'SELECT * FROM audit WHERE guild_id = ? ORDER BY id DESC LIMIT ?';
+    const params = before_id ? [guild_id, before_id, limit] : [guild_id, limit];
 
-    if (before_id) {
-      logs_query = this.db.prepare(
-        'SELECT * FROM audit WHERE guild_id = ? AND id < ? ORDER BY id DESC LIMIT ?',
-      );
-      logs = logs_query.all(guild_id, before_id, limit) as AuditData[];
-    } else {
-      logs_query = this.db.prepare(
-        'SELECT * FROM audit WHERE guild_id = ? ORDER BY id DESC LIMIT ?',
-      );
-      logs = logs_query.all(guild_id, limit) as AuditData[];
-    }
-
-    const next_cursor = logs.length ? logs[logs.length - 1].id : null;
-
-    return ok({ logs, next_cursor });
+    return this.query_all(ZAuditData, query, ...params).map((logs) => ({
+      logs,
+      next_cursor: logs.length ? logs[logs.length - 1].id : null,
+    }));
   }
 
   @with_error_handling
   async get_audit_log(id: number) {
-    const value = this.db.prepare('SELECT * FROM audit WHERE id = ?').get(id);
-    if (!value) return err(new Error('not found'));
-    return ok(value as AuditData);
+    return this.query_one(ZAuditData, 'SELECT * FROM audit WHERE id = ?', id).andThen((row) => {
+      if (!row) return err(new Error('not found'));
+      return ok(row);
+    });
+  }
+
+  @with_error_handling
+  async clean_expired_logs() {
+    const sql = `
+    DELETE FROM audit
+    WHERE unixepoch(timestamp) < unixepoch('now') - COALESCE(
+      (SELECT setting_value FROM settings
+        WHERE settings.guild_id = audit.guild_id
+        AND setting_id = 'AUDIT_LOG_RETENTION'),
+        86400
+      )
+    `;
+    this.db.run(sql);
+    return ok();
   }
 
   @with_error_handling

@@ -289,7 +289,7 @@ router.post(
     if (update_result.isErr()) {
       return res.status(500).json({
         code: 500,
-        message: update_result.error.message,
+        message: update_result.error.name,
         _details: update_result.error,
       });
     }

@@ -21,12 +21,12 @@ import { GenericCommandError } from 'interfaces/Command';
 import { handle_error_generic } from 'utilities/handle_interaction_error';
 import regex_is_safe from 'safe-regex';
 import { Vacuum } from 'services/ComponentService';
-import { AdvancedFilterOptions } from 'services/ChannelService';
 import { CommandContext } from 'utilities/command_context';
+import { FilterData } from 'interfaces/Database';
 
 export interface State<TContext = unknown> {
   components: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder | RoleSelectMenuBuilder>[];
-  filters: AdvancedFilterOptions;
+  filters: FilterData;
   edit_mode: boolean;
   cleaner: Vacuum;
   threads: ThreadChannel[];

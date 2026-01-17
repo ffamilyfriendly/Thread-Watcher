@@ -1,34 +1,84 @@
 import { SqliteError } from 'better-sqlite3';
 import { Result } from 'neverthrow';
+import { z } from 'zod';
 
 export type DatabaseError = SqliteError | Error;
 
-export interface ThreadData {
-  id: string;
-  server: string;
-  parent_channel_id?: string | null;
-  due_archive: number;
-  is_watched: boolean;
-  is_managed: boolean;
-}
 interface InsertThreadData extends Omit<ThreadData, 'is_watched' | 'due_archive'> {
   due_archive: Date;
 }
 
-export interface ChannelData {
-  id: string;
-  server: string;
-}
+export const ZThreadData = z.object({
+  id: z.string(),
+  server: z.string(),
+  parent_channel_id: z.string().nullish(),
+  due_archive: z.coerce.date(),
+  is_watched: z.coerce.boolean().default(true),
+  is_managed: z.coerce.boolean(),
+});
+export type ThreadData = z.output<typeof ZThreadData>;
 
-export interface FilterData {
-  regex?: string;
-  tags?: string[];
-  role_whitelist?: string[];
-}
+export const ZFilterData = z.object({
+  tags: z
+    .preprocess(
+      (val) => (typeof val === 'string' ? val.split(',') : val),
+      z.array(z.string()).nullish(),
+    )
+    .default([]),
+  role_whitelist: z
+    .preprocess(
+      (val) => (typeof val === 'string' ? val.split(',') : val),
+      z.array(z.string()).nullish(),
+    )
+    .default([]),
+  regex: z
+    .union([z.string(), z.instanceof(RegExp), z.null()])
+    .default(null)
+    .transform((val) => {
+      if (!val) return undefined;
+      if (val instanceof RegExp) return val;
 
-export type ChannelDataWithFilters = ChannelData & FilterData;
+      try {
+        const reg = new RegExp(val.trim());
 
-type DBResult<T = void> = Promise<Result<T, DatabaseError>>;
+        (reg as any).toJSON = function () {
+          return this.source;
+        };
+        return reg;
+      } catch {
+        return undefined;
+      }
+    }),
+});
+
+export const ZChannelData = z.object({
+  id: z.string(),
+  server: z.string(),
+  is_suspended: z.coerce.boolean(),
+});
+
+export const ZChannelDataWithFilters = ZChannelData.merge(ZFilterData);
+export type FilterData = z.output<typeof ZFilterData>;
+export type ChannelData = z.output<typeof ZChannelData>;
+export type ChannelDataWithFilters = z.output<typeof ZChannelDataWithFilters>;
+
+export const ZAuditData = z.object({
+  id: z.number(),
+  guild_id: z.string(),
+  executor_id: z.string(),
+  target_id: z.string().nullish(),
+  old_value: z.string().nullish(),
+  new_value: z.string().nullish(),
+  reason: z.string().nullish(),
+  error: z.string().nullish(),
+  exec_time_ms: z.number().nullish(),
+  command_name: z.string().nullish(),
+  timestamp: z.coerce.date().transform((d) => d.getTime()),
+  audit_type: z.string(),
+});
+export type AuditData = z.output<typeof ZAuditData>;
+
+export type DBResult<T = void> = Promise<Result<T, DatabaseError>>;
 
 interface CoreUtils {
   create_backup_file: (base_dir?: string) => DBResult<{ full_path: string; file_name: string }>;
@@ -81,21 +131,6 @@ interface GuildSettings {
   delete_guild_setting_value: (guild_id: string, setting_id: string) => DBResult;
 }
 
-export interface AuditData {
-  id: number;
-  guild_id: string;
-  executor_id: string;
-  target_id?: string;
-  old_value?: string;
-  new_value?: string;
-  reason?: string;
-  error?: string;
-  exec_time_ms?: number;
-  command_name?: string;
-  timestamp: number;
-  audit_type: string;
-}
-
 interface Audit {
   insert_audit_log: (log: Omit<AuditData, 'id' | 'timestamp'>) => DBResult;
   get_audit_logs: (
@@ -104,6 +139,7 @@ interface Audit {
     before_id?: number,
   ) => DBResult<{ logs: AuditData[]; next_cursor: number | null }>;
   get_audit_log: (id: number) => DBResult<AuditData>;
+  clean_expired_logs: () => DBResult;
 }
 
 export interface Database extends Core, GuildSettings, Audit {

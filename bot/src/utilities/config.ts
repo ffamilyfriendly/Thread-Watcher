@@ -34,17 +34,20 @@ const Redis = z.object({
   port: z.number().default(6379),
 });
 
+const ZCronTab = z
+  .string()
+  .regex(
+    /^((((\d+,)+\d+|(\d+(\/|-|#)\d+)|\d+L?|\*(\/\d+)?|L(-\d+)?|\?|[A-Z]{3}(-[A-Z]{3})?) ?){5,7})|(@(annually|yearly|monthly|weekly|daily|hourly|reboot))|(@every (\d+(ns|us|µs|ms|s|m|h))+)$/gm,
+  );
+
 const Database = z.object({
   flavour: z.enum(['sqlite', 'mysql']).default('sqlite'),
   database_path: z.string().default('./data.db'),
   backup_path: z.string().default('./backups'),
-  backup_interval: z
-    .string()
-    .regex(
-      /^((((\d+,)+\d+|(\d+(\/|-|#)\d+)|\d+L?|\*(\/\d+)?|L(-\d+)?|\?|[A-Z]{3}(-[A-Z]{3})?) ?){5,7})|(@(annually|yearly|monthly|weekly|daily|hourly|reboot))|(@every (\d+(ns|us|µs|ms|s|m|h))+)$/gm,
-    ),
+  backup_interval: ZCronTab,
   upload_backup_to_bucket: z.boolean(),
   keep_local_files_amount: z.number(),
+  run_cleanup_tasks: ZCronTab,
   redis: Redis,
 });
 
