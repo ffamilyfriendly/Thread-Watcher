@@ -1,9 +1,9 @@
 import PQueue from 'p-queue';
-import { ThreadData } from 'interfaces/Database';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { SETTINGS_KEYS } from './SettingService';
 import { setting_service, client as d_client, logger, thread_service } from 'bot';
 import { map_err } from 'utilities/error';
+import { ThreadData } from '@watcher/shared';
 
 /**
  * ThreadBumper
@@ -98,10 +98,9 @@ export default class ThreadBumper {
 
     if (!thread.isThread()) return err('not a thread');
 
-    const bump_behaviour_res = await setting_service.get_setting_with_default<string | null>(
+    const bump_behaviour_res = await setting_service.get_setting<string>(
       thread.guildId,
       SETTINGS_KEYS.bump_behaviour,
-      'BUMP_AND_UNARCHIVE',
     );
 
     if (bump_behaviour_res.isErr()) return err(bump_behaviour_res.error);

@@ -39,18 +39,19 @@
 ## 🚀 Quick Start
 
 1. Clone the repo
-2. configure the bot:
+2. Run `bun install` to install required deps for bot and dashboard code
+3. configure the bot:
    - Edit `bot/_config.json5` and rename it to `config.json5`
    - Set up your database (SQLite by default, more adapters coming... Maybe even [MongoDB](https://github.com/ffamilyfriendly/Thread-Watcher/issues/37))
-3. Deploy commands:
-   - `cd bot`
-   - `npm i`
-   - `npm run deploy:dev` (for local commands only)
-   - `npm run deploy:prod` (for global commands)
-4. Generate i18n from docs:
-   - `npm run gen_docs`
-5. Start the bot:
-   - `npm run start`
+4. Deploy commands:
+   - `npm run deploy:dev -w bot` (for local commands only)
+   - `npm run deploy:prod -w bot` (for global commands)
+5. Generate i18n from docs:
+   - `npm run gen_docs -w bot`
+6. Start the bot:
+   - `npm run start -w bot`
+7. Start the dashboard
+   - `npm run dev -w web`
 
 ## 🌐 Dashboard
 

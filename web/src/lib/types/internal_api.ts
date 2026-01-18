@@ -168,7 +168,8 @@ export const ZChannelMonitor = z.object({
 	server: z.string(),
 	regex: ZRegex,
 	tags: z.array(z.string()).nullish(),
-	role_whitelist: z.array(z.string()).nullish()
+	role_whitelist: z.array(z.string()).nullish(),
+	is_suspended: z.boolean()
 });
 
 export type ChannelMonitor = z.output<typeof ZChannelMonitor>;

@@ -1,4 +1,6 @@
 {
+  "name": "bot",
+  "version": "1.0.0",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.948.0",
     "@types/better-sqlite3": "^7.6.13",

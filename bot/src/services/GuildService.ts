@@ -1,4 +1,5 @@
-import { Database, ZGuild } from 'interfaces/Database';
+import { ZGuild } from '@watcher/shared';
+import { Database } from 'interfaces/Database';
 import Redis from 'ioredis';
 import { err, ok } from 'neverthrow';
 import RedisWrapper from 'utilities/redis';

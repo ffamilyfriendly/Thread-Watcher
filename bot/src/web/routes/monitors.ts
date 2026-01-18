@@ -1,20 +1,9 @@
-import { Channel, Entitlement, GuildChannel, Role } from 'discord.js';
 import { Router } from 'express';
-import {
-  audit_service,
-  channel_service,
-  config,
-  ipc_client,
-  settings_service,
-  thread_service,
-} from 'index';
-import { RawSetting } from 'interfaces/Database';
+import { channel_service } from 'index';
+import { ZEditMonitor } from '@watcher/shared';
 import { RouteFile } from 'interfaces/Web';
-import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { map_err } from 'utilities/error';
 import { enforce_policy } from 'web/auth/auth';
-import { Policies, RequestWithUser } from 'web/auth/policies';
-import { z } from 'zod';
+import { Policies } from 'web/auth/policies';
 
 const router = Router();
 
@@ -37,6 +26,37 @@ router.get(
     console.log(monitors.value);
 
     res.json(monitors.value);
+  },
+);
+
+router.patch(
+  '/:guild_id/monitors/:monitor_id',
+  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  async (req, res) => {
+    const monitor_id = req.params.monitor_id;
+    const edit_obj = ZEditMonitor.safeParse(req.body);
+
+    if (!edit_obj.success) {
+      return res.status(400).json({
+        code: 400,
+        message: 'malformed request',
+        _details: edit_obj.error,
+      });
+    }
+
+    return (await channel_service.edit_monitor(monitor_id, edit_obj.data)).match(
+      (_ok) =>
+        res.status(200).json({
+          code: 200,
+          message: 'edited!',
+        }),
+      (err) =>
+        res.status(500).json({
+          code: 500,
+          message: 'Could not edit!',
+          _details: err.name,
+        }),
+    );
   },
 );
 

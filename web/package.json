@@ -36,6 +36,7 @@
 	"dependencies": {
 		"@auth/sveltekit": "^1.11.1",
 		"@lucide/svelte": "^0.561.0",
+		"@watcher/shared": "^1.0.0",
 		"ioredis": "^5.8.2",
 		"neverthrow": "^8.2.0",
 		"zod": "^4.3.4"

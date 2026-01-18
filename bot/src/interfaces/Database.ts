@@ -1,90 +1,20 @@
 import { SqliteError } from 'better-sqlite3';
 import { Result } from 'neverthrow';
-import { z } from 'zod';
+import {
+  type ThreadData,
+  type ChannelData,
+  type FilterData,
+  ChannelDataWithFilters,
+  EditMonitor,
+  AuditData,
+  Guild,
+} from '@watcher/shared';
 
 export type DatabaseError = SqliteError | Error;
 
 interface InsertThreadData extends Omit<ThreadData, 'is_watched' | 'due_archive'> {
   due_archive: Date;
 }
-
-export const ZThreadData = z.object({
-  id: z.string(),
-  server: z.string(),
-  parent_channel_id: z.string().nullish(),
-  due_archive: z.coerce.date(),
-  is_watched: z.coerce.boolean().default(true),
-  is_managed: z.coerce.boolean(),
-});
-export type ThreadData = z.output<typeof ZThreadData>;
-
-export const ZFilterData = z.object({
-  tags: z
-    .preprocess(
-      (val) => (typeof val === 'string' ? val.split(',') : val),
-      z.array(z.string()).nullish(),
-    )
-    .default([]),
-  role_whitelist: z
-    .preprocess(
-      (val) => (typeof val === 'string' ? val.split(',') : val),
-      z.array(z.string()).nullish(),
-    )
-    .default([]),
-  regex: z
-    .union([z.string(), z.instanceof(RegExp), z.null()])
-    .default(null)
-    .transform((val) => {
-      if (!val) return undefined;
-      if (val instanceof RegExp) return val;
-
-      try {
-        const reg = new RegExp(val.trim());
-
-        (reg as any).toJSON = function () {
-          return this.source;
-        };
-        return reg;
-      } catch {
-        return undefined;
-      }
-    }),
-});
-
-export const ZChannelData = z.object({
-  id: z.string(),
-  server: z.string(),
-  is_suspended: z.coerce.boolean(),
-});
-
-export const ZChannelDataWithFilters = ZChannelData.merge(ZFilterData);
-export type FilterData = z.output<typeof ZFilterData>;
-export type ChannelData = z.output<typeof ZChannelData>;
-export type ChannelDataWithFilters = z.output<typeof ZChannelDataWithFilters>;
-
-export const ZAuditData = z.object({
-  id: z.number(),
-  guild_id: z.string(),
-  executor_id: z.string(),
-  target_id: z.string().nullish(),
-  old_value: z.string().nullish(),
-  new_value: z.string().nullish(),
-  reason: z.string().nullish(),
-  error: z.string().nullish(),
-  exec_time_ms: z.number().nullish(),
-  command_name: z.string().nullish(),
-  timestamp: z.coerce.date().transform((d) => d.getTime()),
-  audit_type: z.string(),
-});
-export type AuditData = z.output<typeof ZAuditData>;
-
-/* 'CREATE TABLE IF NOT EXISTS guilds (guild_id INTEGER PRIMARY KEY, left_at TIMESTAMP, granted_SKU TEXT)', */
-export const ZGuild = z.object({
-  guild_id: z.string(),
-  left_at: z.coerce.date().nullish(),
-  granted_sku: z.string().nullish(),
-});
-export type Guild = z.output<typeof ZGuild>;
 
 export type DBResult<T = void> = Promise<Result<T, DatabaseError>>;
 
@@ -111,6 +41,7 @@ interface CoreChannel {
   get_channel: (channel_id: string) => DBResult<ChannelDataWithFilters | null>;
   get_channels_in_guild: (guild_id: string) => DBResult<ChannelDataWithFilters[]>;
   get_monitored_channels_count: (guild_id: string) => DBResult<number>;
+  edit_monitor: (channel_id: string, fields: EditMonitor) => DBResult;
   count_monitored_channels: () => DBResult<number>;
 }
 

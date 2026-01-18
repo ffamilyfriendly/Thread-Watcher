@@ -16,7 +16,10 @@
     "removeComments": true,
     "typeRoots": ["node_modules/@types"],
     "sourceMap": false,
-    "baseUrl": "./src"
+    "baseUrl": "./src",
+    "paths": {
+      "@watcher/shared": ["../packages/shared/index.ts"]
+    }
   },
   "files": ["src/index.ts", "src/bot.ts", "src/deploy.ts"],
   "include": ["src/**/*.ts"],

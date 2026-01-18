@@ -1,16 +1,3 @@
-import {
-  AuditData,
-  ChannelData,
-  Database,
-  DatabaseError,
-  FilterData,
-  Guild,
-  RawSetting,
-  ZAuditData,
-  ZChannelDataWithFilters,
-  ZGuild,
-  ZThreadData,
-} from 'interfaces/Database';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import sql, { Database as SqliteDb } from 'bun:sqlite';
 import { ConfigType } from 'utilities/config';
@@ -20,6 +7,18 @@ import { create as create_tar } from 'tar';
 import { map_err } from 'utilities/error';
 import { z } from 'zod';
 import { safe_parse } from 'utilities/parsing';
+import { Database, DatabaseError, RawSetting } from 'interfaces/Database';
+import {
+  AuditData,
+  ChannelData,
+  EditMonitor,
+  FilterData,
+  Guild,
+  ZAuditData,
+  ZChannelDataWithFilters,
+  ZGuild,
+  ZThreadData,
+} from '@watcher/shared';
 
 const TABLE_CREATION_QUERIES = [
   'CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT NOT NULL, parent_channel_id TEXT, due_archive DATE, is_watched INTEGER, is_managed INTEGER)',
@@ -323,6 +322,32 @@ export default class Sqlite implements Database {
     this.db
       .prepare(sql)
       .run(guild_id, data.left_at ? data.left_at.toISOString() : null, data.granted_sku ?? null);
+    return ok();
+  }
+
+  @with_error_handling
+  async edit_monitor(channel_id: string, data: EditMonitor) {
+    // regex TEXT, role_whitelist TEXT, tags TEXT, is_suspended INTEGER DEFAULT 0)
+    const sql = `
+      UPDATE 
+        channels
+      SET
+        regex = @regex,
+        role_whitelist = @role_whitelist,
+        tags = @tags,
+        is_suspended = @is_suspended
+      WHERE
+        id = @channel_id
+    `;
+
+    this.db.prepare(sql).run({
+      regex: data?.regex?.source ?? null,
+      role_whitelist: data.role_whitelist?.join(',') ?? null,
+      tags: data.tags?.join(',') ?? null,
+      is_suspended: data.is_suspended ?? null,
+      channel_id: channel_id,
+    });
+
     return ok();
   }
 

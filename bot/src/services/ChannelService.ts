@@ -1,5 +1,6 @@
+import { EditMonitor, FilterData, ZChannelDataWithFilters } from '@watcher/shared';
 import { Channel } from 'discord.js';
-import { Database, FilterData, ZChannelDataWithFilters } from 'interfaces/Database';
+import { Database } from 'interfaces/Database';
 import Redis from 'ioredis';
 import { err, ok } from 'neverthrow';
 import RedisWrapper from 'utilities/redis';
@@ -62,6 +63,11 @@ export default class ChannelService {
     }
 
     return res;
+  }
+
+  async edit_monitor(channel_id: string, edit_obj: EditMonitor) {
+    await this.r.del(channel_id);
+    return await this.db.edit_monitor(channel_id, edit_obj);
   }
 
   async remove_channel(channel_id: string) {

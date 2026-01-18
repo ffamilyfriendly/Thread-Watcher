@@ -1,6 +1,7 @@
+import { AuditData } from '@watcher/shared';
 import { CommandInteraction, EmbedBuilder, User } from 'discord.js';
 import i18next from 'i18next';
-import { AuditData, Database, DatabaseError } from 'interfaces/Database';
+import { Database, DatabaseError } from 'interfaces/Database';
 import { err, ok, Result } from 'neverthrow';
 
 export type AuditType =

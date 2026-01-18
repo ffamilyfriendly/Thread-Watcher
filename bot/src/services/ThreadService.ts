@@ -1,5 +1,6 @@
+import { FilterData, ZThreadData } from '@watcher/shared';
 import { Client, ThreadChannel } from 'discord.js';
-import { Database, FilterData, ZThreadData } from 'interfaces/Database';
+import { Database } from 'interfaces/Database';
 import Redis from 'ioredis';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';

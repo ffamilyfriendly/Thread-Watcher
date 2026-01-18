@@ -3,7 +3,6 @@ import { ConfigType } from 'utilities/config';
 import SqliteHandler from './sqlite';
 import { err, ok, Result } from 'neverthrow';
 import { SQLiteError } from 'bun:sqlite';
-import { z } from 'zod';
 
 export default function get_database_instance(config: ConfigType): Database {
   let handler_type;

@@ -1,0 +1,9 @@
+{
+  "name": "thread-watcher-monorepo",
+  "private": true,
+  "workspaces": [
+    "bot",
+    "web",
+    "packages/shared"
+  ]
+}
