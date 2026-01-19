@@ -1,4 +1,4 @@
-import { client, load_commands, logger } from 'bot';
+import { client } from '@providers/client';
 import { PrivateEvent } from 'interfaces/PrivateEvents';
 import { err, ok } from 'neverthrow';
 

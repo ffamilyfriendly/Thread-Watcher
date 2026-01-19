@@ -1,7 +1,11 @@
 import { ThreadChannel } from 'discord.js';
-import { audit_service, thread_service } from 'bot';
+import Ts from '@providers/services/thread_service';
+import As from '@providers/services/audit_service';
+import Logger from '@providers/logger';
 import { Event } from 'interfaces/ClientEvent';
-import { logger } from 'index';
+const thread_service = Ts.instance;
+const audit_service = As.instance;
+const logger = Logger.instance;
 
 const event: Event<ThreadChannel> = {
   event_name: 'threadDelete',

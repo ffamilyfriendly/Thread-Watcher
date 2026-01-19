@@ -1,10 +1,13 @@
-import { config, database as db, logger, bucket_storage } from 'index';
 import { schedule } from 'node-cron';
 import { Dirent, readdirSync, readFileSync, statSync, unlinkSync } from 'fs';
 import { Result, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import { Logger } from 'tslog';
 import path from 'path';
+import { config } from '@providers/config';
+import { logger } from '@providers/logger';
+import { database } from '@providers/database';
+import { s3 } from '@providers/s3_client';
 
 function map_file(f_inf: Dirent<string>) {
   const file_path = path.join(f_inf.parentPath, f_inf.name);
@@ -28,7 +31,7 @@ async function prune_files(l: Logger<unknown>) {
 
 async function do_backup() {
   const l = logger.getSubLogger({ name: 'DB_BACKUP' });
-  const backup_file_res = await db.create_backup_file();
+  const backup_file_res = await database.create_backup_file();
   if (backup_file_res.isErr()) {
     l.error('could not create backup file:', backup_file_res.error);
     return;
@@ -48,7 +51,7 @@ async function do_backup() {
         }
 
         const file_upload_res = await ResultAsync.fromPromise(
-          bucket_storage.write(backup_file_info.file_name, file_data, {
+          s3.write(backup_file_info.file_name, file_data, {
             bucket: 'database-backups',
           }),
           map_err,

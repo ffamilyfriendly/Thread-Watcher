@@ -1,5 +1,6 @@
+import { database } from '@providers/database';
+import { redis } from '@providers/redis';
 import { PrivateEvent } from 'interfaces/PrivateEvents';
-import { database, redis, logger } from 'bot';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 

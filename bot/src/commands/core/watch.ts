@@ -1,4 +1,5 @@
-import { audit_service, thread_service } from 'bot';
+import { audit_service } from '@providers/services/audit_service';
+import { thread_service } from '@providers/services/thread_service';
 import {
   ChannelType,
   ChatInputCommandInteraction,

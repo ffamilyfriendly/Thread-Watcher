@@ -1,9 +1,17 @@
 import PQueue from 'p-queue';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { SETTINGS_KEYS } from './SettingService';
-import { setting_service, client as d_client, logger, thread_service } from 'bot';
 import { map_err } from 'utilities/error';
 import { ThreadData } from '@watcher/shared';
+import DClient from 'providers/client';
+import Logger from 'providers/logger';
+import ThreadService from 'providers/services/thread_service';
+import SettingService from 'providers/services/setting_service';
+
+const d_client = DClient.instance;
+const logger = Logger.instance;
+const thread_service = ThreadService.instance;
+const setting_service = SettingService.instance;
 
 /**
  * ThreadBumper
@@ -107,6 +115,7 @@ export default class ThreadBumper {
     if (!bump_behaviour_res.value) return err('bump_behaviour was null');
     const bump_behaviour = bump_behaviour_res.value;
     if (thread.archived && thread.unarchivable) {
+      this.l.silly('un-archiving', thread.id);
       const set_archived_res = await ResultAsync.fromPromise<unknown, Error>(
         thread.setArchived(false),
         map_err,
@@ -116,13 +125,17 @@ export default class ThreadBumper {
         this.l.error(`could not un-archive thread ${thread.id}`, set_archived_res.error);
     }
 
-    if (bump_behaviour === 'UNARCHIVE_ONLY') return ok();
+    if (bump_behaviour === 'UNARCHIVE_ONLY') {
+      this.l.silly('bump behaviour is unarchive_only.', thread.id);
+      return ok();
+    }
 
     if (!thread.locked && thread.manageable) {
       const new_duration = thread.autoArchiveDuration === 10080 ? 4320 : 10080;
 
       const set_auto_archive_promise = thread.setAutoArchiveDuration(new_duration);
 
+      this.l.silly('setting auto_archive_duration', new_duration, thread.id);
       const auto_archive_res = await ResultAsync.fromPromise<unknown, Error>(
         set_auto_archive_promise,
         map_err,
@@ -130,14 +143,18 @@ export default class ThreadBumper {
       if (auto_archive_res.isErr())
         this.l.error(`could not bump thread w/ edit ${thread.id}`, auto_archive_res.error);
     } else if (thread.sendable && !thread.archived) {
+      this.l.silly('bumping with message', thread.id);
       const send_bump_msg_res = await ResultAsync.fromPromise(
         thread.send('bumping thread.'),
         map_err,
       );
       if (send_bump_msg_res.isErr())
         this.l.error(`could not bump thread w/ msg ${thread.id}`, send_bump_msg_res.error);
+    } else {
+      this.l.silly('NO ACTION TAKEN', thread.id);
     }
 
+    this.l.silly('end of bump_thread', thread.id);
     return ok();
   }
 

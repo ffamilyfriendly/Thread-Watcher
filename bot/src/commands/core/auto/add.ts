@@ -14,10 +14,11 @@ import { type SubCommand } from 'interfaces/Command';
 import { err, Result } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
 import { make_advanced_embed, State } from 'commands/core/_shared/advanced_view';
-import { audit_service, channel_service } from 'bot';
 import { CommandContext } from 'utilities/command_context';
 import { map_err } from 'utilities/error';
 import { get_target } from '../_shared/check_channel_values';
+import { channel_service } from '@providers/services/channel_service';
+import { audit_service } from '@providers/services/audit_service';
 
 async function handle_execution(state: State, interaction: Interaction, context: null) {
   const did_work = await channel_service.add_channel(

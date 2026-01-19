@@ -1,4 +1,3 @@
-import { component_service, setting_service } from 'bot';
 import {
   ActionRowBuilder,
   AutocompleteInteraction,
@@ -27,6 +26,8 @@ import {
 } from 'commands/core/_shared/config';
 import { map_err } from 'utilities/error';
 import { safe_parse } from 'utilities/parsing';
+import { setting_service } from '@providers/services/setting_service';
+import { component_service } from '@providers/services/component_service';
 
 function create_buttons() {
   const apply_button = new ButtonBuilder().setStyle(ButtonStyle.Primary).setLabel('Save');

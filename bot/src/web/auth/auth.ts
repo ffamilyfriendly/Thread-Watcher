@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { RequestWithUser, SecurityPolicy } from './policies';
-import { config, logger } from 'index';
+import { config } from '@providers/config';
+import { logger } from '@providers/logger';
 
 export function enforce_policy(policy: SecurityPolicy) {
   return async function auth(req: Request, res: Response, next: NextFunction) {

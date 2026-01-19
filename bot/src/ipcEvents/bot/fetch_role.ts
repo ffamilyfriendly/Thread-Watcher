@@ -1,4 +1,4 @@
-import { client } from 'bot';
+import { client } from '@providers/client';
 import { PrivateEvent } from 'interfaces/PrivateEvents';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';

@@ -1,3 +1,5 @@
+import { config } from '@providers/config';
+import { logger } from '@providers/logger';
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -9,7 +11,6 @@ import {
   PermissionsBitField,
 } from 'discord.js';
 import { CommandError, PermissionsError } from 'interfaces/Command';
-import { config, logger } from 'bot';
 
 function find_perm(permission: BigInt) {
   for (const perm of Object.keys(PermissionsBitField.Flags)) {

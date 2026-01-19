@@ -1,8 +1,6 @@
+import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
 import { Router } from 'express';
-import { audit_service, channel_service, ipc_client, thread_service } from 'index';
 import { RouteFile } from 'interfaces/Web';
-import { err, ok, ResultAsync } from 'neverthrow';
-import { map_err } from 'utilities/error';
 import { enforce_policy } from 'web/auth/auth';
 import { Policies } from 'web/auth/policies';
 

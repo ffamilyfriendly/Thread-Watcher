@@ -18,7 +18,8 @@
     "sourceMap": false,
     "baseUrl": "./src",
     "paths": {
-      "@watcher/shared": ["../packages/shared/index.ts"]
+      "@watcher/shared": ["../packages/shared/index.ts"],
+      "@providers/*": ["./providers/*"]
     }
   },
   "files": ["src/index.ts", "src/bot.ts", "src/deploy.ts"],

@@ -13,13 +13,15 @@ import {
 import i18next from 'i18next';
 import { CommandError } from 'interfaces/BaseCommandInterface';
 import { ok, err, Result, ResultAsync } from 'neverthrow';
-
-import { Logger } from 'tslog';
 import { get_audit_embed, PartialAuditObject } from 'services/AuditService';
 import { map_err } from './error';
 import { log_event_in_log_channel } from './log_channel_stuff';
 import { type ConfigType } from './config';
-import { config, logger } from 'bot';
+import Config from '../providers/config';
+import LoggerInstance from '../providers/logger';
+import { Logger } from 'tslog';
+const config = Config.instance;
+const logger = LoggerInstance.instance;
 
 type StyleOption = keyof ConfigType['style'];
 export interface EmbedBuilderProps {

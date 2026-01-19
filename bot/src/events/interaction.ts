@@ -4,7 +4,6 @@ import {
   Interaction,
   InteractionType,
 } from 'discord.js';
-import { audit_service, commands, component_service, config, logger } from 'bot';
 import { Event } from 'interfaces/ClientEvent';
 import {
   BaseCommand,
@@ -16,6 +15,17 @@ import {
 import { handle_error } from 'utilities/handle_interaction_error';
 import { map_err } from 'utilities/error';
 import { CommandContext } from 'utilities/command_context';
+import Config from '@providers/config';
+import Commands from '@providers/commands';
+import As from '@providers/services/audit_service';
+import Logger from '@providers/logger';
+import ComponentService from '@providers/services/component_service';
+
+const config = Config.instance;
+const commands = Commands.instance;
+const audit_service = As.instance;
+const logger = Logger.instance;
+const component_service = ComponentService.instance;
 
 function is_standalone_command(command?: BaseCommand): command is Command {
   return command !== undefined && 'run' in command;
@@ -65,7 +75,7 @@ function check_command_gatekeeping(interaction: ChatInputCommandInteraction, com
     }
   }
 
-  if (config.paywall_enabled && command.access_control.required_entitlement_sku) {
+  if (config.paywall.enabled && command.access_control.required_entitlement_sku) {
     const SKU_ID = command.access_control.required_entitlement_sku;
 
     const entitlement_active = interaction.entitlements.find(

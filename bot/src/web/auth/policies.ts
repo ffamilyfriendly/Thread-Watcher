@@ -1,7 +1,9 @@
-import { err, Ok, ok, Result, ResultAsync } from 'neverthrow';
+import { err, Ok, ok, Result } from 'neverthrow';
 import { Request } from 'express';
-import { config, ipc_client, redis } from 'index';
-import { PermissionFlagsBits, PermissionResolvable } from 'discord.js';
+import { PermissionResolvable } from 'discord.js';
+import { redis } from '@providers/redis';
+import { config } from '@providers/config';
+import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
 
 export type RequestWithUser = Request & { user_id: string };
 

@@ -1,4 +1,3 @@
-import { component_service, config } from 'bot';
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -24,6 +23,7 @@ import regex_is_safe from 'safe-regex';
 import { Vacuum } from 'services/ComponentService';
 import { CommandContext } from 'utilities/command_context';
 import { FilterData } from '@watcher/shared';
+import { component_service } from '@providers/services/component_service';
 
 export interface State<TContext = unknown> {
   components: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder | RoleSelectMenuBuilder>[];

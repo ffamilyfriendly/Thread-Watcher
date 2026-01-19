@@ -1,6 +1,8 @@
-import { commands, load_commands, logger } from 'bot';
+import { commands } from '@providers/commands';
+import { logger } from '@providers/logger';
 import { PrivateEvent } from 'interfaces/PrivateEvents';
 import { err, ok } from 'neverthrow';
+import { load_commands } from 'utilities/file_loaders';
 
 const event: PrivateEvent = {
   event_name: 'reload',

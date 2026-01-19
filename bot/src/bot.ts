@@ -1,45 +1,25 @@
-import { Client, Collection, GatewayIntentBits } from 'discord.js';
-import { read_config } from './utilities/config';
-import { Logger } from 'tslog';
+import { Collection } from 'discord.js';
 import { BaseCommand } from 'interfaces/BaseCommandInterface';
 import { BotIpcClient } from 'utilities/ipc_clients';
-import get_database_instance from 'database';
-import Redis from 'ioredis';
 import { ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
-import { create_services_bot, initialize_i18n, setup_shutdown_function } from 'utilities/lifecycle';
+import { initialize_i18n, setup_shutdown_function } from 'utilities/lifecycle';
 import { load_commands, load_events, load_ipc_events } from 'utilities/file_loaders';
+import Config from 'providers/config';
+import Logger from 'providers/logger';
+import Redis from 'providers/redis';
+import Database from 'providers/database';
+import Client from 'providers/client';
 
-const config_result = read_config();
-const logger = new Logger({ name: 'bot' });
 const commands = new Collection<string, BaseCommand>();
 
-if (config_result.isErr()) {
-  logger.fatal('Error when reading configuration file', config_result.error);
-  process.exit(1);
-}
-
-const config = config_result.value;
-
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
-});
+const logger = Logger.with_name('bot');
+const config = Config.instance;
+const client = Client.instance;
+const database = Database.instance;
+const redis = Redis.instance;
 
 const ipc_client = new BotIpcClient(client);
-const database = get_database_instance(config);
-const redis = new Redis();
-
-export const {
-  guild_service,
-  thread_service,
-  audit_service,
-  setting_service,
-  channel_service,
-  component_service,
-  thread_bumper,
-} = create_services_bot(database, redis);
-
-export { logger, commands, config, load_commands, client, ipc_client, database, redis };
 
 async function bootstrap() {
   initialize_i18n(logger);
@@ -68,7 +48,10 @@ async function bootstrap() {
 
 if (client.shard) {
   bootstrap();
-} else if (!process.env.BYPASS_ORPHAN_CHECK) {
+} else {
+  if (process.env.BYPASS_ORPHAN_CHECK && process.env.BYPASS_ORPHAN_CHECK === 'true') {
+    logger.info('BYPASS_ORPHAN_CHECK is set.');
+  }
   logger.warn(
     '"client.shard" not set. Will not attempt to login\n',
     'Somewhere there is a circular ref. Find it, fix it, laugh at it.',

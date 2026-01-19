@@ -3,36 +3,8 @@ import i18next from 'i18next';
 import { Database } from 'interfaces/Database';
 import Redis from 'ioredis';
 import { ResultAsync } from 'neverthrow';
-import AuditService from 'services/AuditService';
-import ChannelService from 'services/ChannelService';
-import ComponentService from 'services/ComponentService';
-import GuildService from 'services/GuildService';
-import SettingService from 'services/SettingService';
-import ThreadBumper from 'services/ThreadBumper';
-import ThreadService from 'services/ThreadService';
 import { Logger } from 'tslog';
 import { map_err } from './error';
-
-export function create_services_bot(database: Database, redis: Redis) {
-  return {
-    thread_service: new ThreadService(database, redis),
-    setting_service: new SettingService(database, redis),
-    component_service: new ComponentService(),
-    channel_service: new ChannelService(database, redis),
-    thread_bumper: new ThreadBumper(),
-    audit_service: new AuditService(database),
-    guild_service: new GuildService(database, redis),
-  };
-}
-
-export function create_services_index(database: Database, redis: Redis) {
-  return {
-    thread_service: new ThreadService(database, redis),
-    setting_service: new SettingService(database, redis),
-    channel_service: new ChannelService(database, redis),
-    audit_service: new AuditService(database),
-  };
-}
 
 type LoggerType = Logger<unknown>;
 export function initialize_i18n(logger: LoggerType) {

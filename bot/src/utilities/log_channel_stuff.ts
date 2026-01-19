@@ -1,4 +1,3 @@
-import { client, setting_service } from 'bot';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { get_audit_embed, PartialAuditObject } from 'services/AuditService';
 import { SETTINGS_KEYS } from 'services/SettingService';
@@ -8,6 +7,8 @@ import { PermissionsError } from 'interfaces/Command';
 import { EmbedBuilder, Message } from 'discord.js';
 import { Logger } from 'tslog';
 import { DatabaseError } from 'interfaces/Database';
+import { client } from '@providers/client';
+import { setting_service } from '@providers/services/setting_service';
 
 async function get_audit_as_embed(event: PartialAuditObject) {
   const user = await ResultAsync.fromPromise(client.users.fetch(event.executor_id), map_err);

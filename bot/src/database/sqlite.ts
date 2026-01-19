@@ -219,7 +219,7 @@ export default class Sqlite implements Database {
   async get_channel(channel_id: string) {
     return this.query_one(
       ZChannelDataWithFilters,
-      'SELECT * FROM channels WHERE id = ?',
+      'SELECT * FROM channels WHERE id = ? AND is_suspended = 0',
       channel_id,
     );
   }

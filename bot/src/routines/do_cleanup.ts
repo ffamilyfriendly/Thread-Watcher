@@ -1,4 +1,6 @@
-import { config, database, logger } from 'index';
+import { config } from '@providers/config';
+import { database } from '@providers/database';
+import { logger } from '@providers/logger';
 import { schedule } from 'node-cron';
 import { Logger } from 'tslog';
 

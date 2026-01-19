@@ -34,6 +34,7 @@
   "scripts": {
     "build": "npx tsc",
     "start": "bun ./src/index.ts",
+    "check_deps": "bun ./src/check_deps.ts",
     "gen_docs": "bun ./src/gen_docs.ts",
     "deploy:dev": "bun ./src/deploy.ts -local",
     "deploy:prod": "bun ./src/deploy.ts",

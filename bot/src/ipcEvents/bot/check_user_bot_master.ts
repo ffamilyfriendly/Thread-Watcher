@@ -1,6 +1,5 @@
-//check_user
-import { client, setting_service } from 'bot';
-import { PermissionResolvable } from 'discord.js';
+import { client } from '@providers/client';
+import { setting_service } from '@providers/services/setting_service';
 import { PrivateEvent } from 'interfaces/PrivateEvents';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';

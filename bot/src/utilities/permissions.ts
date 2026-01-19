@@ -1,4 +1,4 @@
-import { Channel, GuildChannel, GuildTextBasedChannel, PermissionFlagsBits } from 'discord.js';
+import { GuildTextBasedChannel, PermissionFlagsBits } from 'discord.js';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { map_err } from './error';
 

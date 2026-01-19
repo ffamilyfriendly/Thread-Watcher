@@ -1,4 +1,4 @@
-import { config } from 'bot';
+import { config } from '@providers/config';
 import { Channel, ChannelType, Guild, GuildBasedChannel } from 'discord.js';
 import { EntitlementsError, GuildChatInteraction } from 'interfaces/BaseCommandInterface';
 import { err, ok } from 'neverthrow';

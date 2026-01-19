@@ -1,4 +1,5 @@
-import { audit_service, setting_service } from 'bot';
+import { audit_service } from '@providers/services/audit_service';
+import { setting_service } from '@providers/services/setting_service';
 import { ButtonInteraction } from 'discord.js';
 import { SettingSchema, SettingValue } from 'interfaces/Settings';
 import { CommandContext } from 'utilities/command_context';

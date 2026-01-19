@@ -1,5 +1,5 @@
+import { redis } from '@providers/redis';
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { redis } from 'bot';
 import { CommandError, RegistrationScope } from 'interfaces/BaseCommandInterface';
 import { type Command } from 'interfaces/Command';
 import { err, Result, ResultAsync } from 'neverthrow';

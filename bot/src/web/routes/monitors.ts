@@ -1,9 +1,12 @@
 import { Router } from 'express';
-import { audit_service, channel_service, ipc_client, logger } from 'index';
 import { ZEditMonitor } from '@watcher/shared';
 import { RouteFile } from 'interfaces/Web';
 import { enforce_policy } from 'web/auth/auth';
 import { Policies } from 'web/auth/policies';
+import { channel_service } from '@providers/services/channel_service';
+import { audit_service } from '@providers/services/audit_service';
+import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
+import { logger } from '@providers/logger';
 
 const router = Router();
 

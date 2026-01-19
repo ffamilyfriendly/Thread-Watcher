@@ -1,4 +1,5 @@
-import { thread_bumper } from 'bot';
+import { thread_bumper } from '@providers/services/thread_bumper';
+
 const CHECK_STALE_INTERVAL_MINUTES = 2;
 
 export function start_bumper_loop() {

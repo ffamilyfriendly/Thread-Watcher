@@ -7,6 +7,10 @@
     "packages/shared"
   ],
   "devDependencies": {
+    "@types/madge": "^5.0.3",
     "sveltekit-rate-limiter": "^0.7.0"
+  },
+  "dependencies": {
+    "madge": "^8.0.0"
   }
 }

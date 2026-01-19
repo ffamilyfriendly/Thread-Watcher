@@ -1,4 +1,5 @@
-import { audit_service, channel_service } from 'bot';
+import { audit_service } from '@providers/services/audit_service';
+import { channel_service } from '@providers/services/channel_service';
 import {
   ChannelType,
   ChatInputCommandInteraction,
@@ -6,8 +7,7 @@ import {
 } from 'discord.js';
 import { CommandError, RegistrationScope } from 'interfaces/BaseCommandInterface';
 import { type SubCommand } from 'interfaces/Command';
-import { err, ok, Result } from 'neverthrow';
-import { create_channel_link } from '../list';
+import { err, Result } from 'neverthrow';
 import { CommandContext } from 'utilities/command_context';
 
 async function run(

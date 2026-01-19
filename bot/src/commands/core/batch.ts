@@ -1,4 +1,3 @@
-import { audit_service, channel_service, client, config, thread_service } from 'bot';
 import {
   Channel,
   ChannelType,
@@ -26,6 +25,10 @@ import { map_err } from 'utilities/error';
 import { CommandContext } from 'utilities/command_context';
 import { PartialAuditObject } from 'services/AuditService';
 import { get_target } from './_shared/check_channel_values';
+import { audit_service } from '@providers/services/audit_service';
+import { client } from '@providers/client';
+import { thread_service } from '@providers/services/thread_service';
+import { channel_service } from '@providers/services/channel_service';
 
 async function fetch_all_threads_from_parent(channel: Channel | Guild) {
   let thread_list: ThreadChannel[] = [];

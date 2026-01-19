@@ -8,7 +8,3 @@ export function safe_parse<T extends z.ZodTypeAny>(
   const result = schema.safeParse(data);
   return result.success ? ok(result.data) : err(result.error);
 }
-
-export function as_res<TIn, TOut>(r: z.SafeParseReturnType<TIn, TOut>): Result<TOut, Error> {
-  return r.success ? ok(r.data) : err(r.error);
-}

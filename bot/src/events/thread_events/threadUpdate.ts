@@ -1,15 +1,23 @@
 import { AuditLogEvent, ThreadChannel } from 'discord.js';
-import { audit_service, channel_service, client, logger, thread_service } from 'bot';
 import { Event } from 'interfaces/ClientEvent';
 import ThreadService from 'services/ThreadService';
-import { Logger } from 'tslog';
-import { err, ok, Result, ResultAsync } from 'neverthrow';
+import { err, ok, ResultAsync } from 'neverthrow';
 import { try_log } from 'utilities/log_channel_stuff';
-import { map_err } from 'utilities/error';
-import { ChannelDataWithFilters } from '@watcher/shared';
-import { DatabaseError } from 'interfaces/Database';
 
-async function fetch_responsible_manager(thread: ThreadChannel, l: Logger<unknown>) {
+import LoggerThing from '@providers/logger';
+import Client from '@providers/client';
+import As from '@providers/services/audit_service';
+import Ts from '@providers/services/thread_service';
+import Cs from '@providers/services/channel_service';
+import { Logger } from 'tslog';
+
+const logger = LoggerThing.instance;
+const audit_service = As.instance;
+const thread_service = Ts.instance;
+const client = Client.instance;
+const channel_service = Cs.instance;
+
+async function fetch_responsible_manager(thread: ThreadChannel) {
   const res_thread = await thread_service.get_thread(thread.id);
   if (res_thread.isErr()) return err(res_thread.error);
 
@@ -40,7 +48,7 @@ async function fetch_responsible_manager(thread: ThreadChannel, l: Logger<unknow
 export async function check_should_be_watched(thread: ThreadChannel, l: Logger<unknown>) {
   console.log('TRHEAD_PARENT_ID', thread.parentId);
   if (!thread.parentId) return;
-  const res = await fetch_responsible_manager(thread, logger);
+  const res = await fetch_responsible_manager(thread);
   if (res.isErr()) return l.error(res.error);
 
   const monitor = res.value;

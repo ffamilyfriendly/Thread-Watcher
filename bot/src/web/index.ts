@@ -1,9 +1,9 @@
-import { config } from 'index';
-import express, { Router } from 'express';
-import { logger } from 'index';
+import express from 'express';
 import { load_module_as_and } from 'utilities/load_files';
 import { RouteFile } from 'interfaces/Web';
 import body_parser from 'body-parser';
+import { config } from '@providers/config';
+import { logger } from '@providers/logger';
 
 export function create_web_server() {
   const server = express();

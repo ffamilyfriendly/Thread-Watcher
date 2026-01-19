@@ -1,12 +1,12 @@
+import { ipc_client } from '@providers/ipc/bot_ipc_client';
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { ipc_client } from 'bot';
 import { CommandError, RegistrationScope } from 'interfaces/BaseCommandInterface';
 import { type Command } from 'interfaces/Command';
-import { ok, Result } from 'neverthrow';
+import { Result } from 'neverthrow';
 import { CommandContext } from 'utilities/command_context';
 
 function run(
-  interaction: ChatInputCommandInteraction,
+  _interaction: ChatInputCommandInteraction,
   ctx: CommandContext,
 ): Result<void, CommandError> {
   ipc_client.send('reload', null);

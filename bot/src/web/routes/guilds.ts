@@ -1,16 +1,13 @@
-import { Channel, Entitlement, Guild, GuildChannel, Role } from 'discord.js';
+import { config } from '@providers/config';
+import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
+import { audit_service } from '@providers/services/audit_service';
+import { channel_service } from '@providers/services/channel_service';
+import { setting_service } from '@providers/services/setting_service';
+import { thread_service } from '@providers/services/thread_service';
+import { Entitlement, Guild, GuildChannel, Role } from 'discord.js';
 import { Router } from 'express';
-import {
-  audit_service,
-  channel_service,
-  config,
-  ipc_client,
-  settings_service,
-  thread_service,
-} from 'index';
-import { RawSetting } from 'interfaces/Database';
 import { RouteFile } from 'interfaces/Web';
-import { err, ok, Result, ResultAsync } from 'neverthrow';
+import { Result, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import { enforce_policy } from 'web/auth/auth';
 import { Policies, RequestWithUser } from 'web/auth/policies';
@@ -49,7 +46,7 @@ router.get(
         thread_service.get_count_threads(guild_id),
         channel_service.get_count_channels(guild_id),
         ipc_client.get_shard_from_guild_id(guild_id),
-        settings_service.get_guild_settings(guild_id),
+        setting_service.get_guild_settings(guild_id),
         ipc_client.send_to_shard_having_guild<Entitlement[]>(guild_id, 'get_entitlements', {
           guild_id,
         }),
@@ -292,7 +289,7 @@ router.post(
     }
 
     const { guild_id: _, ...settings_to_save } = body.data;
-    const old_settings = await settings_service.get_guild_settings(guild_id);
+    const old_settings = await setting_service.get_guild_settings(guild_id);
     if (old_settings.isErr()) {
       return res.status(500).json({
         code: 500,
@@ -301,7 +298,7 @@ router.post(
       });
     }
 
-    const update_result = await settings_service.set_settings(guild_id, settings_to_save);
+    const update_result = await setting_service.set_settings(guild_id, settings_to_save);
 
     if (update_result.isErr()) {
       return res.status(500).json({
@@ -317,7 +314,7 @@ router.post(
     }
 
     for (const [key, value] of Object.entries(settings_to_save)) {
-      const adapter = settings_service.get_adapter(key);
+      const adapter = setting_service.get_adapter(key);
       if (!adapter) {
         console.log('CANT GET ADAPTER!');
         continue;

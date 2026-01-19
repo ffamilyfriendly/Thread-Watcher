@@ -1,4 +1,8 @@
-import { channel_service, client, component_service, config, thread_service } from 'bot';
+import { client } from '@providers/client';
+import { config } from '@providers/config';
+import { channel_service } from '@providers/services/channel_service';
+import { component_service } from '@providers/services/component_service';
+import { thread_service } from '@providers/services/thread_service';
 import {
   ActionRowBuilder,
   ButtonBuilder,
