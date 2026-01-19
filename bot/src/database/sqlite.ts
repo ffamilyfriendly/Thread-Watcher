@@ -21,7 +21,7 @@ import {
 } from '@watcher/shared';
 
 const TABLE_CREATION_QUERIES = [
-  'CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT NOT NULL, parent_channel_id TEXT, due_archive DATE, is_watched INTEGER, is_managed INTEGER)',
+  'CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT NOT NULL, parent_channel_id TEXT, due_archive DATE, is_watched INTEGER, managed_by INTEGER)',
   'CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT NOT NULL, regex TEXT, role_whitelist TEXT, tags TEXT, is_suspended INTEGER DEFAULT 0)',
   'CREATE TABLE IF NOT EXISTS settings (setting_id TEXT, guild_id TEXT, setting_value TEXT, UNIQUE(setting_id, guild_id) ON CONFLICT REPLACE)',
   'CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY AUTOINCREMENT, error TEXT, command_name TEXT, exec_time_ms INTEGER, audit_type TEXT NOT NULL, guild_id TEXT NOT NULL, executor_id TEXT NOT NULL, target_id TEXT, old_value TEXT, new_value TEXT, reason TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)',
@@ -82,7 +82,7 @@ export default class Sqlite implements Database {
     server: string;
     parent_channel_id?: string | null;
     due_archive: Date;
-    is_managed: boolean;
+    managed_by?: string | null;
   }) {
     this.db
       .prepare('INSERT INTO threads VALUES (?, ?, ?, ? ,1, ?)')
@@ -91,15 +91,15 @@ export default class Sqlite implements Database {
         thread.server,
         thread.parent_channel_id ?? null,
         thread.due_archive.getTime(),
-        thread.is_managed,
+        thread.managed_by ?? null,
       );
     return ok();
   }
 
   @with_error_handling
   async delete_thread(thread_id: string) {
-    this.db.prepare('DELETE FROM threads WHERE id = ?').run(thread_id);
-    return ok();
+    const val = this.db.prepare('DELETE FROM threads WHERE id = ?').run(thread_id);
+    return ok(val.changes);
   }
 
   @with_error_handling
@@ -327,27 +327,33 @@ export default class Sqlite implements Database {
 
   @with_error_handling
   async edit_monitor(channel_id: string, data: EditMonitor) {
-    // regex TEXT, role_whitelist TEXT, tags TEXT, is_suspended INTEGER DEFAULT 0)
+    const fields = [];
+    const params: Record<string, any> = {};
+    params['$channel_id'] = channel_id;
+
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        let final_value: string | null | number;
+        if (value instanceof RegExp) final_value = value?.source;
+        else if (Array.isArray(value)) final_value = value.join(',');
+        else if (typeof value === 'boolean') final_value = value ? 1 : 0;
+        else final_value = value;
+
+        fields.push(`${key} = $${key}`);
+        params['$' + key] = final_value;
+      }
+    }
+
     const sql = `
       UPDATE 
         channels
       SET
-        regex = @regex,
-        role_whitelist = @role_whitelist,
-        tags = @tags,
-        is_suspended = @is_suspended
+        ${fields.join(',')}
       WHERE
-        id = @channel_id
+        id = $channel_id
     `;
 
-    this.db.prepare(sql).run({
-      regex: data?.regex?.source ?? null,
-      role_whitelist: data.role_whitelist?.join(',') ?? null,
-      tags: data.tags?.join(',') ?? null,
-      is_suspended: data.is_suspended ?? null,
-      channel_id: channel_id,
-    });
-
+    this.db.prepare(sql).run(params);
     return ok();
   }
 

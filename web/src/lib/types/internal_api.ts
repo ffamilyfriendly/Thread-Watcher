@@ -1,4 +1,6 @@
+import { ZAuditData } from '@watcher/shared';
 import z from 'zod';
+import { ZDiscordGuild } from './discord';
 
 export const ZRawSetting = z.object({
 	setting_id: z.string(),
@@ -25,12 +27,26 @@ export const ZDiscordEntitlement = z.object({
 	startsTimestamp: z.number().nullish()
 });
 
+export const ZDJSGuild = z.object({
+	banner: z.string().nullish(),
+	description: z.string().nullish(),
+	icon: z.string().nullish(),
+	id: z.string(),
+	large: z.boolean(),
+	memberCount: z.number(),
+	name: z.string(),
+	nameAcronym: z.string(),
+	ownerId: z.string()
+});
+export type DJSGuild = z.output<typeof ZDJSGuild>;
+
 export const ZGuildOverview = z.object({
 	threads_watched: z.number(),
 	monitors_active: z.number(),
 	owned_by_shard: z.number(),
 	guild_settings: ZMappedSettings,
-	entitlements: z.array(ZDiscordEntitlement)
+	entitlements: z.array(ZDiscordEntitlement),
+	guild: ZDJSGuild
 });
 
 export type GuildOverview = z.output<typeof ZGuildOverview>;
@@ -51,24 +67,9 @@ export interface AuditData {
   audit_type: string;
 }
 */
-export const ZAuditLog = z.object({
-	id: z.number(),
-	guild_id: z.string(),
-	executor_id: z.string(),
-	target_id: z.string().nullable(),
-	old_value: z.string().nullable(),
-	new_value: z.string().nullable(),
-	reason: z.string().nullable(),
-	error: z.string().nullable(),
-	exec_time_ms: z.number().nullable(),
-	command_name: z.string().nullable(),
-	timestamp: z.number(),
-	audit_type: z.string()
-});
-export type AuditLog = z.output<typeof ZAuditLog>;
 
 export const ZAuditLogResponse = z.object({
-	logs: z.array(ZAuditLog),
+	logs: z.array(ZAuditData),
 	next_cursor: z.number().nullish()
 });
 export type AuditLogResponse = z.output<typeof ZAuditLogResponse>;
@@ -121,7 +122,7 @@ export type DiscordRole = z.output<typeof ZDiscordRole>;
 export const ZDiscordUser = z.object({
 	id: z.string(),
 	accentColor: z.number().nullish(),
-	avatar: z.string(),
+	avatar: z.string().nullish(),
 	bot: z.boolean(),
 	createdTimestamp: z.number(),
 	defaultAvatarURL: z.string(),
@@ -131,7 +132,7 @@ export const ZDiscordUser = z.object({
 });
 export type DiscordUser = z.output<typeof ZDiscordUser>;
 
-export const ZExpandedAuditLog = ZAuditLog.extend({
+export const ZExpandedAuditLog = ZAuditData.extend({
 	executing_user: ZDiscordUser
 });
 export type ExpandedAuditLog = z.output<typeof ZExpandedAuditLog>;
@@ -149,27 +150,3 @@ export interface FilterData {
   role_whitelist?: string[];
 
 */
-
-export const ZRegex = z
-	.union([z.string(), z.instanceof(RegExp), z.null(), z.undefined()])
-	.transform((val) => {
-		if (!val) return val;
-		if (val instanceof RegExp) return val;
-
-		try {
-			return new RegExp(val.trim());
-		} catch (e) {
-			throw new Error('Invalid regular expression format');
-		}
-	});
-
-export const ZChannelMonitor = z.object({
-	id: z.string(),
-	server: z.string(),
-	regex: ZRegex,
-	tags: z.array(z.string()).nullish(),
-	role_whitelist: z.array(z.string()).nullish(),
-	is_suspended: z.boolean()
-});
-
-export type ChannelMonitor = z.output<typeof ZChannelMonitor>;

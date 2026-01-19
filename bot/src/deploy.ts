@@ -1,5 +1,10 @@
 import { REST, Routes } from 'discord.js';
-import { BaseCommand, Command, RegistrationScope, SubCommand } from 'interfaces/Command';
+import {
+  BaseCommand,
+  Command,
+  RegistrationScope,
+  SubCommand,
+} from 'interfaces/BaseCommandInterface';
 import { ResultAsync } from 'neverthrow';
 import { Logger } from 'tslog';
 import { read_config } from 'utilities/config';
@@ -20,11 +25,11 @@ const rest = new REST().setToken(config.tokens.discord);
 
 logger.info('registering commands!');
 
-function is_subcommand(cmd: BaseCommand): cmd is SubCommand {
+function is_subcommand(cmd: BaseCommand): cmd is SubCommand<unknown> {
   return 'parent_command' in cmd;
 }
 
-async function reg_commands(commands: Command[], route: `/${string}`) {
+async function reg_commands(commands: Command<unknown>[], route: `/${string}`) {
   const reg_cmds_promise = rest.put(route, {
     body: commands.filter((cmd) => !is_subcommand(cmd)).map((cmd) => cmd.command_data.toJSON()),
   });
@@ -33,8 +38,9 @@ async function reg_commands(commands: Command[], route: `/${string}`) {
 }
 
 async function main() {
+  process.env.BYPASS_ORPHAN_CHECK = 'true';
   const command_files = get_file_paths('./src/commands', { file_extention: 'ts' });
-  const command_modules = await load_paths_as_modules<Command>(command_files, false);
+  const command_modules = await load_paths_as_modules<Command<unknown>>(command_files, false);
 
   if (command_modules.isErr()) {
     logger.fatal('could not load commands!', command_modules.error);
@@ -73,6 +79,8 @@ async function main() {
   if (res_private.isErr()) {
     logger.error('could not register private commands!', res_private.error);
   }
+
+  process.exit(0);
 }
 
 main();

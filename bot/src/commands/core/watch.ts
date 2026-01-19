@@ -7,7 +7,8 @@ import {
   ThreadChannel,
 } from 'discord.js';
 
-import { Command, CommandError, RegistrationScope } from 'interfaces/Command';
+import { CommandError, RegistrationScope } from 'interfaces/BaseCommandInterface';
+import { type Command } from 'interfaces/Command';
 import { err, Result } from 'neverthrow';
 import { AuditType } from 'services/AuditService';
 import { CommandContext } from 'utilities/command_context';

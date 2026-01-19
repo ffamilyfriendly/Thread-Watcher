@@ -8,7 +8,12 @@ import {
   MessageActionRowComponentBuilder,
   SlashCommandBuilder,
 } from 'discord.js';
-import { Command, CommandError, GuildChatInteraction, RegistrationScope } from 'interfaces/Command';
+import {
+  CommandError,
+  GuildChatInteraction,
+  RegistrationScope,
+} from 'interfaces/BaseCommandInterface';
+import { type Command } from 'interfaces/Command';
 import settings_map from 'interfaces/Settings';
 import { err, ok, Result } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';

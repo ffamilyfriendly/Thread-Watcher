@@ -1,21 +1,3 @@
-/*
-export interface CommandExecutionContext {
-  build_embed: (props: EmbedBuilderProps) => EmbedBuilder;
-  send_audit: (
-    embed_param: EmbedBuilder | EmbedBuilder[],
-    overwrite_interaction?: Interaction,
-  ) => void;
-  // i18n
-  t: (
-    key: string,
-    options?: {
-      [key: string]: unknown;
-    },
-  ) => string;
-  logger: Logger<unknown>;
-}
-*/
-
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -29,16 +11,17 @@ import {
   messageLink,
 } from 'discord.js';
 import i18next from 'i18next';
-import { CommandError } from 'interfaces/Command';
+import { CommandError } from 'interfaces/BaseCommandInterface';
 import { ok, err, Result, ResultAsync } from 'neverthrow';
 
-import { config, logger } from 'bot';
 import { Logger } from 'tslog';
 import { get_audit_embed, PartialAuditObject } from 'services/AuditService';
 import { map_err } from './error';
 import { log_event_in_log_channel } from './log_channel_stuff';
+import { type ConfigType } from './config';
+import { config, logger } from 'bot';
 
-type StyleOption = keyof typeof config.style;
+type StyleOption = keyof ConfigType['style'];
 export interface EmbedBuilderProps {
   title: string;
   description?: string;

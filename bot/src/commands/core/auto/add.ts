@@ -1,29 +1,30 @@
 import {
   ChannelType,
-  ChatInputCommandInteraction,
-  GuildBasedChannel,
   Interaction,
   PermissionFlagsBits,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 
 import {
-  Command,
   CommandError,
-  PostExecutionTasks,
+  GuildChatInteraction,
   RegistrationScope,
-  SubCommand,
-} from 'interfaces/Command';
+} from 'interfaces/BaseCommandInterface';
+import { type SubCommand } from 'interfaces/Command';
 import { err, Result } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
 import { make_advanced_embed, State } from 'commands/core/_shared/advanced_view';
-import { create_channel_link } from '../list';
 import { audit_service, channel_service } from 'bot';
 import { CommandContext } from 'utilities/command_context';
 import { map_err } from 'utilities/error';
+import { get_target } from '../_shared/check_channel_values';
 
 async function handle_execution(state: State, interaction: Interaction, context: null) {
-  const did_work = await channel_service.add_channel(state.target_channel, state.filters);
+  const did_work = await channel_service.add_channel(
+    state.target_channel.id,
+    state.guild_id,
+    state.filters,
+  );
   if (did_work.isErr()) {
     return state._ctx.err(map_err(did_work.error));
   }
@@ -62,19 +63,20 @@ function handle_cleanup(state: State, interaction: Interaction) {
 }
 
 async function run(
-  interaction: ChatInputCommandInteraction,
+  interaction: GuildChatInteraction,
   ctx: CommandContext,
 ): Promise<Result<void, CommandError>> {
-  const parent = interaction.options.getChannel('parent') || interaction.channel;
+  const parent = get_target(interaction);
+
   const advanced = !!interaction.options.getBoolean('advanced');
 
-  if (!parent || !('threads' in parent)) {
-    return err(new Error('parent cannot hold threads'));
+  if (parent.isErr()) {
+    return err(parent.error);
   }
 
   await interaction.deferReply();
 
-  const existing_monitor = await channel_service.get_channel(parent.id);
+  const existing_monitor = await channel_service.get_channel(parent.value.id);
   if (existing_monitor.isErr()) {
     return err(existing_monitor.error);
   }
@@ -83,13 +85,14 @@ async function run(
     components: [],
     filters: {
       regex: existing_monitor.value?.regex,
-      tags: existing_monitor.value?.tags,
-      role_whitelist: existing_monitor.value?.role_whitelist,
+      tags: existing_monitor.value?.tags ?? null,
+      role_whitelist: existing_monitor.value?.role_whitelist ?? null,
     },
+    guild_id: interaction.guildId,
     edit_mode: existing_monitor.value != null,
     threads: [],
     cleaner: new Vacuum(),
-    target_channel: parent,
+    target_channel: parent.value,
     _ctx: ctx,
     on_save: [handle_execution, null],
     on_cleanup: handle_cleanup,
@@ -121,6 +124,9 @@ export const command_data = new SlashCommandSubcommandBuilder()
   )
   .addBooleanOption((opt) =>
     opt.setName('advanced').setDescription('if u wanna use advanced options idk'),
+  )
+  .addBooleanOption((opt) =>
+    opt.setName('global').setDescription('if you want this monitor to be server wide'),
   );
 
 const command: SubCommand = {

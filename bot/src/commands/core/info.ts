@@ -5,7 +5,8 @@ import {
   ChatInputCommandInteraction,
   SlashCommandBuilder,
 } from 'discord.js';
-import { Command, CommandError, RegistrationScope } from 'interfaces/Command';
+import { CommandError, RegistrationScope } from 'interfaces/BaseCommandInterface';
+import { type Command } from 'interfaces/Command';
 import { ok, Result } from 'neverthrow';
 import { CommandContext } from 'utilities/command_context';
 

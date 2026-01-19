@@ -35,3 +35,15 @@
 		background-color: var(--primary-400);
 	}
 }
+
+.error {
+	background-color: var(--error-500);
+
+	&:hover {
+		background-color: var(--error-600);
+	}
+
+	&:active {
+		background-color: var(--error-400);
+	}
+}

@@ -1,8 +1,10 @@
 import { Message } from 'discord.js';
-import { guild_service, logger, thread_service } from 'bot';
+import { guild_service, logger as _logger, thread_service } from 'bot';
 import { Event } from 'interfaces/ClientEvent';
+import { check_should_be_watched } from './thread_events/threadUpdate';
 
 async function check_msg_should_bump_thread(msg: Message) {
+  const logger = _logger.getSubLogger({ name: 'message_Create' });
   if (!msg.guildId) return;
 
   const guild_nullify_left_at = await guild_service.nullify_left_at(msg.guildId);
@@ -11,6 +13,9 @@ async function check_msg_should_bump_thread(msg: Message) {
   }
 
   if (!msg.channel.isThread()) return;
+
+  check_should_be_watched(msg.channel, logger);
+
   const res_thread = (await thread_service.get_thread(msg.channelId)).match(
     (value) => value,
     (err_value) => {

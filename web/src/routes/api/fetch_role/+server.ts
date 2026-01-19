@@ -1,4 +1,5 @@
 import { fetch_role } from '$lib/server/data_fetchers';
+import { check_ratelimit } from '$lib/server/ratelimit.js';
 import { json } from '@sveltejs/kit';
 
 export async function GET({ locals, url }) {
@@ -25,6 +26,8 @@ export async function GET({ locals, url }) {
 			{ status: 401 }
 		);
 	}
+
+	await check_ratelimit(auth?.user.id, 5, 10);
 
 	const channel_res = await fetch_role(guild_id, auth.user.id, role_id);
 	if (channel_res.isErr()) {

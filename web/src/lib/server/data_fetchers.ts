@@ -1,19 +1,9 @@
-import {
-	ZAuditLogResponse,
-	ZChannelMonitor,
-	ZDiscordChannel,
-	ZDiscordRole,
-	ZDiscordUser,
-	ZExpandedAuditLog,
-	ZGuildOverview,
-	type ChannelMonitor,
-	type ExpandedAuditLog,
-	type GuildOverview
-} from '$lib/types/internal_api';
 import z from 'zod';
 import { json_fetch } from './api';
 import { err, ok, Result } from 'neverthrow';
 import { get_cached_or } from './cache';
+import { ZAuditLogResponse, ZDiscordChannel, ZDiscordRole, ZDiscordUser, ZGuildOverview, type ExpandedAuditLog, type GuildOverview } from '$lib/types/internal_api';
+import { ZAuditData, ZChannelDataWithFilters, type ChannelDataWithFilters } from '@watcher/shared';
 
 export async function fetch_audit_logs(
 	guild_id: string,
@@ -55,7 +45,7 @@ export async function fetch_discord_users(guild_id: string, user_id: string, use
 
 export const ZExtendedResult = z.object({
 	next_cursor: z.number().nullish(),
-	logs: z.array(ZExpandedAuditLog)
+	logs: z.array(ZAuditData)
 });
 export type ExtendedResult = z.output<typeof ZExtendedResult>;
 
@@ -159,10 +149,10 @@ export async function get_guild_info(
 export async function get_monitors(
 	guild_id: string,
 	user_id: string
-): Promise<Result<ChannelMonitor[], Error | Response>> {
-	return await json_fetch<ChannelMonitor[]>(
+): Promise<Result<ChannelDataWithFilters[], Error | Response>> {
+	return await json_fetch<ChannelDataWithFilters[]>(
 		`/guild/${guild_id}/monitors`,
 		{ user_id },
-		z.array(ZChannelMonitor)
+		z.array(ZChannelDataWithFilters)
 	);
 }

@@ -1,7 +1,7 @@
 import { Client, Collection, GatewayIntentBits } from 'discord.js';
 import { read_config } from './utilities/config';
 import { Logger } from 'tslog';
-import { BaseCommand } from 'interfaces/Command';
+import { BaseCommand } from 'interfaces/BaseCommandInterface';
 import { BotIpcClient } from 'utilities/ipc_clients';
 import get_database_instance from 'database';
 import Redis from 'ioredis';
@@ -68,10 +68,10 @@ async function bootstrap() {
 
 if (client.shard) {
   bootstrap();
-} else {
+} else if (!process.env.BYPASS_ORPHAN_CHECK) {
   logger.warn(
     '"client.shard" not set. Will not attempt to login\n',
-    'if you see this while running the deploy command everything is in order and you can disregard',
+    'Somewhere there is a circular ref. Find it, fix it, laugh at it.',
   );
   console.trace();
   process.exit(1);

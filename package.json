@@ -5,5 +5,8 @@
     "bot",
     "web",
     "packages/shared"
-  ]
+  ],
+  "devDependencies": {
+    "sveltekit-rate-limiter": "^0.7.0"
+  }
 }

@@ -1,16 +1,22 @@
-import { audit_service, channel_service, client, thread_service } from 'bot';
+import { audit_service, channel_service, client, config, thread_service } from 'bot';
 import {
   Channel,
   ChannelType,
-  ChatInputCommandInteraction,
-  GuildBasedChannel,
+  Guild,
   Interaction,
   PermissionFlagsBits,
   SlashCommandBuilder,
   ThreadChannel,
 } from 'discord.js';
 
-import { Command, CommandError, PostExecutionTasks, RegistrationScope } from 'interfaces/Command';
+import {
+  CommandError,
+  GuildChatInteraction,
+  PostExecutionTasks,
+  RegistrationScope,
+} from 'interfaces/BaseCommandInterface';
+import { type Command } from 'interfaces/Command';
+
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
 import { make_advanced_embed, State } from 'commands/core/_shared/advanced_view';
@@ -19,9 +25,25 @@ import ThreadService from 'services/ThreadService';
 import { map_err } from 'utilities/error';
 import { CommandContext } from 'utilities/command_context';
 import { PartialAuditObject } from 'services/AuditService';
+import { get_target } from './_shared/check_channel_values';
 
-async function fetch_all_threads_from_parent(channel: Channel) {
+async function fetch_all_threads_from_parent(channel: Channel | Guild) {
   let thread_list: ThreadChannel[] = [];
+
+  if (channel instanceof Guild) {
+    for (const child_channel of channel.channels.cache.values()) {
+      const children_of_guild_threads = await fetch_all_threads_from_parent(child_channel);
+
+      if (children_of_guild_threads.isErr()) {
+        console.log('ERROR', children_of_guild_threads.error);
+        continue;
+      }
+
+      thread_list.push(...children_of_guild_threads.value);
+    }
+
+    return ok(thread_list);
+  }
 
   if (channel.type === ChannelType.GuildCategory) {
     for (const child_of_channel of channel.children.cache.values()) {
@@ -115,7 +137,7 @@ async function handle_execution(state: State, interaction: Interaction, context:
 
   if (context.watch_future) {
     ResultAsync.fromPromise(
-      channel_service.add_channel(state.target_channel, state.filters),
+      channel_service.add_channel(state.target_channel.id, state.guild_id, state.filters),
       map_err,
     );
 
@@ -157,10 +179,13 @@ function handle_cleanup(state: State, interaction: Interaction) {
 }
 
 async function run(
-  interaction: ChatInputCommandInteraction,
+  interaction: GuildChatInteraction,
   ctx: CommandContext,
 ): Promise<Result<void, CommandError>> {
-  const parent = interaction.options.getChannel('parent') || interaction.channel;
+  const parent = get_target(interaction);
+  if (parent.isErr()) {
+    return err(parent.error);
+  }
 
   const action: BATCH_OPTIONS =
     (interaction.options.getString('action') as BATCH_OPTIONS) ?? 'WATCH';
@@ -168,32 +193,36 @@ async function run(
   const advanced = !!interaction.options.getBoolean('advanced');
   const watch_future = !!interaction.options.getBoolean('watch-future');
 
-  if (!parent || !('guild' in parent) || !ALLOWED_CHANNEL_TYPES.includes(parent.type)) {
-    return err(new Error('parent cannot hold threads'));
-  }
+  const channel_link =
+    parent.value instanceof Guild ? 'in this guild' : create_channel_link(parent.value);
 
   const waiting_embed = ctx.build_embed({
     title: ctx.t('commands.batch.fetching_title', {}),
     description: ctx.t('commands.batch.fetching_body', {
-      channel_link: create_channel_link(parent),
+      channel_link,
     }),
     style: 'info',
   });
 
   const state: State<ExecutionContext> = {
     components: [],
-    filters: {},
+    filters: {
+      tags: [],
+      role_whitelist: [],
+      regex: undefined,
+    },
+    guild_id: interaction.guildId,
     edit_mode: false,
     threads: [],
     cleaner: new Vacuum(),
-    target_channel: parent,
+    target_channel: parent.value,
     _ctx: ctx,
     on_save: [handle_execution, { action, watch_future }],
     on_cleanup: handle_cleanup,
   };
 
   await interaction.reply({ embeds: [waiting_embed], flags: ['Ephemeral'] });
-  const fetch_threads = await fetch_all_threads_from_parent(parent);
+  const fetch_threads = await fetch_all_threads_from_parent(parent.value);
 
   if (fetch_threads.isErr()) return err(fetch_threads.error);
   state.threads = fetch_threads.value;
@@ -254,6 +283,9 @@ const command_data = new SlashCommandBuilder()
     opt
       .setName('advanced')
       .setDescription('Use filters (regex, roles, tags) to selectively watch/unwatch threads'),
+  )
+  .addBooleanOption((opt) =>
+    opt.setName('global').setDescription('if you want this monitor to be server wide'),
   );
 
 const command: Command = {

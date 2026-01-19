@@ -1,5 +1,5 @@
-import { SlashCommandBuilder, SlashCommandSubcommandBuilder } from 'discord.js';
-import { BaseCommand, RegistrationScope } from 'interfaces/Command';
+import { SlashCommandBuilder } from 'discord.js';
+import { BaseCommand, RegistrationScope } from 'interfaces/BaseCommandInterface';
 import { command_data as add } from './add';
 import { command_data as remove } from './remove';
 

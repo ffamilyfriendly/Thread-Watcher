@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { redis } from 'bot';
-import { Command, CommandError, RegistrationScope } from 'interfaces/Command';
+import { CommandError, RegistrationScope } from 'interfaces/BaseCommandInterface';
+import { type Command } from 'interfaces/Command';
 import { err, Result, ResultAsync } from 'neverthrow';
 import { CommandContext } from 'utilities/command_context';
 

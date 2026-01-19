@@ -1,4 +1,4 @@
-import { component_service } from 'bot';
+import { component_service, config } from 'bot';
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -6,6 +6,7 @@ import {
   ButtonStyle,
   Channel,
   EmbedBuilder,
+  Guild,
   GuildForumTagEmoji,
   Interaction,
   ModalBuilder,
@@ -17,12 +18,12 @@ import {
   TextInputStyle,
   ThreadChannel,
 } from 'discord.js';
-import { GenericCommandError } from 'interfaces/Command';
+import { GenericCommandError } from 'interfaces/BaseCommandInterface';
 import { handle_error_generic } from 'utilities/handle_interaction_error';
 import regex_is_safe from 'safe-regex';
 import { Vacuum } from 'services/ComponentService';
 import { CommandContext } from 'utilities/command_context';
-import { FilterData } from 'interfaces/Database';
+import { FilterData } from '@watcher/shared';
 
 export interface State<TContext = unknown> {
   components: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder | RoleSelectMenuBuilder>[];
@@ -30,7 +31,8 @@ export interface State<TContext = unknown> {
   edit_mode: boolean;
   cleaner: Vacuum;
   threads: ThreadChannel[];
-  target_channel: Channel;
+  target_channel: Channel | Guild;
+  guild_id: string;
   _ctx: CommandContext;
   on_save: [(state: State, interaction: Interaction, context: TContext) => void, TContext];
   on_cleanup: (state: State, interaction: ButtonInteraction) => void;

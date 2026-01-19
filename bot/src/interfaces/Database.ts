@@ -25,7 +25,7 @@ interface CoreUtils {
 
 interface CoreThread {
   insert_thread: (thread: InsertThreadData) => DBResult;
-  delete_thread: (thread_id: string) => DBResult;
+  delete_thread: (thread_id: string) => DBResult<number>;
   set_thread_auto_archive: (thread_id: string, auto_archive_duration: Date) => DBResult;
   set_thread_watched: (thread_id: string, is_watched: boolean) => DBResult;
   get_thread: (thread_id: string) => DBResult<ThreadData | null>;

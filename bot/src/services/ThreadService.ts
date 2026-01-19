@@ -46,7 +46,7 @@ export default class ThreadService {
     this.r = new RedisWrapper(redis, ThreadService.CACHE_TTL_SECONDS, 'thread');
   }
 
-  async insert_thread(thread: GenericThread, is_managed = false) {
+  async insert_thread(thread: GenericThread, managed_by?: string) {
     const last_activity = thread.lastMessageId
       ? convert_snowflake_to_date(thread.lastMessageId)
       : thread.createdAt;
@@ -61,7 +61,7 @@ export default class ThreadService {
       server: thread.guildId,
       parent_channel_id: thread.parentId,
       due_archive: expires_at,
-      is_managed,
+      managed_by,
     };
 
     const res = await this.db.insert_thread(thread_data);
@@ -152,11 +152,10 @@ export default class ThreadService {
    * @param is_managed_by_parent if the thread was watched as a result of a channel monitor
    * @returns
    */
-  async watch_thread(thread: GenericThread, is_managed_by_parent = false) {
+  async watch_thread(thread: GenericThread, managed_by?: string) {
     const db_entry = await this.get_thread(thread.id);
 
-    if (db_entry.isOk() && db_entry.value === null)
-      return this.insert_thread(thread, is_managed_by_parent);
+    if (db_entry.isOk() && db_entry.value === null) return this.insert_thread(thread, managed_by);
     else return this.set_thread_watch_status(thread.id, true);
   }
 

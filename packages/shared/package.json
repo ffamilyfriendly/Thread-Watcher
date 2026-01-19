@@ -6,7 +6,7 @@
     ".": "./index.ts"
   },
   "peerDependencies": {
-    "zod": "^3.25.67"
+    "zod": "^4.3.4"
   },
   "types": "index.ts"
 }

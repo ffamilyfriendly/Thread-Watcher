@@ -39,12 +39,10 @@ export default class ChannelService {
     return await this.db.get_monitored_channels_count(guild_id);
   }
 
-  async add_channel(channel: Channel, filters?: FilterData) {
-    if (!('guild' in channel)) return err('wont happen');
-
+  async add_channel(monitor_id: string, guild_id: string, filters?: FilterData) {
     const channel_data = {
-      id: channel.id,
-      server: channel.guildId,
+      id: monitor_id,
+      server: guild_id,
       is_suspended: false,
     };
 
@@ -59,7 +57,7 @@ export default class ChannelService {
     const combined_object = Object.assign(channel_data, filter_data);
 
     if (res.isOk()) {
-      this.r.set(channel.id, combined_object, ZChannelDataWithFilters);
+      this.r.set(monitor_id, combined_object, ZChannelDataWithFilters);
     }
 
     return res;

@@ -7,101 +7,115 @@
 	import { EyeIcon, SailboatIcon, SpoolIcon } from '@lucide/svelte';
 	import z from 'zod';
 
-    const { data } = $props()
-    const guild = data.guild
+	const { data } = $props();
+	const guild = data.guild;
 
-    let bot_master_role = $state<string|null>()
+	let bot_master_role = $state<string | null>();
 
-    async function update_bot_master_role() {
-        const save_res = await fetch_as_json("/api/update_settings", { body: JSON.stringify({updated_settings: { BOT_MASTER_ROLE: bot_master_role }, guild_id: data.guild_id}), method: "POST" }, z.object({ code: z.number(), message: z.string() }))
-    
-        if(save_res.isErr()) return add_toast_from_error(save_res.error)
-        
-        await invalidateAll()
-        add_toast({
-            label: "Good Job!",
-            message: "Added Bot Master",
-            timeout: 5000,
-            type: "success"
-        })
-    }
+	async function update_bot_master_role() {
+		const save_res = await fetch_as_json(
+			'/api/update_settings',
+			{
+				body: JSON.stringify({
+					updated_settings: { BOT_MASTER_ROLE: bot_master_role },
+					guild_id: data.guild_id
+				}),
+				method: 'POST'
+			},
+			z.object({ code: z.number(), message: z.string() })
+		);
 
-    $effect(() => {
-        if(!bot_master_role) return
-        const timeout = setTimeout(update_bot_master_role, 1500)
-        return () => clearTimeout(timeout)
-    })
+		if (save_res.isErr()) return add_toast_from_error(save_res.error);
+
+		await invalidateAll();
+		add_toast({
+			label: 'Good Job!',
+			message: 'Added Bot Master',
+			timeout: 5000,
+			type: 'success'
+		});
+	}
+
+	$effect(() => {
+		if (!bot_master_role) return;
+		const timeout = setTimeout(update_bot_master_role, 1500);
+		return () => clearTimeout(timeout);
+	});
 </script>
+
 <h1>Welcome, <span class="username">{data.session?.user.name}</span></h1>
 
 <div class="card_container">
-    <div class="card">
-        <SpoolIcon />
-        <div>
-            <span>{guild.threads_watched}</span>
-            <small>Threads Watched</small>
-        </div>
-    </div>
-    <div class="card">
-        <EyeIcon />
-        <div>
-            <span>{guild.monitors_active}</span>
-            <small>Active Monitors</small>
-        </div>
-    </div>
-    <div class="card">
-        <SailboatIcon />
-        <div>
-            <span>{guild.owned_by_shard}</span>
-            <small>Your Shard</small>
-        </div>
-    </div>
+	<div class="card">
+		<SpoolIcon />
+		<div>
+			<span>{guild.threads_watched}</span>
+			<small>Threads Watched</small>
+		</div>
+	</div>
+	<div class="card">
+		<EyeIcon />
+		<div>
+			<span>{guild.monitors_active}</span>
+			<small>Active Monitors</small>
+		</div>
+	</div>
+	<div class="card">
+		<SailboatIcon />
+		<div>
+			<span>{guild.owned_by_shard}</span>
+			<small>Your Shard</small>
+		</div>
+	</div>
 </div>
 
 {#if !guild.guild_settings.BOT_MASTER_ROLE}
-    <SettingBox name="Bot Master" description="Select the role that can access the bot dashboard." disclaimer="Any role with Administrator will be considered a Bot Master">
-        <RolePicker bind:value={bot_master_role} roles={data.roles} guild_id={data.guild_id} />
-    </SettingBox>
+	<SettingBox
+		name="Bot Master"
+		description="Select the role that can access the bot dashboard."
+		disclaimer="Any role with Administrator will be considered a Bot Master"
+	>
+		<RolePicker bind:value={bot_master_role} roles={data.roles} />
+	</SettingBox>
 {/if}
 
 hello
 
 <style lang="scss">
+	.username {
+		color: var(--primary-900);
+	}
 
-    .username {
-        color: var(--primary-900);
-    }
+	.card {
+		display: flex;
+		gap: 1rem;
+		flex-grow: 1;
 
-    .card {
-        display: flex;
-        gap: 1rem;
-        flex-grow: 1;
+		border-radius: 0.5rem;
+		outline: 1px solid rgba(128, 128, 128, 0.3);
+		padding: 1.5rem;
+		padding-top: 1rem;
+		padding-bottom: 1rem;
 
-        border-radius: .5rem;
-        outline: 1px solid rgba(128, 128, 128, 0.3);
-        padding: 1.5rem;
-        padding-top: 1rem;
-        padding-bottom: 1rem;
+		& div {
+			display: flex;
+			flex-direction: column;
+		}
 
-        & div {
-            display: flex;
-            flex-direction: column;
-        }
+		& small {
+			opacity: 0.5;
+		}
 
-        & small {
-            opacity: .5;
-        }
+		@media (max-width: 500px) {
+			flex-direction: column;
+		}
+	}
 
-        @media (max-width: 500px) {
-            flex-direction: column;
-        }
-    }
-
-    .card_container {
-        display: flex;
-        justify-content: space-evenly;
-        padding-top: 2%;
-        padding-bottom: 2%;
-        gap: max(2%, 5px);
-    }
+	.card_container {
+		display: flex;
+		justify-content: space-evenly;
+		padding-top: 2%;
+		padding-bottom: 2%;
+		gap: max(2%, 5px);
+	}
 </style>

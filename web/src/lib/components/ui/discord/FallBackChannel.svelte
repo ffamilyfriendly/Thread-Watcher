@@ -1,39 +1,42 @@
 <script lang="ts">
-	import { fetch_as_json } from "$lib/client/fetch";
-	import { add_toast_from_error } from "$lib/state/toasts.svelte";
-	import { ZDiscordChannel, type DiscordChannel } from "$lib/types/internal_api";
-	import Channel from "./Channel.svelte";
+	import { fetch_as_json } from '$lib/client/fetch';
+	import { add_toast_from_error } from '$lib/state/toasts.svelte';
+	import { ZDiscordChannel, type DiscordChannel } from '$lib/types/internal_api';
+	import { guild_state } from '$lib/stores/guild.svelte';
+	import Channel from './Channel.svelte';
 
-    interface Props {
-        channel?: DiscordChannel,
-        channel_id: string
-        guild_id: string
-    }
+	interface Props {
+		channel?: DiscordChannel;
+		channel_id: string;
+	}
 
-    const { channel, guild_id, channel_id }: Props = $props()
+	const { channel, channel_id }: Props = $props();
 
-    let fetched_channel = $state<DiscordChannel|null>(null)
+	let fetched_channel = $state<DiscordChannel | null>(null);
 
-    const use_channel = $derived(channel ?? fetched_channel)
+	const use_channel = $derived(channel ?? fetched_channel);
 
-    $effect(() => {
-        if(!channel) {
-            fetch_as_json(`/api/fetch_channel?guild_id=${guild_id}&channel_id=${channel_id}`, undefined, ZDiscordChannel)
-            .then(res => {
-                if(res.isErr()) {
-                    add_toast_from_error(res.error)
-                    console.error("could not fetch channel", res.error)
-                    return
-                }
+	$effect(() => {
+		if (!channel && guild_state.guild_id) {
+			fetch_as_json(
+				`/api/fetch_channel?guild_id=${guild_state.guild_id}&channel_id=${channel_id}`,
+				undefined,
+				ZDiscordChannel
+			).then((res) => {
+				if (res.isErr()) {
+					add_toast_from_error(res.error);
+					console.error('could not fetch channel', res.error);
+					return;
+				}
 
-                fetched_channel = res.value
-            })
-        }
-    })
+				fetched_channel = res.value;
+			});
+		}
+	});
 </script>
 
 {#if use_channel}
-    <Channel channel={use_channel} />
+	<Channel channel={use_channel} />
 {:else}
-    could not fetch channel
+	could not fetch channel
 {/if}

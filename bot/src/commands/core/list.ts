@@ -10,17 +10,28 @@ import {
   SlashCommandBuilder,
 } from 'discord.js';
 
-import { Command, CommandError, GuildChatInteraction, RegistrationScope } from 'interfaces/Command';
+import {
+  CommandError,
+  GuildChatInteraction,
+  RegistrationScope,
+} from 'interfaces/BaseCommandInterface';
+import { type Command } from 'interfaces/Command';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
 import { CommandContext } from 'utilities/command_context';
 
-function create_buttons(guild_id: string) {
+type DisplayType = 'THREADS' | 'CHANNELS';
+
+function create_buttons(guild_id: string, display_as: DisplayType) {
+  const url =
+    `${config.web.hostname}/dashboard/${guild_id}/` +
+    (display_as === 'CHANNELS' ? 'monitors' : 'threads');
+
   const btn_back = new ButtonBuilder().setStyle(ButtonStyle.Secondary).setEmoji('⏪');
   const btn_next = new ButtonBuilder().setStyle(ButtonStyle.Secondary).setEmoji('⏩');
   const btn_website_cta = new ButtonBuilder()
     .setStyle(ButtonStyle.Link)
-    .setURL(`${config.web.hostname}/dashboard/${guild_id}/threads`)
+    .setURL(url)
     .setLabel('View Online');
 
   return { btn_back, btn_next, btn_website_cta };
@@ -218,9 +229,7 @@ async function run(
     return interaction.user.id === btn_interaction.user.id;
   }
 
-  const display_type = (interaction.options.getString('filter') ?? 'THREADS') as
-    | 'THREADS'
-    | 'CHANNELS';
+  const display_type = (interaction.options.getString('filter') ?? 'THREADS') as DisplayType;
 
   const data_to_display = await (display_type === 'THREADS'
     ? thread_service.get_threads(interaction.guildId)
@@ -239,7 +248,7 @@ async function run(
   }
 
   await interaction.deferReply();
-  const { btn_back, btn_next, btn_website_cta } = create_buttons(interaction.guildId);
+  const { btn_back, btn_next, btn_website_cta } = create_buttons(interaction.guildId, display_type);
   const button_row = new ActionRowBuilder<ButtonBuilder>();
   const dashboard_row = new ActionRowBuilder<ButtonBuilder>();
   button_row.addComponents(btn_back, btn_next);
@@ -306,12 +315,12 @@ async function run(
 
 const command_data = new SlashCommandBuilder()
   .setName('list')
-  .setDescription('List all watched threads, channels, or both')
+  .setDescription('List all watched threads, monitors, or both')
   .addStringOption((o) =>
     o
       .addChoices([
         { name: 'Threads', value: 'THREADS' },
-        { name: 'Channels', value: 'CHANNELS' },
+        { name: 'Monitors', value: 'CHANNELS' },
       ])
       .setName('filter')
       .setDescription('Filter the list by type (default: Threads)'),

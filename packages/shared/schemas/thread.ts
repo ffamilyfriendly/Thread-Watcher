@@ -6,6 +6,6 @@ export const ZThreadData = z.object({
   parent_channel_id: z.string().nullish(),
   due_archive: z.coerce.date(),
   is_watched: z.coerce.boolean().default(true),
-  is_managed: z.coerce.boolean(),
+  managed_by: z.string().nullish(),
 });
 export type ThreadData = z.output<typeof ZThreadData>;

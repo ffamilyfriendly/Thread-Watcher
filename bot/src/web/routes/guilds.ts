@@ -1,4 +1,4 @@
-import { Channel, Entitlement, GuildChannel, Role } from 'discord.js';
+import { Channel, Entitlement, Guild, GuildChannel, Role } from 'discord.js';
 import { Router } from 'express';
 import {
   audit_service,
@@ -42,7 +42,7 @@ router.get(
   '/:guild_id',
   enforce_policy(Policies.Common.bot_master_or_guild_master),
   async (req, res) => {
-    const guild_id = req.params.guild_id;
+    const guild_id = req.params.guild_id as string;
 
     const p = await ResultAsync.fromPromise(
       Promise.all([
@@ -53,16 +53,22 @@ router.get(
         ipc_client.send_to_shard_having_guild<Entitlement[]>(guild_id, 'get_entitlements', {
           guild_id,
         }),
+        ipc_client.send_to_shard_having_guild<Guild>(guild_id, 'get_guild', {
+          guild_id,
+        }),
       ]),
       map_err,
     ).andThen((results) => {
-      return Result.combine(results).map(([threads, channels, shard, settings, entitlements]) => ({
-        threads_watched: threads,
-        monitors_active: channels,
-        owned_by_shard: shard,
-        guild_settings: settings,
-        entitlements: entitlements,
-      }));
+      return Result.combine(results).map(
+        ([threads, channels, shard, settings, entitlements, guild]) => ({
+          threads_watched: threads,
+          monitors_active: channels,
+          owned_by_shard: shard,
+          guild_settings: settings,
+          entitlements: entitlements,
+          guild: guild,
+        }),
+      );
     });
 
     if (p.isErr()) {
@@ -73,8 +79,14 @@ router.get(
       });
     }
 
-    const { threads_watched, monitors_active, owned_by_shard, guild_settings, entitlements } =
-      p.value;
+    const {
+      threads_watched,
+      monitors_active,
+      owned_by_shard,
+      guild_settings,
+      entitlements,
+      guild,
+    } = p.value;
 
     const dict: { [index: string]: string } = {};
     for (const setting of guild_settings) {
@@ -87,6 +99,7 @@ router.get(
       owned_by_shard,
       guild_settings: dict,
       entitlements,
+      guild,
     });
   },
 );
@@ -97,7 +110,11 @@ router.get(
   async (req, res) => {
     const before_id = req.query.before_id;
     const cursor = before_id ? Number(before_id) : undefined;
-    const audit_logs = await audit_service.get_audit_logs(req.params.guild_id, 25, cursor);
+    const audit_logs = await audit_service.get_audit_logs(
+      req.params.guild_id as string,
+      25,
+      cursor,
+    );
 
     if (audit_logs.isErr()) {
       return res.status(500).json({
@@ -114,7 +131,7 @@ router.get(
   '/:guild_id/channels',
   enforce_policy(Policies.Common.bot_master_or_guild_master),
   async (req, res) => {
-    const guild_id = req.params.guild_id;
+    const guild_id = req.params.guild_id as string;
     const channels_res = await ipc_client.send_to_shard_having_guild(guild_id, 'fetch_channels', {
       guild_id,
     });
@@ -167,7 +184,7 @@ router.get(
   '/:guild_id/channel/:channel_id',
   enforce_policy(Policies.Common.bot_master_or_guild_master),
   async (req, res) => {
-    const { guild_id, channel_id } = req.params;
+    const { guild_id, channel_id } = req.params as Record<string, string>;
 
     const channel_res = await ipc_client.send_to_shard_having_guild<GuildChannel | null>(
       guild_id,
@@ -208,7 +225,7 @@ router.get(
   '/:guild_id/role/:role_id',
   enforce_policy(Policies.Common.bot_master_or_guild_master),
   async (req, res) => {
-    const { guild_id, role_id } = req.params;
+    const { guild_id, role_id } = req.params as Record<string, string>;
 
     const role_res = await ipc_client.send_to_shard_having_guild<GuildChannel | null>(
       guild_id,
@@ -242,7 +259,7 @@ router.get(
   '/:guild_id/roles',
   enforce_policy(Policies.Common.bot_master_or_guild_master),
   async (req, res) => {
-    const guild_id = req.params.guild_id;
+    const guild_id = req.params.guild_id as string;
     const roles_res = await ipc_client.send_to_shard_having_guild<Role[]>(guild_id, 'fetch_roles', {
       guild_id,
     });
@@ -263,7 +280,7 @@ router.post(
   '/:guild_id/settings',
   enforce_policy(Policies.Common.bot_master_or_guild_master),
   async (req, res) => {
-    const guild_id = req.params.guild_id;
+    const guild_id = req.params.guild_id as string;
     const body = settings_schema.safeParse(req.body);
 
     if (!body.success) {

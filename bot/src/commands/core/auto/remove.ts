@@ -4,7 +4,8 @@ import {
   ChatInputCommandInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { CommandError, RegistrationScope, SubCommand } from 'interfaces/Command';
+import { CommandError, RegistrationScope } from 'interfaces/BaseCommandInterface';
+import { type SubCommand } from 'interfaces/Command';
 import { err, ok, Result } from 'neverthrow';
 import { create_channel_link } from '../list';
 import { CommandContext } from 'utilities/command_context';

@@ -53,14 +53,20 @@ const Database = z.object({
 });
 
 const BucketStorage = z.object({
-  url: z.string().url(),
+  url: z.url(),
   secret_access_key: z.string(),
   access_key_id: z.string(),
 });
 
-const Config = z.object({
+const ZPaywall = z.object({
+  enabled: z.boolean(),
+  basic_sku: z.string(),
+  extended_sku: z.string(),
+});
+
+export const ZConfig = z.object({
   tokens: ConfigTokens,
-  paywall_enabled: z.boolean(),
+  paywall: ZPaywall,
   web: Web,
   database: Database,
   bucket_storage: BucketStorage,
@@ -71,7 +77,7 @@ const Config = z.object({
   style: Style,
 });
 
-export type ConfigType = z.infer<typeof Config>;
+export type ConfigType = z.infer<typeof ZConfig>;
 
 export function read_config(): Result<ConfigType, unknown> {
   if (!existsSync('./config.json5')) return err(`Config file not found`);
@@ -82,7 +88,7 @@ export function read_config(): Result<ConfigType, unknown> {
   if (typeof config_text.value != 'string') return err('faulty format on config file');
 
   const as_json = JSON5.parse(config_text.value);
-  const parsed = Config.safeParse(as_json);
+  const parsed = ZConfig.safeParse(as_json);
 
   if (parsed.success) {
     return ok(parsed.data);

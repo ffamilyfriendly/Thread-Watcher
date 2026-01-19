@@ -39,12 +39,12 @@ export const ZChannelData = z.object({
   is_suspended: z.coerce.boolean(),
 });
 
-export const ZChannelDataWithFilters = ZChannelData.merge(ZFilterData);
+export const ZChannelDataWithFilters = ZChannelData.extend(ZFilterData.shape);
 export type FilterData = z.output<typeof ZFilterData>;
 export type ChannelData = z.output<typeof ZChannelData>;
 export type ChannelDataWithFilters = z.output<typeof ZChannelDataWithFilters>;
 export const ZEditMonitor = ZChannelDataWithFilters.omit({
   id: true,
   server: true,
-});
+}).partial();
 export type EditMonitor = z.output<typeof ZEditMonitor>;
