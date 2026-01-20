@@ -185,7 +185,7 @@ async function run(
   interaction: GuildChatInteraction,
   ctx: CommandContext,
 ): Promise<Result<void, CommandError>> {
-  const parent = get_target(interaction);
+  const parent = await get_target(interaction);
   if (parent.isErr()) {
     return err(parent.error);
   }

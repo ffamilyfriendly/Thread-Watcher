@@ -1,4 +1,5 @@
 import { config } from '@providers/config';
+import { entitlement_service } from '@providers/services/entitlement_service';
 import { Channel, ChannelType, Guild, GuildBasedChannel } from 'discord.js';
 import { EntitlementsError, GuildChatInteraction } from 'interfaces/BaseCommandInterface';
 import { err, ok } from 'neverthrow';
@@ -20,12 +21,15 @@ export function check_channel_is_valid(
   return (ALLOWED_CHANNEL_TYPES as readonly ChannelType[]).includes(channel.type);
 }
 
-export function get_target(interaction: GuildChatInteraction) {
+export async function get_target(interaction: GuildChatInteraction) {
   let parent = interaction.options.getChannel('parent') || interaction.channel;
   const global = interaction.options.getBoolean('global');
 
-  if (global && interaction.entitlements.size == 0) {
-    return err(new EntitlementsError(config.paywall.basic_sku));
+  if (global) {
+    const has_sku = await entitlement_service.has_basic(interaction);
+    if (has_sku.isErr()) return err(has_sku.error);
+
+    if (!has_sku.value) return err(new EntitlementsError(config.paywall.basic_sku, 'global'));
   }
 
   let target: Guild | Channel;

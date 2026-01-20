@@ -1,22 +1,14 @@
 import { client } from '@providers/client';
+import { entitlement_service } from '@providers/services/entitlement_service';
 import { PrivateEvent } from 'interfaces/PrivateEvents';
-import { err, ok, ResultAsync } from 'neverthrow';
-import { map_err } from 'utilities/error';
+import { err, ok } from 'neverthrow';
 
 const event: PrivateEvent<{
   guild_id: string;
 }> = {
   event_name: 'get_entitlements',
   async event_callback({ guild_id }) {
-    if (!client.application) return err(new Error('Client not ready'));
-
-    const entitlements = await ResultAsync.fromPromise(
-      client.application.entitlements.fetch({
-        guild: guild_id,
-        excludeEnded: true,
-      }),
-      map_err,
-    );
+    const entitlements = await entitlement_service.fetch_entitlements_from_client(guild_id, client);
 
     if (entitlements.isErr()) return err(entitlements.error);
 

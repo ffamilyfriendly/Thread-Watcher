@@ -92,7 +92,7 @@ async function check_watched_and_bump(thread: ThreadChannel, l: Logger<unknown>)
 
 const event: Event<ThreadChannel, ThreadChannel> = {
   event_name: 'threadUpdate',
-  async event_callback(_old_thread, thread) {
+  async event_callback(old_thread, thread) {
     const l = logger.getSubLogger({ name: 'THREAD_UPDATE' });
 
     const audit = await ResultAsync.fromPromise(
@@ -134,9 +134,15 @@ const event: Event<ThreadChannel, ThreadChannel> = {
     }
 
     if (thread.archived && thread.unarchivable) {
-      const could_archive = await ResultAsync.fromPromise(thread.setArchived(false), (err) => err);
-      if (could_archive.isErr()) {
-        l.error(`Could not unarchive ${thread.id}:`, could_archive.error);
+      const could_unarchive = await ResultAsync.fromPromise(
+        thread.edit({
+          archived: false,
+          flags: old_thread.flags,
+        }),
+        (err) => err,
+      );
+      if (could_unarchive.isErr()) {
+        l.error(`Could not unarchive ${thread.id}:`, could_unarchive.error);
       }
     }
 

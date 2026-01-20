@@ -46,5 +46,19 @@
     "monitor_desc": "{{action}} monitoring threads in {{channel_link}}",
     "thread_watch_title": "Thread Watch Status Changed",
     "thread_watch_desc": "Thread {{channel_link}} was {{action}}"
+  },
+  "errors": {
+    "fatal": "Fatal Error",
+    "failed_without_clear_cause": "command failed without a clear cause.",
+    "permissions_err": {
+      "you": "you have",
+      "bot": "the bot has",
+      "description": "{{command_tag}} requires that {{target}} the {{permission}} permission."
+    },
+    "entitlement_err": {
+      "title": "Premium Feature Required",
+      "command_requires_sku": "The **{{command_tag}}** command is a premium feature. [Upgrade now]({{link}}) to unlock this and other advanced tools for your server.",
+      "command_option_requires_sku": "The **{{option_name}}** option is part of Thread-Watcher’s premium features. [Upgrade here]({{link}}) to access it."
+    }
   }
 }

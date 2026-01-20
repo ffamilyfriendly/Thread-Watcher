@@ -40,8 +40,11 @@ export class GenericCommandError extends Error {
 
 export class EntitlementsError extends Error {
   sku_id: string;
-  constructor(sku_id: string) {
-    super(`Command requires SKU ${sku_id}`);
+  option_name?: string;
+
+  constructor(sku_id: string, option?: string) {
+    super(`Proceeding requires SKU ${sku_id}`);
+    this.option_name = option;
     this.sku_id = sku_id;
   }
 }

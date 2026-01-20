@@ -32,9 +32,9 @@ export default class GuildService {
     return this.db.upsert_guild_info(guild_id, { left_at: new Date() });
   }
 
-  async set_guild_SKU(guild_id: string, SKU: string) {
+  async set_guild_SKU(guild_id: string, SKU: string | null) {
     this.r.del(guild_id);
-    return this.db.upsert_guild_info(guild_id, { granted_sku: SKU });
+    return this.db.upsert_guild_info(guild_id, { granted_SKU: SKU });
   }
 
   async nullify_left_at(guild_id: string) {

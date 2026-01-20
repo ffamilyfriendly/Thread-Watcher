@@ -10,16 +10,14 @@ import Logger from 'providers/logger';
 import Redis from 'providers/redis';
 import Database from 'providers/database';
 import Client from 'providers/client';
-
-const commands = new Collection<string, BaseCommand>();
+import { commands } from '@providers/commands';
+import { ipc_client } from '@providers/ipc/bot_ipc_client';
 
 const logger = Logger.with_name('bot');
 const config = Config.instance;
 const client = Client.instance;
 const database = Database.instance;
 const redis = Redis.instance;
-
-const ipc_client = new BotIpcClient(client);
 
 async function bootstrap() {
   initialize_i18n(logger);

@@ -10,7 +10,8 @@ import {
   Interaction,
   PermissionsBitField,
 } from 'discord.js';
-import { CommandError, PermissionsError } from 'interfaces/Command';
+import i18next from 'i18next';
+import { CommandError, EntitlementsError, PermissionsError } from 'interfaces/Command';
 
 function find_perm(permission: BigInt) {
   for (const perm of Object.keys(PermissionsBitField.Flags)) {
@@ -26,10 +27,12 @@ export function handle_error(
   interaction: ChatInputCommandInteraction,
   docs_slug: string | null = null,
 ) {
+  const t = (key: string, options?: { [key: string]: unknown }) =>
+    i18next.t(key, { lng: interaction.locale, ...options });
   logger.error(`error encountered while handling interaction "${interaction.id}"`, err);
 
   const embed = new EmbedBuilder({
-    title: '⚠️ Fatal Error',
+    title: `⚠️ ${t('errors.fatal')}`,
   });
   embed.setColor(config.style.error.colour as ColorResolvable);
 
@@ -39,20 +42,44 @@ export function handle_error(
     text: `interaction ID: ${interaction.id}`,
   });
 
+  const button_row = new ActionRowBuilder<ButtonBuilder>();
+  const command_tag = `</${interaction.commandName}:${interaction.commandId}>`;
   if (err instanceof PermissionsError) {
-    const target = err.whos_lackin === 'user' ? 'you have' : 'the bot has';
+    const target =
+      err.whos_lackin === 'user'
+        ? t('errors.permissions_err.you')
+        : t('errors.permissions_err.bot');
+
+    const permission = `\`${find_perm(err.missing_perm as bigint)}\``;
 
     embed.setDescription(
-      `</${interaction.commandName}:${interaction.commandId}> requires that ${target} the \`${find_perm(err.missing_perm as bigint)}\` permission.`,
+      t('errors.permissions_err.description', { command_tag, target, permission }),
     );
     doc_link = 'discord-permissions';
+  }
+  if (err instanceof EntitlementsError) {
+    embed.setTitle(t('errors.entitlement_err.title'));
+    embed.setColor(config.style.info.colour as ColorResolvable);
+    const link = `https://discord.com/discovery/applications/${config.clientID}/store/${err.sku_id}`;
+
+    const description = err.option_name
+      ? t('errors.entitlement_err.command_option_requires_sku', {
+          option_name: err.option_name,
+          link,
+        })
+      : t('errors.entitlement_err.command_requires_sku', { command_tag, link });
+    embed.setDescription(description);
+    // does not work without SKU registered:
+    //const sku_cta_button = new ButtonBuilder();
+    //sku_cta_button.setStyle(ButtonStyle.Premium);
+    //sku_cta_button.setSKUId(err.sku_id);
+    //button_row.addComponents(sku_cta_button);
   } else if ('message' in err && typeof err.message === 'string') {
     embed.setDescription(err.message);
   } else {
-    embed.setDescription(`command failed without a clear cause.`);
+    embed.setDescription(t('errors.permissions_err.failed_without_clear_cause'));
   }
 
-  const button_row = new ActionRowBuilder<ButtonBuilder>();
   const support_server_button = new ButtonBuilder();
   support_server_button.setStyle(ButtonStyle.Link);
   support_server_button.setURL('https://botsuite.co/join');
