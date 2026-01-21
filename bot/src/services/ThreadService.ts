@@ -101,12 +101,12 @@ export default class ThreadService {
     return await this.db.get_watched_threads_count(guild_id);
   }
 
-  async get_stale_threads() {
-    const data = await this.db.get_stale_threads();
+  get_stale_threads() {
+    return this.db.get_stale_threads();
+  }
 
-    if (data.isOk()) {
-      return ok(data.value);
-    } else return err(data.error);
+  get_stale_threads_for_guilds(guild_ids: string[]) {
+    return this.db.get_stale_threads_for_guilds(guild_ids);
   }
 
   async set_thread_watch_status(thread_id: string, is_watched: boolean) {

@@ -15,7 +15,7 @@ export default class GuildService {
   }
 
   async get_guild_info(guild_id: string) {
-    const cached = await this.r.get(guild_id, ZGuild);
+    const cached = await this.r.get_non_nullable(guild_id, ZGuild);
     // We want to return cached nulls as well for this
     if (cached.isOk()) return ok(cached.value);
 

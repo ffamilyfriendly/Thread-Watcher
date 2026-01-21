@@ -7,10 +7,12 @@ async function safe_get<TZodType extends z.ZodTypeAny>(
   redis: Redis,
   key: string,
   schema: TZodType,
+  null_returns_ok = true,
 ): Promise<Result<z.output<TZodType> | null, Error>> {
   const data = await ResultAsync.fromPromise(redis.get(key), map_err);
   if (data.isErr()) return err(data.error);
-  if (!data.value) return ok(null);
+  if (!data.value && null_returns_ok) return ok(null);
+  else if (!data.value) return err(new Error('redis returned null'));
 
   const parsed_json = Result.fromThrowable(() => JSON.parse(data.value!), map_err)();
   if (parsed_json.isErr()) return err(parsed_json.error);
@@ -51,6 +53,11 @@ export default class RedisWrapper {
   get<TZodType extends z.ZodTypeAny>(key: string | string[], schema: TZodType) {
     const k = this.get_key(key);
     return safe_get(this.redis, k, schema);
+  }
+
+  get_non_nullable<TZodType extends z.ZodTypeAny>(key: string | string[], schema: TZodType) {
+    const k = this.get_key(key);
+    return safe_get(this.redis, k, schema, false);
   }
 
   set<TZodType extends z.ZodTypeAny>(

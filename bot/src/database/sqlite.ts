@@ -25,7 +25,7 @@ const TABLE_CREATION_QUERIES = [
   'CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT NOT NULL, regex TEXT, role_whitelist TEXT, tags TEXT, is_suspended INTEGER DEFAULT 0)',
   'CREATE TABLE IF NOT EXISTS settings (setting_id TEXT, guild_id TEXT, setting_value TEXT, UNIQUE(setting_id, guild_id) ON CONFLICT REPLACE)',
   'CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY AUTOINCREMENT, error TEXT, command_name TEXT, exec_time_ms INTEGER, audit_type TEXT NOT NULL, guild_id TEXT NOT NULL, executor_id TEXT NOT NULL, target_id TEXT, old_value TEXT, new_value TEXT, reason TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)',
-  'CREATE TABLE IF NOT EXISTS guilds (guild_id INTEGER PRIMARY KEY, left_at TIMESTAMP, granted_SKU TEXT)',
+  'CREATE TABLE IF NOT EXISTS guilds (guild_id TEXT PRIMARY KEY, left_at TIMESTAMP, granted_SKU TEXT)',
 ];
 
 export default class Sqlite implements Database {
@@ -152,6 +152,18 @@ export default class Sqlite implements Database {
       'SELECT * FROM threads WHERE due_archive <= ? AND is_watched = 1',
       stale_thresh,
     );
+  }
+
+  async get_stale_threads_for_guilds(guild_ids: string[], buffer_in_ms = Sqlite.STALE_BUFFER_MS) {
+    const now = Date.now();
+    const stale_thresh = now + buffer_in_ms;
+    const query = `
+      SELECT * FROM threads
+      WHERE server IN (${guild_ids.map(() => '?').join(',')})
+      AND due_archive <= ?
+      AND is_watched = 1
+    `;
+    return this.query_all(ZThreadData, query, ...guild_ids, stale_thresh);
   }
 
   @with_error_handling
@@ -321,7 +333,7 @@ export default class Sqlite implements Database {
 
     this.db
       .prepare(sql)
-      .run(guild_id, data.left_at ? data.left_at.toISOString() : null, data.granted_sku ?? null);
+      .run(guild_id, data.left_at ? data.left_at.toISOString() : null, data.granted_SKU ?? null);
     return ok();
   }
 

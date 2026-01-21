@@ -32,6 +32,7 @@ interface CoreThread {
   get_threads_in_guild: (guild_id: string, watched: boolean) => DBResult<ThreadData[]>;
   get_watched_threads_count: (guild_id: string) => DBResult<number>;
   get_stale_threads: () => DBResult<ThreadData[]>;
+  get_stale_threads_for_guilds: (guild_ids: string[]) => DBResult<ThreadData[]>;
   count_watched_threads: () => DBResult<number>;
 }
 

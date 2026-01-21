@@ -8,7 +8,7 @@ const event: Event<Message> = {
   async event_callback(msg) {
     const l = logger.getSubLogger({ name: 'messageCreate' });
 
-    for (const mod of modules) {
+    for (const mod of await modules) {
       mod.on_message_create?.(msg, l).then((r) => {
         if (r.isErr()) {
           l.error(`Failed to run module '${mod.name}'`, r.error);

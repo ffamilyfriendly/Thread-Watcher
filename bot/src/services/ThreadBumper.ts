@@ -1,5 +1,5 @@
 import PQueue from 'p-queue';
-import { err, ok, ResultAsync } from 'neverthrow';
+import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { SETTINGS_KEYS } from './SettingService';
 import { map_err } from 'utilities/error';
 import { ThreadData } from '@watcher/shared';
@@ -88,10 +88,6 @@ export default class ThreadBumper {
    * Parameters:
    * - thread_data: ThreadData — minimal thread descriptor containing at least id and server/guild id.
    *
-   * Remarks:
-   * - **DOES NOT** set the new bump time within this function. That's handled within the event handlers (threadUpdate, messageCreate)\
-   *   This is because these handlers will update the thread's stale time anyhow and if we bump the thread via msg/editing those events will be taken care of automatically
-   *
    * Returns:
    * - A result-style value (ok()/err()) indicating success or carrying an error value describing the failure.
    */
@@ -127,12 +123,14 @@ export default class ThreadBumper {
 
     if (bump_behaviour === 'UNARCHIVE_ONLY') {
       this.l.silly('bump behaviour is unarchive_only.', thread.id);
+      thread_service.bump_thread_time(thread);
       return ok();
     }
 
     if (!thread.locked && thread.manageable) {
       const new_duration = thread.autoArchiveDuration === 10080 ? 4320 : 10080;
 
+      this.l.silly('current auto_archive_duration:', thread.autoArchiveDuration);
       const set_auto_archive_promise = thread.setAutoArchiveDuration(new_duration);
 
       this.l.silly('setting auto_archive_duration', new_duration, thread.id);
@@ -142,6 +140,8 @@ export default class ThreadBumper {
       );
       if (auto_archive_res.isErr())
         this.l.error(`could not bump thread w/ edit ${thread.id}`, auto_archive_res.error);
+
+      this.l.silly('new auto_archive_duration:', thread.autoArchiveDuration);
     } else if (thread.sendable && !thread.archived) {
       this.l.silly('bumping with message', thread.id);
       const send_bump_msg_res = await ResultAsync.fromPromise(
@@ -154,9 +154,27 @@ export default class ThreadBumper {
       this.l.silly('NO ACTION TAKEN', thread.id);
     }
 
-    this.l.silly('end of bump_thread', thread.id);
+    thread_service.bump_thread_time(thread);
     return ok();
   }
+
+  /*
+          const new_duration = thread.autoArchiveDuration === 10080 ? 4320 : 10080;
+
+      this.l.silly('current auto_archive_duration:', thread.autoArchiveDuration);
+      const set_auto_archive_promise = thread.setAutoArchiveDuration(new_duration);
+
+      this.l.silly('setting auto_archive_duration', new_duration, thread.id);
+      const auto_archive_res = await ResultAsync.fromPromise<unknown, Error>(
+        set_auto_archive_promise,
+        map_err,
+      );
+      if (auto_archive_res.isErr())
+        this.l.error(`could not bump thread w/ edit ${thread.id}`, auto_archive_res.error);
+
+      this.l.silly('new auto_archive_duration:', thread.autoArchiveDuration);
+  
+  */
 
   /**
    * bump_stale()
@@ -178,13 +196,12 @@ export default class ThreadBumper {
    * - Promise<void> on success (after scheduling jobs). If fetching stale threads fails, returns the error value from the fetch.
    */
   public async bump_stale() {
-    const stale = await thread_service.get_stale_threads();
+    const stale = await thread_service.get_stale_threads_for_guilds(
+      Array.from(d_client.guilds.cache.keys()),
+    );
     if (stale.isErr()) return stale.error;
 
-    // this is probably lousy lol.
-    const threads_to_bump = stale.value.filter(
-      (thread) => !this.queued_threads.has(thread.id) && d_client.guilds.cache.has(thread.server),
-    );
+    const threads_to_bump = stale.value.filter((thread) => !this.queued_threads.has(thread.id));
 
     if (threads_to_bump.length > 0)
       this.l.debug(`adding ${threads_to_bump.length} stale threads to queue...`);

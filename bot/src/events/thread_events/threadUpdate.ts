@@ -8,7 +8,7 @@ const event: Event<ThreadChannel, ThreadChannel> = {
   async event_callback(old_thread, new_thread) {
     const l = logger.getSubLogger({ name: 'threadUpdate' });
 
-    for (const mod of modules) {
+    for (const mod of await modules) {
       mod.on_thread_update?.(old_thread, new_thread, l).then((r) => {
         if (r.isErr()) {
           l.error(`Failed to run module '${mod.name}'`, r.error);
