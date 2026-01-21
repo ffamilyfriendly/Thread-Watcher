@@ -1,12 +1,20 @@
 import { ThreadChannel } from 'discord.js';
 import { Event } from 'interfaces/ClientEvent';
-import { check_should_be_watched } from './threadUpdate';
-import Logger from '@providers/logger';
+import { logger } from '@providers/logger';
+import { modules } from '@providers/modules';
 
 const event: Event<ThreadChannel> = {
   event_name: 'threadCreate',
   async event_callback(thread) {
-    check_should_be_watched(thread, Logger.child('THREAD_CREATE'));
+    const l = logger.getSubLogger({ name: 'threadCreate' });
+
+    for (const mod of modules) {
+      mod.on_thread_create?.(thread, l).then((r) => {
+        if (r.isErr()) {
+          l.error(`Failed to run module '${mod.name}'`, r.error);
+        }
+      });
+    }
   },
 };
 

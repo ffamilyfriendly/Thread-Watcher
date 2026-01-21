@@ -1,41 +1,20 @@
+import { logger } from '@providers/logger';
+import { modules } from '@providers/modules';
 import { Message } from 'discord.js';
 import { Event } from 'interfaces/ClientEvent';
-import { check_should_be_watched } from './thread_events/threadUpdate';
-
-import Logger from '@providers/logger';
-import ThreadService from '@providers/services/thread_service';
-import GuildService from '@providers/services/guild_service';
-
-const logger = Logger.child('message_create');
-const thread_service = ThreadService.instance;
-const guild_service = GuildService.instance;
-
-async function check_msg_should_bump_thread(msg: Message) {
-  if (!msg.guildId) return;
-
-  const guild_nullify_left_at = await guild_service.nullify_left_at(msg.guildId);
-  if (guild_nullify_left_at.isErr()) {
-    logger.error(`Could not unmark guild '${msg.guildId}' as left!`, guild_nullify_left_at.error);
-  }
-
-  if (!msg.channel.isThread()) return;
-
-  check_should_be_watched(msg.channel, logger);
-
-  const res_thread = (await thread_service.get_thread(msg.channelId)).match(
-    (value) => value,
-    (err_value) => {
-      logger.error('could not fetch thread from db: ', err_value);
-      return null;
-    },
-  );
-  if (res_thread) thread_service.bump_thread_time(msg.channel);
-}
 
 const event: Event<Message> = {
   event_name: 'messageCreate',
   async event_callback(msg) {
-    check_msg_should_bump_thread(msg);
+    const l = logger.getSubLogger({ name: 'messageCreate' });
+
+    for (const mod of modules) {
+      mod.on_message_create?.(msg, l).then((r) => {
+        if (r.isErr()) {
+          l.error(`Failed to run module '${mod.name}'`, r.error);
+        }
+      });
+    }
   },
 };
 

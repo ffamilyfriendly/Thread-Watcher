@@ -1,3 +1,4 @@
+import { entitlement_service } from '@providers/services/entitlement_service';
 import { EditMonitor, FilterData, ZChannelDataWithFilters } from '@watcher/shared';
 import { Channel } from 'discord.js';
 import { Database } from 'interfaces/Database';
