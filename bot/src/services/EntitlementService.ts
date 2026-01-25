@@ -134,4 +134,19 @@ export default class EntitlementService {
   async has_extended(v1: any, guild_id?: string) {
     return this.has_sku(config.paywall.extended_sku, v1, guild_id);
   }
+
+  async get_highest_sku(
+    v1: any,
+    guild_id?: string,
+  ): Promise<Result<'EXTENDED' | 'BASIC' | 'NONE', Error>> {
+    const has_extended = await this.has_extended(v1, guild_id);
+    if (has_extended.isErr()) return err(has_extended.error);
+    if (has_extended.value) return ok('EXTENDED');
+
+    const has_basic = await this.has_basic(v1, guild_id);
+    if (has_basic.isErr()) return err(has_basic.error);
+    if (has_basic.value) return ok('BASIC');
+
+    return ok('NONE');
+  }
 }

@@ -6,7 +6,8 @@ $colours: (
 	'primary': #1c2d69,
 	'secondary': #211a2e,
 	'error': #ef4444,
-	'success': #22c55e
+	'success': #22c55e,
+	'premium': #ffc34b
 );
 
 @function colour-variant($base, $i) {

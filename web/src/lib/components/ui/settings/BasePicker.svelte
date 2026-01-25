@@ -10,8 +10,9 @@
 		value?: string | string[] | null;
 		multiple?: boolean;
 		placeholder: string;
-		fetcher: (id: string) => Promise<Result<T, Error>> | Result<never, Error>;
+		fetcher?: (id: string) => Promise<Result<T, Error>> | Result<never, Error>;
 		render_item: Snippet<[T]>;
+		disabled?: boolean;
 	}
 
 	let {
@@ -20,7 +21,8 @@
 		multiple = false,
 		fetcher,
 		render_item,
-		placeholder
+		placeholder,
+		disabled = false
 	}: Props = $props();
 
 	const selected_ids = $derived(Array.isArray(value) ? value : value ? [value] : []);
@@ -82,7 +84,7 @@
 			(id) => !items.some((i) => i.id === id) && !fetched_items.some((i) => i.id === id)
 		);
 
-		if (missing.length > 0) {
+		if (missing.length > 0 && fetcher) {
 			missing.forEach(async (id) => {
 				const res = await fetcher(id);
 				if (res.isOk()) {
@@ -107,13 +109,15 @@
 				<p class="none">None selected</p>
 			{/each}
 		</div>
-		<button class={[btn_style.button]} onclick={() => (show_item_picker = !show_item_picker)}>
-			{#if show_item_picker}
-				<ChevronUp />
-			{:else}
-				<ChevronDown />
-			{/if}
-		</button>
+		{#if !disabled}
+			<button class={[btn_style.button]} onclick={() => (show_item_picker = !show_item_picker)}>
+				{#if show_item_picker}
+					<ChevronUp />
+				{:else}
+					<ChevronDown />
+				{/if}
+			</button>
+		{/if}
 	</div>
 
 	{#if show_item_picker}
@@ -140,12 +144,13 @@
 				{/each}
 			</div>
 
-			<hr />
-
-			<form onsubmit={handle_custom_submit} class="custom_id">
-				<input pattern={'\\d{17,21}'} placeholder="ID (Snowflake)" name="custom_item_id" />
-				<input value="Add" type="submit" />
-			</form>
+			{#if fetcher}
+				<hr />
+				<form onsubmit={handle_custom_submit} class="custom_id">
+					<input pattern={'\\d{17,21}'} placeholder="ID (Snowflake)" name="custom_item_id" />
+					<input value="Add" type="submit" />
+				</form>
+			{/if}
 		</div>
 	{/if}
 </div>

@@ -48,3 +48,11 @@ export enum ChannelTypes {
 	GUILD_FORUM = 15,
 	GUILD_MEDIA = 16
 }
+
+export const CAN_BE_MONITOR_TARGET = [
+	ChannelTypes.GUILD_TEXT,
+	ChannelTypes.GUILD_CATEGORY,
+	ChannelTypes.GUILD_ANNOUNCEMENT,
+	ChannelTypes.GUILD_FORUM,
+	ChannelTypes.GUILD_MEDIA
+];

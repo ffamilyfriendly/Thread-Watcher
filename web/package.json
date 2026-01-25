@@ -39,6 +39,7 @@
 		"@watcher/shared": "^1.0.0",
 		"ioredis": "^5.8.2",
 		"neverthrow": "^8.2.0",
+		"safe-regex": "^2.1.1",
 		"zod": "^4.3.4"
 	}
 }

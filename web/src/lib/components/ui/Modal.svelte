@@ -1,20 +1,22 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { blur, crossfade, fly } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 	import btn_style from '$lib/style/button.module.scss';
 
 	interface Props {
 		children: Snippet;
+		class_name?: string | string[];
 		title: string;
 		set_open: boolean;
 		buttons?: Snippet;
 	}
 
-	let { children, title, set_open = $bindable(), buttons }: Props = $props();
+	let { children, title, set_open = $bindable(), buttons, class_name }: Props = $props();
+	const other_class_names = $derived(Array.isArray(class_name) ? class_name : [class_name]);
 </script>
 
 <div transition:fly class="container">
-	<div class="modal">
+	<div class={['modal', ...other_class_names]}>
 		<div class="top_row">
 			<h3>{title}</h3>
 

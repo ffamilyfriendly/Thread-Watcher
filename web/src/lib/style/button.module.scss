@@ -1,7 +1,10 @@
 @use './colours.scss';
 
 .button {
-	display: block;
+	display: flex;
+	align-items: center;
+	font-size: 1rem;
+	gap: 0.5rem;
 	height: fit-content;
 	padding: 0.5rem 1rem 0.5rem 1rem;
 	text-align: center;
@@ -45,5 +48,18 @@
 
 	&:active {
 		background-color: var(--error-400);
+	}
+}
+
+.premium {
+	background-color: color-mix(in srgb, var(--premium-500) 25%, transparent);
+	color: var(--premium-900);
+
+	&:hover {
+		background-color: color-mix(in srgb, var(--premium-500) 50%, transparent);
+	}
+
+	&:active {
+		background-color: color-mix(in srgb, var(--premium-500) 10%, transparent);
 	}
 }

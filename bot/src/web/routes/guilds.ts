@@ -2,6 +2,7 @@ import { config } from '@providers/config';
 import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
 import { audit_service } from '@providers/services/audit_service';
 import { channel_service } from '@providers/services/channel_service';
+import { entitlement_service } from '@providers/services/entitlement_service';
 import { setting_service } from '@providers/services/setting_service';
 import { thread_service } from '@providers/services/thread_service';
 import { Entitlement, Guild, GuildChannel, Role } from 'discord.js';
@@ -47,9 +48,7 @@ router.get(
         channel_service.get_count_channels(guild_id),
         ipc_client.get_shard_from_guild_id(guild_id),
         setting_service.get_guild_settings(guild_id),
-        ipc_client.send_to_shard_having_guild<Entitlement[]>(guild_id, 'get_entitlements', {
-          guild_id,
-        }),
+        entitlement_service.get_highest_sku(ipc_client, guild_id),
         ipc_client.send_to_shard_having_guild<Guild>(guild_id, 'get_guild', {
           guild_id,
         }),

@@ -3,6 +3,17 @@ import { map_err } from '$lib/error_helper';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import type z from 'zod';
 
+export class APIError extends Error {
+	status_code: number;
+	raw_err: string;
+
+	constructor(message: string, raw_err: string, status_code = 500) {
+		super(message);
+		this.status_code = status_code;
+		this.raw_err = raw_err;
+	}
+}
+
 export function safe_fetch(input: string | URL | Request, init?: RequestInit) {
 	const _wrapped_fetch = Result.fromThrowable(fetch);
 	return _wrapped_fetch(input, init).match(
@@ -60,13 +71,13 @@ async function write_nice_error(req: Response) {
 	try {
 		const json = JSON.parse(body_text);
 		if (json && typeof json === 'object' && 'message' in json) {
-			return new Error(String(json.message));
+			return new APIError(json.message, body_text, req.status);
 		}
 	} catch {
-		return new Error(body_text.substring(0, 500) || req.statusText);
+		return new APIError(body_text.substring(0, 500) || req.statusText, body_text, req.status);
 	}
 
-	return new Error(req.statusText);
+	return new APIError(req.statusText, req.statusText, req.status);
 }
 
 export async function json_fetch<T>(

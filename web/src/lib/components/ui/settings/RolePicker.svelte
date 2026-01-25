@@ -10,9 +10,10 @@
 		roles: DiscordRole[];
 		value?: string | string[] | null;
 		multiple?: boolean;
+		disabled?: boolean;
 	}
 
-	let { roles, value = $bindable(), multiple = false }: Props = $props();
+	let { roles, value = $bindable(), multiple = false, disabled }: Props = $props();
 
 	function fetcher(role_id: string) {
 		const g_id = guild_state.guild_id;
@@ -30,7 +31,7 @@
 </script>
 
 {#if guild_state.guild_id}
-	<BasePicker {multiple} items={roles} bind:value {fetcher} placeholder="Search Roles">
+	<BasePicker {multiple} {disabled} items={roles} bind:value {fetcher} placeholder="Search Roles">
 		{#snippet render_item(role)}
 			<Role {role} />
 		{/snippet}

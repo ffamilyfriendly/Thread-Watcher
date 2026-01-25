@@ -5,32 +5,17 @@
 	import { onMount } from 'svelte';
 	import { guild_state } from '$lib/stores/guild.svelte';
 
-	let should_be_open = $state(false);
 	let { children, data } = $props();
 
 	$effect(() => {
 		guild_state.init(data.roles, data.channels, data.guild);
 	});
 
-	onMount(() => {
-		if (browser) {
-			const unsub = sidebar_open.subscribe((open) => {
-				should_be_open = open || window.innerWidth > 500;
-			});
-
-			const handle_resize = () => {
-				should_be_open = $sidebar_open || window.innerWidth > 500;
-			};
-
-			window.addEventListener('resize', handle_resize);
-
-			return () => {
-				unsub();
-				window.removeEventListener('resize', handle_resize);
-			};
-		}
-	});
+	let inner_width = $state(0);
+	let should_be_open = $derived($sidebar_open || inner_width > 500);
 </script>
+
+<svelte:window bind:innerWidth={inner_width} />
 
 <div class="container">
 	<NavBar open={should_be_open} />

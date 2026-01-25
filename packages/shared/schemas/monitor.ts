@@ -1,17 +1,17 @@
 import z from "zod";
 
+function str_to_arr(val: unknown) {
+  if (typeof val === "string") {
+    if (val.trim().length === 0) return [];
+    else return val.split(",");
+  }
+  return val;
+}
+
 export const ZFilterData = z.object({
-  tags: z
-    .preprocess(
-      (val) => (typeof val === "string" ? val.split(",") : val),
-      z.array(z.string()).nullish(),
-    )
-    .default([]),
+  tags: z.preprocess(str_to_arr, z.array(z.string()).nullish()).default([]),
   role_whitelist: z
-    .preprocess(
-      (val) => (typeof val === "string" ? val.split(",") : val),
-      z.array(z.string()).nullish(),
-    )
+    .preprocess(str_to_arr, z.array(z.string()).nullish())
     .default([]),
   regex: z
     .union([z.string(), z.instanceof(RegExp), z.null()])

@@ -45,7 +45,7 @@ export const ZGuildOverview = z.object({
 	monitors_active: z.number(),
 	owned_by_shard: z.number(),
 	guild_settings: ZMappedSettings,
-	entitlements: z.array(ZDiscordEntitlement),
+	entitlements: z.enum(['EXTENDED', 'BASIC', 'NONE']).default('NONE'),
 	guild: ZDJSGuild
 });
 
@@ -81,9 +81,11 @@ const ZDiscordTag = z.object({
 	id: z.string(),
 	name: z.string(),
 	moderated: z.boolean(),
-	emoji_id: z.string().nullish(),
-	emoji_name: z.string().nullish()
+	emoji: z.object({ id: z.string().nullish(), name: z.string().nullish() }).nullish()
 });
+
+export type DiscordTag = z.output<typeof ZDiscordTag>;
+
 export const ZDiscordChannel = z.object({
 	id: z.string(),
 	type: z.number(),
@@ -94,8 +96,8 @@ export const ZDiscordChannel = z.object({
 	owner_id: z.string().nullish(),
 	parentId: z.string().nullish(),
 	flags: z.number().nullish(),
-	available_tags: z.array(ZDiscordTag).nullish(),
-	applied_tags: z.array(ZDiscordTag).nullish()
+	availableTags: z.array(ZDiscordTag).nullish(),
+	appliedTags: z.array(ZDiscordTag).nullish()
 });
 export type DiscordChannel = z.output<typeof ZDiscordChannel>;
 

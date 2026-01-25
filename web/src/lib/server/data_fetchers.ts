@@ -2,7 +2,15 @@ import z from 'zod';
 import { json_fetch } from './api';
 import { err, ok, Result } from 'neverthrow';
 import { get_cached_or } from './cache';
-import { ZAuditLogResponse, ZDiscordChannel, ZDiscordRole, ZDiscordUser, ZGuildOverview, type ExpandedAuditLog, type GuildOverview } from '$lib/types/internal_api';
+import {
+	ZAuditLogResponse,
+	ZDiscordChannel,
+	ZDiscordRole,
+	ZDiscordUser,
+	ZGuildOverview,
+	type ExpandedAuditLog,
+	type GuildOverview
+} from '$lib/types/internal_api';
 import { ZAuditData, ZChannelDataWithFilters, type ChannelDataWithFilters } from '@watcher/shared';
 
 export async function fetch_audit_logs(
@@ -62,7 +70,6 @@ export async function fetch_extended_audit(
 
 	const users = new Set(audit_res.value.logs.map((audit) => audit.executor_id));
 
-	console.log('fetching users...');
 	const users_res = await fetch_discord_users(guild_id, user_id, Array.from(users));
 
 	if (users_res.isErr()) {

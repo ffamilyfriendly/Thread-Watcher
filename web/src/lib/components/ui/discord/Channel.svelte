@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { DiscordChannel } from '$lib/types/internal_api';
-	import { Group, Hash, Megaphone, Spool } from '@lucide/svelte';
+	import { Folder, Hash, Megaphone, MessagesSquare, Spool } from '@lucide/svelte';
 
 	interface Props {
 		channel: DiscordChannel;
@@ -13,12 +13,14 @@
 			case 0: // GUILD_TEXT
 				return Hash;
 			case 4: // GUILD_CATEGORY
-				return Group;
+				return Folder;
 			case 5: // GUILD_ANNOUNCEMENT
 				return Megaphone;
 			case 11: // PUBLIC_THREAD
 			case 12: // PRIVATE_THREAD
 				return Spool;
+			case 15:
+				return MessagesSquare;
 			default:
 				return Hash;
 		}
