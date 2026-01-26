@@ -67,10 +67,13 @@ async function write_nice_error(req: Response) {
 	const text_res = await ResultAsync.fromPromise(req.text(), map_err);
 	if (text_res.isErr()) return text_res.error;
 	const body_text = text_res.value;
-
 	try {
 		const json = JSON.parse(body_text);
 		if (json && typeof json === 'object' && 'message' in json) {
+			if ('_details' in json) {
+				console.error('details', json._details);
+			}
+
 			return new APIError(json.message, body_text, req.status);
 		}
 	} catch {

@@ -10,10 +10,12 @@
 	interface Props {
 		require_level: 'BASIC' | 'EXTENDED';
 		on_click: () => void;
-		children: Snippet;
+		children?: Snippet;
+		icon?: Snippet;
+		class_name?: string;
 	}
 
-	const { require_level, on_click, children }: Props = $props();
+	const { require_level, on_click, children, icon, class_name }: Props = $props();
 
 	let show_premium_modal = $state(false);
 
@@ -55,7 +57,18 @@
 	</Modal>
 {/if}
 
-<button onclick={on_click_wrapper} class={[btn_styles.button, btn_styles.premium]}>
+{#snippet icon_fallback()}
 	<Crown />
-	{@render children()}
+{/snippet}
+
+<button onclick={on_click_wrapper} class={[btn_styles.button, btn_styles.premium, class_name]}>
+	{#if icon}
+		{@render icon()}
+	{:else}
+		{@render icon_fallback()}
+	{/if}
+
+	{#if children}
+		{@render children()}
+	{/if}
 </button>

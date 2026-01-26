@@ -64,6 +64,13 @@ const ZPaywall = z.object({
   extended_sku: z.string(),
 });
 
+const ZAi = z.object({
+  mistral_key: z.string(),
+  agents: z.object({
+    regex_agent: z.string(),
+  }),
+});
+
 export const ZConfig = z.object({
   tokens: ConfigTokens,
   paywall: ZPaywall,
@@ -71,6 +78,7 @@ export const ZConfig = z.object({
   database: Database,
   bucket_storage: BucketStorage,
   clientID: z.string().nonempty('Client ID cannot be empty'),
+  ai: ZAi,
   owners: z.array(z.string()),
   devServer: z.string().nonempty(),
   logWebhook: z.string().url().startsWith('https://discord.com').optional(),

@@ -14,6 +14,7 @@
 	import Expandable from '../Expandable.svelte';
 	import Role from '../discord/Role.svelte';
 	import Emoji from '../discord/Emoji.svelte';
+	import { PUBLIC_SKU_STORE } from '$env/static/public';
 
 	interface Props {
 		monitor: ChannelDataWithFilters;
@@ -117,6 +118,10 @@
 	function get_tag(tag_id: string) {
 		return channel_obj?.availableTags?.find((t) => t.id == tag_id);
 	}
+
+	const is_paused = $derived(
+		monitor.id === monitor.server && guild_state.guild?.entitlements === 'NONE'
+	);
 </script>
 
 {#if show_delete_modal}
@@ -156,15 +161,16 @@
 		{:else}
 			<FallBackChannel channel_id={monitor.id} channel={channel_obj} />
 		{/if}
-		<div class="status {monitor.is_suspended ? 'suspended' : 'active'}">
+		<div class="status {monitor.is_suspended ? 'suspended' : 'active'} {is_paused ? 'paused' : ''}">
 			{#if monitor.is_suspended}
 				Suspended
-			{:else if guild_state.guild?.entitlements === 'NONE'}
+			{:else if is_paused}
 				<p>
 					Paused
 					<small
-						>Temporarily paused. Global monitors are a premium feature. <a href="/links/subscribe"
-							>View Tiers</a
+						>Temporarily paused. Global monitors are a premium feature. <a
+							data-premium="true"
+							href={PUBLIC_SKU_STORE}>View Tiers</a
 						>
 					</small>
 				</p>
@@ -175,39 +181,27 @@
 	</div>
 
 	<div class="container">
-		<div>
+		<div class="filter_container">
 			{#if active_filters.length === 0}
 				Will watch all threads
 			{:else}
 				{#each active_filters as filter, i}
-					{#if i > 0}
-						<p class="and">AND</p>
-					{/if}
+					<div class="filter_row_SCJ_MENTION_BEST_CULT">
+						<p class="name">{filter.id}</p>
 
-					{#if filter.id === 'regex'}
-						name matches <code>{monitor.regex?.source}</code>
-					{/if}
-
-					{#if filter.id === 'roles' && monitor.role_whitelist}
-						<p>
-							Where the creator has any of these roles
-							<Expandable initial_items={1} inline={true} items={monitor.role_whitelist}>
-								{#snippet render_item(id)}
-									{@const role = guild_state.get_role_sync(id)}
+						<div class="items">
+							{#if filter.id === 'regex'}
+								<code>{monitor.regex}</code>
+							{:else if filter.id === 'roles' && monitor.role_whitelist}
+								{#each monitor.role_whitelist as role_id}
+									{@const role = guild_state.get_role_sync(role_id)}
 									{#if role}
 										<Role {role} />
 									{/if}
-								{/snippet}
-							</Expandable>
-						</p>
-					{/if}
-
-					{#if filter.id === 'tags' && monitor.tags}
-						<p class="guy">
-							Where the post has any of these tags
-							<Expandable initial_items={1} inline={true} items={monitor.tags}>
-								{#snippet render_item(id)}
-									{@const tag = get_tag(id)}
+								{/each}
+							{:else if filter.id === 'tags' && monitor.tags}
+								{#each monitor.tags as tag_id}
+									{@const tag = get_tag(tag_id)}
 									{#if tag}
 										<div class="d_tag">
 											{#if tag.emoji}
@@ -216,10 +210,10 @@
 											{tag.name}
 										</div>
 									{/if}
-								{/snippet}
-							</Expandable>
-						</p>
-					{/if}
+								{/each}
+							{/if}
+						</div>
+					</div>
 				{/each}
 			{/if}
 		</div>
@@ -253,10 +247,45 @@
 		--padding: 1rem;
 	}
 
+	.filter_container {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
 	.guy {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
+	}
+
+	.filter_row_SCJ_MENTION_BEST_CULT {
+		--padding: 0.5rem;
+		overflow: hidden;
+		display: flex;
+		align-items: stretch;
+		gap: 0.5rem;
+		outline: 1px solid var(--secondary-500);
+		border-radius: 0.5rem;
+
+		.name {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			padding: var(--padding);
+			min-width: 75px;
+			background-color: var(--secondary-500);
+		}
+
+		.items {
+			align-items: center;
+			padding: var(--padding);
+			display: flex;
+			flex-wrap: wrap;
+			column-gap: 0.5rem;
+			row-gap: 0.25rem;
+			flex-grow: 1;
+		}
 	}
 
 	.d_tag {
@@ -334,6 +363,10 @@
 			small {
 				opacity: 0.5;
 			}
+		}
+
+		&.paused {
+			--status_clr: var(--premium-500);
 		}
 
 		&.suspended {

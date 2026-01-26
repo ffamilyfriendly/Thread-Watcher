@@ -4,6 +4,7 @@ import { PermissionResolvable } from 'discord.js';
 import { redis } from '@providers/redis';
 import { config } from '@providers/config';
 import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
+import { entitlement_service } from '@providers/services/entitlement_service';
 
 export type RequestWithUser = Request & { user_id: string };
 
@@ -188,6 +189,40 @@ export namespace Policies {
     return ok({
       passes: r.value,
       message: `'${req.user_id}' is not a bot master`,
+    });
+  }
+
+  export async function has_basic_entitlement(
+    req: RequestWithUser,
+  ): Promise<Result<PolicyResult, Error>> {
+    const guild_id = req.params.guild_id || req.body.guild_id;
+    if (!guild_id) {
+      return err(new Error(`route does not have a 'guild_id' parameter!`));
+    }
+
+    const result = await entitlement_service.has_basic(ipc_client, guild_id);
+    if (result.isErr()) return err(result.error);
+
+    return ok({
+      passes: result.value,
+      message: `'${req.user_id}' does not have the basic premium tier`,
+    });
+  }
+
+  export async function has_extended_entitlement(
+    req: RequestWithUser,
+  ): Promise<Result<PolicyResult, Error>> {
+    const guild_id = req.params.guild_id || req.body.guild_id;
+    if (!guild_id) {
+      return err(new Error(`route does not have a 'guild_id' parameter!`));
+    }
+
+    const result = await entitlement_service.has_extended(ipc_client, guild_id);
+    if (result.isErr()) return err(result.error);
+
+    return ok({
+      passes: result.value,
+      message: `'${req.user_id}' does not have the basic premium tier`,
     });
   }
 

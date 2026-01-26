@@ -3,6 +3,7 @@
 .button {
 	display: flex;
 	align-items: center;
+	justify-content: center;
 	font-size: 1rem;
 	gap: 0.5rem;
 	height: fit-content;
@@ -61,5 +62,17 @@
 
 	&:active {
 		background-color: color-mix(in srgb, var(--premium-500) 10%, transparent);
+	}
+}
+
+.topgg {
+	background-color: var(--topgg-500);
+
+	&:hover {
+		background-color: var(--topgg-600);
+	}
+
+	&:active {
+		background-color: var(--topgg-400);
 	}
 }

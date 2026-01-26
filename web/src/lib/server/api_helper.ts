@@ -38,7 +38,10 @@ export async function with_schema_auth<T>(
 	const body = await request.json();
 	const parsed = schema.safeParse(body);
 	if (!parsed.success)
-		return json({ code: 400, message: 'malformed request body' }, { status: 400 });
+		return json(
+			{ code: 400, message: 'malformed request body', issues: parsed.error },
+			{ status: 400 }
+		);
 
 	return with_api_auth({ locals, request }, parsed.data, handler);
 }

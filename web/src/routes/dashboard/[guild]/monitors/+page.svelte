@@ -22,24 +22,32 @@
 
 	let create_monitors_modal = $state(false);
 	let monitor_configuration = $state<Omit<ChannelDataWithFilters, 'is_suspended'>>();
-	function start_monitor_process(id: string) {
+	function start_monitor_process(id?: string) {
 		create_monitors_modal = true;
 
-		monitor_configuration = {
-			id: id,
-			server: guild_state.guild_id,
-			tags: null,
-			role_whitelist: null,
-			regex: undefined
-		};
+		if (id) {
+			monitor_configuration = {
+				id: id,
+				server: guild_state.guild_id,
+				tags: null,
+				role_whitelist: null,
+				regex: undefined
+			};
+		}
 	}
 
 	async function create_new_monitor() {
 		if (!monitor_configuration) return;
 
+		// DOing this just to ensure our serializers are attached
+		const safe_parse = ZChannelDataWithFilters.safeParse(monitor_configuration);
+		if (!safe_parse.success) {
+			return add_toast_from_error(safe_parse.error);
+		}
+
 		const res = await safe_fetch('/api/monitor', {
 			method: 'POST',
-			body: JSON.stringify(monitor_configuration)
+			body: JSON.stringify(safe_parse.data)
 		});
 
 		if (res.isErr()) {
@@ -56,14 +64,34 @@
 	}
 </script>
 
-{#if create_monitors_modal && monitor_configuration}
+{#if create_monitors_modal}
+	{@const show_advanced = !!monitor_configuration}
 	<Modal bind:set_open={create_monitors_modal} title="Create Monitor">
 		{#snippet buttons()}
-			<button class={[btn_styles.button, btn_styles.primary]} onclick={create_new_monitor}>
-				Create
-			</button>
+			{#if show_advanced}
+				<button class={[btn_styles.button, btn_styles.primary]} onclick={create_new_monitor}>
+					Create
+				</button>
+			{:else}
+				<button
+					disabled={!selected_channel}
+					class={[btn_styles.button, btn_styles.primary]}
+					onclick={() => start_monitor_process(selected_channel)}
+				>
+					Select Channel
+				</button>
+			{/if}
 		{/snippet}
-		<MonitorConfiguration data={monitor_configuration} />
+
+		{#if show_advanced}
+			<MonitorConfiguration data={monitor_configuration!} />
+		{:else}
+			<ChannelPicker
+				guild_id={guild_state.guild_id}
+				channels={allowed_new_targets}
+				bind:value={selected_channel}
+			/>
+		{/if}
 	</Modal>
 {/if}
 
@@ -71,28 +99,10 @@
 	<PremiumButton require_level="BASIC" on_click={() => start_monitor_process(guild_state.guild_id)}
 		>Create Server-Wide</PremiumButton
 	>
-	<div class="create_new_channel">
-		<ChannelPicker
-			only_with_types={CAN_BE_MONITOR_TARGET}
-			bind:value={selected_channel}
-			guild_id={guild_state.guild_id}
-			channels={allowed_new_targets}
-		/>
-
-		<button
-			disabled={!selected_channel}
-			class={[btn_styles.button, btn_styles.primary]}
-			onclick={() => start_monitor_process(selected_channel!)}
-		>
-			<Eye />
-			{#if selected_channel}
-				Create in
-				<FallBackChannel channel_id={selected_channel} />
-			{:else}
-				Please select a channel
-			{/if}
-		</button>
-	</div>
+	<button class={[btn_styles.button, btn_styles.primary]} onclick={() => start_monitor_process()}>
+		<Eye />
+		Create Monitor
+	</button>
 </div>
 
 <h2>Active Monitors</h2>

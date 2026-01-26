@@ -8,6 +8,14 @@ function str_to_arr(val: unknown) {
   return val;
 }
 
+function attach_regex_serialise(r: RegExp) {
+  (r as any).toJSON = function () {
+    return this.source;
+  };
+
+  return r;
+}
+
 export const ZFilterData = z.object({
   tags: z.preprocess(str_to_arr, z.array(z.string()).nullish()).default([]),
   role_whitelist: z
@@ -18,14 +26,12 @@ export const ZFilterData = z.object({
     .default(null)
     .transform((val) => {
       if (!val) return undefined;
-      if (val instanceof RegExp) return val;
+      if (val instanceof RegExp) return attach_regex_serialise(val);
 
       try {
         const reg = new RegExp(val.trim());
 
-        (reg as any).toJSON = function () {
-          return this.source;
-        };
+        attach_regex_serialise(reg);
         return reg;
       } catch {
         return undefined;

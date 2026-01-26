@@ -35,6 +35,14 @@ body {
 	min-height: 100vh;
 }
 
+a {
+	color: #818cf8;
+}
+
+a[data-premium='true'] {
+	color: var(--premium-500);
+}
+
 @mixin atkinson($weight, $italic: false) {
 	font-family: 'Atkinson Hyperlegible Next', sans-serif;
 	font-optical-sizing: auto;

@@ -323,17 +323,27 @@ export default class Sqlite implements Database {
 
   @with_error_handling
   async upsert_guild_info(guild_id: string, data: Omit<Guild, 'guild_id'>) {
-    const sql = `
-    INSERT INTO guilds (guild_id, left_at, granted_SKU)
-    VALUES (?, ?, ?)
-    ON CONFLICT(guild_id) DO UPDATE SET
-      left_at = excluded.left_at,
-      granted_SKU = COALESCE(excluded.granted_SKU, guilds.granted_SKU)
-  `;
+    const fields = [];
+    const params: Record<string, any> = {};
+    params['$guild_id'] = guild_id;
 
-    this.db
-      .prepare(sql)
-      .run(guild_id, data.left_at ? data.left_at.toISOString() : null, data.granted_SKU ?? null);
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        fields.push(`${key} = $${key}`);
+        params['$' + key] = value;
+      }
+    }
+
+    const sql = `
+      UPDATE 
+        guilds
+      SET
+        ${fields.join(',')}
+      WHERE
+        guild_id = $guild_id
+    `;
+
+    this.db.prepare(sql).run(params);
     return ok();
   }
 

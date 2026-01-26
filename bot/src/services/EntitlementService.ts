@@ -26,6 +26,11 @@ export default class EntitlementService {
     this.r = new RedisWrapper(redis, 60, 'entitlement');
   }
 
+  async get_topgg_vote_perk(guild_id: string) {
+    return this.r.get([guild_id, 'topgg'], z.boolean());
+    //`entitlement:guild_id:topgg`
+  }
+
   async get_db_granted_sku(guild_id: string) {
     const db_res = await guild_service.get_guild_info(guild_id);
     if (db_res.isErr()) return err(db_res.error);
@@ -90,6 +95,13 @@ export default class EntitlementService {
       });
       return ok(v);
     };
+
+    const topgg_res = await this.get_topgg_vote_perk(gid);
+    if (topgg_res.isOk() && topgg_res.value && sku_id === config.paywall.basic_sku) {
+      alright(true);
+    } else {
+      console.log('topgg', topgg_res);
+    }
 
     const cache = await this.r.get([gid, sku_id], z.boolean());
     if (cache.isErr()) {
