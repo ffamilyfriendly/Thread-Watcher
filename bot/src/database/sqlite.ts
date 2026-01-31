@@ -24,8 +24,8 @@ const TABLE_CREATION_QUERIES = [
   'CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT NOT NULL, parent_channel_id TEXT, due_archive DATE, is_watched INTEGER, managed_by INTEGER)',
   'CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT NOT NULL, regex TEXT, role_whitelist TEXT, tags TEXT, is_suspended INTEGER DEFAULT 0)',
   'CREATE TABLE IF NOT EXISTS settings (setting_id TEXT, guild_id TEXT, setting_value TEXT, UNIQUE(setting_id, guild_id) ON CONFLICT REPLACE)',
-  'CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY AUTOINCREMENT, error TEXT, command_name TEXT, exec_time_ms INTEGER, audit_type TEXT NOT NULL, guild_id TEXT NOT NULL, executor_id TEXT NOT NULL, target_id TEXT, old_value TEXT, new_value TEXT, reason TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)',
-  'CREATE TABLE IF NOT EXISTS guilds (guild_id TEXT PRIMARY KEY, left_at TIMESTAMP, granted_SKU TEXT)',
+  'CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id TEXT NOT NULL, executor_id TEXT NOT NULL, data TEXT NOT NULL, reason TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)',
+  'CREATE TABLE IF NOT EXISTS guilds (guild_id TEXT PRIMARY KEY, left_at TIMESTAMP, granted_SKU TEXT, monthly_tokens NUMBER, persistent_tokens NUMBER, monthly_tokens_last_granted TIMESTAMP)',
 ];
 
 export default class Sqlite implements Database {
@@ -261,24 +261,14 @@ export default class Sqlite implements Database {
     );
   }
 
+  /*
+  id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id TEXT NOT NULL, executor_id TEXT NOT NULL, data TEXT NOT NULL, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+  */
   @with_error_handling
   async insert_audit_log(log: Omit<AuditData, 'id' | 'timestamp'>) {
     this.db
-      .prepare(
-        'INSERT INTO audit(audit_type, guild_id, executor_id, target_id, old_value, new_value, reason, error, exec_time_ms, command_name) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      )
-      .run(
-        log.audit_type,
-        log.guild_id,
-        log.executor_id,
-        log.target_id ?? null,
-        log.old_value ?? null,
-        log.new_value ?? null,
-        log.reason ?? null,
-        log.error ?? null,
-        log.exec_time_ms ?? null,
-        log.command_name ?? null,
-      );
+      .prepare('INSERT INTO audit(guild_id, executor_id, data, reason) VALUES(?, ?, ?, ?)')
+      .run(log.guild_id, log.executor_id, JSON.stringify(log.data), log.reason ?? null);
     return ok();
   }
 

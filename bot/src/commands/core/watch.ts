@@ -10,8 +10,9 @@ import {
 
 import { CommandError, RegistrationScope } from 'interfaces/BaseCommandInterface';
 import { type Command } from 'interfaces/Command';
+import { DatabaseError } from 'interfaces/Database';
 import { err, Result } from 'neverthrow';
-import { AuditType } from 'services/AuditService';
+import { AuditType, PartialAuditObject } from 'services/AuditService';
 import { CommandContext } from 'utilities/command_context';
 
 async function run(
@@ -31,15 +32,22 @@ async function run(
   } else {
     const audit_type: AuditType = result.value ? 'THREAD_WATCHED' : 'THREAD_UNWATCHED';
 
-    const log = await audit_service.log_event(
-      audit_type,
-      interaction.guildId!,
-      interaction.user.id,
-      {
-        command_name: interaction.commandName,
-        target_id: thread.id,
-      },
-    );
+    let log: Result<PartialAuditObject, DatabaseError>;
+    if (result.value) {
+      log = await audit_service.log_thread_watch(
+        thread.id,
+        thread.guildId,
+        interaction.user.id,
+        '',
+      );
+    } else {
+      log = await audit_service.log_thread_unwatch(
+        thread.id,
+        thread.guildId,
+        interaction.user.id,
+        '',
+      );
+    }
 
     if (log.isErr()) return ctx.err(log.error);
 

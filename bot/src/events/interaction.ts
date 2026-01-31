@@ -95,7 +95,7 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
 
   let command = commands.get(interaction.commandName);
   const audit_builder = audit_service.get_builder_from_command_interaction(interaction);
-  audit_builder.with_timestamp();
+  audit_builder.set_cmd_args(interaction);
   const handle_err = audit_builder.bind_err_func(handle_error);
 
   if (!command) {

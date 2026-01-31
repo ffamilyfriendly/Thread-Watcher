@@ -70,18 +70,24 @@ export async function check_should_be_watched(thread: ThreadChannel, l: Logger<u
   if (should_be_watched.value) {
     const watch_res = await thread_service.watch_thread(thread, monitor.id);
     if (watch_res.isErr()) return err(map_err(watch_res.error));
-    audit_service.log_event('THREAD_WATCHED', thread.guildId, client.user?.id!, {
-      target_id: thread.id,
-      reason: 'thread fullfills filters of monitor!',
-    });
+    audit_service.log_thread_watch(
+      thread.id,
+      thread.guildId,
+      client.user?.id!,
+      `Thread fullfills monitor filters!`,
+      monitor.id,
+    );
     l.info(`watched ${thread.id}`);
   } else {
     const unwatch_res = await thread_service.unwatch_thread(thread);
     if (unwatch_res.isErr()) return err(map_err(unwatch_res.error));
-    audit_service.log_event('THREAD_UNWATCHED', thread.guildId, client.user?.id!, {
-      target_id: thread.id,
-      reason: 'thread no longer fullfills monitor filters of monitor',
-    });
+    audit_service.log_thread_unwatch(
+      thread.id,
+      thread.guildId,
+      client.user?.id!,
+      `Thread no longer fullfills monitor filters!`,
+      monitor.id,
+    );
   }
 
   return ok();
@@ -145,14 +151,11 @@ async function on_thread_update(old: ThreadChannel, thread: ThreadChannel, l: Lo
       l.error('could not unwatch thread');
       return err(map_err(unwatch_res.error));
     }
-    const unwatch_event = audit_service.log_event(
-      'THREAD_UNWATCHED',
-      thread.guildId!,
-      audit_entry?.executorId ?? 'UNKNOWN',
-      {
-        target_id: thread.id,
-        reason: 'thread was manually closed',
-      },
+    const unwatch_event = audit_service.log_thread_unwatch(
+      thread.id,
+      thread.guildId,
+      audit_entry?.executorId ?? 'unknown',
+      'manual archival',
     );
 
     try_log(unwatch_event, l);
@@ -192,10 +195,12 @@ async function on_thread_delete(thread: ThreadChannel, l: Logger<unknown>) {
   }
 
   if (changes.value != 0) {
-    audit_service.log_event('THREAD_UNWATCHED', thread.guildId!, '@self', {
-      target_id: thread.id,
-      reason: 'Thread was deleted',
-    });
+    audit_service.log_thread_unwatch(
+      thread.id,
+      thread.guildId,
+      client.user?.id!,
+      `Thread was deleted`,
+    );
   }
 
   return ok();

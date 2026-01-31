@@ -30,15 +30,11 @@ async function handle_execution(state: State, interaction: Interaction, context:
     return state._ctx.err(map_err(did_work.error));
   }
 
-  const audit_res = await audit_service.log_event(
-    'CHANNEL_MONITOR_START',
+  const audit_res = await audit_service.log_monitor_added(
+    state.target_channel.id,
     interaction.guildId!,
     interaction.user.id,
-    {
-      reason: JSON.stringify(state.filters),
-      command_name: 'auto add',
-      target_id: state.target_channel.id,
-    },
+    state.filters,
   );
 
   if (audit_res.isErr()) return state._ctx.err(audit_res.error);

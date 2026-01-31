@@ -22,14 +22,10 @@ async function run(
 
   if (res.isErr()) return err(res.error);
 
-  const log = await audit_service.log_event(
-    'CHANNEL_MONITOR_END',
-    interaction.guildId!,
+  const log = await audit_service.log_monitor_removed(
+    target.id,
     interaction.user.id,
-    {
-      command_name: 'auto remove',
-      target_id: target.id,
-    },
+    interaction.guildId!,
   );
 
   if (log.isErr()) return ctx.err(log.error);

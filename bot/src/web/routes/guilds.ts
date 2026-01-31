@@ -1,5 +1,6 @@
 import { config } from '@providers/config';
 import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
+import { logger } from '@providers/logger';
 import { audit_service } from '@providers/services/audit_service';
 import { channel_service } from '@providers/services/channel_service';
 import { entitlement_service } from '@providers/services/entitlement_service';
@@ -113,6 +114,7 @@ router.get(
     );
 
     if (audit_logs.isErr()) {
+      logger.error('could not get audit logs', audit_logs.error);
       return res.status(500).json({
         code: 500,
         message: 'something went wrong',
@@ -322,11 +324,13 @@ router.post(
       const old_value = old_values[key];
       if (typeof old_value != 'string') continue;
 
-      const audit_res = await audit_service.log_event('CONFIG_UPDATE', guild_id, req.user_id!, {
-        new_value: adapter.display_value(value as string),
-        old_value: adapter.display_value(old_value),
-        reason: key,
-      });
+      const audit_res = await audit_service.log_config_update(
+        req.user_id!,
+        guild_id,
+        key,
+        adapter.display_value(old_value),
+        adapter.display_value(value as string),
+      );
 
       if (audit_res.isOk()) {
         ipc_client.send_to_shard_having_guild(guild_id, 'audit_log', audit_res.value);

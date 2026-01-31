@@ -99,8 +99,6 @@ export default class EntitlementService {
     const topgg_res = await this.get_topgg_vote_perk(gid);
     if (topgg_res.isOk() && topgg_res.value && sku_id === config.paywall.basic_sku) {
       alright(true);
-    } else {
-      console.log('topgg', topgg_res);
     }
 
     const cache = await this.r.get([gid, sku_id], z.boolean());

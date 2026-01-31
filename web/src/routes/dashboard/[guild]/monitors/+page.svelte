@@ -96,9 +96,9 @@
 {/if}
 
 <div class="btn_row">
-	<PremiumButton require_level="BASIC" on_click={() => start_monitor_process(guild_state.guild_id)}
-		>Create Server-Wide</PremiumButton
-	>
+	<PremiumButton require_level="BASIC" on_click={() => start_monitor_process(guild_state.guild_id)}>
+		Create Server-Wide
+	</PremiumButton>
 	<button class={[btn_styles.button, btn_styles.primary]} onclick={() => start_monitor_process()}>
 		<Eye />
 		Create Monitor

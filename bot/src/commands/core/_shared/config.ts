@@ -61,11 +61,13 @@ export async function handle_apply_callback<T extends SettingValue>(
     return ctx.err(setting_result.error);
   }
 
-  const log = await audit_service.log_event('CONFIG_UPDATE', response.guildId, response.user.id, {
-    old_value: setting.adapter.display_value(state.old_value),
-    new_value: setting.adapter.display_value(state.value),
-    reason: setting.key,
-  });
+  const log = await audit_service.log_config_update(
+    response.user.id,
+    response.guildId,
+    setting.key,
+    state.old_value,
+    state.value,
+  );
 
   if (log.isErr()) return ctx.err(log.error);
 

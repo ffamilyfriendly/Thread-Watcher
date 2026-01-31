@@ -23,7 +23,7 @@
     {
       "label": "Run Web",
       "type": "shell",
-      "command": "npm run dev -w web",
+      "command": "npm run dev -w web -- --host",
       "isBackground": true,
       "icon": { "id": "server", "color": "terminal.ansiYellow" },
       "presentation": {

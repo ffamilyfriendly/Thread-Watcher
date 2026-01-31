@@ -7,6 +7,7 @@ import {
 	ZDiscordChannel,
 	ZDiscordRole,
 	ZDiscordUser,
+	ZExpandedAuditLog,
 	ZGuildOverview,
 	type ExpandedAuditLog,
 	type GuildOverview
@@ -53,7 +54,7 @@ export async function fetch_discord_users(guild_id: string, user_id: string, use
 
 export const ZExtendedResult = z.object({
 	next_cursor: z.number().nullish(),
-	logs: z.array(ZAuditData)
+	logs: z.array(ZExpandedAuditLog)
 });
 export type ExtendedResult = z.output<typeof ZExtendedResult>;
 

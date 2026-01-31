@@ -7,7 +7,7 @@ const ZTopggWebhookSchema = z.object({
 	bot: z.string(),
 	user: z.string(),
 	type: z.enum(['upvote', 'test']),
-	isWeekend: z.boolean(),
+	isWeekend: z.boolean().default(false),
 	query: z.string().nullish()
 });
 
@@ -31,6 +31,7 @@ export async function POST({ request }) {
 	const raw_body = await request.json();
 	const parsed_body = ZTopggWebhookSchema.safeParse(raw_body);
 	if (!parsed_body.success) {
+		console.log('BAD BODY', raw_body);
 		return json(
 			{
 				code: 400,

@@ -107,13 +107,6 @@ const ACTION_AS_TEXT_LOOKUP_TABLE = {
 
 async function handle_execution(state: State, interaction: Interaction, context: ExecutionContext) {
   let threads_actioned = 0;
-
-  const builder = audit_service
-    .get_builder(interaction.guildId!, interaction.user.id, 'BATCH_ACTION')
-    .with_timestamp()
-    .set_reason(context.action)
-    .set_target_ids(state.threads);
-
   for (const thread of state.threads) {
     const should_be_actioned = await ThreadService.should_be_watched(client, thread, state.filters);
     if (!should_be_actioned) continue;
@@ -133,7 +126,12 @@ async function handle_execution(state: State, interaction: Interaction, context:
     }
   }
 
-  const log = await builder.commit();
+  const log = await audit_service.log_batch_action(
+    interaction.guildId!,
+    interaction.user.id,
+    state.threads.map((c) => c.id),
+    context.action,
+  );
 
   if (log.isErr()) return state._ctx.err(log.error);
   const logged_events: PartialAuditObject[] = [log.value];
@@ -144,15 +142,11 @@ async function handle_execution(state: State, interaction: Interaction, context:
       map_err,
     );
 
-    const channel_monitor_log = await audit_service.log_event(
-      'CHANNEL_MONITOR_START',
+    const channel_monitor_log = await audit_service.log_monitor_added(
+      state.target_channel.id,
       interaction.guildId!,
       interaction.user.id,
-      {
-        target_id: state.target_channel.id,
-        reason: JSON.stringify(state.filters),
-        command_name: interaction.isCommand() ? interaction.commandName : 'batch',
-      },
+      state.filters,
     );
 
     if (channel_monitor_log.isErr()) return state._ctx.err(channel_monitor_log.error);
