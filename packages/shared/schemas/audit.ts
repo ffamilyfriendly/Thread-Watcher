@@ -73,4 +73,9 @@ export const ZAuditData = z.object({
   }, ZAuditTypes),
 });
 
+export type NarrowedLog<
+  T extends AuditData["data"]["audit_type"],
+  BaseType = AuditData,
+> = BaseType & { data: Extract<AuditData["data"], { audit_type: T }> };
+
 export type AuditData = z.output<typeof ZAuditData>;

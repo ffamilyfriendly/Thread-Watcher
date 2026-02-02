@@ -18,6 +18,10 @@
 	transition: 0.2s ease-out;
 }
 
+.inline {
+	display: inline-flex;
+}
+
 .button:disabled {
 	filter: grayscale(0.7);
 	cursor: not-allowed;

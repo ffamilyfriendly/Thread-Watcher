@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { ZAiRegexResponse, ZChannelDataWithFilters, ZEditMonitor } from '@watcher/shared';
+import { ZAiRegexResponse, ZMonitor, ZEditMonitor } from '@watcher/shared';
 import { RouteFile } from 'interfaces/Web';
 import { enforce_policy } from 'web/auth/auth';
 import { Policies } from 'web/auth/policies';
@@ -24,7 +24,7 @@ router.get(
     if (typeof guild_id !== 'string')
       return res.status(500).json({ message: 'should never happen', code: 500 });
 
-    const monitors = await channel_service.get_channels(guild_id);
+    const monitors = await channel_service.get_monitors(guild_id);
 
     if (monitors.isErr()) {
       console.log(monitors.error);
@@ -39,12 +39,33 @@ router.get(
   },
 );
 
+router.get(
+  '/:guild_id/monitor/:monitor_id',
+  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  async (req, res) => {
+    //const guild_id = req.params.guild_id as string;
+    const monitor_id = req.params.monitor_id as string;
+
+    const monitor = await channel_service.get_monitor(monitor_id);
+
+    if (monitor.isErr()) {
+      return res.status(500).json({
+        code: 500,
+        message: 'could not get monitor',
+        _details: monitor.error,
+      });
+    }
+
+    res.json(monitor.value);
+  },
+);
+
 router.post(
   '/:guild_id/monitors',
   enforce_policy(Policies.Common.bot_master_or_guild_master),
   async (req, res) => {
     const guild_id = req.params.guild_id as string;
-    const parsed_monitor = ZChannelDataWithFilters.omit({ is_suspended: true }).safeParse(req.body);
+    const parsed_monitor = ZMonitor.omit({ is_suspended: true }).safeParse(req.body);
 
     if (!parsed_monitor.success) {
       return res.status(400).json({
@@ -58,7 +79,7 @@ router.post(
 
     // if monitor id is same as server this is a server wide monitor
     // which requires the BASIC premium tier
-    if (monitor.id === monitor.server) {
+    if (monitor.target_id === monitor.guild_id) {
       const entitled_res = await entitlement_service.has_basic(ipc_client, guild_id);
       if (entitled_res.isErr()) {
         return res.status(500).json({
@@ -76,10 +97,10 @@ router.post(
       }
     }
 
-    return (await channel_service.add_channel(monitor.id, monitor.server, monitor)).match(
+    return (await channel_service.add_monitor(monitor.target_id, monitor.guild_id, monitor)).match(
       (_ok_val) => {
         audit_service
-          .log_monitor_added(monitor.id, monitor.server, req.user_id!, monitor)
+          .log_monitor_added(monitor.target_id, monitor.guild_id, req.user_id!, monitor)
           .then((r) => {
             if (r.isErr()) logger.error('could not audit monitor creation', r.error);
           });
@@ -226,7 +247,7 @@ router.delete(
       if (res.isErr()) logger.error('could not add audit log thing', res.error);
     });
 
-    return (await channel_service.remove_channel(monitor_id)).match(
+    return (await channel_service.remove_monitor(monitor_id)).match(
       (_ok) =>
         res.status(200).json({
           code: 200,

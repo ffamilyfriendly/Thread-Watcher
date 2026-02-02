@@ -138,7 +138,7 @@ async function handle_execution(state: State, interaction: Interaction, context:
 
   if (context.watch_future) {
     ResultAsync.fromPromise(
-      channel_service.add_channel(state.target_channel.id, state.guild_id, state.filters),
+      channel_service.add_monitor(state.target_channel.id, state.guild_id, state.filters),
       map_err,
     );
 

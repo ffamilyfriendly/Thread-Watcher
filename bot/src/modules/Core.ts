@@ -17,7 +17,7 @@ async function fetch_responsible_manager(thread: ThreadChannel) {
   if (res_thread.isErr()) return err(res_thread.error);
 
   if (res_thread.value && res_thread.value.managed_by) {
-    const mgr = await channel_service.get_channel(res_thread.value.managed_by);
+    const mgr = await channel_service.get_monitor(res_thread.value.managed_by);
     if (mgr.isErr()) return err(mgr.error);
     if (mgr.value) return ok(mgr.value);
     // Unsure how we want to treat a managed thread that somehow does not have a parent?
@@ -27,10 +27,10 @@ async function fetch_responsible_manager(thread: ThreadChannel) {
   const search_ids = [thread.parentId, thread.parent?.parentId, thread.guildId];
   for (const id of search_ids) {
     if (!id) continue;
-    const res = await channel_service.get_channel(id);
+    const res = await channel_service.get_monitor(id);
     if (res.isOk() && res.value) {
-      if (res.value.id === res.value.server) {
-        const entitlement_answer = await entitlement_service.has_basic(client, res.value.server);
+      if (res.value.target_id === res.value.guild_id) {
+        const entitlement_answer = await entitlement_service.has_basic(client, res.value.guild_id);
         if (entitlement_answer.isErr()) return err(entitlement_answer.error);
         if (entitlement_answer.value === false) return ok(null);
       }
@@ -68,26 +68,28 @@ export async function check_should_be_watched(thread: ThreadChannel, l: Logger<u
   }
 
   if (should_be_watched.value) {
-    const watch_res = await thread_service.watch_thread(thread, monitor.id);
+    const watch_res = await thread_service.watch_thread(thread, monitor.target_id);
     if (watch_res.isErr()) return err(map_err(watch_res.error));
-    audit_service.log_thread_watch(
-      thread.id,
-      thread.guildId,
-      client.user?.id!,
-      `Thread fullfills monitor filters!`,
-      monitor.id,
-    );
+    if (watch_res.value)
+      audit_service.log_thread_watch(
+        thread.id,
+        thread.guildId,
+        client.user?.id!,
+        `Thread fullfills monitor filters!`,
+        monitor.target_id,
+      );
     l.info(`watched ${thread.id}`);
   } else {
     const unwatch_res = await thread_service.unwatch_thread(thread);
     if (unwatch_res.isErr()) return err(map_err(unwatch_res.error));
-    audit_service.log_thread_unwatch(
-      thread.id,
-      thread.guildId,
-      client.user?.id!,
-      `Thread no longer fullfills monitor filters!`,
-      monitor.id,
-    );
+    if (unwatch_res.value)
+      audit_service.log_thread_unwatch(
+        thread.id,
+        thread.guildId,
+        client.user?.id!,
+        `Thread no longer fullfills monitor filters!`,
+        monitor.target_id,
+      );
   }
 
   return ok();

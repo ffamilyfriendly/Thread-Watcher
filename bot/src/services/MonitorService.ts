@@ -1,5 +1,5 @@
 import { entitlement_service } from '@providers/services/entitlement_service';
-import { EditMonitor, FilterData, ZChannelDataWithFilters } from '@watcher/shared';
+import { EditMonitor, FilterData, ZMonitor } from '@watcher/shared';
 import { Channel } from 'discord.js';
 import { Database } from 'interfaces/Database';
 import Redis from 'ioredis';
@@ -17,33 +17,33 @@ export default class ChannelService {
     this.r = new RedisWrapper(redis, ChannelService.CACHE_TTL_SECONDS, 'channel');
   }
 
-  async get_channel(channel_id: string) {
-    const cached = await this.r.get(channel_id, ZChannelDataWithFilters);
+  async get_monitor(channel_id: string) {
+    const cached = await this.r.get(channel_id, ZMonitor);
     if (cached.isErr()) return err(cached.error);
     if (cached.value) return ok(cached.value);
 
-    const db_res = await this.db.get_channel(channel_id);
+    const db_res = await this.db.get_monitor(channel_id);
     return db_res.andThen((raw) => {
       if (!raw) return ok(null);
 
-      this.r.set(channel_id, raw, ZChannelDataWithFilters);
+      this.r.set(channel_id, raw, ZMonitor);
 
       return ok(raw);
     });
   }
 
-  get_channels(guild_id: string) {
-    return this.db.get_channels_in_guild(guild_id);
+  get_monitors(guild_id: string) {
+    return this.db.get_monitors_in_guild(guild_id);
   }
 
-  async get_count_channels(guild_id: string) {
-    return await this.db.get_monitored_channels_count(guild_id);
+  async get_monitor_count(guild_id: string) {
+    return await this.db.get_monitors_count(guild_id);
   }
 
-  async add_channel(monitor_id: string, guild_id: string, filters?: FilterData) {
+  async add_monitor(monitor_id: string, guild_id: string, filters?: FilterData) {
     const channel_data = {
-      id: monitor_id,
-      server: guild_id,
+      target_id: monitor_id,
+      guild_id: guild_id,
       is_suspended: false,
     };
 
@@ -53,12 +53,12 @@ export default class ChannelService {
       regex: filters?.regex,
     };
 
-    const res = await this.db.insert_channel(channel_data, filter_data);
+    const res = await this.db.insert_monitor(channel_data, filter_data);
 
     const combined_object = Object.assign(channel_data, filter_data);
 
     if (res.isOk()) {
-      this.r.set(monitor_id, combined_object, ZChannelDataWithFilters);
+      this.r.set(monitor_id, combined_object, ZMonitor);
     }
 
     return res;
@@ -69,8 +69,8 @@ export default class ChannelService {
     return await this.db.edit_monitor(channel_id, edit_obj);
   }
 
-  async remove_channel(channel_id: string) {
+  async remove_monitor(channel_id: string) {
     await this.r.del(channel_id);
-    return await this.db.delete_channel(channel_id);
+    return await this.db.delete_monitor(channel_id);
   }
 }

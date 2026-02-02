@@ -97,7 +97,7 @@ export const ZDiscordChannel = z.object({
 	parentId: z.string().nullish(),
 	flags: z.number().nullish(),
 	availableTags: z.array(ZDiscordTag).nullish(),
-	appliedTags: z.array(ZDiscordTag).nullish()
+	appliedTags: z.array(z.string()).nullish()
 });
 export type DiscordChannel = z.output<typeof ZDiscordChannel>;
 

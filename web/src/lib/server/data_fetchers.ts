@@ -12,7 +12,7 @@ import {
 	type ExpandedAuditLog,
 	type GuildOverview
 } from '$lib/types/internal_api';
-import { ZAuditData, ZChannelDataWithFilters, type ChannelDataWithFilters } from '@watcher/shared';
+import { ZAuditData, ZMonitor, type Monitor } from '@watcher/shared';
 
 export async function fetch_audit_logs(
 	guild_id: string,
@@ -157,10 +157,6 @@ export async function get_guild_info(
 export async function get_monitors(
 	guild_id: string,
 	user_id: string
-): Promise<Result<ChannelDataWithFilters[], Error | Response>> {
-	return await json_fetch<ChannelDataWithFilters[]>(
-		`/guild/${guild_id}/monitors`,
-		{ user_id },
-		z.array(ZChannelDataWithFilters)
-	);
+): Promise<Result<Monitor[], Error | Response>> {
+	return await json_fetch<Monitor[]>(`/guild/${guild_id}/monitors`, { user_id }, z.array(ZMonitor));
 }

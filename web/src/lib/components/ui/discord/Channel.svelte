@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { guild_state } from '$lib/stores/guild.svelte';
 	import type { DiscordChannel } from '$lib/types/internal_api';
 	import { Folder, Hash, Megaphone, MessagesSquare, Spool } from '@lucide/svelte';
 
@@ -27,7 +28,9 @@
 	});
 </script>
 
-<p><Icon /> {channel.name}</p>
+<a target="_blank" href="https://discord.com/channels/{guild_state.guild_id}/{channel.id}">
+	<p><Icon /> {channel.name}</p>
+</a>
 
 <style lang="scss">
 	p {

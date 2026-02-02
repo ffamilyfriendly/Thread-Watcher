@@ -40,17 +40,19 @@ export const ZFilterData = z.object({
 });
 
 export const ZChannelData = z.object({
-  id: z.string(),
-  server: z.string(),
+  target_id: z.string(),
+  guild_id: z.string(),
   is_suspended: z.coerce.boolean(),
+  manages_threads_count: z.number().nullish().default(0),
 });
 
-export const ZChannelDataWithFilters = ZChannelData.extend(ZFilterData.shape);
+export const ZMonitor = ZChannelData.extend(ZFilterData.shape);
 export type FilterData = z.output<typeof ZFilterData>;
-export type ChannelData = z.output<typeof ZChannelData>;
-export type ChannelDataWithFilters = z.output<typeof ZChannelDataWithFilters>;
-export const ZEditMonitor = ZChannelDataWithFilters.omit({
-  id: true,
-  server: true,
+export type BaseMonitor = z.output<typeof ZChannelData>;
+export type Monitor = z.output<typeof ZMonitor>;
+export const ZEditMonitor = ZMonitor.omit({
+  target_id: true,
+  guild_id: true,
+  manages_threads_count: true,
 }).partial();
 export type EditMonitor = z.output<typeof ZEditMonitor>;

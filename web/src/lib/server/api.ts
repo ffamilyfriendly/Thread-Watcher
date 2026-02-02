@@ -106,6 +106,7 @@ export async function json_fetch<T>(
 		if (schema) {
 			const parsed = schema.safeParse(data);
 			if (!parsed.success) {
+				console.warn('DATA', data);
 				return err(parsed.error);
 			}
 

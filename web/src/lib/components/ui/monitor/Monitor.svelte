@@ -1,31 +1,28 @@
 <script lang="ts">
 	import btn_style from '$lib/style/button.module.scss';
-	import type { ChannelDataWithFilters } from '@watcher/shared';
-	import FallBackChannel from '../discord/FallBackChannel.svelte';
+	import type { Monitor } from '@watcher/shared';
 	import { CirclePause, CirclePower, PenLine, Trash } from '@lucide/svelte';
 	import { safe_fetch } from '$lib/client/fetch';
 	import { add_toast_from_error } from '$lib/state/toasts.svelte';
 	import Modal from '../Modal.svelte';
-	import RolePicker from '../settings/RolePicker.svelte';
 	import { guild_state } from '$lib/stores/guild.svelte';
 	import Guild from '../discord/Guild.svelte';
 	import MonitorConfiguration from './MonitorConfiguration.svelte';
-	import TagPicker from '../settings/TagPicker.svelte';
-	import Expandable from '../Expandable.svelte';
 	import Role from '../discord/Role.svelte';
 	import Emoji from '../discord/Emoji.svelte';
 	import { PUBLIC_SKU_STORE } from '$env/static/public';
+	import FallBackChannel from '../discord/FallBackChannel.svelte';
 
 	interface Props {
-		monitor: ChannelDataWithFilters;
-		monitors: ChannelDataWithFilters[];
+		monitor: Monitor,
+		monitors: Monitor[]
 	}
 
 	let { monitors = $bindable(), ...rest }: Props = $props();
 	let monitor = $state(rest.monitor);
 
-	const channel_obj = $derived(guild_state.channels.find((c) => c.id === monitor.id));
-	let edit_data = $state<ChannelDataWithFilters>();
+	const channel_obj = $derived(guild_state.channels.find((c) => c.id === monitor.target_id));
+	let edit_data = $state<Monitor>();
 
 	$effect(() => {
 		edit_data = { ...monitor };
@@ -37,7 +34,7 @@
 
 		const data = {
 			guild_id: guild_state.guild_id,
-			monitor_id: monitor.id,
+			monitor_id: monitor.target_id,
 			edit: {
 				is_suspended: value_to_set
 			}
@@ -55,10 +52,10 @@
 		}
 	}
 
-	function get_edit_object(item?: ChannelDataWithFilters) {
+	function get_edit_object(item?: Monitor) {
 		return {
 			guild_id: guild_state.guild_id,
-			monitor_id: monitor.id,
+			monitor_id: monitor.target_id,
 			edit: {
 				tags: item?.tags?.filter((str) => str.trim().length != 0) ?? null,
 				role_whitelist: item?.role_whitelist?.filter((str) => str.trim().length != 0) ?? null,
@@ -66,8 +63,7 @@
 			}
 		};
 	}
-
-	async function edit_monitor() {
+async function edit_monitor() {
 		if (!edit_data) return;
 		const data = get_edit_object(edit_data);
 
@@ -87,7 +83,7 @@
 
 	async function delete_monitor() {
 		const res = await safe_fetch(
-			`/api/monitor?monitor_id=${monitor.id}&guild_id=${guild_state.guild_id}`,
+			`/api/monitor?monitor_id=${monitor.target_id}&guild_id=${guild_state.guild_id}`,
 			{
 				method: 'DELETE'
 			}
@@ -97,7 +93,7 @@
 			return add_toast_from_error(res.error);
 		}
 
-		monitors = monitors.filter((m) => m.id !== monitor.id);
+		monitors = monitors.filter((m) => m.target_id !== monitor.target_id);
 	}
 
 	const is_not_edited = $derived(
@@ -120,7 +116,7 @@
 	}
 
 	const is_paused = $derived(
-		monitor.id === monitor.server && guild_state.guild?.entitlements === 'NONE'
+		monitor.target_id === monitor.guild_id && guild_state.guild?.entitlements === 'NONE'
 	);
 </script>
 
@@ -149,17 +145,17 @@
 	</Modal>
 {/if}
 
-<div class="monitor">
+<div id="focus_{monitor.target_id}" class="monitor">
 	<div class="head_thing">
 		<p>Monitor in</p>
-		{#if monitor.id == monitor.server}
+		{#if monitor.target_id == monitor.guild_id}
 			{#if guild_state.guild}
 				<Guild guild={guild_state.guild.guild} />
 			{:else}
 				GUILD
 			{/if}
 		{:else}
-			<FallBackChannel channel_id={monitor.id} channel={channel_obj} />
+			<FallBackChannel channel_id={monitor.target_id} channel={channel_obj} />
 		{/if}
 		<div class="status {monitor.is_suspended ? 'suspended' : 'active'} {is_paused ? 'paused' : ''}">
 			{#if monitor.is_suspended}
@@ -175,7 +171,12 @@
 					</small>
 				</p>
 			{:else}
-				Active
+				<p>
+					Active
+					<small>
+						Keeping <b>{monitor.manages_threads_count}</b> threads open!
+					</small>
+				</p>
 			{/if}
 		</div>
 	</div>
@@ -305,12 +306,12 @@
 	}
 
 	.head_thing {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
 		padding: var(--padding);
 		background-color: color-mix(in srgb, var(--primary-500) 30%, transparent);
 		border-bottom: 1px solid color-mix(in srgb, var(--primary-500), transparent);
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
 	}
 
 	.container {
@@ -324,6 +325,27 @@
 		outline: 1px solid rgba(255, 255, 255, 0.2);
 		border-radius: 0.5rem;
 		justify-content: space-between;
+		transition: .2s;
+
+		&:target {
+			animation-name: attention;
+			animation-timing-function: ease-in-out;
+			animation-duration: 1s;
+			animation-iteration-count: 3;
+		}
+	}
+
+	@keyframes attention {
+		0% {
+			transform: scale(0.99);
+		}
+		50% {
+			transform: scale(1.01);
+		}
+
+		100% {
+			transform: scale(0.99);
+		}
 	}
 
 	.buttons {

@@ -11,36 +11,38 @@
 	import btn_styles from '$lib/style/button.module.scss';
 	import { CAN_BE_MONITOR_TARGET } from '$lib/types/discord.js';
 	import { Eye } from '@lucide/svelte';
-	import { ZChannelDataWithFilters, type ChannelDataWithFilters } from '@watcher/shared';
+	import { ZMonitor, type Monitor as dMonitor } from '@watcher/shared';
 
-	const { data } = $props();
+	const { data } = $props()
 	let monitors = $derived(data.monitors);
 	let selected_channel = $state<string>();
 	let allowed_new_targets = $derived(
-		guild_state.channels.filter((ch) => !monitors.find((mn) => mn.id == ch.id))
+		guild_state.channels.filter((ch) => !monitors.find((mn) => mn.target_id == ch.id))
 	);
 
 	let create_monitors_modal = $state(false);
-	let monitor_configuration = $state<Omit<ChannelDataWithFilters, 'is_suspended'>>();
+	let monitor_configuration = $state<Omit<dMonitor, 'is_suspended'|"manages_threads_count">>();
 	function start_monitor_process(id?: string) {
 		create_monitors_modal = true;
 
+		console.log("GOT ID", id)
+
 		if (id) {
 			monitor_configuration = {
-				id: id,
-				server: guild_state.guild_id,
+				target_id: id,
+				guild_id: guild_state.guild_id,
 				tags: null,
 				role_whitelist: null,
 				regex: undefined
 			};
 		}
 	}
-
+	
 	async function create_new_monitor() {
 		if (!monitor_configuration) return;
 
 		// DOing this just to ensure our serializers are attached
-		const safe_parse = ZChannelDataWithFilters.safeParse(monitor_configuration);
+		const safe_parse = ZMonitor.omit({ manages_threads_count: true }).safeParse(monitor_configuration);
 		if (!safe_parse.success) {
 			return add_toast_from_error(safe_parse.error);
 		}
@@ -48,14 +50,14 @@
 		const res = await safe_fetch('/api/monitor', {
 			method: 'POST',
 			body: JSON.stringify(safe_parse.data)
-		});
+		})
 
-		if (res.isErr()) {
-			console.error(res.error);
-			return add_toast_from_error(res.error);
+		if(res.isErr()) {
+			add_toast_from_error(res.error)
 		}
+	
 
-		const parsed = ZChannelDataWithFilters.safeParse(monitor_configuration);
+		const parsed = ZMonitor.safeParse(monitor_configuration);
 		if (parsed.success) monitors = [...monitors, parsed.data];
 
 		monitor_configuration = undefined;
@@ -63,7 +65,6 @@
 		create_monitors_modal = false;
 	}
 </script>
-
 {#if create_monitors_modal}
 	{@const show_advanced = !!monitor_configuration}
 	<Modal bind:set_open={create_monitors_modal} title="Create Monitor">
@@ -107,7 +108,7 @@
 
 <h2>Active Monitors</h2>
 <div class="monitors">
-	{#each monitors as monitor (monitor.id)}
+	{#each monitors as monitor (monitor.target_id)}
 		<Monitor bind:monitors {monitor} />
 	{/each}
 </div>

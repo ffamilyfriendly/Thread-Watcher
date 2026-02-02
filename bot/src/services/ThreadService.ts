@@ -57,8 +57,8 @@ export default class ThreadService {
     );
 
     const thread_data = {
-      id: thread.id,
-      server: thread.guildId,
+      thread_id: thread.id,
+      guild_id: thread.guildId,
       parent_channel_id: thread.parentId,
       due_archive: expires_at,
       managed_by,
@@ -112,14 +112,7 @@ export default class ThreadService {
   async set_thread_watch_status(thread_id: string, is_watched: boolean) {
     const result = await this.db.set_thread_watched(thread_id, is_watched);
     if (result.isOk()) {
-      const cached_value = await this.r.get(thread_id, ZThreadData);
-
-      if (cached_value.isOk() && cached_value.value) {
-        const as_obj = cached_value.value;
-
-        as_obj.is_watched = is_watched;
-        this.r.set(thread_id, as_obj, ZThreadData);
-      }
+      await this.r.del(thread_id);
     }
 
     return result;
@@ -154,13 +147,21 @@ export default class ThreadService {
    */
   async watch_thread(thread: GenericThread, managed_by?: string) {
     const db_entry = await this.get_thread(thread.id);
+    if (db_entry.isErr()) return err(db_entry.error);
 
-    if (db_entry.isOk() && db_entry.value === null) return this.insert_thread(thread, managed_by);
-    else return this.set_thread_watch_status(thread.id, true);
+    if (!db_entry.value) return (await this.insert_thread(thread, managed_by)).map(() => true);
+
+    if (db_entry.value.is_watched) return ok(false);
+
+    return (await this.set_thread_watch_status(thread.id, true)).map(() => true);
   }
 
   async unwatch_thread(thread: GenericThread) {
-    return this.set_thread_watch_status(thread.id, false);
+    const db_entry = await this.get_thread(thread.id);
+    if (db_entry.isErr()) return err(db_entry.error);
+    if (db_entry.value === null || !db_entry.value.is_watched) return ok(false);
+
+    return (await this.set_thread_watch_status(thread.id, false)).map(() => true);
   }
 
   async toggle_thread_watch_status(thread: GenericThread) {
@@ -187,6 +188,8 @@ export default class ThreadService {
   }
 
   static async should_be_watched(client: Client, thread: ThreadChannel, filters: FilterData) {
+    if (thread.locked) return ok(false);
+
     const name_matches_regex = filters.regex?.test(thread.name) ?? true;
 
     const thread_guild = await ResultAsync.fromPromise(

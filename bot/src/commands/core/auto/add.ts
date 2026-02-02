@@ -21,7 +21,7 @@ import { channel_service } from '@providers/services/channel_service';
 import { audit_service } from '@providers/services/audit_service';
 
 async function handle_execution(state: State, interaction: Interaction, context: null) {
-  const did_work = await channel_service.add_channel(
+  const did_work = await channel_service.add_monitor(
     state.target_channel.id,
     state.guild_id,
     state.filters,
@@ -73,7 +73,7 @@ async function run(
 
   await interaction.deferReply();
 
-  const existing_monitor = await channel_service.get_channel(parent.value.id);
+  const existing_monitor = await channel_service.get_monitor(parent.value.id);
   if (existing_monitor.isErr()) {
     return err(existing_monitor.error);
   }

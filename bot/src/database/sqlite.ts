@@ -10,19 +10,19 @@ import { safe_parse } from 'utilities/parsing';
 import { Database, DatabaseError, RawSetting } from 'interfaces/Database';
 import {
   AuditData,
-  ChannelData,
+  BaseMonitor,
   EditMonitor,
   FilterData,
   Guild,
   ZAuditData,
-  ZChannelDataWithFilters,
+  ZMonitor,
   ZGuild,
   ZThreadData,
 } from '@watcher/shared';
 
 const TABLE_CREATION_QUERIES = [
-  'CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, server TEXT NOT NULL, parent_channel_id TEXT, due_archive DATE, is_watched INTEGER, managed_by INTEGER)',
-  'CREATE TABLE IF NOT EXISTS channels (id TEXT PRIMARY KEY, server TEXT NOT NULL, regex TEXT, role_whitelist TEXT, tags TEXT, is_suspended INTEGER DEFAULT 0)',
+  'CREATE TABLE IF NOT EXISTS threads (thread_id TEXT PRIMARY KEY, guild_id TEXT NOT NULL, parent_channel_id TEXT, due_archive DATE, is_watched INTEGER, managed_by TEXT)',
+  'CREATE TABLE IF NOT EXISTS monitors (target_id TEXT PRIMARY KEY, guild_id TEXT NOT NULL, regex TEXT, role_whitelist TEXT, tags TEXT, is_suspended INTEGER DEFAULT 0)',
   'CREATE TABLE IF NOT EXISTS settings (setting_id TEXT, guild_id TEXT, setting_value TEXT, UNIQUE(setting_id, guild_id) ON CONFLICT REPLACE)',
   'CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id TEXT NOT NULL, executor_id TEXT NOT NULL, data TEXT NOT NULL, reason TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)',
   'CREATE TABLE IF NOT EXISTS guilds (guild_id TEXT PRIMARY KEY, left_at TIMESTAMP, granted_SKU TEXT, monthly_tokens NUMBER, persistent_tokens NUMBER, monthly_tokens_last_granted TIMESTAMP)',
@@ -78,8 +78,8 @@ export default class Sqlite implements Database {
 
   @with_error_handling
   async insert_thread(thread: {
-    id: string;
-    server: string;
+    thread_id: string;
+    guild_id: string;
     parent_channel_id?: string | null;
     due_archive: Date;
     managed_by?: string | null;
@@ -87,8 +87,8 @@ export default class Sqlite implements Database {
     this.db
       .prepare('INSERT INTO threads VALUES (?, ?, ?, ? ,1, ?)')
       .run(
-        thread.id,
-        thread.server,
+        thread.thread_id,
+        thread.guild_id,
         thread.parent_channel_id ?? null,
         thread.due_archive.getTime(),
         thread.managed_by ?? null,
@@ -98,32 +98,34 @@ export default class Sqlite implements Database {
 
   @with_error_handling
   async delete_thread(thread_id: string) {
-    const val = this.db.prepare('DELETE FROM threads WHERE id = ?').run(thread_id);
+    const val = this.db.prepare('DELETE FROM threads WHERE thread_id = ?').run(thread_id);
     return ok(val.changes);
   }
 
   @with_error_handling
   async set_thread_auto_archive(thread_id: string, auto_archive_duration: Date) {
     this.db
-      .prepare('UPDATE threads SET due_archive = ? WHERE id = ?')
+      .prepare('UPDATE threads SET due_archive = ? WHERE thread_id = ?')
       .run(auto_archive_duration.getTime(), thread_id);
     return ok();
   }
 
   @with_error_handling
   async set_thread_watched(thread_id: string, is_watched: boolean) {
-    this.db.prepare('UPDATE threads SET is_watched = ? WHERE id = ?').run(is_watched, thread_id);
+    this.db
+      .prepare('UPDATE threads SET is_watched = ? WHERE thread_id = ?')
+      .run(is_watched, thread_id);
     return ok();
   }
 
   async get_thread(thread_id: string) {
-    return this.query_one(ZThreadData, 'SELECT * FROM threads WHERE id = ?', thread_id);
+    return this.query_one(ZThreadData, 'SELECT * FROM threads WHERE thread_id = ?', thread_id);
   }
 
   async get_threads_in_guild(guild_id: string, watched: boolean) {
     return this.query_all(
       ZThreadData,
-      'SELECT * FROM threads WHERE server = ? AND is_watched = ?',
+      'SELECT * FROM threads WHERE guild_id = ? AND is_watched = ?',
       guild_id,
       watched,
     );
@@ -134,7 +136,7 @@ export default class Sqlite implements Database {
     return ok(
       (
         this.db
-          .prepare('SELECT COUNT(*) FROM threads WHERE server = ? AND is_watched = 1')
+          .prepare('SELECT COUNT(*) FROM threads WHERE guild_id = ? AND is_watched = 1')
           .get(guild_id) as { 'COUNT(*)': number }
       )['COUNT(*)'],
     );
@@ -159,7 +161,7 @@ export default class Sqlite implements Database {
     const stale_thresh = now + buffer_in_ms;
     const query = `
       SELECT * FROM threads
-      WHERE server IN (${guild_ids.map(() => '?').join(',')})
+      WHERE guild_id IN (${guild_ids.map(() => '?').join(',')})
       AND due_archive <= ?
       AND is_watched = 1
     `;
@@ -214,12 +216,12 @@ export default class Sqlite implements Database {
   }
 
   @with_error_handling
-  async insert_channel(channel: ChannelData, filters?: FilterData) {
+  async insert_monitor(channel: Omit<BaseMonitor, 'manages_threads_count'>, filters?: FilterData) {
     this.db
-      .prepare('INSERT OR REPLACE INTO channels VALUES(?, ?, ?, ?, ?, ?)')
+      .prepare('INSERT OR REPLACE INTO monitors VALUES(?, ?, ?, ?, ?, ?)')
       .run(
-        channel.id,
-        channel.server,
+        channel.target_id,
+        channel.guild_id,
         filters?.regex?.source ?? null,
         filters?.role_whitelist?.join(',') ?? null,
         filters?.tags?.join(',') ?? null,
@@ -228,33 +230,33 @@ export default class Sqlite implements Database {
     return ok();
   }
 
-  async get_channel(channel_id: string) {
+  async get_monitor(channel_id: string) {
     return this.query_one(
-      ZChannelDataWithFilters,
-      'SELECT * FROM channels WHERE id = ? AND is_suspended = 0',
+      ZMonitor,
+      'SELECT *, (SELECT COUNT(*) FROM threads WHERE managed_by = monitors.target_id) as manages_threads_count FROM monitors WHERE target_id = ? AND is_suspended = 0',
       channel_id,
     );
   }
 
-  async get_channels_in_guild(guild_id: string) {
+  async get_monitors_in_guild(guild_id: string) {
     return this.query_all(
-      ZChannelDataWithFilters,
-      'SELECT * FROM channels WHERE server = ?',
+      ZMonitor,
+      'SELECT *, (SELECT COUNT(*) FROM threads WHERE managed_by = monitors.target_id) as manages_threads_count FROM monitors WHERE guild_id = ?',
       guild_id,
     );
   }
 
   @with_error_handling
-  async delete_channel(channel_id: string) {
-    this.db.prepare('DELETE FROM channels WHERE id = ?').run(channel_id);
+  async delete_monitor(channel_id: string) {
+    this.db.prepare('DELETE FROM monitors WHERE target_id = ?').run(channel_id);
     return ok();
   }
 
   @with_error_handling
-  async get_monitored_channels_count(guild_id: string) {
+  async get_monitors_count(guild_id: string) {
     return ok(
       (
-        this.db.prepare('SELECT COUNT(*) FROM channels WHERE server = ?').get(guild_id) as {
+        this.db.prepare('SELECT COUNT(*) FROM monitors WHERE guild_id = ?').get(guild_id) as {
           'COUNT(*)': number;
         }
       )['COUNT(*)'],
@@ -358,11 +360,11 @@ export default class Sqlite implements Database {
 
     const sql = `
       UPDATE 
-        channels
+        monitors
       SET
         ${fields.join(',')}
       WHERE
-        id = $channel_id
+        target_id = $channel_id
     `;
 
     this.db.prepare(sql).run(params);
@@ -379,8 +381,8 @@ export default class Sqlite implements Database {
       AND unixepoch(left_at) < unixepoch('now') - ${inactive_time_in_seconds}
     `;
 
-    this.db.prepare(`DELETE FROM threads WHERE server IN (${inactive_guilds_query})`).run();
-    this.db.prepare(`DELETE FROM channels WHERE server IN (${inactive_guilds_query})`).run();
+    this.db.prepare(`DELETE FROM threads WHERE guild_id IN (${inactive_guilds_query})`).run();
+    this.db.prepare(`DELETE FROM monitors WHERE guild_id IN (${inactive_guilds_query})`).run();
     this.db.prepare(`DELETE FROM settings WHERE guild_id IN (${inactive_guilds_query})`).run();
     this.db.prepare(`DELETE FROM audit WHERE guild_id IN (${inactive_guilds_query})`).run();
     this.db.prepare(`DELETE FROM guilds WHERE guild_id IN (${inactive_guilds_query})`).run();
@@ -404,7 +406,7 @@ export default class Sqlite implements Database {
   @with_error_handling
   async count_monitored_channels() {
     const res = this.db
-      .prepare('SELECT COUNT(*) AS count FROM channels WHERE is_suspended = 0')
+      .prepare('SELECT COUNT(*) AS count FROM monitors WHERE is_suspended = 0')
       .get() as { count: number };
     return ok(res.count);
   }

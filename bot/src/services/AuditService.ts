@@ -267,7 +267,7 @@ function embed_config_update(audit: ConfigLog, t: i18n_func) {
 
   const embed = new EmbedBuilder()
     .setTitle(t('audit.config_embed_title'))
-    .setDescription(t('audit.config_desc', { setting_key: audit.reason }))
+    .setDescription(t('audit.config_desc', { setting_key: audit.data.setting_key }))
     .setFields([
       {
         name: t('audit.config_embed_from'),

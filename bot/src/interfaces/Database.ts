@@ -2,9 +2,9 @@ import { SqliteError } from 'better-sqlite3';
 import { Result } from 'neverthrow';
 import {
   type ThreadData,
-  type ChannelData,
+  type BaseMonitor,
   type FilterData,
-  ChannelDataWithFilters,
+  Monitor,
   EditMonitor,
   AuditData,
   Guild,
@@ -37,11 +37,14 @@ interface CoreThread {
 }
 
 interface CoreChannel {
-  insert_channel: (channel: ChannelData, filters?: FilterData) => DBResult;
-  delete_channel: (channel_id: string) => DBResult;
-  get_channel: (channel_id: string) => DBResult<ChannelDataWithFilters | null>;
-  get_channels_in_guild: (guild_id: string) => DBResult<ChannelDataWithFilters[]>;
-  get_monitored_channels_count: (guild_id: string) => DBResult<number>;
+  insert_monitor: (
+    channel: Omit<BaseMonitor, 'manages_threads_count'>,
+    filters?: FilterData,
+  ) => DBResult;
+  delete_monitor: (channel_id: string) => DBResult;
+  get_monitor: (channel_id: string) => DBResult<Monitor | null>;
+  get_monitors_in_guild: (guild_id: string) => DBResult<Monitor[]>;
+  get_monitors_count: (guild_id: string) => DBResult<number>;
   edit_monitor: (channel_id: string, fields: EditMonitor) => DBResult;
   count_monitored_channels: () => DBResult<number>;
 }

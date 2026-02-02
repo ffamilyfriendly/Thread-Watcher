@@ -46,7 +46,7 @@ router.get(
     const p = await ResultAsync.fromPromise(
       Promise.all([
         thread_service.get_count_threads(guild_id),
-        channel_service.get_count_channels(guild_id),
+        channel_service.get_monitor_count(guild_id),
         ipc_client.get_shard_from_guild_id(guild_id),
         setting_service.get_guild_settings(guild_id),
         entitlement_service.get_highest_sku(ipc_client, guild_id),

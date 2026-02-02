@@ -18,7 +18,7 @@ async function run(
 
   if (!target || !('guild' in target)) return err(new Error('no channel bruh'));
 
-  const res = await channel_service.remove_channel(target?.id);
+  const res = await channel_service.remove_monitor(target?.id);
 
   if (res.isErr()) return err(res.error);
 

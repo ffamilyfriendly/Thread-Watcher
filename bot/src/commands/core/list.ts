@@ -237,7 +237,7 @@ async function run(
 
   const data_to_display = await (display_type === 'THREADS'
     ? thread_service.get_threads(interaction.guildId)
-    : channel_service.get_channels(interaction.guildId));
+    : channel_service.get_monitors(interaction.guildId));
 
   if (data_to_display.isErr()) return err(data_to_display.error);
 

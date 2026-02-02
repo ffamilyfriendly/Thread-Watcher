@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { ZAiRegexResponse, type ChannelDataWithFilters } from '@watcher/shared';
-	import RolePicker from '../settings/RolePicker.svelte';
+	import { ZAiRegexResponse, type Monitor } from '@watcher/shared';
+	import RolePicker from '../settings/RolePicker.svelte';;
 	import { guild_state } from '$lib/stores/guild.svelte';
 	import safe_regex from 'safe-regex';
 	import { Result } from 'neverthrow';
@@ -14,7 +14,7 @@
 	import { fetch_as_json, safe_fetch } from '$lib/client/fetch';
 
 	interface Props {
-		data: Omit<ChannelDataWithFilters, 'is_suspended'>;
+		data: Omit<Monitor, 'is_suspended'|"manages_threads_count">;
 	}
 
 	let { data = $bindable() }: Props = $props();
@@ -26,8 +26,8 @@
 	let avail_tags: DiscordTag[] = $state([]);
 
 	$effect(() => {
-		if (data.server === data.id) return;
-		guild_state.get_channel(data.id).then((ch_res) => {
+		if (data.guild_id === data.target_id) return;
+		guild_state.get_channel(data.target_id).then((ch_res) => {
 			if (ch_res.isErr()) {
 				add_toast_from_error(ch_res.error);
 				return;
