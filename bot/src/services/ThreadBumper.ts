@@ -93,7 +93,7 @@ export default class ThreadBumper {
    */
   private async bump_thread(thread_data: ThreadData) {
     const thread_res = await ResultAsync.fromPromise(
-      d_client.channels.fetch(thread_data.id),
+      d_client.channels.fetch(thread_data.thread_id),
       map_err,
     );
     if (thread_res.isErr()) return err(thread_res.error);
@@ -201,19 +201,21 @@ export default class ThreadBumper {
     );
     if (stale.isErr()) return stale.error;
 
-    const threads_to_bump = stale.value.filter((thread) => !this.queued_threads.has(thread.id));
+    const threads_to_bump = stale.value.filter(
+      (thread) => !this.queued_threads.has(thread.thread_id),
+    );
 
     if (threads_to_bump.length > 0)
       this.l.debug(`adding ${threads_to_bump.length} stale threads to queue...`);
 
     threads_to_bump.forEach((thread) => {
-      this.queued_threads.add(thread.id);
+      this.queued_threads.add(thread.thread_id);
       this.queue.add(async () => {
         const res = await this.bump_thread(thread);
         if (res.isErr()) {
-          this.l.error(`Could not bump ${thread.id}: `, res.error);
+          this.l.error(`Could not bump ${thread.thread_id}: `, res.error);
         }
-        this.queued_threads.delete(thread.id);
+        this.queued_threads.delete(thread.thread_id);
       });
     });
   }

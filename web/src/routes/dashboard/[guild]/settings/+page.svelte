@@ -10,19 +10,28 @@
 	import z from 'zod';
 	import { invalidateAll } from '$app/navigation';
 	import { ChannelTypes } from '$lib/types/discord.js';
+	import type { MappedSettings } from '$lib/types/internal_api.js';
 
 	const { data } = $props();
 
-	const settings = $state({ ...data.guild.guild_settings });
-	let compare_to = $state(data.guild.guild_settings);
+	let settings = $state<MappedSettings>({} as MappedSettings);
+	let compare_to = $state<MappedSettings>({} as MappedSettings);
+
+	$effect(() => {
+		settings = { ...data.guild.guild_settings }
+		compare_to = data.guild.guild_settings
+	})
+
 	const is_dirty = $derived(JSON.stringify(settings) !== JSON.stringify(compare_to));
 	let is_loading = $state(false);
 
 	function reset_changes() {
+		if(!settings) return
 		Object.assign(settings, compare_to);
 	}
 
 	async function save_changes() {
+		if(!settings || !compare_to) return
 		is_loading = true;
 
 		const patch: Record<string, unknown> = {};
@@ -68,15 +77,15 @@
 	<div class="settings">
 		<SettingsBox
 			name="Bot Master"
-			description="Select the role that can access the bot dashboard."
-			disclaimer="Any role with Administrator will be considered a Bot Master"
+			description="Select a management role for the dashboard."
+			disclaimer="Users with the 'Administrator' permission are granted access by default"
 		>
 			<RolePicker roles={data.roles} bind:value={settings.BOT_MASTER_ROLE} />
 		</SettingsBox>
 
 		<SettingsBox
 			name="Logging Channel"
-			description="Choose the channel where Thread-Watcher will send its logs."
+			description="Where the bot will send it's audit logs and other activity"
 		>
 			<ChannelPicker
 				only_with_types={[
@@ -93,7 +102,7 @@
 
 		<SettingsBox
 			name="Bump Behaviour"
-			description="Determine how the bot should handle threads that are becoming inactive."
+			description="Choose how the bot should react when a watched thread is about to expire"
 		>
 			<StringPicker
 				bind:value={settings.BUMP_BEHAVIOUR}
@@ -104,6 +113,24 @@
 						description: 'keep thread un-archived and active'
 					},
 					{ name: 'Un-Archive', id: 'UNARCHIVE_ONLY', description: 'Only un-archive the thread' }
+				]}
+			/>
+		</SettingsBox>
+
+		<SettingsBox
+			name="Audit Log Retention"
+			description="Control the lifespan of your activity history."
+		>
+			<StringPicker
+				bind:value={settings.AUDIT_LOG_RETENTION}
+				options={[
+					{
+						name: '24 hours',
+						id: '86400',
+						description: 'Short-term retention'
+					},
+					{ name: '30 days', id: '2592000', description: 'Standard retention' },
+					{ name: '90 days', id: '7776000', description: 'Extended retention' }
 				]}
 			/>
 		</SettingsBox>
@@ -151,7 +178,7 @@
 		bottom: 1rem;
 		margin-inline: auto;
 		width: 90%;
-		background-color: var(--background-800);
+		background-color: color-mix(in srgb, var(--primary-500) 30%, transparent);
 		padding: 0.75rem 1.5rem;
 		border-radius: 0.5rem;
 		display: flex;
@@ -160,7 +187,7 @@
 		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 		z-index: 1000;
 		backdrop-filter: blur(10px);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid color-mix(in srgb, var(--primary-500) 50%, transparent);
 
 		@media (max-width: 500px) {
 			width: 100%;

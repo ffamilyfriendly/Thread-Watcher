@@ -43,17 +43,12 @@
 
     const core_items: MenuItem[] = [
         {
-            name: "Core",
-            href: link_to("core"),
-            icon: Activity
-        },
-        {
             name: "Watched Threads",
             href: link_to("threads"),
             icon: Spool
         },
         {
-            name: "Channel Monitors",
+            name: "Monitors",
             href: link_to("monitors"),
             icon: Eye
         }

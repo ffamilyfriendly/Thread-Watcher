@@ -18,16 +18,50 @@
     </div>
     <div class="input_area">
         {@render children()}
+        {#if disclaimer}
+            <small class="disclaimer">{disclaimer}</small>
+        {/if}
     </div>
-    {#if disclaimer}
-        <small class="disclaimer">{disclaimer}</small>
-    {/if}
 </div>
 
 <style lang="scss">
     .setting_container {
-        outline: 1px solid rgba(128, 128, 128, 0.33);
         border-radius: .5rem;
         padding: .5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .info {
+            h2 {
+                font-weight: 600;
+            }
+
+            p {
+                opacity: .8;
+            }
+        }
+
+        @media (max-width: 500px) {
+			flex-direction: column;
+            align-items: start;
+
+
+		}
+    }
+
+    .input_area{
+        flex-grow: 1;
+        max-width: 500px;
+
+        small {
+            color: var(--error-700);
+            opacity: .7;
+        }
+
+        @media (max-width: 500px) {
+            max-width: 100%;
+            width: 100%;
+		}
     }
 </style>

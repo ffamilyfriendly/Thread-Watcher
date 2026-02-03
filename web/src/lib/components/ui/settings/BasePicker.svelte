@@ -75,6 +75,25 @@
 	);
 
 	let container: HTMLDivElement | undefined = $state();
+
+	$effect(() => {
+		if(!window || !show_item_picker) return
+	
+		function handle_click(ev: PointerEvent) {
+			if(!ev.target || !(ev.target instanceof HTMLElement)) return
+			
+			const target_is_child = container?.contains(ev.target)
+			if(!target_is_child) {
+				show_item_picker = false
+			}
+		}
+		window.addEventListener("click", handle_click)
+
+		return () => {
+			window.removeEventListener("click", handle_click)
+		}
+	})
+
 	$effect(() => {
 		const current_ids = (Array.isArray(value) ? value : value ? [value] : []).filter(
 			(str) => str.trim().length != 0

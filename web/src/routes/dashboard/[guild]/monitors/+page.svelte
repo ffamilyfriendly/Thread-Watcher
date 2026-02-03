@@ -17,15 +17,13 @@
 	let monitors = $derived(data.monitors);
 	let selected_channel = $state<string>();
 	let allowed_new_targets = $derived(
-		guild_state.channels.filter((ch) => !monitors.find((mn) => mn.target_id == ch.id))
+		guild_state.channels.filter((ch) => !monitors.find((mn) => mn.target_id == ch.id) && CAN_BE_MONITOR_TARGET.includes(ch.type))
 	);
 
 	let create_monitors_modal = $state(false);
 	let monitor_configuration = $state<Omit<dMonitor, 'is_suspended'|"manages_threads_count">>();
 	function start_monitor_process(id?: string) {
 		create_monitors_modal = true;
-
-		console.log("GOT ID", id)
 
 		if (id) {
 			monitor_configuration = {
@@ -118,6 +116,7 @@
 		display: flex;
 		align-items: center;
 		gap: 1rem;
+		margin-bottom: 1rem;
 	}
 
 	.monitors {

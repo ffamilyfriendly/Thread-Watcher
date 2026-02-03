@@ -3,20 +3,19 @@
 	import type { NarrowedLog } from "@watcher/shared";
 
     interface Props {
-        log: NarrowedLog<"COMMAND", ExpandedAuditLog>
+        action: NarrowedLog<"BATCH_ACTION", ExpandedAuditLog>
     }
 
-    const { log }: Props = $props()
+    const { action }: Props = $props()
+
+    const nice_name_loopup = {
+        "WATCH": "watched",
+        "UNWATCH": "un-watched",
+        "TOGGLE": "toggled"
+    } as const
+
 </script>
-<span class="command">
-<code>/{log.data.command_name}
-    <span class="command_props">
-    {#each Object.entries(log.data.command_args) as [key, value] }
-        <b>{key}:</b> {value}
-    {/each}
-    </span>
-</code>
-</span>
+{nice_name_loopup[action.data.action]} {action.data.target_channels.length} threads!
 
 <style lang="scss">
     .command {

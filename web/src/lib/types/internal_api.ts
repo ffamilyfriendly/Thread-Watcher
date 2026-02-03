@@ -11,8 +11,11 @@ export const ZRawSetting = z.object({
 export const ZMappedSettings = z.object({
 	LOGGING_CHANNEL: z.string().nullish(),
 	BUMP_BEHAVIOUR: z.string().nullish().default('BUMP_AND_UNARCHIVE'),
-	BOT_MASTER_ROLE: z.string().nullish()
+	BOT_MASTER_ROLE: z.string().nullish(),
+	AUDIT_LOG_RETENTION: z.enum(['86400', '2592000', '7776000']).nullish().default('86400')
 });
+
+export type MappedSettings = z.output<typeof ZMappedSettings>;
 
 export const ZDiscordEntitlement = z.object({
 	consumed: z.boolean(),

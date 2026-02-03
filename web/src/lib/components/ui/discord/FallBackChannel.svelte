@@ -8,9 +8,10 @@
 	interface Props {
 		channel?: DiscordChannel;
 		channel_id: string;
+		clickable?: boolean
 	}
 
-	const { channel, channel_id }: Props = $props();
+	const { channel, channel_id, clickable }: Props = $props();
 
 	let fetched_channel = $state<DiscordChannel | null>(null);
 
@@ -36,7 +37,7 @@
 </script>
 
 {#if use_channel}
-	<Channel channel={use_channel} />
+	<Channel clickable={clickable} channel={use_channel} />
 {:else}
 	could not fetch channel
 {/if}

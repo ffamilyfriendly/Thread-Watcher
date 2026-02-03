@@ -5,17 +5,15 @@
 	import FallBackChannel from "../discord/FallBackChannel.svelte";
 
     interface Props {
-        thread: NarrowedLog<"THREAD_WATCHED"|"THREAD_UNWATCHED", ExpandedAuditLog>
+        monitor: NarrowedLog<"MONITOR_ADD", ExpandedAuditLog>
     }
 
-    const { thread }: Props = $props()
+    const { monitor }: Props = $props()
 </script>
     <div class="breakdown">
-        <FallBackChannel clickable={true} channel_id={thread.data.thread_id} />
+        <FallBackChannel clickable={true} channel_id={monitor.data.target_channel} />
         
-        {#if thread.data.due_to_monitor}
-            <a class={[btn_style.button, btn_style.tetriary, btn_style.inline]} href="./monitors#focus_{thread.data.due_to_monitor}">View Monitor</a>
-        {/if}
+        <a class={[btn_style.button, btn_style.tetriary, btn_style.inline]} href="./monitors#focus_{monitor.data.target_channel}">View Monitor</a>
     </div>
 <style lang="scss">
 

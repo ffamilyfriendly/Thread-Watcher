@@ -197,12 +197,12 @@ const AUDIT_LOG_RETENTION: SettingSchema<string> = {
       value: '2592000',
     },
     {
-      label: '1 Year',
-      value: '31536000',
+      label: '90 Days',
+      value: '7776000',
     },
   ]),
   default: '86400',
-  schema: z.enum(['86400', '2592000', '31536000']),
+  schema: z.enum(['86400', '2592000', '7776000']),
   type: 'string',
   description: 'How long to retain audit logs for your server',
 };
