@@ -12,7 +12,7 @@ import {
 	type ExpandedAuditLog,
 	type GuildOverview
 } from '$lib/types/internal_api';
-import { ZAuditData, ZMonitor, type Monitor } from '@watcher/shared';
+import { ZAuditData, ZMonitor, ZThreadData, type Monitor, type ThreadData } from '@watcher/shared';
 
 export async function fetch_audit_logs(
 	guild_id: string,
@@ -143,20 +143,24 @@ export async function get_guild_info(
 	guild_id: string,
 	user_id: string
 ): Promise<Result<GuildOverview, Error | Response>> {
-	const guilds_res = await json_fetch<GuildOverview>(
-		`/guilds/${guild_id}`,
-		{ user_id },
-		ZGuildOverview
-	);
-
-	if (guilds_res.isErr()) return err(guilds_res.error);
-
-	return ok(guilds_res.value);
+	return json_fetch<GuildOverview>(`/guilds/${guild_id}`, { user_id }, ZGuildOverview);
 }
 
+// Explore caching on both below
 export async function get_monitors(
 	guild_id: string,
 	user_id: string
 ): Promise<Result<Monitor[], Error | Response>> {
 	return await json_fetch<Monitor[]>(`/guild/${guild_id}/monitors`, { user_id }, z.array(ZMonitor));
+}
+
+export async function get_threads(
+	guild_id: string,
+	user_id: string
+): Promise<Result<ThreadData[], Error | Response>> {
+	return await json_fetch<ThreadData[]>(
+		`/guild/${guild_id}/watched_threads`,
+		{ user_id },
+		z.array(ZThreadData.extend({ channel_obj: ZDiscordChannel.nullish() }))
+	);
 }

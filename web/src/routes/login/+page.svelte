@@ -1,34 +1,66 @@
 <script lang="ts">
-	import { signIn } from "@auth/sveltekit/client";
-	import { page } from "$app/state"
-	import { redirect } from "@sveltejs/kit";
+	import { signIn } from '@auth/sveltekit/client';
+	import logo from '$lib/assets/thread_watcher_icon.png';
+	import btn_style from '$lib/style/button.module.scss';
 </script>
 
-<div id="cum">
+<div id="container">
+	<div class="window">
+		<div class="logo">
+			<img width="24px" src={logo} alt="Thread-Watcher logo" />
+			<h2>Login</h2>
+		</div>
+
+		<div class="content">
+			<button
+				class={[btn_style.button, btn_style.primary]}
+				on:click={() => signIn('discord', { redirectTo: '/dashboard/' })}
+			>
+				Sign In With Discord
+			</button>
+		</div>
+	</div>
+
 	<div>
-		<h1>Sign in cuh</h1>
-		<button on:click={() => signIn("discord", { redirectTo: "/dashboard/" })}>Sign In with Discord</button>
+		<a href="/policies/privacy_policy">Privacy Policy</a>
+		<a href="/policies/terms_of_service">Terms of Service</a>
 	</div>
 </div>
 
 <style lang="scss">
-
-#cum {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	height: 100vh;
-
-	background-image: url(https://media.discordapp.net/attachments/1411007366584860834/1438529114964234461/affinity_img_1.png?ex=694014a3&is=693ec323&hm=81e401bd827ba5ae58cb8557c8dd5ae932bbbccfc7e48c104971acdc6b9333c8&=&format=webp&quality=lossless&width=743&height=525);
-	background-position: center;
-	background-size: cover;
-
-	div {
-		padding: 2em;
-		border-radius: .2em;
-		background: #2A7B9B;
-		background: radial-gradient(circle, rgba(42, 123, 155, 1) 0%, rgba(87, 199, 133, 1) 50%, rgba(237, 221, 83, 1) 100%);
+	#container {
+		display: flex;
+		height: 100vh;
+		width: 100%;
+		justify-content: center;
+		align-items: center;
+		gap: 0.5rem;
+		flex-direction: column;
 	}
-}
 
+	.window {
+		outline: 1px solid color-mix(in srgb, var(--primary-500), transparent);
+		max-width: 500px;
+		min-width: 300px;
+		border-radius: 0.5rem;
+		--padding: 0.5rem;
+	}
+
+	.content {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		min-height: 100px;
+		padding: var(--padding);
+	}
+
+	.logo {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+
+		background-color: color-mix(in srgb, var(--primary-500) 30%, transparent);
+		border-bottom: 1px solid color-mix(in srgb, var(--primary-500), transparent);
+		padding: var(--padding);
+	}
 </style>

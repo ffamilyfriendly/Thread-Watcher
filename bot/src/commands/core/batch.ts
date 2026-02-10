@@ -11,7 +11,6 @@ import {
 import {
   CommandError,
   GuildChatInteraction,
-  PostExecutionTasks,
   RegistrationScope,
 } from 'interfaces/BaseCommandInterface';
 import { type Command } from 'interfaces/Command';
@@ -86,50 +85,50 @@ async function fetch_all_threads_from_parent(channel: Channel | Guild) {
 
 type BATCH_OPTIONS = 'WATCH' | 'UNWATCH' | 'TOGGLE';
 
-const ALLOWED_CHANNEL_TYPES = [
-  ChannelType.GuildCategory,
-  ChannelType.GuildForum,
-  ChannelType.GuildMedia,
-  ChannelType.GuildText,
-  ChannelType.GuildAnnouncement,
-];
-
 interface ExecutionContext {
   action: BATCH_OPTIONS;
   watch_future: boolean;
 }
 
-const ACTION_AS_TEXT_LOOKUP_TABLE = {
-  TOGGLE: 'toggled',
-  WATCH: 'watched',
-  UNWATCH: 'unwatched',
-};
-
 async function handle_execution(state: State, interaction: Interaction, context: ExecutionContext) {
-  let threads_actioned = 0;
-  for (const thread of state.threads) {
-    const should_be_actioned = await ThreadService.should_be_watched(client, thread, state.filters);
-    if (!should_be_actioned) continue;
-    threads_actioned++;
+  let results: ResultAsync<unknown, Error>[] = [];
+  let actioned_threads: string[] = [];
 
-    // TODO: handle cases where the thread_service returns err. We don't rn
+  for (const thread of state.threads) {
+    // Name is slightly missleading. This really only checks if the thread complies with our filters
+    const should_be_actioned = await ThreadService.should_be_watched(client, thread, state.filters);
+    if (should_be_actioned.isOk() && !should_be_actioned.value) continue;
+    if (should_be_actioned.isErr()) {
+      return state._ctx.err(should_be_actioned.error);
+    }
+    actioned_threads.push(thread.id);
+
+    let res: ResultAsync<unknown, Error>;
+
     switch (context.action) {
       case 'WATCH':
-        ResultAsync.fromPromise(thread_service.watch_thread(thread), map_err);
+        res = ResultAsync.fromPromise(thread_service.watch_thread(thread), map_err);
         break;
       case 'UNWATCH':
-        ResultAsync.fromPromise(thread_service.unwatch_thread(thread), map_err);
+        res = ResultAsync.fromPromise(thread_service.unwatch_thread(thread), map_err);
         break;
       case 'TOGGLE':
-        ResultAsync.fromPromise(thread_service.toggle_thread_watch_status(thread), map_err);
+        res = ResultAsync.fromPromise(thread_service.toggle_thread_watch_status(thread), map_err);
         break;
     }
+
+    results.push(res);
+  }
+
+  const result_thing = await ResultAsync.combineWithAllErrors(results);
+  if (result_thing.isErr()) {
+    return state._ctx.err(result_thing.error[0]);
   }
 
   const log = await audit_service.log_batch_action(
     interaction.guildId!,
     interaction.user.id,
-    state.threads.map((c) => c.id),
+    actioned_threads,
     context.action,
   );
 
@@ -204,8 +203,8 @@ async function run(
   const state: State<ExecutionContext> = {
     components: [],
     filters: {
-      tags: [],
-      role_whitelist: [],
+      tags: null,
+      role_whitelist: null,
       regex: undefined,
     },
     guild_id: interaction.guildId,
@@ -229,14 +228,6 @@ async function run(
   } else {
     handle_execution(state as State<unknown>, interaction, { action, watch_future });
   }
-
-  const ms_10_minutes = 1000 * 60 * 10;
-  const post_exec_tasks: PostExecutionTasks = {
-    cleanup: {
-      func: (int) => handle_cleanup(state as State<unknown>, int),
-      cleanup_timing: ms_10_minutes,
-    },
-  };
 
   return ctx.get_execution_promise();
 }

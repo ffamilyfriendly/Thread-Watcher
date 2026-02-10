@@ -125,7 +125,7 @@ export class CommandContext {
 
     const msg = await log_event_in_log_channel(embeds, interaction.guildId);
 
-    if (msg.isOk()) return this.with_audit_channel(interaction, msg.value, embeds);
+    if (msg.isOk() && msg.value) return this.with_audit_channel(interaction, msg.value, embeds);
 
     let content;
     if (msg.isErr()) content = msg.error.message;

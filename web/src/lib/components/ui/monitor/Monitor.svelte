@@ -155,7 +155,7 @@ async function edit_monitor() {
 				GUILD
 			{/if}
 		{:else}
-			<FallBackChannel channel_id={monitor.target_id} channel={channel_obj} />
+			<FallBackChannel clickable={true} channel_id={monitor.target_id} channel={channel_obj} />
 		{/if}
 		<div class="status {monitor.is_suspended ? 'suspended' : 'active'} {is_paused ? 'paused' : ''}">
 			{#if monitor.is_suspended}

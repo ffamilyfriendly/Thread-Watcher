@@ -21,17 +21,17 @@ async function get_audit_as_embed(event: PartialAuditObject) {
 
 export async function log_event_in_log_channel(
   event: PartialAuditObject,
-): Promise<Result<Message<true>, Error>>;
+): Promise<Result<Message<true> | null, Error>>;
 
 export async function log_event_in_log_channel(
   embeds: EmbedBuilder[],
   guild_id: string,
-): Promise<Result<Message<true>, Error>>;
+): Promise<Result<Message<true> | null, Error>>;
 
 export async function log_event_in_log_channel(
   event_or_embed: PartialAuditObject | EmbedBuilder[],
   guild_id?: string,
-): Promise<Result<Message<true>, Error>> {
+): Promise<Result<Message<true> | null, Error>> {
   let embeds;
   // if event_or_embed is EmbedBuilder[], guild_id is enforced
   // if it's an PartialAuditObject we grab it from the object
@@ -49,6 +49,7 @@ export async function log_event_in_log_channel(
   );
 
   if (LOGGING_CHANNEL.isErr()) return err(map_err(LOGGING_CHANNEL.error));
+  if (!LOGGING_CHANNEL.value) return ok(null);
 
   const logging_channel =
     LOGGING_CHANNEL.isOk() && LOGGING_CHANNEL.value !== null

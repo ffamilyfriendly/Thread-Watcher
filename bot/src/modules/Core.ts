@@ -115,14 +115,7 @@ async function check_msg_should_bump_thread(msg: Message, l: Logger<unknown>) {
 
   check_should_be_watched(msg.channel, l);
 
-  const res_thread = (await thread_service.get_thread(msg.channelId)).match(
-    (value) => value,
-    (err_value) => {
-      l.error('could not fetch thread from db: ', err_value);
-      return err(map_err(err_value));
-    },
-  );
-  if (res_thread) thread_service.bump_thread_time(msg.channel);
+  thread_service.bump_thread_time(msg.channel);
   return ok();
 }
 
@@ -208,7 +201,20 @@ async function on_thread_delete(thread: ThreadChannel, l: Logger<unknown>) {
   return ok();
 }
 
-function on_message_create(message: Message, l: Logger<unknown>) {
+async function on_message_create(message: Message, l: Logger<unknown>) {
+  if (!message.channel.isThread()) return ok();
+
+  const res_thread = (await thread_service.get_thread(message.channelId)).match(
+    (value) => ok(value),
+    (err_value) => {
+      l.error('could not fetch thread from db: ', err_value);
+      return err(map_err(err_value));
+    },
+  );
+
+  if (res_thread.isErr()) return err(res_thread.error);
+  if (!res_thread.value) return ok();
+
   return check_msg_should_bump_thread(message, l);
 }
 

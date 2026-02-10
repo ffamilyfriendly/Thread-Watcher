@@ -5,10 +5,11 @@
 
 	interface Props {
 		channel: DiscordChannel;
-		clickable?: boolean
+		clickable?: boolean;
+		class_name?: string;
 	}
 
-	const { channel, clickable = false }: Props = $props();
+	const { channel, clickable = false, class_name }: Props = $props();
 
 	const Icon = $derived.by(() => {
 		switch (channel.type) {
@@ -30,11 +31,11 @@
 </script>
 
 {#if clickable}
-<a target="_blank" href="https://discord.com/channels/{guild_state.guild_id}/{channel.id}">
-	<p><Icon /> {channel.name}</p>
-</a>
+	<a target="_blank" href="https://discord.com/channels/{guild_state.guild_id}/{channel.id}">
+		<p class={class_name}><Icon /> {channel.name}</p>
+	</a>
 {:else}
-<p><Icon /> {channel.name}</p>
+	<p class={class_name}><Icon /> {channel.name}</p>
 {/if}
 
 <style lang="scss">

@@ -13,19 +13,22 @@
 	import { Eye } from '@lucide/svelte';
 	import { ZMonitor, type Monitor as dMonitor } from '@watcher/shared';
 
-	const { data } = $props()
+	const { data } = $props();
 	let monitors = $derived(data.monitors);
 	let selected_channel = $state<string>();
 	let allowed_new_targets = $derived(
-		guild_state.channels.filter((ch) => !monitors.find((mn) => mn.target_id == ch.id) && CAN_BE_MONITOR_TARGET.includes(ch.type))
+		guild_state.channels.filter(
+			(ch) =>
+				!monitors.find((mn) => mn.target_id == ch.id) && CAN_BE_MONITOR_TARGET.includes(ch.type)
+		)
 	);
 
 	let create_monitors_modal = $state(false);
-	let monitor_configuration = $state<Omit<dMonitor, 'is_suspended'|"manages_threads_count">>();
+	let monitor_configuration = $state<Omit<dMonitor, 'is_suspended' | 'manages_threads_count'>>();
 	function start_monitor_process(id?: string) {
 		create_monitors_modal = true;
 
-		if (id) {
+		if (id && guild_state.guild_id) {
 			monitor_configuration = {
 				target_id: id,
 				guild_id: guild_state.guild_id,
@@ -35,12 +38,14 @@
 			};
 		}
 	}
-	
+
 	async function create_new_monitor() {
 		if (!monitor_configuration) return;
 
 		// DOing this just to ensure our serializers are attached
-		const safe_parse = ZMonitor.omit({ manages_threads_count: true }).safeParse(monitor_configuration);
+		const safe_parse = ZMonitor.omit({ manages_threads_count: true }).safeParse(
+			monitor_configuration
+		);
 		if (!safe_parse.success) {
 			return add_toast_from_error(safe_parse.error);
 		}
@@ -48,12 +53,11 @@
 		const res = await safe_fetch('/api/monitor', {
 			method: 'POST',
 			body: JSON.stringify(safe_parse.data)
-		})
+		});
 
-		if(res.isErr()) {
-			add_toast_from_error(res.error)
+		if (res.isErr()) {
+			add_toast_from_error(res.error);
 		}
-	
 
 		const parsed = ZMonitor.safeParse(monitor_configuration);
 		if (parsed.success) monitors = [...monitors, parsed.data];
@@ -63,6 +67,7 @@
 		create_monitors_modal = false;
 	}
 </script>
+
 {#if create_monitors_modal}
 	{@const show_advanced = !!monitor_configuration}
 	<Modal bind:set_open={create_monitors_modal} title="Create Monitor">
@@ -84,7 +89,7 @@
 
 		{#if show_advanced}
 			<MonitorConfiguration data={monitor_configuration!} />
-		{:else}
+		{:else if guild_state.guild_id}
 			<ChannelPicker
 				guild_id={guild_state.guild_id}
 				channels={allowed_new_targets}
@@ -104,7 +109,7 @@
 	</button>
 </div>
 
-<h2>Active Monitors</h2>
+<h2>Your Monitors</h2>
 <div class="monitors">
 	{#each monitors as monitor (monitor.target_id)}
 		<Monitor bind:monitors {monitor} />

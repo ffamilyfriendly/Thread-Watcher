@@ -1,3 +1,4 @@
+import { logger } from '@providers/logger';
 import { FilterData, ZThreadData } from '@watcher/shared';
 import { Client, ThreadChannel } from 'discord.js';
 import { Database } from 'interfaces/Database';
@@ -71,9 +72,11 @@ export default class ThreadService {
     return res;
   }
 
-  async get_thread(thread_id: string) {
-    const cached = await this.r.get(thread_id, ZThreadData);
-    if (cached.isOk() && cached.value) return ok(cached.value);
+  async get_thread(thread_id: string, with_cache = true) {
+    if (with_cache) {
+      const cached = await this.r.get(thread_id, ZThreadData);
+      if (cached.isOk() && cached.value) return ok(cached.value);
+    }
 
     const data = await this.db.get_thread(thread_id);
 
@@ -146,7 +149,7 @@ export default class ThreadService {
    * @returns
    */
   async watch_thread(thread: GenericThread, managed_by?: string) {
-    const db_entry = await this.get_thread(thread.id);
+    const db_entry = await this.get_thread(thread.id, false);
     if (db_entry.isErr()) return err(db_entry.error);
 
     if (!db_entry.value) return (await this.insert_thread(thread, managed_by)).map(() => true);
@@ -157,7 +160,7 @@ export default class ThreadService {
   }
 
   async unwatch_thread(thread: GenericThread) {
-    const db_entry = await this.get_thread(thread.id);
+    const db_entry = await this.get_thread(thread.id, false);
     if (db_entry.isErr()) return err(db_entry.error);
     if (db_entry.value === null || !db_entry.value.is_watched) return ok(false);
 
@@ -165,7 +168,7 @@ export default class ThreadService {
   }
 
   async toggle_thread_watch_status(thread: GenericThread) {
-    const db_thread_entry = await this.get_thread(thread.id);
+    const db_thread_entry = await this.get_thread(thread.id, false);
 
     if (db_thread_entry.isErr()) return err(db_thread_entry.error);
 

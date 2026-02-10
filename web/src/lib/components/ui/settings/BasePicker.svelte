@@ -3,7 +3,7 @@
 	import { fly } from 'svelte/transition';
 	import type { Snippet } from 'svelte';
 	import type { Result } from 'neverthrow';
-	import { ChevronDown, ChevronUp } from '@lucide/svelte';
+	import { ChevronDown, ChevronUp, Delete } from '@lucide/svelte';
 
 	interface Props {
 		items: T[];
@@ -77,22 +77,22 @@
 	let container: HTMLDivElement | undefined = $state();
 
 	$effect(() => {
-		if(!window || !show_item_picker) return
-	
+		if (!window || !show_item_picker) return;
+
 		function handle_click(ev: PointerEvent) {
-			if(!ev.target || !(ev.target instanceof HTMLElement)) return
-			
-			const target_is_child = container?.contains(ev.target)
-			if(!target_is_child) {
-				show_item_picker = false
+			if (!ev.target || !(ev.target instanceof HTMLElement)) return;
+
+			const target_is_child = container?.contains(ev.target);
+			if (!target_is_child) {
+				show_item_picker = false;
 			}
 		}
-		window.addEventListener("click", handle_click)
+		window.addEventListener('click', handle_click);
 
 		return () => {
-			window.removeEventListener("click", handle_click)
-		}
-	})
+			window.removeEventListener('click', handle_click);
+		};
+	});
 
 	$effect(() => {
 		const current_ids = (Array.isArray(value) ? value : value ? [value] : []).filter(
@@ -128,6 +128,13 @@
 				<p class="none">None selected</p>
 			{/each}
 		</div>
+
+		{#if value}
+			<button onclick={() => (value = '')} class="remove_button">
+				<Delete />
+			</button>
+		{/if}
+
 		{#if !disabled}
 			<button class={[btn_style.button]} onclick={() => (show_item_picker = !show_item_picker)}>
 				{#if show_item_picker}
@@ -178,6 +185,13 @@
 	.picker {
 		position: relative;
 		width: 100%;
+	}
+
+	.remove_button {
+		background-color: transparent;
+		border: none;
+		color: white;
+		cursor: pointer;
 	}
 
 	.current_selection {

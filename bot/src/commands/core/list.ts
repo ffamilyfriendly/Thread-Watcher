@@ -23,6 +23,7 @@ import { type Command } from 'interfaces/Command';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
 import { CommandContext } from 'utilities/command_context';
+import { map_err } from 'utilities/error';
 
 type DisplayType = 'THREADS' | 'CHANNELS';
 
@@ -121,7 +122,7 @@ class PageGenerator {
   static GET_PER_BATCH = 10;
   static MAX_PER_PAGE = 4096;
 
-  constructor(private items: { id: string }[]) {}
+  constructor(private items: ({ thread_id: string } | { target_id: string })[]) {}
 
   get page() {
     return this._page;
@@ -160,7 +161,12 @@ class PageGenerator {
       const items = this.items.slice(this.last_unread, end_index);
       this.last_unread = end_index;
 
-      const items_fetched = await fetch_data_from_id(items);
+      const items_fetched = await fetch_data_from_id(
+        items.map((t) => {
+          const id = 'thread_id' in t ? t.thread_id : t.target_id;
+          return { id };
+        }),
+      );
       // TODO: Handle displaying of threads that fail.
       // MIGHT just push users to web dashboard for this. Unsure yet.
       const as_links = items_fetched.succeeded.map((c) => create_channel_link(c));
@@ -234,6 +240,7 @@ async function run(
   }
 
   const display_type = (interaction.options.getString('filter') ?? 'THREADS') as DisplayType;
+  const show_private = interaction.options.getBoolean('private') ?? true;
 
   const data_to_display = await (display_type === 'THREADS'
     ? thread_service.get_threads(interaction.guildId)
@@ -251,14 +258,36 @@ async function run(
     return ok();
   }
 
-  await interaction.deferReply();
+  await interaction.deferReply(show_private ? { flags: 'Ephemeral' } : {});
   const { btn_back, btn_next, btn_website_cta } = create_buttons(interaction.guildId, display_type);
   const button_row = new ActionRowBuilder<ButtonBuilder>();
   const dashboard_row = new ActionRowBuilder<ButtonBuilder>();
   button_row.addComponents(btn_back, btn_next);
   dashboard_row.addComponents(btn_website_cta);
 
-  const page_generator = new PageGenerator(data_to_display.value);
+  const d_member = await ResultAsync.fromPromise(
+    interaction.guild.members.fetch(interaction.user.id),
+    map_err,
+  );
+  if (d_member.isErr()) {
+    return err(d_member.error);
+  }
+
+  // We're filtering out threads/channels that the user cannot see.
+  // This is consistent with V2 behaviour
+  const filtered_items = data_to_display.value.filter((item) => {
+    const id = 'thread_id' in item ? item.thread_id : item.target_id;
+
+    // We're not bothering to show guild-wide monitors here
+    if (id === interaction.guildId) return false;
+
+    const channel = client.channels.cache.get(id);
+    if (!channel || channel.isDMBased()) return true;
+
+    return channel.permissionsFor(d_member.value).has('ViewChannel');
+  });
+
+  const page_generator = new PageGenerator(filtered_items);
   const page_1 = await page_generator.generate_page();
 
   const embed = new EmbedBuilder();

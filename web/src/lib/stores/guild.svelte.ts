@@ -12,9 +12,13 @@ import { err, ok } from 'neverthrow';
 class GuildState {
 	roles = $state<DiscordRole[]>([]);
 	channels = $state<DiscordChannel[]>([]);
-	guild_id = $state<string>('');
+	guild_id = $state<string>();
 	guild = $state<GuildOverview>();
 	monitors = $state<Map<string, Monitor>>(new Map());
+
+	get is_ready() {
+		return !!this.guild_id;
+	}
 
 	set_roles(new_roles: DiscordRole[]) {
 		this.roles = new_roles;
