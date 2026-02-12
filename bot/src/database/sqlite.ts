@@ -18,6 +18,7 @@ import {
   ZMonitor,
   ZGuild,
   ZThreadData,
+  ThreadSearchData,
 } from '@watcher/shared';
 
 const TABLE_CREATION_QUERIES = [
@@ -128,6 +129,31 @@ export default class Sqlite implements Database {
       'SELECT * FROM threads WHERE guild_id = ? AND is_watched = ?',
       guild_id,
       watched,
+    );
+  }
+
+  async get_paginated_threads_in_guild(guild_id: string, limit: number, filters: ThreadSearchData) {
+    let params = [guild_id];
+    let query_parts = ['guild_id = ?', 'is_watched = 1'];
+
+    if (filters.monitor_id) {
+      params.push(filters.monitor_id);
+      query_parts.push('managed_by = ?');
+    }
+
+    if (filters.parent_channel_id) {
+      params.push(filters.parent_channel_id);
+      query_parts.push('parent_channel_id = ?');
+    }
+
+    const offset = limit * filters.page;
+
+    return this.query_all(
+      ZThreadData,
+      `SELECT * FROM threads WHERE ${query_parts.join(' AND ')} LIMIT ? OFFSET ?`,
+      ...params,
+      limit,
+      offset,
     );
   }
 

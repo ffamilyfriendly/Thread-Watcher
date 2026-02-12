@@ -1,5 +1,5 @@
 import { logger } from '@providers/logger';
-import { FilterData, ZThreadData } from '@watcher/shared';
+import { FilterData, ThreadSearchData, ZThreadData } from '@watcher/shared';
 import { Client, ThreadChannel } from 'discord.js';
 import { Database } from 'interfaces/Database';
 import Redis from 'ioredis';
@@ -98,6 +98,10 @@ export default class ThreadService {
     if (data.isOk()) {
       return ok(data.value);
     } else return err(data.error);
+  }
+
+  async get_filtered_threads(guild_id: string, filters: ThreadSearchData) {
+    return this.db.get_paginated_threads_in_guild(guild_id, 50, filters);
   }
 
   async get_count_threads(guild_id: string) {

@@ -8,6 +8,7 @@ import {
   EditMonitor,
   AuditData,
   Guild,
+  ThreadSearchData,
 } from '@watcher/shared';
 
 export type DatabaseError = SqliteError | Error;
@@ -30,6 +31,11 @@ interface CoreThread {
   set_thread_watched: (thread_id: string, is_watched: boolean) => DBResult;
   get_thread: (thread_id: string) => DBResult<ThreadData | null>;
   get_threads_in_guild: (guild_id: string, watched: boolean) => DBResult<ThreadData[]>;
+  get_paginated_threads_in_guild: (
+    guild_id: string,
+    limit: number,
+    filters: ThreadSearchData,
+  ) => DBResult<ThreadData[]>;
   get_watched_threads_count: (guild_id: string) => DBResult<number>;
   get_stale_threads: () => DBResult<ThreadData[]>;
   get_stale_threads_for_guilds: (guild_ids: string[]) => DBResult<ThreadData[]>;

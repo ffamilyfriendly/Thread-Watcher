@@ -4,6 +4,7 @@ import { randomBytes } from 'crypto';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import Redis from 'ioredis';
 import { map_err } from './error';
+import z from 'zod';
 
 function generate_request_id() {
   return randomBytes(16).toString('hex');
@@ -39,6 +40,7 @@ class BaseClient implements IpcClient {
     shard: Shard | ShardClientUtil,
     event: string,
     data: unknown,
+    schema?: z.ZodType<T>,
   ): Promise<Result<T, unknown>> {
     return new Promise(async (resolve) => {
       const request = generate_message(event, data);
@@ -53,7 +55,12 @@ class BaseClient implements IpcClient {
       this.response_events.set(request.request_id, (data) => {
         this.response_events.delete(request.request_id);
         if (data.ok) {
-          resolve(ok(data.data as T));
+          if (!schema) return resolve(ok(data.data as T));
+
+          const as_parsed = schema.safeParse(data.data);
+          if (as_parsed.success) return resolve(ok(as_parsed.data));
+
+          resolve(err(as_parsed.error));
         } else {
           resolve(err(data.data));
         }
@@ -139,12 +146,17 @@ export class ShardedIpcClient extends BaseClient {
     });
   }
 
-  send_to_shard<T = unknown>(shard_id: number, event: string, data: unknown) {
+  send_to_shard<T = unknown>(
+    shard_id: number,
+    event: string,
+    data: unknown,
+    schema?: z.ZodType<T>,
+  ) {
     const shard = this.shards.get(shard_id);
 
     if (!shard) return err(new Error(`shard "${shard_id}" does not exist`));
 
-    return this._send<T>(shard, event, data);
+    return this._send<T>(shard, event, data, schema);
   }
 
   async get_shard_from_guild_id(guild_id: string) {
@@ -178,12 +190,17 @@ export class ShardedIpcClient extends BaseClient {
     return ok(shard_id);
   }
 
-  async send_to_shard_having_guild<T = unknown>(guild_id: string, event: string, data: unknown) {
+  async send_to_shard_having_guild<T = unknown>(
+    guild_id: string,
+    event: string,
+    data: unknown,
+    schema?: z.ZodType<T>,
+  ) {
     const shard = await this.get_shard_from_guild_id(guild_id);
 
     if (shard.isErr()) return err(shard.error);
 
-    return this.send_to_shard<T>(shard.value, event, data);
+    return this.send_to_shard<T>(shard.value, event, data, schema);
   }
 
   /**

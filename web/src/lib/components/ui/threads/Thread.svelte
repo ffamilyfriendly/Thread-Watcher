@@ -1,28 +1,12 @@
 <script lang="ts">
-	import { add_toast_from_error } from '$lib/state/toasts.svelte';
 	import { guild_state } from '$lib/stores/guild.svelte';
-	import type { DiscordChannel } from '$lib/types/internal_api';
-	import type { ThreadData } from '@watcher/shared';
-	import FallBackChannel from '../discord/FallBackChannel.svelte';
+	import type { HydratedThreadData } from '@watcher/shared';
 
 	interface Props {
-		thread: ThreadData;
+		thread: HydratedThreadData;
 	}
 
 	const { thread }: Props = $props();
-
-	let channel_data = $state<DiscordChannel>();
-
-	$effect(() => {
-		if (!guild_state.is_ready) return;
-		guild_state.get_channel(thread.thread_id).then((res) => {
-			if (res.isErr()) {
-				return add_toast_from_error(res.error);
-			}
-
-			channel_data = res.value;
-		});
-	});
 </script>
 
 <div class="watched_thread">
@@ -31,15 +15,14 @@
 			class="thread_name"
 			href="https://discord.com/channels/{guild_state.guild_id}/{thread.thread_id}"
 		>
-			<span>{channel_data?.name ?? 'NO NAME'}</span>
+			<span>{thread.display_name}</span>
 		</a>
 
-		{#if channel_data?.parentId}
-			<FallBackChannel
-				class_name="parent_channel_link"
-				clickable={true}
-				channel_id={channel_data?.parentId}
-			/>
+		{#if thread.parent_channel}
+			{@const p = thread.parent_channel}
+			<a href="https://discord.com/channels/{guild_state.guild_id}/{p.channel_id}"
+				>{p.display_name}</a
+			>
 		{/if}
 	</div>
 

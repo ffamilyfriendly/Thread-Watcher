@@ -12,7 +12,16 @@ import {
 	type ExpandedAuditLog,
 	type GuildOverview
 } from '$lib/types/internal_api';
-import { ZAuditData, ZMonitor, ZThreadData, type Monitor, type ThreadData } from '@watcher/shared';
+import {
+	ZAuditData,
+	ZHydratedThreadData,
+	ZMonitor,
+	ZThreadData,
+	type HydratedThreadData,
+	type Monitor,
+	type ThreadData,
+	type ThreadSearchData
+} from '@watcher/shared';
 
 export async function fetch_audit_logs(
 	guild_id: string,
@@ -156,11 +165,22 @@ export async function get_monitors(
 
 export async function get_threads(
 	guild_id: string,
-	user_id: string
-): Promise<Result<ThreadData[], Error | Response>> {
-	return await json_fetch<ThreadData[]>(
-		`/guild/${guild_id}/watched_threads`,
+	user_id: string,
+	filters: ThreadSearchData
+): Promise<Result<HydratedThreadData[], Error | Response>> {
+	const query = [`page=${filters.page}`];
+
+	if (filters.monitor_id) {
+		query.push(`monitor_id=${filters.monitor_id}`);
+	}
+
+	if (filters.parent_channel_id) {
+		query.push(`parent_channel_id=${filters.parent_channel_id}`);
+	}
+
+	return await json_fetch<HydratedThreadData[]>(
+		`/guild/${guild_id}/watched_threads?${query.join('&')}`,
 		{ user_id },
-		z.array(ZThreadData.extend({ channel_obj: ZDiscordChannel.nullish() }))
+		z.array(ZHydratedThreadData)
 	);
 }
