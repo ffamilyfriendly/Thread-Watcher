@@ -7,12 +7,11 @@ import {
   SlashCommandBuilder,
   ThreadChannel,
 } from 'discord.js';
-
 import { CommandError, RegistrationScope } from 'interfaces/BaseCommandInterface';
 import { type Command } from 'interfaces/Command';
 import { DatabaseError } from 'interfaces/Database';
 import { err, Result } from 'neverthrow';
-import { AuditType, PartialAuditObject } from 'services/AuditService';
+import { PartialAuditObject } from 'services/AuditService';
 import { CommandContext } from 'utilities/command_context';
 
 async function run(
@@ -30,8 +29,6 @@ async function run(
   if (result.isErr()) {
     return err(result.error);
   } else {
-    const audit_type: AuditType = result.value ? 'THREAD_WATCHED' : 'THREAD_UNWATCHED';
-
     let log: Result<PartialAuditObject, DatabaseError>;
     if (result.value) {
       log = await audit_service.log_thread_watch(
@@ -75,7 +72,6 @@ const command: Command = {
   command_scope: RegistrationScope.GLOBAL,
   access_control: {
     invoker_requires_permission: [PermissionFlagsBits.ManageThreads],
-    bot_requires_permission: [PermissionFlagsBits.ManageThreads],
     channel_option_name: 'thread',
   },
   command_data,

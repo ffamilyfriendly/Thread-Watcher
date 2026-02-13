@@ -119,6 +119,14 @@ export default class Sqlite implements Database {
     return ok();
   }
 
+  @with_error_handling
+  async set_thread_manager(thread_id: string, mgr?: string) {
+    this.db
+      .prepare('UPDATE threads SET managed_by = ? WHERE thread_id = ?')
+      .run(mgr ?? null, thread_id);
+    return ok();
+  }
+
   async get_thread(thread_id: string) {
     return this.query_one(ZThreadData, 'SELECT * FROM threads WHERE thread_id = ?', thread_id);
   }

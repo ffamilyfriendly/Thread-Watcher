@@ -14,8 +14,8 @@
 	import FallBackChannel from '../discord/FallBackChannel.svelte';
 
 	interface Props {
-		monitor: Monitor,
-		monitors: Monitor[]
+		monitor: Monitor;
+		monitors: Monitor[];
 	}
 
 	let { monitors = $bindable(), ...rest }: Props = $props();
@@ -63,7 +63,7 @@
 			}
 		};
 	}
-async function edit_monitor() {
+	async function edit_monitor() {
 		if (!edit_data) return;
 		const data = get_edit_object(edit_data);
 
@@ -147,16 +147,18 @@ async function edit_monitor() {
 
 <div id="focus_{monitor.target_id}" class="monitor">
 	<div class="head_thing">
-		<p>Monitor in</p>
-		{#if monitor.target_id == monitor.guild_id}
-			{#if guild_state.guild}
-				<Guild guild={guild_state.guild.guild} />
+		<div class="mimimimi">
+			<p>Monitor in</p>
+			{#if monitor.target_id == monitor.guild_id}
+				{#if guild_state.guild}
+					<Guild guild={guild_state.guild.guild} />
+				{:else}
+					GUILD
+				{/if}
 			{:else}
-				GUILD
+				<FallBackChannel clickable={true} channel_id={monitor.target_id} channel={channel_obj} />
 			{/if}
-		{:else}
-			<FallBackChannel clickable={true} channel_id={monitor.target_id} channel={channel_obj} />
-		{/if}
+		</div>
 		<div class="status {monitor.is_suspended ? 'suspended' : 'active'} {is_paused ? 'paused' : ''}">
 			{#if monitor.is_suspended}
 				Suspended
@@ -175,6 +177,7 @@ async function edit_monitor() {
 					Active
 					<small>
 						Keeping <b>{monitor.manages_threads_count}</b> threads open!
+						<a class="active_count_text" href="./threads?monitor={monitor.target_id}">(view)</a>
 					</small>
 				</p>
 			{/if}
@@ -260,6 +263,10 @@ async function edit_monitor() {
 		gap: 0.5rem;
 	}
 
+	.active_count_text {
+		color: inherit;
+	}
+
 	.filter_row_SCJ_MENTION_BEST_CULT {
 		--padding: 0.5rem;
 		overflow: hidden;
@@ -325,7 +332,7 @@ async function edit_monitor() {
 		outline: 1px solid rgba(255, 255, 255, 0.2);
 		border-radius: 0.5rem;
 		justify-content: space-between;
-		transition: .2s;
+		transition: 0.2s;
 
 		&:target {
 			animation-name: attention;
@@ -333,6 +340,12 @@ async function edit_monitor() {
 			animation-duration: 1s;
 			animation-iteration-count: 3;
 		}
+	}
+
+	.mimimimi {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
 	}
 
 	@keyframes attention {
@@ -418,6 +431,11 @@ async function edit_monitor() {
 			& * {
 				flex-grow: 1;
 			}
+		}
+
+		.head_thing {
+			flex-direction: column;
+			align-items: start;
 		}
 	}
 </style>

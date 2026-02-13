@@ -101,7 +101,7 @@ export default class ThreadService {
   }
 
   async get_filtered_threads(guild_id: string, filters: ThreadSearchData) {
-    return this.db.get_paginated_threads_in_guild(guild_id, 50, filters);
+    return this.db.get_paginated_threads_in_guild(guild_id, 20, filters);
   }
 
   async get_count_threads(guild_id: string) {
@@ -147,6 +147,10 @@ export default class ThreadService {
     return this.set_bump_thread_time(thread.id, thread.autoArchiveDuration ?? 0);
   }
 
+  async set_manager(thread_id: string, mgr?: string) {
+    return this.db.set_thread_manager(thread_id, mgr);
+  }
+
   /**
    *
    * @param is_managed_by_parent if the thread was watched as a result of a channel monitor
@@ -158,14 +162,32 @@ export default class ThreadService {
 
     if (!db_entry.value) return (await this.insert_thread(thread, managed_by)).map(() => true);
 
+    // Here we're setting managed_by to null if "managed_by" is undefined as we want a manual watch to override any monitors
+    if (!managed_by && db_entry.value.managed_by) {
+      this.set_manager(thread.id).then((r) => {
+        if (r.isErr()) {
+          logger.warn('could not unbind manager on watch_thread', thread.id, r.error);
+        }
+      });
+    }
+
     if (db_entry.value.is_watched) return ok(false);
 
     return (await this.set_thread_watch_status(thread.id, true)).map(() => true);
   }
 
-  async unwatch_thread(thread: GenericThread) {
+  async unwatch_thread(thread: GenericThread, remove_manager = false) {
     const db_entry = await this.get_thread(thread.id, false);
     if (db_entry.isErr()) return err(db_entry.error);
+
+    if (remove_manager && db_entry.value?.managed_by) {
+      this.set_manager(thread.id).then((r) => {
+        if (r.isErr()) {
+          logger.warn('could not unbind manager on unwatch_thread', thread.id, r.error);
+        }
+      });
+    }
+
     if (db_entry.value === null || !db_entry.value.is_watched) return ok(false);
 
     return (await this.set_thread_watch_status(thread.id, false)).map(() => true);
@@ -179,7 +201,7 @@ export default class ThreadService {
     const is_watched = db_thread_entry.value && db_thread_entry.value.is_watched;
 
     if (db_thread_entry.value && db_thread_entry.value.is_watched) {
-      const unwatch_result = await this.unwatch_thread(thread);
+      const unwatch_result = await this.unwatch_thread(thread, true);
       if (unwatch_result.isErr()) return err(unwatch_result.error);
     } else {
       const watch_result = await this.watch_thread(thread);
@@ -196,6 +218,8 @@ export default class ThreadService {
 
   static async should_be_watched(client: Client, thread: ThreadChannel, filters: FilterData) {
     if (thread.locked) return ok(false);
+
+    logger.silly('should_be_watched', thread.id, filters);
 
     const name_matches_regex = filters.regex?.test(thread.name) ?? true;
 
@@ -218,8 +242,9 @@ export default class ThreadService {
     const tag_list_as_ids = thread.appliedTags?.map((r) => r);
     const thread_has_tag = !!tag_list_as_ids.find((t) => filters.tags?.includes(t));
 
-    const role_thing = filters.role_whitelist ? author_has_role : true;
-    const tag_thing = filters.tags ? thread_has_tag : true;
+    const role_thing =
+      filters.role_whitelist && filters.role_whitelist.length !== 0 ? author_has_role : true;
+    const tag_thing = filters.tags && filters.tags.length !== 0 ? thread_has_tag : true;
 
     return ok(name_matches_regex && role_thing && tag_thing);
   }

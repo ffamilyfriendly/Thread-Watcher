@@ -3,7 +3,7 @@ import { error } from '@sveltejs/kit';
 
 export async function load({ locals, params, url }) {
 	const auth = await locals.auth();
-
+	console.log('hello rendering');
 	if (!auth?.user) {
 		return error(401, 'not authenticated');
 	}

@@ -21,6 +21,8 @@ export const ZThreadMetadata = z.object({
   thread_id: z.string(),
   display_name: z.string(),
   last_activity: z.coerce.date(),
+  recent_messages_count: z.number().nullish().default(-1),
+  thread_bump_mode: z.enum(["MESSAGE", "EDIT", "CANNOT_BUMP"]),
   parent_channel: z
     .object({
       channel_id: z.string(),

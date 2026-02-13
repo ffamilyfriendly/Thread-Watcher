@@ -13,8 +13,8 @@
 	}
 	const data: Props = $props();
 
-	const watched_threads = data.data.watched_threads;
-	const page_id = $derived(Number(page.url.searchParams.get('page')));
+	const watched_threads = $derived(data.data.watched_threads);
+	let page_id = $state(Number(page.url.searchParams.get('page')));
 
 	let filter_monitor = $state<string | null>(page.url.searchParams.get('monitor'));
 	let filter_channel = $state<string>();
@@ -22,26 +22,47 @@
 	let search_url = $state<string>();
 
 	$effect(() => {
-		let url_segments = [`page=${page_id}`];
+		const params = new URLSearchParams();
+		params.set('page', '0');
+		if (filter_monitor) params.set('monitor', filter_monitor);
+		if (filter_channel) params.set('parent', filter_channel);
 
-		if (filter_monitor) {
-			url_segments.push(`monitor=${filter_monitor}`);
-		}
-
-		if (filter_channel) {
-			url_segments.push(`parent=${filter_channel}`);
-		}
-
-		search_url = '?' + url_segments.join('&');
+		search_url = `?${params.toString()}`;
 	});
+
+	function do_navigation(delta: number) {
+		page_id = Math.max(0, page_id + delta);
+
+		const params = new URLSearchParams();
+
+		params.set('page', page_id.toString());
+		if (filter_monitor) params.set('monitor', filter_monitor);
+		if (filter_channel) params.set('parent', filter_channel);
+		console.log('navigating to', params);
+		goto(`?${params.toString()}`, { keepFocus: true });
+	}
 </script>
 
 <main>
 	{#key watched_threads}
-		<div class="items">
-			{#each watched_threads as thread (thread.thread_id)}
-				<Thread {thread} />
-			{/each}
+		<div class="main">
+			<div class="items">
+				{#each watched_threads as thread (thread.thread_id)}
+					<Thread {thread} />
+				{/each}
+			</div>
+			<div class="button_row">
+				<button
+					onclick={() => do_navigation(-1)}
+					disabled={page_id <= 0}
+					class={[btn_style.button, btn_style.tetriary]}>Previous</button
+				>
+				<button
+					disabled={watched_threads.length !== 20}
+					onclick={() => do_navigation(1)}
+					class={[btn_style.button, btn_style.primary]}>Next</button
+				>
+			</div>
 		</div>
 	{/key}
 
@@ -77,6 +98,10 @@
 		display: flex;
 		justify-content: space-between;
 		gap: 1rem;
+
+		@media (max-width: 825px) {
+			flex-direction: column-reverse;
+		}
 	}
 
 	.filters {
@@ -89,9 +114,20 @@
 	}
 
 	.items {
-		flex-grow: 1;
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
+	}
+
+	.main {
+		flex-grow: 1;
+	}
+
+	.button_row {
+		display: flex;
+		justify-content: right;
+		gap: 0.5rem;
+		align-items: center;
+		margin-top: 1rem;
 	}
 </style>

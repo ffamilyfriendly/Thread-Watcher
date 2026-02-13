@@ -1,10 +1,41 @@
 import { client } from '@providers/client';
 import { logger } from '@providers/logger';
 import { ThreadMetadata } from '@watcher/shared';
+import { ChannelType, GuildMember, PrivateThreadChannel, PublicThreadChannel } from 'discord.js';
 import { PrivateEvent } from 'interfaces/PrivateEvents';
-import { err, ok, ResultAsync } from 'neverthrow';
+import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { convert_snowflake_to_date } from 'services/ThreadService';
 import { map_err } from 'utilities/error';
+
+function get_bump_mode(
+  thread: PublicThreadChannel | PrivateThreadChannel,
+  guild_member: GuildMember,
+): 'MESSAGE' | 'EDIT' | 'CANNOT_BUMP' {
+  const perms = thread.permissionsFor(guild_member);
+
+  if (perms.has('ManageThreads')) return 'EDIT';
+  if (thread.type !== ChannelType.PrivateThread || perms.has('SendMessagesInThreads'))
+    return 'MESSAGE';
+  return 'CANNOT_BUMP';
+}
+
+const FETCH_MSGES_AMOUNT = 10;
+const MAX_RECENT_MSG_AGE = 1000 * 60 * 60;
+async function get_recent_messages(thread: PublicThreadChannel | PrivateThreadChannel) {
+  const msges_res = await ResultAsync.fromPromise(
+    thread.messages.fetch({ limit: FETCH_MSGES_AMOUNT }),
+    map_err,
+  );
+
+  if (msges_res.isErr()) return err(msges_res.error);
+
+  const recent_msges = msges_res.value.filter((m) => {
+    const msg_age = Date.now() - m.createdTimestamp;
+    return msg_age < MAX_RECENT_MSG_AGE;
+  });
+
+  return ok(recent_msges.size);
+}
 
 const event: PrivateEvent<{
   guild_id: string;
@@ -14,6 +45,15 @@ const event: PrivateEvent<{
   async event_callback({ guild_id, ids }) {
     if (!client.application) return err(new Error('Client not ready'));
     const hydrated: ThreadMetadata[] = [];
+
+    const bot_member = await ResultAsync.fromPromise(
+      client.guilds.fetch(guild_id),
+      map_err,
+    ).andThen((g) => {
+      return ResultAsync.fromPromise(g.members.fetchMe(), map_err);
+    });
+
+    if (bot_member.isErr()) return err(bot_member.error);
 
     for (const id of ids) {
       const chn_res = await ResultAsync.fromPromise(client.channels.fetch(id), map_err);
@@ -44,6 +84,8 @@ const event: PrivateEvent<{
       hydrated.push({
         thread_id: id,
         display_name: thr.name,
+        recent_messages_count: (await get_recent_messages(thr)).unwrapOr(-1),
+        thread_bump_mode: get_bump_mode(thr, bot_member.value),
         last_activity: thr.lastMessageId
           ? convert_snowflake_to_date(thr.lastMessageId)
           : new Date('2003-05-01'),
