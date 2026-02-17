@@ -328,8 +328,8 @@ router.post(
         req.user_id!,
         guild_id,
         key,
-        adapter.display_value(old_value),
-        adapter.display_value(value as string),
+        old_value,
+        value as string,
       );
 
       if (audit_res.isOk()) {

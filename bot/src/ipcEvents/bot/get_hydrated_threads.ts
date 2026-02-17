@@ -14,7 +14,7 @@ function get_bump_mode(
   const perms = thread.permissionsFor(guild_member);
 
   if (perms.has('ManageThreads')) return 'EDIT';
-  if (thread.type !== ChannelType.PrivateThread || perms.has('SendMessagesInThreads'))
+  if (thread.type !== ChannelType.PrivateThread && perms.has('SendMessagesInThreads'))
     return 'MESSAGE';
   return 'CANNOT_BUMP';
 }

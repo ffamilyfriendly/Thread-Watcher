@@ -62,7 +62,4 @@ If you wish to place code into any of these folders but do not wish it to be loa
 
 - Test, test, and test again
   - we want this to run without crashing, yes? Weird perms **WILL** crash the bot
-  - find and check edge cases (EDGE4LIFE 😎)
-- stoooop trying to make everything too clean
-  - if we actually want to deploy this we cant stay stuck on core features only
-  - we can polish before deploy. Build shit bro
+- Secure config route. Currently bot accepts arbitrary IDs for stuff like logging channel IDs and bot will accept it and try sending cross-server

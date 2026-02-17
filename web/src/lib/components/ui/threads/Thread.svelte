@@ -23,6 +23,7 @@
 		<a
 			class="thread_name"
 			href="https://discord.com/channels/{guild_state.guild_id}/{thread.thread_id}"
+			target="_blank"
 		>
 			<span>{thread.display_name}</span>
 		</a>
@@ -32,7 +33,7 @@
 			<a
 				class="parent_name"
 				href="https://discord.com/channels/{guild_state.guild_id}/{p.channel_id}"
-				>#{p.display_name}</a
+				target="_blank">#{p.display_name}</a
 			>
 		{/if}
 	</div>
