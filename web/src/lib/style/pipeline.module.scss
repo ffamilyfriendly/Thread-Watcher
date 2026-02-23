@@ -1,0 +1,30 @@
+:root {
+	--clr: var(var(--clr), #121212);
+}
+
+.select {
+	background-color: color-mix(in srgb, var(--clr) 95%, white);
+	outline: 1px solid color-mix(in srgb, var(--clr) 85%, white);
+	padding: 0.25rem 0.5rem;
+	color: inherit;
+	border: none;
+	border-radius: 0.15rem;
+}
+
+.text_input {
+	background-color: color-mix(in srgb, var(--clr) 95%, white);
+	outline: 1px solid color-mix(in srgb, var(--clr) 85%, white);
+	padding: 0.25rem 0.5rem;
+	color: inherit;
+	border: none;
+	border-radius: 0.15rem;
+}
+
+.basic_btn {
+	background-color: color-mix(in srgb, var(--clr) 95%, white);
+	outline: 1px solid color-mix(in srgb, var(--clr) 85%, white);
+	color: inherit;
+	border: none;
+	border-radius: 0.15rem;
+	padding: 0.25rem 0.5rem;
+}

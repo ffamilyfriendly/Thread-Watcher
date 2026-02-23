@@ -4,3 +4,4 @@ export * from "./schemas/guild";
 export * from "./schemas/audit";
 export * from "./schemas/ai";
 export * from "./schemas/ticket";
+export * from "./ticket_outputs";

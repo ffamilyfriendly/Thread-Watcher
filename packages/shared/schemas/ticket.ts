@@ -36,24 +36,31 @@ export const ZSelectionStart = z.object({
 });
 
 // Pipeline stuff
+export const ConditionalOperands = [
+  "starts_with",
+  "ends_with",
+  "includes",
+  "not_null",
+  "equal",
+] as const;
 
 export const ZConditional = z.object({
   value_1: z.string(),
-  operand: z.enum([
-    "starts_with",
-    "ends_with",
-    "includes",
-    "not_null",
-    "equal",
-  ]),
+  operand: z.enum(ConditionalOperands),
   value_2: z.string().nullish(),
 });
+export type Conditional = z.output<typeof ZConditional>;
 
 export const ZModule = z.object({
   uid: z.string(), // internal Id that cannot be changed
   id: z.string(),
   conditional_type: z.enum(["AND", "OR"]),
   conditionals: z.array(ZConditional),
+});
+
+// This modules does not really exist. It's injected and includes variables such as the selected role and so forth
+export const ZFakeEnvModule = ZModule.extend({
+  type: z.literal("ROOT_ENV_MODULE"),
 });
 
 // Changes the assigned role of the ticket
@@ -71,6 +78,7 @@ export const ZGenerateAnswer = ZModule.extend({
 export const ZPipelineModule = z.discriminatedUnion("type", [
   ZAssignRole,
   ZGenerateAnswer,
+  ZFakeEnvModule,
 ]);
 export type PipelineModule = z.output<typeof ZPipelineModule>;
 export type TypedPipelineModule<T extends PipelineModule["type"]> = Extract<

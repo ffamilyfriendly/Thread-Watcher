@@ -136,7 +136,10 @@
 		{/if}
 
 		{#if !disabled}
-			<button class={[btn_style.button]} onclick={() => (show_item_picker = !show_item_picker)}>
+			<button
+				class={[btn_style.button, 'chevron_btn']}
+				onclick={() => (show_item_picker = !show_item_picker)}
+			>
 				{#if show_item_picker}
 					<ChevronUp />
 				{:else}
@@ -196,12 +199,15 @@
 
 	.current_selection {
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
 		padding: 0.1rem;
 		margin: 0.5rem 0rem;
 		outline: 1px solid rgba(128, 128, 128, 0.33);
 		border-radius: 0.5rem;
+
+		.chevron_btn {
+			margin-left: auto;
+		}
 	}
 
 	.selected_list {
