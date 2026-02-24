@@ -1,30 +1,34 @@
 <script lang="ts">
 	import Pipeline from '$lib/components/ui/tickets/Pipeline.svelte';
 	import type { PipelineModule } from '@watcher/shared';
-	import type { PageData, PageProps } from './$types.js';
-	import { init_pipeline_state } from '$lib/stores/pipeline.svelte.js';
-	import SettingBox from '$lib/components/ui/settings/SettingBox.svelte';
+	import type { PageProps } from './$types.js';
+	import { clean_or_throw, init_pipeline_state } from '$lib/stores/pipeline.svelte.js';
 	import RolePicker from '$lib/components/ui/settings/RolePicker.svelte';
+	import ChannelPicker from '$lib/components/ui/settings/ChannelPicker.svelte';
+	import { CAN_HOLD_THREADS } from '$lib/types/discord.js';
+	import { ResultAsync } from 'neverthrow';
+	import { map_err } from '$lib/error_helper.js';
+	import { add_toast, add_toast_from_error } from '$lib/state/toasts.svelte.js';
+	import btn_style from '$lib/style/button.module.scss';
+	import { Clipboard } from '@lucide/svelte';
 
 	const TEST_MODULES: PipelineModule[] = [
 		{
-			type: 'ASSIGN_ROLE',
-			id: 'test_component_1',
-			uid: 'test_1',
-			conditional_type: 'OR',
-			conditionals: [
-				{
-					value_1: 'test_component_1',
-					operand: 'not_null'
-				}
-			]
+			uid: '4f22d4d9-a252-4610-90cd-f959f76662b9',
+			id: 'rhyme_username',
+			conditional_type: 'AND',
+			conditionals: [],
+			type: 'GENERATE_ANSWER'
 		},
 		{
-			type: 'GENERATE_ANSWER',
-			id: 'gen_ai_slop_ans',
-			uid: 'test_2',
+			uid: '4da3f6e0-8a77-4d97-ad75-76f80f5a3f97',
+			id: 'rhymes_w_orange_lol',
 			conditional_type: 'AND',
-			conditionals: []
+			conditionals: [
+				{ value_1: '{{rhyme_username.answer}}', operand: 'includes', value_2: 'orange' }
+			],
+			type: 'ASSIGN_ROLE',
+			role_id: '1460017237233504348'
 		}
 	];
 
@@ -33,8 +37,9 @@
 	let panel_name = $state<string>();
 	let panel_description = $state<string>();
 
-	const pipeline_state = init_pipeline_state(TEST_MODULES);
+	let pipeline_state = init_pipeline_state(TEST_MODULES);
 	let assign_role = $state<string>();
+	let assign_channel = $state<string>();
 
 	$effect(() => {
 		if (!data.panel) return;
@@ -45,13 +50,30 @@
 		if (description) panel_description = description;
 
 		if (data.panel.pipeline) {
-			pipeline_state.set_modules(data.panel.pipeline);
+			pipeline_state.set_modules(clean_or_throw(data.panel.pipeline));
 		}
 
 		assign_role = data.panel.initial_assigned_role;
+		assign_channel = data.panel.initial_channel_id;
 
-		init_pipeline_state(data.panel?.pipeline ?? []);
+		pipeline_state = init_pipeline_state(data.panel?.pipeline ?? []);
 	});
+
+	async function export_pipeline_as_json() {
+		const as_json = JSON.stringify(pipeline_state.modules);
+
+		const could_set_clipboard = await ResultAsync.fromPromise(
+			navigator.clipboard.writeText(as_json),
+			map_err
+		);
+		if (could_set_clipboard.isErr()) add_toast_from_error(could_set_clipboard.error);
+
+		add_toast({
+			label: 'Yay!',
+			message: 'pipeline data saved to your clipboard',
+			type: 'success'
+		});
+	}
 
 	const create_new = $derived(params.panel_id === 'new');
 </script>
@@ -68,9 +90,22 @@
 
 		<h2>Pipeline</h2>
 		<Pipeline />
+		<button class={[btn_style.button, btn_style.tetriary]} onclick={export_pipeline_as_json}>
+			<Clipboard />
+			Copy
+		</button>
 	</div>
 
 	<div class="sidebar">
+		<div class="option">
+			<h3>Assigned Channel</h3>
+			<ChannelPicker
+				channels={data.channels}
+				guild_id={data.guild_id}
+				only_with_types={CAN_HOLD_THREADS}
+				bind:value={assign_channel}
+			/>
+		</div>
 		<div class="option">
 			<h3>Assigned Role</h3>
 			<RolePicker roles={data.roles} bind:value={assign_role} />

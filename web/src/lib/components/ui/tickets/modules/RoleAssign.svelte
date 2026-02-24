@@ -10,7 +10,7 @@
 	let { module = $bindable() }: Props = $props();
 </script>
 
-<BaseModule title="Assign Role" accent="#5865F2" bind:module>
+<BaseModule title="Assign Role" bind:module>
 	{#snippet description()}
 		Set which role is responsible for this ticket. The <a
 			href="https://docs.threadwatcher.xyz/features/tickets/ticket-panels#assigned-role"

@@ -13,13 +13,6 @@ export const ZDiscordGuild = z.object({
 
 export type DiscordGuild = z.infer<typeof ZDiscordGuild>;
 
-interface DiscordGuildExpanded extends DiscordGuild {
-	can_add: boolean;
-	guild_has_bot: boolean;
-	should_not_show: boolean;
-	action_link: string;
-}
-
 const ZDiscordUser = z.object({
 	id: z.string(),
 	username: z.string(),
@@ -55,4 +48,10 @@ export const CAN_BE_MONITOR_TARGET = [
 	ChannelTypes.GUILD_ANNOUNCEMENT,
 	ChannelTypes.GUILD_FORUM,
 	ChannelTypes.GUILD_MEDIA
+];
+
+export const CAN_HOLD_THREADS = [
+	ChannelTypes.GUILD_TEXT,
+	ChannelTypes.GUILD_ANNOUNCEMENT,
+	ChannelTypes.GUILD_FORUM
 ];

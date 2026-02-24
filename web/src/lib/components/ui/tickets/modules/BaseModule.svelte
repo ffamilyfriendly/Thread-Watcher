@@ -1,20 +1,22 @@
 <script lang="ts">
-	import { ChevronDown, ChevronUp } from '@lucide/svelte';
-	import type { PipelineModule } from '@watcher/shared';
+	import { ChevronDown, ChevronUp, Trash2 } from '@lucide/svelte';
+	import { MODULE_OUTPUTS, type PipelineModule } from '@watcher/shared';
 	import type { Snippet } from 'svelte';
 	import { slide } from 'svelte/transition';
 	import PermissionsSection from './components/PermissionsSection.svelte';
+	import { use_pipeline } from '$lib/stores/pipeline.svelte';
 
 	interface Props {
 		module: PipelineModule;
 		children: Snippet;
 		title: string;
 		description: Snippet;
-		accent: `#${string}`;
 	}
 
-	let { module = $bindable(), children, accent, title, description }: Props = $props();
+	let { module = $bindable(), children, title, description }: Props = $props();
 
+	const accent = $derived(MODULE_OUTPUTS[module.type].accent_clr);
+	const pipeline = use_pipeline();
 	function on_input(e: Event) {
 		const input = e.target as HTMLInputElement;
 		const val = input.value.replace(/\s/g, '_').replace(/[^\w]/g, '').slice(0, 20);
@@ -22,10 +24,25 @@
 		module.id = val;
 	}
 
+	function handle_drag_start(e: DragEvent) {
+		e.dataTransfer?.setData('optype', 'move');
+		e.dataTransfer?.setData('module_id', module.uid);
+	}
+
+	function handle_delete() {
+		pipeline.delete_module(module.uid);
+	}
+
 	let expanded = $state(false);
 </script>
 
-<div class="wrapper">
+<div
+	role="region"
+	draggable={!expanded}
+	class:draggable={!expanded}
+	ondragstart={handle_drag_start}
+	class="wrapper"
+>
 	<div style="--accent: {accent}" class="module {expanded ? '' : 'hidden'}">
 		{#if expanded}
 			<div transition:slide={{ duration: 300 }} class="expansion_wrapper">
@@ -65,13 +82,20 @@
 			</div>
 		{/if}
 	</div>
-	<button class="expand" onclick={() => (expanded = !expanded)}>
-		{#if expanded}
-			<ChevronUp />
-		{:else}
-			<ChevronDown />
-		{/if}
-	</button>
+
+	<div class="btns">
+		<button class="expand" onclick={() => (expanded = !expanded)}>
+			{#if expanded}
+				<ChevronUp />
+			{:else}
+				<ChevronDown />
+			{/if}
+		</button>
+
+		<button onclick={handle_delete} class="expand delete">
+			<Trash2 />
+		</button>
+	</div>
 </div>
 
 <style lang="scss">
@@ -80,17 +104,42 @@
 		--clr: #121212;
 	}
 
+	.draggable {
+		cursor: move;
+	}
+
 	.wrapper {
 		display: flex;
 		width: 100%;
 		gap: 1rem;
 		align-items: start;
+
+		&:hover {
+			.delete {
+				opacity: 1;
+
+				&:hover {
+					color: var(--error-700);
+				}
+			}
+		}
+
+		.delete {
+			opacity: 0;
+			color: var(--error-500);
+		}
+
+		.btns {
+			display: flex;
+			flex-direction: column;
+		}
 	}
 
 	.expand {
 		background-color: transparent;
 		color: white;
 		border: none;
+		cursor: pointer;
 	}
 
 	.module {

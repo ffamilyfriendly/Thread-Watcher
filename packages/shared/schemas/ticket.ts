@@ -66,13 +66,13 @@ export const ZFakeEnvModule = ZModule.extend({
 // Changes the assigned role of the ticket
 export const ZAssignRole = ZModule.extend({
   role_id: z.string().nullish(),
-  type: z.literal("ASSIGN_ROLE"),
+  type: z.literal("ASSIGN_ROLE").default("ASSIGN_ROLE"),
 });
 
 // Changes the assigned role of the ticket
 export const ZGenerateAnswer = ZModule.extend({
   prompt: z.string().nullish(),
-  type: z.literal("GENERATE_ANSWER"),
+  type: z.literal("GENERATE_ANSWER").default("GENERATE_ANSWER"),
 });
 
 export const ZPipelineModule = z.discriminatedUnion("type", [
@@ -84,6 +84,9 @@ export type PipelineModule = z.output<typeof ZPipelineModule>;
 export type TypedPipelineModule<T extends PipelineModule["type"]> = Extract<
   PipelineModule,
   { type: T }
+>;
+export type RenderableModule = TypedPipelineModule<
+  Exclude<PipelineModule["type"], "ROOT_ENV_MODULE">
 >;
 
 export const ZPipeline = z.array(ZPipelineModule);

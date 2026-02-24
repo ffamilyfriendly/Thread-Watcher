@@ -8,7 +8,7 @@
 	let { module = $bindable() }: Props = $props();
 </script>
 
-<BaseModule title="Generate Answer" accent="#10A37F" bind:module>
+<BaseModule title="Generate Answer" bind:module>
 	{#snippet description()}
 		The <code>Generate Answer</code> module allows you to automatically answer whatever a user might need
 		help with.
