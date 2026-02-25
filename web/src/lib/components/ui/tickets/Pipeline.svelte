@@ -43,7 +43,11 @@
 
 	<div class="drawer">
 		{#if show_module_drawer}
-			<ModuleDrawer />
+			<ModuleDrawer
+				on_click={(unchecked_module_type) => {
+					handle_create(pipe_state.modules.length, unchecked_module_type);
+				}}
+			/>
 		{/if}
 		<button onclick={() => (show_module_drawer = !show_module_drawer)} class="drawer_btn">
 			{#if show_module_drawer}

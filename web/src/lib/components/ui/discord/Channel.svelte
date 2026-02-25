@@ -7,9 +7,10 @@
 		channel: DiscordChannel;
 		clickable?: boolean;
 		class_name?: string;
+		icon_size?: number;
 	}
 
-	const { channel, clickable = false, class_name }: Props = $props();
+	const { channel, clickable = false, class_name, icon_size }: Props = $props();
 
 	const Icon = $derived.by(() => {
 		switch (channel.type) {
@@ -32,10 +33,10 @@
 
 {#if clickable}
 	<a target="_blank" href="https://discord.com/channels/{guild_state.guild_id}/{channel.id}">
-		<p class={class_name}><Icon /> {channel.name}</p>
+		<p class={class_name}><Icon size={icon_size} />{channel.name}</p>
 	</a>
 {:else}
-	<p class={class_name}><Icon /> {channel.name}</p>
+	<p class={class_name}><Icon size={icon_size} />{channel.name}</p>
 {/if}
 
 <style lang="scss">

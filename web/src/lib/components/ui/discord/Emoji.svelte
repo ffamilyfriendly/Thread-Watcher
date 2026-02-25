@@ -2,14 +2,22 @@
 	interface Props {
 		id?: string | null;
 		name?: string | null;
+		is_animated?: boolean;
+		size?: number;
 	}
 
-	const { id, name }: Props = $props();
+	const { id, name, is_animated, size = 96 }: Props = $props();
+
+	const emoji_url = $derived.by(() => {
+		let url = `https://cdn.discordapp.com/emojis/${id}.webp?size=${size}`;
+		if (is_animated) url += '&animated=true';
+		return url;
+	});
 </script>
 
 <span class="emoji">
 	{#if id}
-		<img src="https://cdn.discordapp.com/emojis/{id}.webp?size=96" alt="Emoji" />
+		<img src={emoji_url} alt="Emoji" />
 	{:else if name}
 		<span>{name}</span>
 	{/if}
@@ -18,8 +26,9 @@
 <style>
 	.emoji {
 		display: inline-block;
+		vertical-align: text-bottom;
 		height: 1rem;
-		width: 1rem;
+		aspect-ratio: 1/1;
 
 		img,
 		span {

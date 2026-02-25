@@ -40,6 +40,7 @@
 		"ioredis": "^5.8.2",
 		"neverthrow": "^8.2.0",
 		"safe-regex": "^2.1.1",
+		"svelte-exmarkdown": "^5.0.2",
 		"zod": "^4.3.4"
 	}
 }

@@ -48,6 +48,11 @@ function generate_user(name = "user"): ModuleProperty {
         value: "string",
         description: "the username",
       },
+      {
+        name: "tag",
+        value: "string",
+        description: "tags the user",
+      },
     ],
   };
 }

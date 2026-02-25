@@ -1,0 +1,169 @@
+<script lang="ts">
+	import { Check, Pencil } from '@lucide/svelte';
+	import { tick, type Snippet } from 'svelte';
+	import type { HTMLInputAttributes, HTMLTextareaAttributes } from 'svelte/elements';
+	import VariableSelector from './modules/components/VariableSelector.svelte';
+
+	type TextAreaProps = {
+		use_text_area: true;
+		width?: string;
+	} & HTMLTextareaAttributes;
+
+	type InputProps = {
+		use_text_area?: false;
+		width?: never;
+	} & HTMLInputAttributes;
+
+	type Props = {
+		value?: string | null;
+		display: Snippet<[string | undefined | null]>;
+	} & (TextAreaProps | InputProps);
+
+	let {
+		value = $bindable(),
+		display,
+		use_text_area = false,
+		width,
+		...rest_props
+	}: Props = $props();
+	let is_editing = $state(false);
+	let show_variable_picker = $state(false);
+
+	const input_attrs = $derived(!use_text_area ? (rest_props as HTMLInputAttributes) : {});
+	const textarea_attrs = $derived(use_text_area ? (rest_props as HTMLTextareaAttributes) : {});
+
+	let last_keycode: string;
+	let saved_location: number;
+	function handle_keydown(e: KeyboardEvent) {
+		if (show_variable_picker) return;
+		const is_text_area = e.target instanceof HTMLTextAreaElement;
+
+		if (e.key === '{' && last_keycode === '{') {
+			show_variable_picker = true;
+
+			const target = e.target;
+			if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
+				if (target.selectionStart) saved_location = target.selectionStart + 1;
+			}
+		}
+
+		if (e.key === 'Enter' && (is_text_area ? !e.shiftKey : true)) is_editing = false;
+
+		last_keycode = e.key;
+	}
+
+	function on_blur() {
+		if (show_variable_picker) return;
+		is_editing = false;
+	}
+
+	function resize(node: HTMLTextAreaElement, text: string | null | undefined) {
+		const update = () => {
+			node.style.height = `auto`;
+			node.style.height = `${node.scrollHeight}px`;
+		};
+
+		update();
+
+		return { update };
+	}
+
+	async function insert_picked_var(variable: string) {
+		// I have not the slightest of clues WHY value is not a string when its typed as a string | null in props.
+		// doing this just to keep vsc happy
+		const v_typed = value as string;
+
+		const value_with_variable_added =
+			v_typed.slice(0, saved_location) + variable + '}}' + v_typed.slice(saved_location);
+		value = value_with_variable_added;
+
+		await tick();
+
+		const target = document.activeElement;
+		if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
+			const new_pos = saved_location + variable.length + 2;
+			target.setSelectionRange(new_pos, new_pos);
+			target.focus();
+		}
+	}
+
+	function focus(node: HTMLInputElement | HTMLTextAreaElement) {
+		node.focus();
+		node.select();
+	}
+</script>
+
+{#if show_variable_picker}
+	<VariableSelector bind:show_this={show_variable_picker} on_selected={insert_picked_var} />
+{/if}
+
+<div class="wrapper">
+	{#if is_editing}
+		{#if use_text_area}
+			<textarea
+				{...textarea_attrs}
+				use:focus
+				style:width
+				class="edit textarea"
+				use:resize={value}
+				bind:value
+				onblur={on_blur}
+				onkeydown={handle_keydown}
+			></textarea>
+		{:else}
+			<input
+				{...input_attrs}
+				use:focus
+				class="edit"
+				bind:value
+				onblur={on_blur}
+				onkeydown={handle_keydown}
+			/>
+		{/if}
+
+		<button class="icon_btn" onclick={() => (is_editing = false)}>
+			<Check size={14} />
+		</button>
+	{:else}
+		{@render display(value)}
+		<button class="icon_btn edit_trigger" onclick={() => (is_editing = true)}>
+			<Pencil size={14} />
+		</button>
+	{/if}
+</div>
+
+<style lang="scss">
+	.wrapper {
+		display: flex;
+		align-items: center;
+		max-width: 500px;
+		gap: 0.5rem;
+	}
+
+	.edit {
+		font: inherit;
+		padding: 0;
+		margin: 0;
+		display: inline-block;
+		overflow: hidden;
+		white-space: pre-wrap;
+		background-color: transparent;
+		border: none;
+		outline: none;
+		color: inherit;
+
+		&.textarea {
+			min-height: 1.2rem;
+			flex-grow: 1;
+			resize: none;
+		}
+	}
+
+	.icon_btn {
+		background-color: transparent;
+		border: none;
+		color: white;
+		cursor: pointer;
+		opacity: 0.6;
+	}
+</style>

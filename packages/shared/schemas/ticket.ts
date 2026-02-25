@@ -1,23 +1,28 @@
 import z from "zod";
 
+export const DISCORD_EMBED_TITLE_MAX_LEN = 256;
+export const DISCORD_EMBED_DESCRIPTION_MAX_LEN = 4096;
 export const DISCORD_MAX_FIELDS_IN_EMBED = 25;
-export const DISCORD_MAX_CHARS_IN_FIELD_TEXT = 2000;
+export const DISCORD_MAX_CHARS_IN_FIELD_TITLE = 256;
+export const DISCORD_MAX_CHARS_IN_FIELD_TEXT = 1024;
 
 // Generic stuff used both in panel and pipeline
 export const ZEmbedField = z.object({
-  title: z.string(),
+  title: z.string().max(DISCORD_MAX_CHARS_IN_FIELD_TITLE),
   text: z.string().max(DISCORD_MAX_CHARS_IN_FIELD_TEXT),
   is_inline: z.boolean().nullish(),
 });
 
 export const ZEmbed = z.object({
-  title: z.string(),
-  description: z.string().nullish(),
+  title: z.string().max(DISCORD_EMBED_TITLE_MAX_LEN),
+  description: z.string().max(DISCORD_EMBED_DESCRIPTION_MAX_LEN).nullish(),
   fields: z.array(ZEmbedField).max(DISCORD_MAX_FIELDS_IN_EMBED),
   colour: z
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/, { error: "Must be valid colour hex" }),
 });
+export type EmbedField = z.output<typeof ZEmbedField>;
+export type Embed = z.output<typeof ZEmbed>;
 
 export const ZStringSelectionOption = z.object({
   title: z.string(),
@@ -97,6 +102,8 @@ export const ZTicketPanel = z.object({
   id: z.string(),
   name: z.string().nullish(),
   description: z.string().nullish(),
+  should_watch_ticket: z.coerce.boolean(),
+  should_GPT_summarize_ticket: z.coerce.boolean(),
   discord_message_id: z.string().nullish(), // The message ID of the panel. Used to edit updated panels / check if we've sent the panel message
   initial_assigned_role: z.string(), // The role that will be assigned to the ticket (if pipeline does not alter)
   initial_channel_id: z.string(), // The channel the ticket will open in (if pipeline does not alter)

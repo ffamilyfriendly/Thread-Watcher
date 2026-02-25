@@ -10,9 +10,10 @@
 		channel_id: string;
 		clickable?: boolean;
 		class_name?: string;
+		icon_size?: number;
 	}
 
-	const { channel, channel_id, clickable, class_name }: Props = $props();
+	const { channel, channel_id, clickable, class_name, icon_size }: Props = $props();
 
 	let fetched_channel = $state<DiscordChannel | null>(null);
 
@@ -38,7 +39,7 @@
 </script>
 
 {#if use_channel}
-	<Channel {class_name} {clickable} channel={use_channel} />
+	<Channel {icon_size} {class_name} {clickable} channel={use_channel} />
 {:else}
 	could not fetch channel
 {/if}

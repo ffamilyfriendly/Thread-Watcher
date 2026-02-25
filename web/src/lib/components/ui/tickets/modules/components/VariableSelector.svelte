@@ -2,25 +2,86 @@
 	import { use_pipeline } from '$lib/stores/pipeline.svelte';
 	import { ArrowRightFromLine, Percent, TextInitial } from '@lucide/svelte';
 	import { type ModuleProperty } from '@watcher/shared';
-	import style from '$lib/style/pipeline.module.scss';
 	import { fly } from 'svelte/transition';
+	import { string } from 'zod';
 
 	const pipe_state = use_pipeline();
 
 	interface Props {
 		on_selected: (selected: string) => void;
 		before_uid?: string;
+		show_this?: boolean;
 	}
-	const { on_selected, before_uid }: Props = $props();
+	let { on_selected, before_uid, show_this = $bindable() }: Props = $props();
 
 	let modules = $state(pipe_state.get_all_properties());
+
+	function focus(node: HTMLDivElement) {
+		node.focus();
+	}
 
 	$effect(() => {
 		if (before_uid) {
 			modules = pipe_state.get_properties_before(before_uid);
 		}
 	});
+
+	let selected_index = $state(0);
+
+	const flat_options = $derived.by(() => {
+		const list: { path: string; name: string; type: string }[] = [];
+
+		const walk = (key: string, values: ModuleProperty[], prev_key?: string) => {
+			values.forEach((v) => {
+				if (Array.isArray(v.value)) {
+					walk(v.name, v.value, key);
+				} else {
+					list.push({
+						path: [prev_key, key, v.name].filter(Boolean).join('.'),
+						name: v.name,
+						type: v.value
+					});
+				}
+			});
+		};
+
+		for (const [key, values] of modules.entries()) {
+			walk(key, values);
+		}
+
+		return list;
+	});
+
+	function handle_keydown(e: KeyboardEvent) {
+		switch (e.key) {
+			case 'ArrowDown':
+				e.preventDefault();
+				selected_index = (selected_index + 1) % flat_options.length;
+				break;
+			case 'ArrowUp':
+				e.preventDefault();
+				selected_index = (selected_index - 1 + flat_options.length) % flat_options.length;
+				break;
+			case 'Enter':
+				e.preventDefault();
+				if (flat_options[selected_index]) {
+					selection_made(flat_options[selected_index].path);
+				}
+				break;
+		}
+	}
+
+	function handle_win_click(e: MouseEvent) {
+		e.target;
+	}
+
+	function selection_made(variable: string) {
+		if (show_this) show_this = false;
+		on_selected(variable);
+	}
 </script>
+
+<svelte:window onclick={handle_win_click} onkeydown={handle_keydown} />
 
 {#snippet get_icon(v: ModuleProperty, size = 16)}
 	{#if v.value == 'number'}
@@ -33,27 +94,31 @@
 {/snippet}
 
 {#snippet show_value(key: string, values: ModuleProperty[], prev_key?: string)}
-	<div class="section">
+	<div use:focus class="section">
 		{key}
-		{#each values as value}
-			{#if Array.isArray(value.value)}
-				{@render show_value(value.name, value.value, key)}
-			{:else}
-				<div class="row">
-					<button
-						onclick={() => on_selected([prev_key, key, value.name].filter(Boolean).join('.'))}
-						class="click_event_wrapper"
-					>
-						{@render get_icon(value)}
-						<p>{value.name}</p>
+		<ul>
+			{#each values as value}
+				{#if Array.isArray(value.value)}
+					{@render show_value(value.name, value.value, key)}
+				{:else}
+					{@const path = [prev_key, key, value.name].filter(Boolean).join('.')}
+					{@const is_active = flat_options[selected_index]?.path === path}
+					<li class="row" class:active={is_active}>
+						<button
+							onclick={() => selection_made([prev_key, key, value.name].filter(Boolean).join('.'))}
+							class="click_event_wrapper"
+						>
+							{@render get_icon(value)}
+							<p>{value.name}</p>
 
-						{#if value.description}
-							<p class="description">{value.description}</p>
-						{/if}
-					</button>
-				</div>
-			{/if}
-		{/each}
+							{#if value.description}
+								<p class="description">{value.description}</p>
+							{/if}
+						</button>
+					</li>
+				{/if}
+			{/each}
+		</ul>
 	</div>
 {/snippet}
 
@@ -77,6 +142,9 @@
 		flex-direction: column;
 		gap: 0.25rem;
 		min-width: 300px;
+
+		opacity: 0.9;
+		backdrop-filter: blur(10px);
 	}
 
 	.click_event_wrapper {
@@ -97,6 +165,10 @@
 
 		&:hover {
 			background-color: red;
+		}
+
+		&.active {
+			background-color: green;
 		}
 	}
 

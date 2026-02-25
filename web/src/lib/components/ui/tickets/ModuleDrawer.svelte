@@ -3,10 +3,15 @@
 		CATEGORY_NAMES,
 		MODULE_OUTPUTS,
 		ModuleCategory,
-		type ModuleObject,
-		type RenderableModule
+		type ModuleObject
 	} from '@watcher/shared';
-	import { fly, slide } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
+
+	interface Props {
+		on_click: (module_type: string) => void;
+	}
+
+	const { on_click }: Props = $props();
 
 	type ModuleWithType = ModuleObject & { type: string };
 	const mapped = $state<Map<ModuleCategory, ModuleWithType[]>>(new Map());
@@ -33,15 +38,22 @@
 		{@const cat_name = CATEGORY_NAMES[cat_type]}
 		<b>{cat_name}</b>
 		{#each modules as mod}
-			<div
-				role="region"
-				draggable="true"
-				ondragstart={(e) => handle_drag_start(e, mod.type)}
-				class="module"
-				style="--accent: {mod.accent_clr}"
+			<button
+				class="stop_a11y_complaints"
+				onclick={() => {
+					on_click(mod.type);
+				}}
 			>
-				{mod.name}
-			</div>
+				<div
+					role="region"
+					draggable="true"
+					ondragstart={(e) => handle_drag_start(e, mod.type)}
+					class="module"
+					style="--accent: {mod.accent_clr}"
+				>
+					{mod.name}
+				</div>
+			</button>
 		{/each}
 	{/each}
 </div>
@@ -50,6 +62,11 @@
 	:root {
 		--padding: 0.5rem;
 		--clr: var(var(--clr), #121212);
+	}
+
+	.stop_a11y_complaints {
+		all: unset;
+		display: contents;
 	}
 
 	.module {

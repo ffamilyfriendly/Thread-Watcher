@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Pipeline from '$lib/components/ui/tickets/Pipeline.svelte';
-	import type { PipelineModule } from '@watcher/shared';
+	import type { Embed, PipelineModule } from '@watcher/shared';
 	import type { PageProps } from './$types.js';
 	import { clean_or_throw, init_pipeline_state } from '$lib/stores/pipeline.svelte.js';
 	import RolePicker from '$lib/components/ui/settings/RolePicker.svelte';
@@ -11,35 +11,21 @@
 	import { add_toast, add_toast_from_error } from '$lib/state/toasts.svelte.js';
 	import btn_style from '$lib/style/button.module.scss';
 	import { Clipboard } from '@lucide/svelte';
-
-	const TEST_MODULES: PipelineModule[] = [
-		{
-			uid: '4f22d4d9-a252-4610-90cd-f959f76662b9',
-			id: 'rhyme_username',
-			conditional_type: 'AND',
-			conditionals: [],
-			type: 'GENERATE_ANSWER'
-		},
-		{
-			uid: '4da3f6e0-8a77-4d97-ad75-76f80f5a3f97',
-			id: 'rhymes_w_orange_lol',
-			conditional_type: 'AND',
-			conditionals: [
-				{ value_1: '{{rhyme_username.answer}}', operand: 'includes', value_2: 'orange' }
-			],
-			type: 'ASSIGN_ROLE',
-			role_id: '1460017237233504348'
-		}
-	];
+	import Toggle from '$lib/components/ui/Toggle.svelte';
+	import EmbedConfigurator from '$lib/components/ui/tickets/EmbedConfigurator.svelte';
+	import EditableAttribute from '$lib/components/ui/tickets/EditableAttribute.svelte';
 
 	const { data, params }: PageProps = $props();
 
 	let panel_name = $state<string>();
 	let panel_description = $state<string>();
 
-	let pipeline_state = init_pipeline_state(TEST_MODULES);
+	let pipeline_state = init_pipeline_state([]);
 	let assign_role = $state<string>();
 	let assign_channel = $state<string>();
+	let watch_thread = $state<boolean>(true);
+	let summarize_ticket = $state<boolean>(true);
+	let starting_embed = $state<Embed>({ title: 'Embed Title', fields: [], colour: '#1c2d69' });
 
 	$effect(() => {
 		if (!data.panel) return;
@@ -55,6 +41,9 @@
 
 		assign_role = data.panel.initial_assigned_role;
 		assign_channel = data.panel.initial_channel_id;
+		watch_thread = data.panel.should_watch_ticket;
+		summarize_ticket = data.panel.should_GPT_summarize_ticket;
+		starting_embed = data.panel.commencement_embed;
 
 		pipeline_state = init_pipeline_state(data.panel?.pipeline ?? []);
 	});
@@ -80,13 +69,21 @@
 
 <main class="view">
 	<div class="panel_meta">
-		<h1>{panel_name ?? 'Ticket Panel'}</h1>
-		<p>{panel_description ?? 'this is a description just tryna test stuff'}</p>
+		<EditableAttribute maxlength={50} bind:value={panel_name}>
+			{#snippet display(v)}
+				<h1>{v ?? '<no title>'}</h1>
+			{/snippet}
+		</EditableAttribute>
+		<EditableAttribute width="65ch" bind:value={panel_description} use_text_area={true}>
+			{#snippet display(v)}
+				<p>{v ?? '<no description>'}</p>
+			{/snippet}
+		</EditableAttribute>
 	</div>
 
 	<div class="pipeline">
 		<h2>Opening Embed</h2>
-		put an embed generator thing here please
+		<EmbedConfigurator bind:value={starting_embed} />
 
 		<h2>Pipeline</h2>
 		<Pipeline />
@@ -110,9 +107,13 @@
 			<h3>Assigned Role</h3>
 			<RolePicker roles={data.roles} bind:value={assign_role} />
 		</div>
-		<div class="option">
+		<div class="option row">
 			<h3>Watch Ticket</h3>
-			toggle for if tickets should be watched
+			<Toggle bind:value={watch_thread} />
+		</div>
+		<div class="option row">
+			<h3>Summarize Ticket</h3>
+			<Toggle bind:value={summarize_ticket} />
 		</div>
 		<div class="option">
 			<h3>Opening Method</h3>
@@ -126,6 +127,14 @@
 </main>
 
 <style lang="scss">
+	.option {
+		&.row {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+	}
+
 	.view {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) 300px;
