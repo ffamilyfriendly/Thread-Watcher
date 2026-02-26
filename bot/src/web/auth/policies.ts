@@ -1,10 +1,12 @@
-import { err, Ok, ok, Result } from 'neverthrow';
+import { Err, err, Ok, ok, Result } from 'neverthrow';
 import { Request } from 'express';
 import { PermissionResolvable } from 'discord.js';
 import { redis } from '@providers/redis';
 import { config } from '@providers/config';
 import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
 import { entitlement_service } from '@providers/services/entitlement_service';
+import z from 'zod';
+import { map_err } from 'utilities/error';
 
 export type RequestWithUser = Request & { user_id: string };
 
@@ -226,6 +228,32 @@ export namespace Policies {
     });
   }
 
+  export async function user_is_in_guild(
+    req: RequestWithUser,
+  ): Promise<Result<PolicyResult, Error>> {
+    const guild_id = req.params.guild_id || req.body.guild_id;
+    if (!guild_id) {
+      return err(new Error(`route does not have a 'guild_id' parameter!`));
+    }
+
+    const r = await ipc_client.send_to_shard_having_guild(
+      guild_id,
+      'check_user_in_guild',
+      {
+        guild_id,
+        user_id: req.user_id,
+      },
+      z.boolean(),
+    );
+
+    if (r.isErr()) return err(map_err(r.error));
+
+    return ok({
+      passes: r.value,
+      message: `'${req.user_id}' is not in that guild!`,
+    });
+  }
+
   /**
    * Here we can define common Policy combinations / configs so we dont have to rewrite them every time
    */
@@ -236,5 +264,6 @@ export namespace Policies {
       60,
       'bot_dash_access',
     );
+    export const user_in_guild = cached(user_is_in_guild, 60, 'user_in_guild');
   }
 }

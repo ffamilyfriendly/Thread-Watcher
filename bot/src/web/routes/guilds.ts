@@ -127,7 +127,7 @@ router.get(
 
 router.get(
   '/:guild_id/channels',
-  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  enforce_policy(Policies.Common.user_in_guild),
   async (req, res) => {
     const guild_id = req.params.guild_id as string;
     const channels_res = await ipc_client.send_to_shard_having_guild(guild_id, 'fetch_channels', {
@@ -147,8 +147,6 @@ router.get(
 );
 
 router.get('/:guild_id/@me', async (req, res) => {
-  const guild_id = req.params.guild_id;
-
   if (!req.user_id) {
     return res.status(400).json({
       code: 400,
@@ -170,17 +168,9 @@ router.get('/:guild_id/@me', async (req, res) => {
   });
 });
 
-/*
-  This can indirectly be called by end users (proxied via sveltekit)
-  the user_id is always set by sveltekit and cannot be changed by users.
-  the end user CAN however select the guild_id and channel_id.
-  However, since we use the is_bot_master policy the user would still have to be a bot master in the guild they are getting data from.
-
-  tl;dr: we're not leaking any data here.
-*/
 router.get(
   '/:guild_id/channel/:channel_id',
-  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  enforce_policy(Policies.Common.user_in_guild),
   async (req, res) => {
     const { guild_id, channel_id } = req.params as Record<string, string>;
 
@@ -221,7 +211,7 @@ router.get(
 
 router.get(
   '/:guild_id/role/:role_id',
-  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  enforce_policy(Policies.Common.user_in_guild),
   async (req, res) => {
     const { guild_id, role_id } = req.params as Record<string, string>;
 
@@ -253,25 +243,21 @@ router.get(
   },
 );
 
-router.get(
-  '/:guild_id/roles',
-  enforce_policy(Policies.Common.bot_master_or_guild_master),
-  async (req, res) => {
-    const guild_id = req.params.guild_id as string;
-    const roles_res = await ipc_client.send_to_shard_having_guild<Role[]>(guild_id, 'fetch_roles', {
-      guild_id,
+router.get('/:guild_id/roles', enforce_policy(Policies.Common.user_in_guild), async (req, res) => {
+  const guild_id = req.params.guild_id as string;
+  const roles_res = await ipc_client.send_to_shard_having_guild<Role[]>(guild_id, 'fetch_roles', {
+    guild_id,
+  });
+
+  if (roles_res.isErr()) {
+    return res.status(500).json({
+      code: 500,
+      message: 'something went wrong',
     });
+  }
 
-    if (roles_res.isErr()) {
-      return res.status(500).json({
-        code: 500,
-        message: 'something went wrong',
-      });
-    }
-
-    res.json(roles_res.value.filter((r) => r.name !== '@everyone'));
-  },
-);
+  res.json(roles_res.value.filter((r) => r.name !== '@everyone'));
+});
 
 const settings_schema = z.record(z.string(), z.unknown());
 router.post(

@@ -29,7 +29,7 @@
 		<EditableAttribute use_text_area={true} bind:value={f.text}>
 			{#snippet display(v)}
 				<div class="field_value_markdown">
-					<TWMarkdown md={v ?? 'text'} />
+					<TWMarkdown md={v ?? ''} />
 				</div>
 			{/snippet}
 		</EditableAttribute>
@@ -37,7 +37,11 @@
 		<div class="row inline_sel">
 			Inline
 			<Toggle height={'14px'} width={'30px'} bind:value={f.is_inline} />
-			<button class="remove_btn" onclick={() => value.fields.splice(idx, 1)}>
+			<button
+				aria-label="Remove this field"
+				class="remove_btn"
+				onclick={() => value.fields.splice(idx, 1)}
+			>
 				<Trash2 size={16} />
 			</button>
 		</div>
@@ -90,9 +94,11 @@
 			{/each}
 		</div>
 		<button
+			disabled={value.fields.length >= 25}
+			aria-label="Add a new embed field"
 			class="add_field"
 			onclick={() => {
-				value.fields.push({ title: 'New Field', text: 'hi' });
+				value.fields.push({ title: 'New Field', text: '' });
 			}}>Add Field</button
 		>
 	</div>
@@ -148,16 +154,16 @@
 
 	.fields {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr); // Discord supports up to 3 columns
+		grid-template-columns: repeat(3, 1fr);
 		gap: 8px;
 		margin-top: 8px;
 
 		.field {
 			position: relative;
-			grid-column: span 3; // Default to full width
+			grid-column: span 3;
 
 			&.inline {
-				grid-column: span 1; // Swap to 1/3 width if 'inline' is toggled
+				grid-column: span 1;
 			}
 
 			.remove_btn {
@@ -187,7 +193,6 @@
 		font-size: 14px;
 		gap: 0.5rem;
 		min-height: 100px;
-		display: flex;
 		background-color: #131416;
 
 		border: 1px solid #2d2e32;

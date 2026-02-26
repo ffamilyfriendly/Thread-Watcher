@@ -6,7 +6,7 @@ import { Policies } from 'web/auth/policies';
 
 const router = Router();
 
-router.post('/batch', enforce_policy(Policies.is_bot_master), async (req, res) => {
+router.post('/batch', enforce_policy(Policies.Common.user_in_guild), async (req, res) => {
   const { guild_id, user_ids } = req.body;
   if (!req.body || !guild_id || !Array.isArray(user_ids)) {
     return res.status(400).send({

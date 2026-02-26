@@ -19,22 +19,20 @@ function get_bump_mode(
   return 'CANNOT_BUMP';
 }
 
+// This previously used "fetch" instead of the cache.
+// However, we're doing quite a lot of calls in this event and this is not a very critical number
 const FETCH_MSGES_AMOUNT = 10;
 const MAX_RECENT_MSG_AGE = 1000 * 60 * 60;
 async function get_recent_messages(thread: PublicThreadChannel | PrivateThreadChannel) {
-  const msges_res = await ResultAsync.fromPromise(
-    thread.messages.fetch({ limit: FETCH_MSGES_AMOUNT }),
-    map_err,
-  );
+  const recent_msges = thread.messages.cache
+    .values()
+    .toArray()
+    .filter((m) => {
+      const msg_age = Date.now() - m.createdTimestamp;
+      return msg_age < MAX_RECENT_MSG_AGE;
+    });
 
-  if (msges_res.isErr()) return err(msges_res.error);
-
-  const recent_msges = msges_res.value.filter((m) => {
-    const msg_age = Date.now() - m.createdTimestamp;
-    return msg_age < MAX_RECENT_MSG_AGE;
-  });
-
-  return ok(recent_msges.size);
+  return ok(recent_msges.length);
 }
 
 const event: PrivateEvent<{
