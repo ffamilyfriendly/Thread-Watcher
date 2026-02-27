@@ -1,0 +1,24 @@
+.row {
+	display: flex;
+	align-items: center;
+}
+
+.flex_col {
+	display: flex;
+	flex-direction: column;
+}
+
+$sizes: (
+	'smaller': 0.1rem,
+	'small': 0.25rem,
+	'medium': 0.5rem,
+	'big': 0.75rem,
+	'bigger': 1rem,
+	'chungus': 1.5rem
+);
+
+@each $name, $value in $sizes {
+	.gap_#{$name} {
+		gap: $value;
+	}
+}

@@ -1,33 +1,33 @@
 <script lang="ts">
 	import { guild_state } from '$lib/stores/guild.svelte';
-	import type { DiscordUser } from '$lib/types/internal_api';
+	import type { DiscordRole } from '$lib/types/internal_api';
 
 	interface Props {
-		user_id: string;
+		role_id: string;
 	}
 
-	const { user_id }: Props = $props();
+	const { role_id }: Props = $props();
 
-	let user_obj = $state<DiscordUser>();
+	let role_obj = $state<DiscordRole>();
 	let is_err = $state(false);
 
 	$effect(() => {
-		guild_state.get_user(user_id).then((res) => {
+		guild_state.get_role(role_id).then((res) => {
 			if (res.isErr()) {
-				console.error(`[DiscordTag] could not fetch user '${user_id}'`, res.error);
+				console.error(`[DiscordRoleTag] could not fetch role '${role_id}'`, res.error);
 				is_err = true;
 				return;
 			}
 
 			is_err = false;
-			user_obj = res.value;
+			role_obj = res.value;
 		});
 	});
 </script>
 
-<span class="ping" class:errored={is_err}>
-	{#if user_obj}
-		@{user_obj.username}
+<span class="ping" style="--ping_clr: #{role_obj?.color.toString(16)}" class:errored={is_err}>
+	{#if role_obj}
+		@{role_obj.name}
 	{:else if is_err}
 		error
 	{:else}

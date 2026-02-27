@@ -3,6 +3,7 @@
 	import { tick, type Snippet } from 'svelte';
 	import type { HTMLInputAttributes, HTMLTextareaAttributes } from 'svelte/elements';
 	import VariableSelector from './modules/components/VariableSelector.svelte';
+	import { s_tooltip, tooltip } from '$lib/client/attachments/tooltip';
 
 	type TextAreaProps = {
 		use_text_area: true;
@@ -17,6 +18,8 @@
 	type Props = {
 		value?: string | null;
 		display: Snippet<[string | undefined | null]>;
+		before_uid?: string;
+		use_variable_picker?: boolean;
 	} & (TextAreaProps | InputProps);
 
 	let {
@@ -24,6 +27,8 @@
 		display,
 		use_text_area = false,
 		width,
+		before_uid,
+		use_variable_picker,
 		...rest_props
 	}: Props = $props();
 	let is_editing = $state(false);
@@ -38,7 +43,7 @@
 		if (show_variable_picker) return;
 		const is_text_area = e.target instanceof HTMLTextAreaElement;
 
-		if (e.key === '{' && last_keycode === '{') {
+		if (e.key === '{' && last_keycode === '{' && use_variable_picker) {
 			show_variable_picker = true;
 
 			const target = e.target;
@@ -93,40 +98,53 @@
 	}
 </script>
 
-{#if show_variable_picker}
-	<VariableSelector bind:show_this={show_variable_picker} on_selected={insert_picked_var} />
-{/if}
-
 <div class="wrapper">
+	{#if show_variable_picker}
+		<VariableSelector
+			{before_uid}
+			bind:show_this={show_variable_picker}
+			on_selected={insert_picked_var}
+		/>
+	{/if}
+
 	{#if is_editing}
-		{#if use_text_area}
-			<textarea
-				{...textarea_attrs}
-				use:focus
-				style:width
-				class="edit textarea"
-				use:resize={value}
-				bind:value
-				onblur={on_blur}
-				onkeydown={handle_keydown}
-			></textarea>
-		{:else}
-			<input
-				{...input_attrs}
-				use:focus
-				class="edit"
-				bind:value
-				onblur={on_blur}
-				onkeydown={handle_keydown}
-			/>
-		{/if}
+		<div class="content">
+			{#if use_text_area}
+				<textarea
+					{...textarea_attrs}
+					use:focus
+					style:width
+					class="edit textarea"
+					use:resize={value}
+					bind:value
+					onblur={on_blur}
+					onkeydown={handle_keydown}
+				></textarea>
+			{:else}
+				<input
+					{...input_attrs}
+					use:focus
+					class="edit"
+					bind:value
+					onblur={on_blur}
+					onkeydown={handle_keydown}
+				/>
+			{/if}
+		</div>
 
 		<button class="icon_btn" onclick={() => (is_editing = false)}>
 			<Check size={14} />
 		</button>
 	{:else}
-		{@render display(value)}
-		<button class="icon_btn edit_trigger" onclick={() => (is_editing = true)}>
+		<div class="content">
+			{@render display(value)}
+		</div>
+
+		<button
+			{@attach tooltip({ content: 'Edit Value', delay: 200 })}
+			class="icon_btn edit_trigger"
+			onclick={() => (is_editing = true)}
+		>
 			<Pencil size={14} />
 		</button>
 	{/if}
@@ -136,8 +154,10 @@
 	.wrapper {
 		display: flex;
 		align-items: center;
-		max-width: 500px;
+		width: max-content;
+		position: relative;
 		gap: 0.5rem;
+		min-width: 0;
 	}
 
 	.edit {
@@ -159,7 +179,17 @@
 		}
 	}
 
+	.content {
+		flex: 1;
+		min-width: 0;
+		padding-top: 0.15rem;
+		padding-bottom: 0.15rem;
+		overflow: hidden;
+	}
+
 	.icon_btn {
+		flex-shrink: 0;
+		margin-top: 2px;
 		background-color: transparent;
 		border: none;
 		color: white;

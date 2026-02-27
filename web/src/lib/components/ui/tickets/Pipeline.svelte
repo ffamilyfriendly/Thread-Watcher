@@ -23,16 +23,17 @@
 	}
 
 	let show_module_drawer = $state(false);
+
+	const safe_modules = $derived(pipe_state.safe_modules());
 </script>
 
 <div class="pipeline">
 	<div class="items">
-		{#each pipe_state.modules as _, index (pipe_state.modules[index].uid)}
-			{@const mod = pipe_state.modules[index]}
+		{#each safe_modules as mod, index (mod.uid)}
 			{@const Component = get_module_component(mod.type)}
 
 			<DropArea on_create_here={handle_create} on_move={handle_reorder} idx={index} />
-			<Component bind:module={pipe_state.modules[index]} />
+			<Component bind:module={safe_modules[index]} />
 		{/each}
 		<DropArea
 			on_create_here={handle_create}
@@ -41,55 +42,33 @@
 		/>
 	</div>
 
-	<div class="drawer">
-		{#if show_module_drawer}
-			<ModuleDrawer
-				on_click={(unchecked_module_type) => {
-					handle_create(pipe_state.modules.length, unchecked_module_type);
-				}}
-			/>
-		{/if}
-		<button onclick={() => (show_module_drawer = !show_module_drawer)} class="drawer_btn">
-			{#if show_module_drawer}
-				<CircleMinus size={24} />
-			{:else}
-				<CirclePlus size={24} />
-			{/if}
-		</button>
-	</div>
+	<ModuleDrawer
+		on_click={(unchecked_module_type) => {
+			handle_create(pipe_state.modules.length, unchecked_module_type);
+		}}
+	/>
 </div>
 
 <style lang="scss">
 	.pipeline {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
 		background-color: #121212;
-		padding: 1rem;
 
 		--grid_clr: rgba(255, 255, 255, 0.05);
 		background-image:
 			linear-gradient(var(--grid_clr) 0.1em, transparent 0.1em),
 			linear-gradient(90deg, var(--grid_clr) 0.1em, transparent 0.1em);
 		background-size: 3em 3em;
-
-		min-height: 50vh;
+		min-height: 35vh;
+		height: 85vh;
+		overflow-y: auto;
 		position: relative;
 	}
 
-	.drawer {
-		position: absolute;
-		display: flex;
-		bottom: 0;
-		left: 0;
-	}
-
-	.drawer_btn {
-		margin: 1rem;
-		background-color: transparent;
-		border: none;
-		color: var(--primary-900);
-		cursor: pointer;
-	}
-
 	.items {
+		padding: 1rem;
 		gap: 1rem;
 		display: flex;
 		flex-direction: column;

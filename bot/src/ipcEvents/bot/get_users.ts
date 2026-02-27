@@ -18,8 +18,6 @@ const event: PrivateEvent<{
     const promises_result = await ResultAsync.fromPromise(Promise.all(promises), map_err);
 
     if (promises_result.isErr()) {
-      console.log(user_ids);
-      console.error(promises_result.error);
       return err(promises_result.error);
     }
 

@@ -5,6 +5,7 @@
 	import { slide } from 'svelte/transition';
 	import PermissionsSection from './components/PermissionsSection.svelte';
 	import { use_pipeline } from '$lib/stores/pipeline.svelte';
+	import common from '$lib/style/common.module.scss';
 
 	interface Props {
 		module: PipelineModule;
@@ -33,7 +34,7 @@
 		pipeline.delete_module(module.uid);
 	}
 
-	let expanded = $state(false);
+	let expanded = $state(true);
 </script>
 
 <div
@@ -83,7 +84,7 @@
 		{/if}
 	</div>
 
-	<div class="btns">
+	<div class={[common.flex_col]}>
 		<button class="expand" onclick={() => (expanded = !expanded)}>
 			{#if expanded}
 				<ChevronUp />
@@ -127,11 +128,6 @@
 		.delete {
 			opacity: 0;
 			color: var(--error-500);
-		}
-
-		.btns {
-			display: flex;
-			flex-direction: column;
 		}
 	}
 

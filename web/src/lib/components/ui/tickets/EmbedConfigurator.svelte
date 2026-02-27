@@ -8,9 +8,11 @@
 	interface Props {
 		value: Embed;
 		width?: `${number}px` | `${number}rem`;
+		before_uid?: string;
+		use_variable_picker?: boolean;
 	}
 
-	const { value = $bindable(), width }: Props = $props();
+	const { value = $bindable(), width, before_uid, use_variable_picker }: Props = $props();
 
 	let colour_element = $state<HTMLInputElement>();
 
@@ -21,12 +23,12 @@
 
 {#snippet embed_field(f: EmbedField, idx: number)}
 	<div class="field" class:inline={f.is_inline}>
-		<EditableAttribute bind:value={f.title}>
+		<EditableAttribute {before_uid} {use_variable_picker} bind:value={f.title}>
 			{#snippet display(v)}
 				<b class="title">{v}</b>
 			{/snippet}
 		</EditableAttribute>
-		<EditableAttribute use_text_area={true} bind:value={f.text}>
+		<EditableAttribute {before_uid} {use_variable_picker} use_text_area={true} bind:value={f.text}>
 			{#snippet display(v)}
 				<div class="field_value_markdown">
 					<TWMarkdown md={v ?? ''} />
@@ -65,24 +67,28 @@
 
 	<div class="row title_row">
 		<button aria-label="colour swatch" class="clr_picker" onclick={handle_colour_click}></button>
-		<EditableAttribute maxlength={50} bind:value={value.title}>
+		<EditableAttribute {before_uid} {use_variable_picker} maxlength={50} bind:value={value.title}>
 			{#snippet display(v)}
 				<b class="embed_title">{v}</b>
 			{/snippet}
 		</EditableAttribute>
 	</div>
 	<EditableAttribute
-		width="65ch"
+		{before_uid}
+		{use_variable_picker}
 		use_text_area={true}
+		width={'64ch'}
 		maxlength={DISCORD_EMBED_DESCRIPTION_MAX_LEN}
 		bind:value={value.description}
 	>
 		{#snippet display(v)}
-			{#if v}
-				<TWMarkdown md={v} />
-			{:else}
-				<p class="description placeholder">no description set</p>
-			{/if}
+			<div style:max-width={'65ch'}>
+				{#if v}
+					<TWMarkdown md={v} />
+				{:else}
+					<p class="description placeholder">no description set</p>
+				{/if}
+			</div>
 		{/snippet}
 	</EditableAttribute>
 

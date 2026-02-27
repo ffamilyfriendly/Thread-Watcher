@@ -2,19 +2,29 @@ import { fetch_as_json } from '$lib/client/fetch';
 import {
 	ZDiscordChannel,
 	ZDiscordRole,
+	ZDiscordUser,
 	type DiscordChannel,
 	type DiscordRole,
+	type DiscordUser,
 	type GuildOverview
 } from '$lib/types/internal_api';
 import { ZMonitor, type Monitor } from '@watcher/shared';
-import { err, ok } from 'neverthrow';
+import { err, ok, Result } from 'neverthrow';
+import z from 'zod';
+
+type UserFetchCallback = (v: Result<DiscordUser, unknown>) => void;
 
 class GuildState {
 	roles = $state<DiscordRole[]>([]);
 	channels = $state<DiscordChannel[]>([]);
+	users = $state<Map<string, DiscordUser>>(new Map());
 	guild_id = $state<string>();
 	guild = $state<GuildOverview>();
 	monitors = $state<Map<string, Monitor>>(new Map());
+
+	batch_wait_ms = 100;
+	pending_users: Map<string, UserFetchCallback[]> = new Map();
+	batch_timeout_id: number | NodeJS.Timeout | null = null;
 
 	get is_ready() {
 		return !!this.guild_id;
@@ -26,6 +36,10 @@ class GuildState {
 
 	set_guild_id(new_guild_id: string) {
 		this.guild_id = new_guild_id;
+	}
+
+	set_users(new_users: DiscordUser[]) {
+		this.users = new Map(new_users.map((u) => [u.id, u]));
 	}
 
 	init(roles: DiscordRole[], channels: DiscordChannel[], guild: GuildOverview) {
@@ -90,6 +104,73 @@ class GuildState {
 		return result;
 	}
 
+	async get_users(user_ids: string[]) {
+		const result = await fetch_as_json(
+			`/api/users`,
+			{
+				method: 'POST',
+				body: JSON.stringify({ guild_id: this.guild_id, user_ids })
+			},
+			z.array(ZDiscordUser)
+		);
+
+		if (result.isErr()) return err(result.error);
+
+		result.value.forEach((u) => this.users.set(u.id, u));
+
+		return ok(result.value);
+	}
+
+	private get_user_debounce(user_id: string, callback: UserFetchCallback) {
+		const existing = this.pending_users.get(user_id);
+
+		if (existing) {
+			existing.push(callback);
+		} else {
+			this.pending_users.set(user_id, [callback]);
+		}
+
+		this.batch_get_users();
+	}
+
+	private batch_get_users() {
+		if (this.batch_timeout_id) return;
+		if (this.pending_users.size === 0) return;
+
+		this.batch_timeout_id = setTimeout(async () => {
+			this.batch_timeout_id = null;
+			const r = await this.get_users(this.pending_users.keys().toArray());
+			if (r.isErr()) {
+				this.pending_users.forEach((callbacks) => callbacks.forEach((callback) => callback(r)));
+				return this.pending_users.clear();
+			}
+
+			for (const user of r.value) {
+				this.pending_users.get(user.id)?.forEach((callback) => callback(ok(user)));
+				this.pending_users.delete(user.id);
+			}
+
+			this.pending_users
+				.values()
+				.forEach((callbacks) =>
+					callbacks.forEach((callback) => callback(err('could not fetch user')))
+				);
+			this.pending_users.clear();
+		}, this.batch_wait_ms);
+	}
+
+	async get_user(user_id: string): Promise<Result<DiscordUser, unknown>> {
+		const u_cached = this.users.get(user_id);
+		if (u_cached) return ok(u_cached);
+
+		return new Promise((resolve) => {
+			this.get_user_debounce(user_id, (res) => {
+				resolve(res);
+			});
+		});
+	}
+
+	// Unsure if this is relevant anymore?
 	resolve_snowflake(snowflake: unknown) {
 		// For the convinience in ConfigChange we allow the snowflake parameter to be anything
 		if (typeof snowflake !== 'string') return { entity_type: 'UNKNOWN' as const, data: snowflake };

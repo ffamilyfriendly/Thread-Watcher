@@ -1,9 +1,9 @@
 <script lang="ts">
+	import { click_outside } from '$lib/client/attachments/click_outside';
 	import { use_pipeline } from '$lib/stores/pipeline.svelte';
-	import { ArrowRightFromLine, Percent, TextInitial } from '@lucide/svelte';
+	import { ArrowRightFromLine, List, Percent, TextInitial } from '@lucide/svelte';
 	import { type ModuleProperty } from '@watcher/shared';
 	import { fly } from 'svelte/transition';
-	import { string } from 'zod';
 
 	const pipe_state = use_pipeline();
 
@@ -15,10 +15,6 @@
 	let { on_selected, before_uid, show_this = $bindable() }: Props = $props();
 
 	let modules = $state(pipe_state.get_all_properties());
-
-	function focus(node: HTMLDivElement) {
-		node.focus();
-	}
 
 	$effect(() => {
 		if (before_uid) {
@@ -68,11 +64,10 @@
 					selection_made(flat_options[selected_index].path);
 				}
 				break;
+			case 'Backspace':
+				show_this = false;
+				break;
 		}
-	}
-
-	function handle_win_click(e: MouseEvent) {
-		e.target;
 	}
 
 	function selection_made(variable: string) {
@@ -81,20 +76,22 @@
 	}
 </script>
 
-<svelte:window onclick={handle_win_click} onkeydown={handle_keydown} />
+<svelte:window onkeydown={handle_keydown} />
 
 {#snippet get_icon(v: ModuleProperty, size = 16)}
 	{#if v.value == 'number'}
 		<Percent {size} />
 	{:else if v.value == 'string'}
 		<TextInitial {size} />
+	{:else if v.value == 'array'}
+		<List {size} />
 	{:else}
 		<ArrowRightFromLine {size} />
 	{/if}
 {/snippet}
 
 {#snippet show_value(key: string, values: ModuleProperty[], prev_key?: string)}
-	<div use:focus class="section">
+	<div class="section">
 		{key}
 		<ul>
 			{#each values as value}
@@ -122,7 +119,11 @@
 	</div>
 {/snippet}
 
-<div class="selector" transition:fly={{ duration: 200 }}>
+<div
+	class="selector"
+	{@attach show_this && click_outside(() => (show_this = false))}
+	transition:fly={{ duration: 200 }}
+>
 	{#each modules.entries() as [key, values] (key)}
 		{@render show_value(key, values)}
 	{/each}
@@ -130,6 +131,7 @@
 
 <style lang="scss">
 	.selector {
+		top: 1px;
 		background-color: color-mix(in srgb, var(--clr) 97%, white);
 		outline: 1px solid color-mix(in srgb, var(--clr) 90%, white);
 		font-family: 'JetBrains Mono', monospace;
@@ -161,6 +163,7 @@
 
 		.description {
 			opacity: 0.6;
+			margin-left: auto;
 		}
 
 		&:hover {

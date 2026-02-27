@@ -1,6 +1,5 @@
 import { ZAuditData } from '@watcher/shared';
 import z from 'zod';
-import { ZDiscordGuild } from './discord';
 
 export const ZRawSetting = z.object({
 	setting_id: z.string(),

@@ -1,27 +1,40 @@
 import {
+	DEFAULT_TICKET_PANEL,
 	MODULE_OUTPUTS,
+	ZTicketPanel,
 	type ModuleObject,
 	type ModuleProperty,
 	type Pipeline,
 	type PipelineModule,
 	type RenderableModule,
-	type TypedPipelineModule
+	type TicketPanel
 } from '@watcher/shared';
 import { getContext, setContext } from 'svelte';
-import type z from 'zod';
 
 export type RenderablePipeline = RenderableModule[];
 
 export class PipelineState {
-	public modules = $state<RenderablePipeline>([]);
+	public panel = $state<TicketPanel>(DEFAULT_TICKET_PANEL);
 
-	constructor(initial_state: RenderablePipeline) {
-		this.set_modules(initial_state);
+	constructor(panel?: TicketPanel) {
+		if (panel) this.panel = panel;
+	}
+
+	get modules() {
+		return this.panel.pipeline;
+	}
+
+	set modules(v) {
+		this.panel.pipeline = v;
+	}
+
+	safe_modules(): RenderablePipeline {
+		return this.modules.filter((m) => m.type !== 'ROOT_ENV_MODULE');
 	}
 
 	move_module(to_idx: number, module_uid: string) {
 		console.log('move_module', to_idx, module_uid);
-		const old_idx = this.modules.findIndex((mod) => mod.uid === module_uid);
+		const old_idx = this.panel.pipeline.findIndex((mod) => mod.uid === module_uid);
 
 		if (old_idx === -1) throw new Error('Tried to move a module that does not exist');
 
@@ -56,7 +69,7 @@ export class PipelineState {
 	}
 
 	get_modules_before(uid: string) {
-		let m: RenderablePipeline = [];
+		let m: Pipeline = [];
 		for (const module of this.modules) {
 			if (module.uid === uid) break;
 			m.push(module);
@@ -64,13 +77,14 @@ export class PipelineState {
 		return m;
 	}
 
-	get_properties(modules: RenderablePipeline) {
+	get_properties(modules: Pipeline) {
+		if (!this.panel) throw Error('no panel');
 		const mods = this.get_copy(modules);
 		const r = new Map<string, ModuleProperty[]>();
 
 		for (const mod of mods) {
 			const rvs = MODULE_OUTPUTS[mod.type];
-			r.set(mod.id, rvs.properties(mod));
+			r.set(mod.id, rvs.properties(mod, this.panel));
 		}
 
 		return r;
@@ -115,8 +129,7 @@ export function clean_or_throw(pl: Pipeline): RenderablePipeline {
 	throw new Error('unclean pipeline was passed!');
 }
 
-export function init_pipeline_state(initial_data: Pipeline) {
-	if (!is_clean_pipeline(initial_data)) throw new Error('unclean pipeline was passed!');
+export function init_pipeline_state(initial_data?: TicketPanel) {
 	return setContext(PIPELINE_KEY, new PipelineState(initial_data));
 }
 

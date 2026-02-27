@@ -5,6 +5,7 @@ import type { Pluggable } from 'unified';
 import MdDiscordUserTag from '$lib/components/ui/Markdown/MdDiscordUserTag.svelte';
 import MdDiscordChannelTag from '$lib/components/ui/Markdown/MdDiscordChannelTag.svelte';
 import Emoji from '$lib/components/ui/discord/Emoji.svelte';
+import MdDiscordRoleTag from '$lib/components/ui/Markdown/MdDiscordRoleTag.svelte';
 export type ComponentsMap = Record<string, Component<any>>;
 export type Plugin = {
 	remarkPlugin?: Pluggable;
@@ -97,6 +98,7 @@ export const discord_plugin = (options = {}): Plugin => ({
 	renderer: {
 		discord_user_tag: MdDiscordUserTag,
 		discord_channel_tag: MdDiscordChannelTag,
-		discord_emoji_tag: Emoji
+		discord_emoji_tag: Emoji,
+		discord_role_tag: MdDiscordRoleTag
 	}
 });

@@ -25,7 +25,11 @@
 </div>
 
 {#if show_selector}
-	<VariableSelector before_uid={module_uid} on_selected={handle_selected} />
+	<VariableSelector
+		bind:show_this={show_selector}
+		before_uid={module_uid}
+		on_selected={handle_selected}
+	/>
 {/if}
 
 <style lang="scss">

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Pipeline from '$lib/components/ui/tickets/Pipeline.svelte';
-	import type { Embed, PipelineModule } from '@watcher/shared';
+	import type { ButtonStart, Embed, PipelineModule, SelectionStart } from '@watcher/shared';
 	import type { PageProps } from './$types.js';
 	import { clean_or_throw, init_pipeline_state } from '$lib/stores/pipeline.svelte.js';
 	import RolePicker from '$lib/components/ui/settings/RolePicker.svelte';
@@ -14,39 +14,27 @@
 	import Toggle from '$lib/components/ui/Toggle.svelte';
 	import EmbedConfigurator from '$lib/components/ui/tickets/EmbedConfigurator.svelte';
 	import EditableAttribute from '$lib/components/ui/tickets/EditableAttribute.svelte';
+	import TabbedView from '$lib/components/ui/TabbedView.svelte';
+	import ButtonConfigurator from '$lib/components/ui/tickets/ButtonConfigurator.svelte';
+	import StringSelectConfigurator from '$lib/components/ui/tickets/StringSelectConfigurator.svelte';
+	import { tooltip } from '$lib/client/attachments/tooltip.js';
 
 	const { data, params }: PageProps = $props();
 
-	let panel_name = $state<string>();
-	let panel_description = $state<string>();
+	// svelte-ignore state_referenced_locally
+	let pipeline_state = init_pipeline_state(data.panel);
 
-	let pipeline_state = init_pipeline_state([]);
-	let assign_role = $state<string>();
-	let assign_channel = $state<string>();
-	let watch_thread = $state<boolean>(true);
-	let summarize_ticket = $state<boolean>(true);
-	let starting_embed = $state<Embed>({ title: 'Embed Title', fields: [], colour: '#1c2d69' });
+	let init_w_btn_state = $state<ButtonStart>(
+		pipeline_state.panel.commencement_method.type === 'BUTTON'
+			? pipeline_state.panel.commencement_method
+			: { type: 'BUTTON', button_text: 'Open Ticket' }
+	);
 
-	$effect(() => {
-		if (!data.panel) return;
-
-		const { name, description } = data.panel;
-
-		if (name) panel_name = name;
-		if (description) panel_description = description;
-
-		if (data.panel.pipeline) {
-			pipeline_state.set_modules(clean_or_throw(data.panel.pipeline));
-		}
-
-		assign_role = data.panel.initial_assigned_role;
-		assign_channel = data.panel.initial_channel_id;
-		watch_thread = data.panel.should_watch_ticket;
-		summarize_ticket = data.panel.should_GPT_summarize_ticket;
-		starting_embed = data.panel.commencement_embed;
-
-		pipeline_state = init_pipeline_state(data.panel?.pipeline ?? []);
-	});
+	let init_w_select_state = $state<SelectionStart>(
+		pipeline_state.panel.commencement_method.type === 'SELECTION'
+			? pipeline_state.panel.commencement_method
+			: { type: 'SELECTION', placeholder: 'Select a reason', options: [] }
+	);
 
 	async function export_pipeline_as_json() {
 		const as_json = JSON.stringify(pipeline_state.modules);
@@ -64,17 +52,29 @@
 		});
 	}
 
+	function handle_tab_change(new_id: number) {
+		if (new_id === 0 && init_w_btn_state) {
+			pipeline_state.panel.commencement_method = init_w_btn_state;
+		} else if (init_w_select_state) {
+			pipeline_state.panel.commencement_method = init_w_select_state;
+		}
+	}
+
 	const create_new = $derived(params.panel_id === 'new');
 </script>
 
 <main class="view">
 	<div class="panel_meta">
-		<EditableAttribute maxlength={50} bind:value={panel_name}>
+		<EditableAttribute maxlength={50} bind:value={pipeline_state.panel.name}>
 			{#snippet display(v)}
 				<h1>{v ?? '<no title>'}</h1>
 			{/snippet}
 		</EditableAttribute>
-		<EditableAttribute width="65ch" bind:value={panel_description} use_text_area={true}>
+		<EditableAttribute
+			width="65ch"
+			bind:value={pipeline_state.panel.description}
+			use_text_area={true}
+		>
 			{#snippet display(v)}
 				<p>{v ?? '<no description>'}</p>
 			{/snippet}
@@ -83,7 +83,35 @@
 
 	<div class="pipeline">
 		<h2>Opening Embed</h2>
-		<EmbedConfigurator bind:value={starting_embed} />
+		<EmbedConfigurator bind:value={pipeline_state.panel.commencement_embed} />
+
+		{#snippet btn_conf()}
+			<ButtonConfigurator bind:value={init_w_btn_state} />
+		{/snippet}
+		{#snippet select_conf()}
+			<StringSelectConfigurator bind:value={init_w_select_state} />
+		{/snippet}
+
+		<TabbedView
+			inverted={true}
+			on_change={handle_tab_change}
+			tabs={[
+				{
+					label: 'Button',
+					content: btn_conf
+				},
+				{
+					label: 'Select',
+					content: select_conf
+				}
+			]}
+		/>
+
+		<h2>Closing Embed</h2>
+		<EmbedConfigurator
+			use_variable_picker={true}
+			bind:value={pipeline_state.panel.resolved_embed}
+		/>
 
 		<h2>Pipeline</h2>
 		<Pipeline />
@@ -100,24 +128,24 @@
 				channels={data.channels}
 				guild_id={data.guild_id}
 				only_with_types={CAN_HOLD_THREADS}
-				bind:value={assign_channel}
+				bind:value={pipeline_state.panel.initial_channel_id}
 			/>
 		</div>
 		<div class="option">
 			<h3>Assigned Role</h3>
-			<RolePicker roles={data.roles} bind:value={assign_role} />
+			<RolePicker
+				roles={data.roles}
+				multiple={true}
+				bind:value={pipeline_state.panel.initial_assigned_roles}
+			/>
 		</div>
 		<div class="option row">
 			<h3>Watch Ticket</h3>
-			<Toggle bind:value={watch_thread} />
+			<Toggle bind:value={pipeline_state.panel.should_watch_ticket} />
 		</div>
 		<div class="option row">
 			<h3>Summarize Ticket</h3>
-			<Toggle bind:value={summarize_ticket} />
-		</div>
-		<div class="option">
-			<h3>Opening Method</h3>
-			maybe tabbed view here for button alt. multiselect
+			<Toggle bind:value={pipeline_state.panel.should_GPT_summarize_ticket} />
 		</div>
 		<div class="option">
 			<h3>Close Method</h3>
@@ -151,6 +179,10 @@
 		width: 100%;
 		min-width: 0;
 		min-height: 100vh;
+
+		h2 {
+			margin-top: 1rem;
+		}
 	}
 
 	.sidebar {

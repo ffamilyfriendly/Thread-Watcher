@@ -1,10 +1,20 @@
 import z from "zod";
 
+// Discord related constraints
 export const DISCORD_EMBED_TITLE_MAX_LEN = 256;
 export const DISCORD_EMBED_DESCRIPTION_MAX_LEN = 4096;
 export const DISCORD_MAX_FIELDS_IN_EMBED = 25;
 export const DISCORD_MAX_CHARS_IN_FIELD_TITLE = 256;
 export const DISCORD_MAX_CHARS_IN_FIELD_TEXT = 1024;
+export const DISCORD_MAX_CHARS_IN_PLACEHOLDER = 150;
+export const DISCORD_MAX_CHARS_IN_BUTTON_LABEL = 80;
+export const DISCORD_MAX_CHARS_IN_OPTION = 100; // Value is the same for id, label, and description
+export const DISCORD_SNOWFLAKE_MAX_LEN = 19;
+
+// Service restraints
+export const TW_MAX_CHARS_IN_OPERANT_VALUE = 100;
+export const TW_MAX_ALLOWED_CONDITIONS = 10;
+export const TW_AI_PROMPT_MAX_LEN = 255;
 
 // Generic stuff used both in panel and pipeline
 export const ZEmbedField = z.object({
@@ -25,20 +35,24 @@ export type EmbedField = z.output<typeof ZEmbedField>;
 export type Embed = z.output<typeof ZEmbed>;
 
 export const ZStringSelectionOption = z.object({
-  title: z.string(),
-  description: z.string().nullish(),
-  option_id: z.string(),
+  title: z.string().max(DISCORD_MAX_CHARS_IN_OPTION),
+  description: z.string().max(DISCORD_MAX_CHARS_IN_OPTION).nullish(),
+  option_id: z.string().max(DISCORD_MAX_CHARS_IN_OPTION),
 });
+export type StringSelectOption = z.output<typeof ZStringSelectionOption>;
 
 export const ZButtonStart = z.object({
   type: z.literal("BUTTON"),
-  button_text: z.string(),
+  button_text: z.string().max(DISCORD_MAX_CHARS_IN_BUTTON_LABEL),
 });
+export type ButtonStart = z.output<typeof ZButtonStart>;
 
 export const ZSelectionStart = z.object({
   type: z.literal("SELECTION"),
-  options: z.array(ZStringSelectionOption),
+  placeholder: z.string().max(DISCORD_MAX_CHARS_IN_PLACEHOLDER),
+  options: z.array(ZStringSelectionOption).max(DISCORD_MAX_FIELDS_IN_EMBED),
 });
+export type SelectionStart = z.output<typeof ZSelectionStart>;
 
 // Pipeline stuff
 export const ConditionalOperands = [
@@ -50,17 +64,17 @@ export const ConditionalOperands = [
 ] as const;
 
 export const ZConditional = z.object({
-  value_1: z.string(),
+  value_1: z.string().max(TW_MAX_CHARS_IN_OPERANT_VALUE),
   operand: z.enum(ConditionalOperands),
-  value_2: z.string().nullish(),
+  value_2: z.string().max(TW_MAX_CHARS_IN_OPERANT_VALUE).nullish(),
 });
 export type Conditional = z.output<typeof ZConditional>;
 
 export const ZModule = z.object({
-  uid: z.string(), // internal Id that cannot be changed
-  id: z.string(),
+  uid: z.string().max(TW_MAX_CHARS_IN_OPERANT_VALUE), // internal Id that cannot be changed
+  id: z.string().max(TW_MAX_CHARS_IN_OPERANT_VALUE),
   conditional_type: z.enum(["AND", "OR"]),
-  conditionals: z.array(ZConditional),
+  conditionals: z.array(ZConditional).max(TW_MAX_ALLOWED_CONDITIONS),
 });
 
 // This modules does not really exist. It's injected and includes variables such as the selected role and so forth
@@ -70,13 +84,20 @@ export const ZFakeEnvModule = ZModule.extend({
 
 // Changes the assigned role of the ticket
 export const ZAssignRole = ZModule.extend({
-  role_id: z.string().nullish(),
+  role_id: z.string().max(DISCORD_SNOWFLAKE_MAX_LEN).nullish(),
+  append: z.boolean().default(false), // true = add the role to the already existing selected roles
   type: z.literal("ASSIGN_ROLE").default("ASSIGN_ROLE"),
 });
 
 // Changes the assigned role of the ticket
 export const ZGenerateAnswer = ZModule.extend({
-  prompt: z.string().nullish(),
+  prompt: z
+    .string()
+    .max(
+      TW_AI_PROMPT_MAX_LEN,
+      `prompt cannot be above ${TW_AI_PROMPT_MAX_LEN} characters.`,
+    )
+    .nullish(),
   type: z.literal("GENERATE_ANSWER").default("GENERATE_ANSWER"),
 });
 
@@ -105,10 +126,11 @@ export const ZTicketPanel = z.object({
   should_watch_ticket: z.coerce.boolean(),
   should_GPT_summarize_ticket: z.coerce.boolean(),
   discord_message_id: z.string().nullish(), // The message ID of the panel. Used to edit updated panels / check if we've sent the panel message
-  initial_assigned_role: z.string(), // The role that will be assigned to the ticket (if pipeline does not alter)
+  initial_assigned_roles: z.array(z.string()), // The roles that will be assigned to the ticket (if pipeline does not alter)
   initial_channel_id: z.string(), // The channel the ticket will open in (if pipeline does not alter)
   commencement_embed: ZEmbed,
   commencement_method: z.union([ZButtonStart, ZSelectionStart]),
+  resolved_embed: ZEmbed,
   pipeline: ZPipeline,
 });
 
@@ -124,3 +146,28 @@ export const ZTicket = z.object({
   closed_at: z.coerce.date().nullish(),
 });
 export type TicketPanel = z.output<typeof ZTicketPanel>;
+export type TicketPanelMeta = Omit<TicketPanel, "id">;
+
+export const DEFAULT_TICKET_PANEL: TicketPanel = {
+  id: "",
+  description: "",
+  should_watch_ticket: true,
+  should_GPT_summarize_ticket: true,
+  initial_assigned_roles: [],
+  initial_channel_id: "",
+  commencement_embed: {
+    title: "Open Ticket",
+    colour: "#1c2d69",
+    fields: [],
+  },
+  resolved_embed: {
+    title: "Ticket Closed",
+    colour: "#211a2e",
+    fields: [],
+  },
+  pipeline: [],
+  commencement_method: {
+    type: "BUTTON",
+    button_text: "open ticket",
+  },
+};

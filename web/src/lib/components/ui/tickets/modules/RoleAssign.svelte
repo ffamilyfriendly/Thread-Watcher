@@ -1,8 +1,10 @@
 <script lang="ts">
-	import type { PipelineModule, TypedPipelineModule } from '@watcher/shared';
+	import type { TypedPipelineModule } from '@watcher/shared';
+	import common from '$lib/style/common.module.scss';
 	import BaseModule from './BaseModule.svelte';
 	import RolePicker from '../../settings/RolePicker.svelte';
 	import { guild_state } from '$lib/stores/guild.svelte';
+	import Toggle from '../../Toggle.svelte';
 
 	interface Props {
 		module: TypedPipelineModule<'ASSIGN_ROLE'>;
@@ -19,4 +21,9 @@
 		the ticket in the dashboard.
 	{/snippet}
 	<RolePicker bind:value={module.role_id} roles={guild_state.roles} />
+
+	<div class={[common.row, common.gap_medium]}>
+		<b>append</b>
+		<Toggle bind:value={module.append} />
+	</div>
 </BaseModule>

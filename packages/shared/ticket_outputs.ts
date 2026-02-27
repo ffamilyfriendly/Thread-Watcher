@@ -1,11 +1,12 @@
 import type z from "zod";
 import {
+  type TicketPanelMeta,
   ZAssignRole,
   ZGenerateAnswer,
   type PipelineModule,
 } from "./schemas/ticket";
 
-export type ModulePropertyTypes = "string" | "number";
+export type ModulePropertyTypes = "string" | "number" | "array";
 export interface ModuleProperty {
   name: string;
   description?: string;
@@ -18,7 +19,7 @@ export enum ModuleCategory {
 }
 
 export interface ModuleObject<T extends PipelineModule = PipelineModule> {
-  properties: (mod: T) => ModuleProperty[];
+  properties: (mod: T, panel: TicketPanelMeta) => ModuleProperty[];
   name: string;
   accent_clr: `#${string}`;
   is_meta_module?: boolean;
@@ -75,6 +76,29 @@ function generate_role(name = "role"): ModuleProperty {
   };
 }
 
+function generate_string_select(name = "selection"): ModuleProperty {
+  return {
+    name,
+    value: [
+      {
+        name: "id",
+        value: "string",
+        description: "the ID of this option",
+      },
+      {
+        name: "label",
+        value: "string",
+        description: "the label of this option",
+      },
+      {
+        name: "description",
+        value: "string",
+        description: "the description of this option",
+      },
+    ],
+  };
+}
+
 const ASSIGN_ROLE: ModuleObject = {
   properties: () => [generate_role("selected")],
   name: "Assign Role",
@@ -95,7 +119,22 @@ const GENERATE_ANSWER: ModuleObject = {
 const ROOT_ENV_MODULE: ModuleObject = {
   name: "ROOT ENVIROMENT MODULE (THIS SHOULD NOT BE SHOWN)",
   accent_clr: "#676767",
-  properties: () => [generate_user("user"), generate_role("assigned_role")],
+  properties: (_self, panel) => {
+    const props: ModuleProperty[] = [
+      generate_user("user"),
+      {
+        name: "assigned_roles",
+        value: "array",
+        description: "the role(s) assigned",
+      },
+    ];
+
+    if (panel.commencement_method.type === "SELECTION") {
+      props.push(generate_string_select());
+    }
+
+    return props;
+  },
   is_meta_module: true,
 };
 
