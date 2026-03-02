@@ -4,6 +4,8 @@ import {
   ZAssignRole,
   ZGenerateAnswer,
   type PipelineModule,
+  ZAssignChannel,
+  ZAssignName,
 } from "./schemas/ticket";
 
 export type ModulePropertyTypes = "string" | "number" | "array";
@@ -127,6 +129,20 @@ const ROOT_ENV_MODULE: ModuleObject = {
         value: "array",
         description: "the role(s) assigned",
       },
+      {
+        name: "ID",
+        value: "string",
+        description: "the ID of this ticket",
+      },
+      {
+        name: "number",
+        value: "number",
+      },
+      {
+        name: "name",
+        value: "string",
+        description: "the name of this ticket",
+      },
     ];
 
     if (panel.commencement_method.type === "SELECTION") {
@@ -138,10 +154,32 @@ const ROOT_ENV_MODULE: ModuleObject = {
   is_meta_module: true,
 };
 
+const ASSIGN_CHANNEL: ModuleObject = {
+  name: "Assign Channel",
+  accent_clr: "#121212",
+  category: ModuleCategory.ASSIGNMENT,
+  properties: (_self) => {
+    return [];
+  },
+  schema: ZAssignChannel,
+};
+
+const ASSIGN_NAME: ModuleObject = {
+  name: "Assign Name",
+  accent_clr: "#121212",
+  category: ModuleCategory.ASSIGNMENT,
+  properties: (_self) => {
+    return [];
+  },
+  schema: ZAssignName,
+};
+
 export const MODULE_OUTPUTS: ModuleRegistry = {
   ASSIGN_ROLE,
   GENERATE_ANSWER,
   ROOT_ENV_MODULE,
+  ASSIGN_CHANNEL,
+  ASSIGN_NAME,
 };
 
 export const CATEGORY_NAMES: CategoryNames = {

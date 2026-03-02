@@ -212,7 +212,6 @@
 		display: grid;
 		grid-template-columns: auto;
 		grid-template-rows: auto;
-		overflow: hidden;
 		padding-block: 0.5rem 1rem;
 		padding-inline: 0.75rem 1rem;
 		padding-top: 0.125rem;

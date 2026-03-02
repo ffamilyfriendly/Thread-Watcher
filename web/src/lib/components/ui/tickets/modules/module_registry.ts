@@ -2,6 +2,8 @@ import type { PipelineModule, TypedPipelineModule } from '@watcher/shared';
 import GenerateAnswer from './GenerateAnswer.svelte';
 import RoleAssign from './RoleAssign.svelte';
 import type { Component } from 'svelte';
+import ChannelAssign from './ChannelAssign.svelte';
+import SetName from './SetName.svelte';
 
 export type RenderableModuleTypes = Exclude<PipelineModule['type'], 'ROOT_ENV_MODULE'>;
 
@@ -11,7 +13,9 @@ type ModuleRegistry = {
 
 export const MODULE_COMPONENTS: ModuleRegistry = {
 	ASSIGN_ROLE: RoleAssign,
-	GENERATE_ANSWER: GenerateAnswer
+	GENERATE_ANSWER: GenerateAnswer,
+	ASSIGN_CHANNEL: ChannelAssign,
+	ASSIGN_NAME: SetName
 };
 
 export type ModuleType = keyof typeof MODULE_COMPONENTS;

@@ -19,6 +19,7 @@ import {
   ZGuild,
   ZThreadData,
   ThreadSearchData,
+  TicketPanel,
 } from '@watcher/shared';
 
 const TABLE_CREATION_QUERIES = [
@@ -26,7 +27,9 @@ const TABLE_CREATION_QUERIES = [
   'CREATE TABLE IF NOT EXISTS monitors (target_id TEXT PRIMARY KEY, guild_id TEXT NOT NULL, regex TEXT, role_whitelist TEXT, tags TEXT, is_suspended INTEGER DEFAULT 0)',
   'CREATE TABLE IF NOT EXISTS settings (setting_id TEXT, guild_id TEXT, setting_value TEXT, UNIQUE(setting_id, guild_id) ON CONFLICT REPLACE)',
   'CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id TEXT NOT NULL, executor_id TEXT NOT NULL, data TEXT NOT NULL, reason TEXT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)',
-  'CREATE TABLE IF NOT EXISTS guilds (guild_id TEXT PRIMARY KEY, left_at TIMESTAMP, granted_SKU TEXT, monthly_tokens NUMBER, persistent_tokens NUMBER, monthly_tokens_last_granted TIMESTAMP)',
+  'CREATE TABLE IF NOT EXISTS guilds (guild_id TEXT PRIMARY KEY, left_at TIMESTAMP, granted_SKU TEXT, monthly_tokens INTEGER, persistent_tokens INTEGER, monthly_tokens_last_granted TIMESTAMP)',
+  'CREATE TABLE IF NOT EXISTS ticketpanels (panel_id TEXT PRIMARY KEY, guild_id TEXT NOT NULL, name TEXT, description TEXT, should_watch_ticket INTEGER, should_GPT_summarize_ticket INTEGER, discord_message_id TEXT, initial_assigned_roles TEXT, initial_channel_id TEXT, commencement_embed TEXT NOT NULL, commencement_method TEXT NOT NULL, resolved_embed TEXT NOT NULL, pipeline TEXT NOT NULL)',
+  'CREATE TABLE IF NOT EXISTS ticket (ticket_id TEXT PRIMARY KEY, guild_id TEXT NOT NULL, discord_channel_id TEXT NOT NULL, name TEXT NOT NULL, owner TEXT NOT NULL, panel_id TEXT NOT NULL, assigned_to_roles TEXT NOT NULL, claimed_by_user_id TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, closed_at DATETIME)',
 ];
 
 export default class Sqlite implements Database {
@@ -74,6 +77,72 @@ export default class Sqlite implements Database {
   @with_error_handling
   async close() {
     this.db.close();
+    return ok();
+  }
+
+  @with_error_handling
+  async insert_ticket_panel(guild_id: string, panel: TicketPanel) {
+    const sql = `
+      INSERT INTO ticketpanels (
+        panel_id, 
+        guild_id, 
+        name, 
+        description, 
+        should_watch_ticket, 
+        should_GPT_summarize_ticket, 
+        initial_assigned_roles, 
+        initial_channel_id, 
+        commencement_embed, 
+        commencement_method, 
+        resolved_embed, 
+        pipeline
+        )
+      VALUES (
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
+        ?
+      )
+    `;
+
+    const panel_id = crypto.randomUUID();
+
+    this.db
+      .prepare(sql)
+      .run(
+        panel_id,
+        guild_id,
+        panel.name ?? null,
+        panel.description ?? null,
+        panel.should_watch_ticket,
+        panel.should_GPT_summarize_ticket,
+        panel.initial_assigned_roles.join(','),
+        panel.initial_channel_id,
+        JSON.stringify(panel.commencement_embed),
+        JSON.stringify(panel.commencement_method),
+        JSON.stringify(panel.resolved_embed),
+        JSON.stringify(panel.pipeline),
+      );
+    return ok();
+  }
+
+  async get_ticket_panels(guild_id: string) {}
+
+  @with_error_handling
+  async update_ticket_panel(panel_id: string, data: Omit<TicketPanel, 'id'>) {
+    return ok();
+  }
+
+  @with_error_handling
+  async delete_ticket_panel(panel_id: string) {
+    this.db.prepare('DELETE FROM ticketpanels WHERE panel_id = ?').run(panel_id);
     return ok();
   }
 

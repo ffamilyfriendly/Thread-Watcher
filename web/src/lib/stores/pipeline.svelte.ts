@@ -116,6 +116,10 @@ export class PipelineState {
 	set_modules(modules: RenderablePipeline) {
 		this.modules = modules;
 	}
+
+	get_panel() {
+		return ZTicketPanel.safeParse(this.panel);
+	}
 }
 
 const PIPELINE_KEY = Symbol('PIPELINE');

@@ -9,6 +9,7 @@ import {
   AuditData,
   Guild,
   ThreadSearchData,
+  TicketPanel,
 } from '@watcher/shared';
 
 export type DatabaseError = SqliteError | Error;
@@ -102,6 +103,13 @@ interface Guilds {
   upsert_guild_info: (guild_id: string, data: Omit<Guild, 'guild_id'>) => DBResult;
 }
 
-export interface Database extends Core, GuildSettings, Audit, Guilds {
+interface Tickets {
+  insert_ticket_panel: (guild_id: string, panel: TicketPanel) => DBResult;
+  update_ticket_panel: (panel_id: string, data: Omit<TicketPanel, 'id'>) => DBResult;
+  delete_ticket_panel: (panel_id: string) => DBResult;
+  get_ticket_panels: (guild_id: string) => DBResult<TicketPanel[]>;
+}
+
+export interface Database extends Core, GuildSettings, Audit, Guilds, Tickets {
   create_tables: () => DBResult;
 }

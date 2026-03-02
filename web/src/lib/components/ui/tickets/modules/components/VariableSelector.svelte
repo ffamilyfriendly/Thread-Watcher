@@ -74,6 +74,20 @@
 		if (show_this) show_this = false;
 		on_selected(variable);
 	}
+
+	function str_to_vibrant_clr(str: string): string {
+		let hash = 0;
+		for (let i = 0; i < str.length; i++) {
+			hash = str.charCodeAt(i) + ((hash << 5) - hash);
+		}
+
+		const hue = Math.abs(hash) % 360;
+
+		const sat = 80;
+		const light = 65;
+
+		return `hsl(${hue}, ${sat}%, ${light}%)`;
+	}
 </script>
 
 <svelte:window onkeydown={handle_keydown} />
@@ -91,8 +105,8 @@
 {/snippet}
 
 {#snippet show_value(key: string, values: ModuleProperty[], prev_key?: string)}
-	<div class="section">
-		{key}
+	<div class="section" style="--side_clr: {str_to_vibrant_clr(key)};">
+		<span class="name">{key}</span>
 		<ul>
 			{#each values as value}
 				{#if Array.isArray(value.value)}
@@ -136,7 +150,6 @@
 		outline: 1px solid color-mix(in srgb, var(--clr) 90%, white);
 		font-family: 'JetBrains Mono', monospace;
 		z-index: 99999;
-		padding: 0.5rem;
 		border-radius: 0.1rem;
 		position: absolute;
 		font-size: small;
@@ -144,15 +157,15 @@
 		flex-direction: column;
 		gap: 0.25rem;
 		min-width: 300px;
+		width: max-content;
+		padding: 1rem;
 
-		opacity: 0.9;
 		backdrop-filter: blur(10px);
 	}
 
 	.click_event_wrapper {
 		display: contents;
 		color: inherit;
-		cursor: pointer;
 	}
 
 	.row {
@@ -160,23 +173,32 @@
 		align-items: center;
 		gap: 0.5rem;
 		margin-left: 0.25rem;
+		padding: 0.25rem 0.5rem;
+		border-radius: 0.15rem;
 
 		.description {
 			opacity: 0.6;
-			margin-left: auto;
 		}
 
-		&:hover {
-			background-color: red;
-		}
-
+		&:hover,
 		&.active {
-			background-color: green;
+			background-color: color-mix(in srgb, var(--side_clr, white) 25%, transparent);
 		}
 	}
 
 	.section {
-		border-left: 1px solid red;
-		padding-left: 0.25rem;
+		cursor: pointer;
+
+		& * {
+			cursor: pointer;
+		}
+
+		.name {
+			color: color-mix(in srgb, var(--side_clr, white) 50%, white);
+			font-weight: bold;
+		}
+
+		border-left: 2px solid var(--side_clr, var(--primary-800));
+		padding-left: 0.3rem;
 	}
 </style>

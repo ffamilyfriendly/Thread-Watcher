@@ -12,7 +12,6 @@ import { ai_client } from '@providers/ai';
 import { config } from '@providers/config';
 import { ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
-import { MessageOutputEntry } from '@mistralai/mistralai/models/components';
 
 const router = Router();
 

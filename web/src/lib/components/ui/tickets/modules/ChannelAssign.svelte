@@ -7,9 +7,10 @@
 	import Toggle from '../../Toggle.svelte';
 	import { Info } from '@lucide/svelte';
 	import { s_tooltip } from '$lib/client/attachments/tooltip';
+	import ChannelPicker from '../../settings/ChannelPicker.svelte';
 
 	interface Props {
-		module: TypedPipelineModule<'ASSIGN_ROLE'>;
+		module: TypedPipelineModule<'ASSIGN_CHANNEL'>;
 	}
 	let { module = $bindable() }: Props = $props();
 </script>
@@ -22,15 +23,12 @@
 		> will be pinged when the ticket is created or updated, and its members will gain access to manage
 		the ticket in the dashboard.
 	{/snippet}
-	<RolePicker bind:value={module.role_id} roles={guild_state.roles} />
 
-	<div class={[common.row, common.gap_medium]}>
-		<Info
-			size={16}
-			color={'var(--primary-900)'}
-			{@attach s_tooltip('Append role to "Assigned Roles" or replace')}
+	{#if guild_state.guild_id}
+		<ChannelPicker
+			bind:value={module.channel_id}
+			guild_id={guild_state.guild_id}
+			channels={guild_state.channels}
 		/>
-		<b>append</b>
-		<Toggle bind:value={module.append} />
-	</div>
+	{/if}
 </BaseModule>

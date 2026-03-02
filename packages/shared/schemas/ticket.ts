@@ -10,6 +10,7 @@ export const DISCORD_MAX_CHARS_IN_PLACEHOLDER = 150;
 export const DISCORD_MAX_CHARS_IN_BUTTON_LABEL = 80;
 export const DISCORD_MAX_CHARS_IN_OPTION = 100; // Value is the same for id, label, and description
 export const DISCORD_SNOWFLAKE_MAX_LEN = 19;
+export const DISCORD_CHANNEL_NAME_MAX_LEN = 100;
 
 // Service restraints
 export const TW_MAX_CHARS_IN_OPERANT_VALUE = 100;
@@ -89,6 +90,22 @@ export const ZAssignRole = ZModule.extend({
   type: z.literal("ASSIGN_ROLE").default("ASSIGN_ROLE"),
 });
 
+// Changes the assigned channel of the ticket
+export const ZAssignChannel = ZModule.extend({
+  channel_id: z.string().max(DISCORD_SNOWFLAKE_MAX_LEN).nullish(),
+  type: z.literal("ASSIGN_CHANNEL").default("ASSIGN_CHANNEL"),
+});
+
+// Changes the assigned name of the ticket
+export const ZAssignName = ZModule.extend({
+  new_name: z
+    .string()
+    .max(DISCORD_CHANNEL_NAME_MAX_LEN)
+    .default("Ticket-{{env.number}}")
+    .nullish(),
+  type: z.literal("ASSIGN_NAME").default("ASSIGN_NAME"),
+});
+
 // Changes the assigned role of the ticket
 export const ZGenerateAnswer = ZModule.extend({
   prompt: z
@@ -105,6 +122,8 @@ export const ZPipelineModule = z.discriminatedUnion("type", [
   ZAssignRole,
   ZGenerateAnswer,
   ZFakeEnvModule,
+  ZAssignChannel,
+  ZAssignName,
 ]);
 export type PipelineModule = z.output<typeof ZPipelineModule>;
 export type TypedPipelineModule<T extends PipelineModule["type"]> = Extract<
@@ -137,10 +156,11 @@ export const ZTicketPanel = z.object({
 export const ZTicket = z.object({
   id: z.string(),
   discord_channel_id: z.string(),
+  name: z.string(),
   owner: z.string(),
   panel_id: z.string(),
   status: z.enum(["OPEN", "CLOSED"]),
-  assigned_to_role: z.string(),
+  assigned_to_roles: z.array(z.string()),
   claimed_by_user_id: z.string().nullish(),
   created_at: z.coerce.date(),
   closed_at: z.coerce.date().nullish(),

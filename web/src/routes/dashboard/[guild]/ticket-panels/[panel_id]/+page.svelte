@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Pipeline from '$lib/components/ui/tickets/Pipeline.svelte';
-	import type { ButtonStart, Embed, PipelineModule, SelectionStart } from '@watcher/shared';
+	import type { ButtonStart, SelectionStart } from '@watcher/shared';
 	import type { PageProps } from './$types.js';
-	import { clean_or_throw, init_pipeline_state } from '$lib/stores/pipeline.svelte.js';
+	import { init_pipeline_state } from '$lib/stores/pipeline.svelte.js';
 	import RolePicker from '$lib/components/ui/settings/RolePicker.svelte';
 	import ChannelPicker from '$lib/components/ui/settings/ChannelPicker.svelte';
 	import { CAN_HOLD_THREADS } from '$lib/types/discord.js';
@@ -17,7 +17,8 @@
 	import TabbedView from '$lib/components/ui/TabbedView.svelte';
 	import ButtonConfigurator from '$lib/components/ui/tickets/ButtonConfigurator.svelte';
 	import StringSelectConfigurator from '$lib/components/ui/tickets/StringSelectConfigurator.svelte';
-	import { tooltip } from '$lib/client/attachments/tooltip.js';
+	import { fetch_as_json } from '$lib/client/fetch.js';
+	import { guild_state } from '$lib/stores/guild.svelte.js';
 
 	const { data, params }: PageProps = $props();
 
@@ -58,6 +59,25 @@
 		} else if (init_w_select_state) {
 			pipeline_state.panel.commencement_method = init_w_select_state;
 		}
+	}
+
+	async function create_ticket() {
+		const panel_validation_result = pipeline_state.get_panel();
+
+		if (!panel_validation_result.success) {
+			return add_toast_from_error(panel_validation_result.error);
+		}
+
+		const res = await fetch_as_json(`/api/panel`, {
+			body: JSON.stringify({ guild_id: guild_state.guild_id, ...panel_validation_result.data }),
+			method: create_new ? 'POST' : 'PUT'
+		});
+
+		if (res.isErr()) {
+			return add_toast_from_error(res.error);
+		}
+
+		alert('all is ok! :D');
 	}
 
 	const create_new = $derived(params.panel_id === 'new');
@@ -132,7 +152,7 @@
 			/>
 		</div>
 		<div class="option">
-			<h3>Assigned Role</h3>
+			<h3>Assigned Roles</h3>
 			<RolePicker
 				roles={data.roles}
 				multiple={true}
@@ -151,10 +171,18 @@
 			<h3>Close Method</h3>
 			What we want to do when a ticket is resolved. Maybe: Delete Thread, Un-Watch thread, nothing
 		</div>
+
+		<button onclick={create_ticket} class={[btn_style.button, btn_style.primary, 'updatebtn']}>
+			{create_new ? 'Create' : 'Update'}
+		</button>
 	</div>
 </main>
 
 <style lang="scss">
+	.updatebtn {
+		margin-top: auto;
+		width: 100%;
+	}
 	.option {
 		&.row {
 			display: flex;
@@ -186,6 +214,9 @@
 	}
 
 	.sidebar {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
 		padding: 0.5rem;
 		width: 300px;
 		grid-area: side;
