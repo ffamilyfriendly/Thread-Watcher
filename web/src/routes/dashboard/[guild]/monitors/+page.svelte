@@ -7,11 +7,13 @@
 	import PremiumButton from '$lib/components/ui/premium/PremiumButton.svelte';
 	import ChannelPicker from '$lib/components/ui/settings/ChannelPicker.svelte';
 	import { add_toast_from_error } from '$lib/state/toasts.svelte.js';
-	import { guild_state } from '$lib/stores/guild.svelte.js';
+	import { use_guild_state } from '$lib/stores/guild.svelte.js';
 	import btn_styles from '$lib/style/button.module.scss';
 	import { CAN_BE_MONITOR_TARGET } from '$lib/types/discord.js';
 	import { Eye } from '@lucide/svelte';
 	import { ZMonitor, type Monitor as dMonitor } from '@watcher/shared';
+
+	const guild_state = use_guild_state()
 
 	const { data } = $props();
 	let monitors = $derived(data.monitors);

@@ -4,9 +4,11 @@
 	import ChannelPicker from '$lib/components/ui/settings/ChannelPicker.svelte';
 	import StringPicker from '$lib/components/ui/settings/StringPicker.svelte';
 	import Thread from '$lib/components/ui/threads/Thread.svelte';
-	import { guild_state } from '$lib/stores/guild.svelte';
+	import { use_guild_state } from '$lib/stores/guild.svelte';
 	import btn_style from '$lib/style/button.module.scss';
 	import type { PageData } from './$types';
+
+	const guild_state = use_guild_state()
 
 	interface Props {
 		data: PageData;

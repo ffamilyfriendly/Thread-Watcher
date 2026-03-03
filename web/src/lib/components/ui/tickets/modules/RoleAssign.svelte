@@ -3,10 +3,12 @@
 	import common from '$lib/style/common.module.scss';
 	import BaseModule from './BaseModule.svelte';
 	import RolePicker from '../../settings/RolePicker.svelte';
-	import { guild_state } from '$lib/stores/guild.svelte';
 	import Toggle from '../../Toggle.svelte';
 	import { Info } from '@lucide/svelte';
 	import { s_tooltip } from '$lib/client/attachments/tooltip';
+	import { use_guild_state } from '$lib/stores/guild.svelte';
+
+	const guild_state = use_guild_state()
 
 	interface Props {
 		module: TypedPipelineModule<'ASSIGN_ROLE'>;

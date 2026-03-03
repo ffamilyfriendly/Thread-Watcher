@@ -5,6 +5,24 @@ import { err, ok, Result, ResultAsync } from 'neverthrow';
 import Redis from 'ioredis';
 import { map_err } from './error';
 import z from 'zod';
+import { with_schema } from 'database';
+
+interface EnsuredSchemaCall<E extends z.ZodType, R extends z.ZodType> {
+  event_name: string;
+  return_schema: R;
+  expected_data: E;
+}
+
+const create_funcs = <T extends Record<string, EnsuredSchemaCall<z.ZodType, z.ZodType>>>(obj: T) =>
+  obj;
+
+export const FUNCS = create_funcs({
+  send_embed: {
+    event_name: 'send_embed',
+    expected_data: z.object({ panel_id: z.string() }),
+    return_schema: z.object({ message_id: z.string() }),
+  },
+});
 
 function generate_request_id() {
   return randomBytes(16).toString('hex');
@@ -31,9 +49,18 @@ type ResponseCallback = (ev: ReponseEvent) => void;
 class BaseClient implements IpcClient {
   listeners = new Map<string, Callback<unknown>>();
   response_events = new Map<string, ResponseCallback>();
+  request_timeout_after_ms = 1000 * 3;
 
   on(event: string, callback: Callback<unknown>) {
     this.listeners.set(event, callback);
+  }
+
+  protected ensure_schema(data: ShardedBaseEvent | BaseEvent) {
+    const schema_config = FUNCS[data.type as keyof typeof FUNCS];
+    if (!schema_config) return true;
+
+    const parsed = schema_config.expected_data.safeParse(data.data);
+    return parsed.success;
   }
 
   protected _send<T>(
@@ -48,11 +75,16 @@ class BaseClient implements IpcClient {
       const send_res = await ResultAsync.fromPromise(shard.send(request) as Promise<any>, map_err);
 
       if (send_res.isErr()) {
-        console.log(request);
         return resolve(err(send_res.error));
       }
 
+      const req_timeout = setTimeout(() => {
+        this.response_events.delete(request.request_id);
+        return resolve(err(new Error('Request Timed Out')));
+      }, this.request_timeout_after_ms);
+
       this.response_events.set(request.request_id, (data) => {
+        clearTimeout(req_timeout);
         this.response_events.delete(request.request_id);
         if (data.ok) {
           if (!schema) return resolve(ok(data.data as T));
@@ -66,6 +98,15 @@ class BaseClient implements IpcClient {
         }
       });
     });
+  }
+
+  with_schema<K extends keyof typeof FUNCS>(
+    shard: Shard | ShardClientUtil,
+    key: K,
+    data: z.input<(typeof FUNCS)[K]['expected_data']>,
+  ) {
+    const details = FUNCS[key];
+    return this._send(shard, details.event_name, data, details.return_schema);
   }
 }
 
@@ -98,6 +139,15 @@ export class BotIpcClient extends BaseClient {
 
     const handler = this.listeners.get(message.type);
     if (handler) {
+      if (!this.ensure_schema(message)) {
+        return this.shard?.send({
+          type: 'response',
+          ok: false,
+          data: 'IPC_SCHEMA_VALIDATION_FAILED',
+          request_id: message.request_id,
+        });
+      }
+
       const result = await handler(message.data);
 
       if (result.isOk()) {
@@ -201,6 +251,20 @@ export class ShardedIpcClient extends BaseClient {
     if (shard.isErr()) return err(shard.error);
 
     return this.send_to_shard<T>(shard.value, event, data, schema);
+  }
+
+  async send_shard<T extends keyof typeof FUNCS>(
+    guild_id: string,
+    schema: T,
+    data: z.input<(typeof FUNCS)[T]['expected_data']>,
+  ) {
+    const shard = await this.get_shard_from_guild_id(guild_id);
+    if (shard.isErr()) return err(shard.error);
+
+    const shard_obj = this.shards.get(shard.value);
+    if (!shard_obj) return err(new Error(`shard "${shard_obj}" does not exist`));
+
+    return this.with_schema(shard_obj, schema, data);
   }
 
   /**

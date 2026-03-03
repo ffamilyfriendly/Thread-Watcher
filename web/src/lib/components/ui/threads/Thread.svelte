@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { get_pwetty_relative_time } from '$lib/client/time_util';
-	import { guild_state } from '$lib/stores/guild.svelte';
+	import { use_guild_state } from '$lib/stores/guild.svelte';
 	import { CircleAlert, CircleX, Eye } from '@lucide/svelte';
 	import type { HydratedThreadData } from '@watcher/shared';
+
+	const guild_state = use_guild_state()
 
 	interface Props {
 		thread: HydratedThreadData;

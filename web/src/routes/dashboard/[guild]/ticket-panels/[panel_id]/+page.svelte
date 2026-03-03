@@ -18,12 +18,17 @@
 	import ButtonConfigurator from '$lib/components/ui/tickets/ButtonConfigurator.svelte';
 	import StringSelectConfigurator from '$lib/components/ui/tickets/StringSelectConfigurator.svelte';
 	import { fetch_as_json } from '$lib/client/fetch.js';
-	import { guild_state } from '$lib/stores/guild.svelte.js';
+	import { use_guild_state } from '$lib/stores/guild.svelte.js';
+	import common from "$lib/style/common.module.scss"
+	import z from 'zod';
+	import { goto } from '$app/navigation';
 
 	const { data, params }: PageProps = $props();
 
+	const guild_state = use_guild_state()
+
 	// svelte-ignore state_referenced_locally
-	let pipeline_state = init_pipeline_state(data.panel);
+	let pipeline_state = $state(init_pipeline_state(guild_state.guild_id_throws, data.panel));
 
 	let init_w_btn_state = $state<ButtonStart>(
 		pipeline_state.panel.commencement_method.type === 'BUTTON'
@@ -69,15 +74,32 @@
 		}
 
 		const res = await fetch_as_json(`/api/panel`, {
-			body: JSON.stringify({ guild_id: guild_state.guild_id, ...panel_validation_result.data }),
+			body: JSON.stringify(panel_validation_result.data),
 			method: create_new ? 'POST' : 'PUT'
-		});
+		}, z.object({ panel_id: z.string().default(pipeline_state.panel.panel_id) }));
 
 		if (res.isErr()) {
 			return add_toast_from_error(res.error);
 		}
 
-		alert('all is ok! :D');
+		if(create_new) {
+			add_toast({ type: "success", message: "Created panel!" })
+			goto(`/dashboard/${guild_state.guild_id}/ticket-panels/${res.value.panel_id}`)
+		} else {
+			add_toast({ type: "success", message: "updated panel!", timeout: 1500 })
+		}
+	}
+
+	async function update_message() {
+		const res = await fetch_as_json(`/api/panel/${pipeline_state.panel.panel_id}/send_message`, {
+			method: "POST",
+			body: JSON.stringify({ panel_id: pipeline_state.panel.panel_id, guild_id: guild_state.guild_id })
+		}, z.object({ message_id: z.string() }))
+
+		if(res.isErr()) return add_toast_from_error(res.error)
+
+		console.log(res.value)
+		alert("OK")
 	}
 
 	const create_new = $derived(params.panel_id === 'new');
@@ -172,16 +194,21 @@
 			What we want to do when a ticket is resolved. Maybe: Delete Thread, Un-Watch thread, nothing
 		</div>
 
-		<button onclick={create_ticket} class={[btn_style.button, btn_style.primary, 'updatebtn']}>
-			{create_new ? 'Create' : 'Update'}
-		</button>
+		<div class={[common.row, common.gap_medium]}>
+			<button disabled={create_new} onclick={update_message} class={[btn_style.button, btn_style.tetriary, 'updatebtn']}>
+				Send Embed
+			</button>
+	
+			<button onclick={create_ticket} class={[btn_style.button, btn_style.primary, 'updatebtn']}>
+				{create_new ? 'Create' : 'Update'}
+			</button>
+		</div>
 	</div>
 </main>
 
 <style lang="scss">
 	.updatebtn {
-		margin-top: auto;
-		width: 100%;
+		flex: 1;
 	}
 	.option {
 		&.row {

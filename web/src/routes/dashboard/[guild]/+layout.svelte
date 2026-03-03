@@ -1,14 +1,15 @@
 <script>
-	import { browser } from '$app/environment';
 	import NavBar from '$lib/components/ui/NavBar.svelte';
 	import { sidebar_open } from '$lib/stores/sidebar';
-	import { onMount } from 'svelte';
-	import { guild_state } from '$lib/stores/guild.svelte';
+	import { init_guild_state } from '$lib/stores/guild.svelte';
 
 	let { children, data } = $props();
 
+	// svelte-ignore state_referenced_locally
+	const gs = init_guild_state(data.guild_id)
+
 	$effect(() => {
-		guild_state.init(data.roles, data.channels, data.guild);
+		gs.init(data.roles, data.channels, data.guild);
 	});
 
 	let inner_width = $state(0);

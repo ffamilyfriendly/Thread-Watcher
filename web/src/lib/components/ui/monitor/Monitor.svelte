@@ -5,13 +5,15 @@
 	import { safe_fetch } from '$lib/client/fetch';
 	import { add_toast_from_error } from '$lib/state/toasts.svelte';
 	import Modal from '../Modal.svelte';
-	import { guild_state } from '$lib/stores/guild.svelte';
 	import Guild from '../discord/Guild.svelte';
 	import MonitorConfiguration from './MonitorConfiguration.svelte';
 	import Role from '../discord/Role.svelte';
 	import Emoji from '../discord/Emoji.svelte';
 	import { PUBLIC_SKU_STORE } from '$env/static/public';
 	import FallBackChannel from '../discord/FallBackChannel.svelte';
+	import { use_guild_state } from '$lib/stores/guild.svelte';
+
+	const guild_state = use_guild_state()
 
 	interface Props {
 		monitor: Monitor;

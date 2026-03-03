@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { ZAiRegexResponse, type Monitor } from '@watcher/shared';
 	import RolePicker from '../settings/RolePicker.svelte';;
-	import { guild_state } from '$lib/stores/guild.svelte';
 	import safe_regex from 'safe-regex';
 	import { Result } from 'neverthrow';
 	import { map_err } from '$lib/error_helper';
@@ -12,6 +11,9 @@
 	import { Sparkles } from '@lucide/svelte';
 	import style from './monitorconfig.module.scss';
 	import { fetch_as_json, safe_fetch } from '$lib/client/fetch';
+	import { use_guild_state } from '$lib/stores/guild.svelte';
+
+	const guild_state = use_guild_state()
 
 	interface Props {
 		data: Omit<Monitor, 'is_suspended'|"manages_threads_count">;

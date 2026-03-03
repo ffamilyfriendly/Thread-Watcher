@@ -1,7 +1,9 @@
 <script lang="ts">
-	import { guild_state } from '$lib/stores/guild.svelte';
+	import { use_guild_state } from '$lib/stores/guild.svelte';
 	import type { DiscordChannel } from '$lib/types/internal_api';
 	import { Folder, Hash, Megaphone, MessagesSquare, Spool } from '@lucide/svelte';
+
+	const guild_state = use_guild_state()
 
 	interface Props {
 		channel: DiscordChannel;

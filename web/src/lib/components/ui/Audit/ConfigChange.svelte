@@ -1,10 +1,12 @@
 <script lang="ts">
-	import { guild_state } from "$lib/stores/guild.svelte";
-import type { ExpandedAuditLog } from "$lib/types/internal_api";
+    import type { ExpandedAuditLog } from "$lib/types/internal_api";
 	import { ArrowRight } from "@lucide/svelte";
 	import type { NarrowedLog } from "@watcher/shared";
 	import Channel from "../discord/Channel.svelte";
 	import Role from "../discord/Role.svelte";
+	import { use_guild_state } from "$lib/stores/guild.svelte";
+
+    const guild_state = use_guild_state()
 
     interface Props {
         log: NarrowedLog<"CONFIG", ExpandedAuditLog>

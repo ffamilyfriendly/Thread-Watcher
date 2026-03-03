@@ -1,11 +1,13 @@
 <script lang="ts">
 	import btn_styles from '$lib/style/button.module.scss';
 	import { Crown } from '@lucide/svelte';
-	import { guild_state } from '$lib/stores/guild.svelte';
 	import type { Snippet } from 'svelte';
 	import Modal from '../Modal.svelte';
 	import PremiumInformation from './PremiumInformation.svelte';
 	import { PUBLIC_SKU_BASIC, PUBLIC_SKU_EXTENDED, PUBLIC_SKU_STORE } from '$env/static/public';
+	import { use_guild_state } from '$lib/stores/guild.svelte';
+
+	const guild_state = use_guild_state()
 
 	interface Props {
 		require_level: 'BASIC' | 'EXTENDED';
@@ -20,7 +22,6 @@
 	let show_premium_modal = $state(false);
 
 	function on_click_wrapper() {
-		console.log('HI HI', guild_state.guild);
 		if (!guild_state.guild) return;
 
 		if (require_level === 'EXTENDED' && guild_state.guild.entitlements !== 'EXTENDED') {

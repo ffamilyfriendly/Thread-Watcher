@@ -140,6 +140,7 @@ export type Pipeline = z.output<typeof ZPipeline>;
 // Panel related stuff
 export const ZTicketPanel = z.object({
   panel_id: z.string(),
+  guild_id: z.string(),
   name: z.string().nullish(),
   description: z.string().nullish(),
   should_watch_ticket: z.coerce.boolean(),
@@ -171,8 +172,11 @@ export type TicketPanel = z.output<typeof ZTicketPanel>;
 export type EditTicketPanel = z.output<typeof ZEditTicketPanel>;
 export type TicketPanelMeta = Omit<TicketPanel, "id">;
 
-export const DEFAULT_TICKET_PANEL: TicketPanel = {
+export const DEFAULT_TICKET_PANEL: (s: string) => TicketPanel = (
+  guild_id: string,
+) => ({
   panel_id: "",
+  guild_id,
   description: "",
   should_watch_ticket: true,
   should_GPT_summarize_ticket: true,
@@ -193,4 +197,4 @@ export const DEFAULT_TICKET_PANEL: TicketPanel = {
     type: "BUTTON",
     button_text: "open ticket",
   },
-};
+});

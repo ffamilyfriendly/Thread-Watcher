@@ -23,7 +23,7 @@ export function enforce_policy(policy: SecurityPolicy) {
       logger.error(`Failed to run policy '${policy.name}'`, policy_result.error);
       return res.status(500).json({
         code: 500,
-        message: 'failed to run security policy',
+        message: policy_result.error.message, // Might leak privvy data. Watch out
       });
     }
 

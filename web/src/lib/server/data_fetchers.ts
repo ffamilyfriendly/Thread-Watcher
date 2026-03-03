@@ -17,6 +17,7 @@ import {
 	ZHydratedThreadData,
 	ZMonitor,
 	ZThreadData,
+	ZTicketPanel,
 	type HydratedThreadData,
 	type Monitor,
 	type ThreadData,
@@ -147,6 +148,17 @@ export function fetch_role(guild_id: string, user_id: string, role_id: string) {
 		500
 	);
 }
+
+export const _fetch_ticket_panel = (guild_id: string, panel_id: string, user_id: string) =>
+	json_fetch(`/guild/${guild_id}/panel/${panel_id}`, { user_id }, ZTicketPanel);
+
+export const fetch_ticket_panel = (guild_id: string, panel_id: string, user_id: string) =>
+	get_cached_or(
+		`ticketservice:panel:${panel_id}`,
+		ZTicketPanel,
+		() => _fetch_ticket_panel(guild_id, panel_id, user_id),
+		500
+	);
 
 export async function get_guild_info(
 	guild_id: string,

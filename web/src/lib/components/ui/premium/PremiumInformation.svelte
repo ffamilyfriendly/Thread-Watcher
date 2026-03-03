@@ -1,10 +1,12 @@
 <script lang="ts">
-	import { guild_state } from '$lib/stores/guild.svelte';
+	import { use_guild_state } from '$lib/stores/guild.svelte';
 	import btn_style from '$lib/style/button.module.scss';
 
 	interface Props {
 		level: 'BASIC' | 'EXTENDED';
 	}
+
+	const guild_state = use_guild_state()
 
 	const { level }: Props = $props();
 </script>

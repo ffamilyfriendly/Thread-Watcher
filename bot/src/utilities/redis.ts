@@ -47,7 +47,7 @@ export default class RedisWrapper {
   ) {}
 
   get_key(key: string | string[]) {
-    return this.prefix + (typeof key === 'string' ? key : key.join(':'));
+    return this.prefix + ':' + (typeof key === 'string' ? key : key.join(':'));
   }
 
   get<TZodType extends z.ZodTypeAny>(key: string | string[], schema: TZodType) {

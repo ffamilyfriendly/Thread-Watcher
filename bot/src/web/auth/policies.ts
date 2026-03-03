@@ -25,6 +25,22 @@ function assert_all_ok<T, E>(results: Result<T, E>[]): asserts results is Ok<T, 
   }
 }
 
+/**
+ * @description checks the formatting of a guild_id. Does not verify guild actually exists nor any user identity data related to it
+ * @param req
+ * @returns Result with guild_id or an error
+ */
+function get_valid_guild_id(req: RequestWithUser) {
+  const guild_id = req.params.guild_id || req.body.guild_id;
+
+  if (!guild_id) return err(new Error("no 'guild_id' was passed"));
+  if (typeof guild_id !== 'string')
+    return err(new Error('guild_id was passed but was not a string'));
+  if (!guild_id.match(/^\d{17,19}$/))
+    return err(new Error('guild_id was passed but was not a valid snowflake'));
+  return ok(guild_id);
+}
+
 export namespace Policies {
   /**
    * Helper policy that takes two policies and passes the request if either one of the policies are true
@@ -78,12 +94,11 @@ export namespace Policies {
 
   export function cached(policy: SecurityPolicy, cache_duration_seconds: 60, policy_name?: string) {
     return async function (req: RequestWithUser): Promise<Result<PolicyResult, Error>> {
-      const guild_id = req.params.guild_id || req.body.guild_id;
-      if (!guild_id) {
-        return err(new Error(`route does not have a 'guild_id' parameter!`));
-      }
+      const guild_id = get_valid_guild_id(req);
+      if (guild_id.isErr()) return err(guild_id.error);
+
       const p_name = policy_name ?? policy.name;
-      const cache_key = `policy:${p_name}:${guild_id}:${req.user_id}`;
+      const cache_key = `policy:${p_name}:${guild_id.value}:${req.user_id}`;
       const cached = await redis.get(cache_key);
       if (cached !== null) {
         return ok({
@@ -113,16 +128,18 @@ export namespace Policies {
   export function has_discord_perm(permissions: PermissionResolvable | PermissionResolvable[]) {
     const perm_arr = Array.isArray(permissions) ? permissions : [permissions];
     return async function (req: RequestWithUser): Promise<Result<PolicyResult, Error>> {
-      const guild_id = req.params.guild_id || req.body.guild_id;
-      if (!guild_id) {
-        return err(new Error(`route does not have a 'guild_id' parameter!`));
-      }
+      const guild_id = get_valid_guild_id(req);
+      if (guild_id.isErr()) return err(guild_id.error);
 
-      const r = await ipc_client.send_to_shard_having_guild<boolean>(guild_id, 'check_user_perm', {
-        guild_id,
-        user_id: req.user_id,
-        permission: perm_arr,
-      });
+      const r = await ipc_client.send_to_shard_having_guild<boolean>(
+        guild_id.value,
+        'check_user_perm',
+        {
+          guild_id,
+          user_id: req.user_id,
+          permission: perm_arr,
+        },
+      );
 
       if (r.isErr()) {
         console.log('ISSUE', r.error);
@@ -145,13 +162,11 @@ export namespace Policies {
   export async function has_universal_guild_access(
     req: RequestWithUser,
   ): Promise<Result<PolicyResult, Error>> {
-    const guild_id = req.params.guild_id || req.body.guild_id;
-    if (!guild_id) {
-      return err(new Error(`route does not have a 'guild_id' parameter!`));
-    }
+    const guild_id = get_valid_guild_id(req);
+    if (guild_id.isErr()) return err(guild_id.error);
 
     const r = await ipc_client.send_to_shard_having_guild<boolean>(
-      guild_id,
+      guild_id.value,
       'check_user_guild_master',
       {
         guild_id,
@@ -170,13 +185,11 @@ export namespace Policies {
   }
 
   export async function is_bot_master(req: RequestWithUser): Promise<Result<PolicyResult, Error>> {
-    const guild_id = req.params.guild_id || req.body.guild_id;
-    if (!guild_id) {
-      return err(new Error(`route does not have a 'guild_id' parameter!`));
-    }
+    const guild_id = get_valid_guild_id(req);
+    if (guild_id.isErr()) return err(guild_id.error);
 
     const r = await ipc_client.send_to_shard_having_guild<boolean>(
-      guild_id,
+      guild_id.value,
       'check_user_bot_master',
       {
         guild_id,
@@ -197,12 +210,10 @@ export namespace Policies {
   export async function has_basic_entitlement(
     req: RequestWithUser,
   ): Promise<Result<PolicyResult, Error>> {
-    const guild_id = req.params.guild_id || req.body.guild_id;
-    if (!guild_id) {
-      return err(new Error(`route does not have a 'guild_id' parameter!`));
-    }
+    const guild_id = get_valid_guild_id(req);
+    if (guild_id.isErr()) return err(guild_id.error);
 
-    const result = await entitlement_service.has_basic(ipc_client, guild_id);
+    const result = await entitlement_service.has_basic(ipc_client, guild_id.value);
     if (result.isErr()) return err(result.error);
 
     return ok({
@@ -214,12 +225,10 @@ export namespace Policies {
   export async function has_extended_entitlement(
     req: RequestWithUser,
   ): Promise<Result<PolicyResult, Error>> {
-    const guild_id = req.params.guild_id || req.body.guild_id;
-    if (!guild_id) {
-      return err(new Error(`route does not have a 'guild_id' parameter!`));
-    }
+    const guild_id = get_valid_guild_id(req);
+    if (guild_id.isErr()) return err(guild_id.error);
 
-    const result = await entitlement_service.has_extended(ipc_client, guild_id);
+    const result = await entitlement_service.has_extended(ipc_client, guild_id.value);
     if (result.isErr()) return err(result.error);
 
     return ok({
@@ -231,13 +240,11 @@ export namespace Policies {
   export async function user_is_in_guild(
     req: RequestWithUser,
   ): Promise<Result<PolicyResult, Error>> {
-    const guild_id = req.params.guild_id || req.body.guild_id;
-    if (!guild_id) {
-      return err(new Error(`route does not have a 'guild_id' parameter!`));
-    }
+    const guild_id = get_valid_guild_id(req);
+    if (guild_id.isErr()) return err(guild_id.error);
 
     const r = await ipc_client.send_to_shard_having_guild(
-      guild_id,
+      guild_id.value,
       'check_user_in_guild',
       {
         guild_id,

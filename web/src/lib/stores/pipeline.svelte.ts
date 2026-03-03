@@ -14,10 +14,13 @@ import { getContext, setContext } from 'svelte';
 export type RenderablePipeline = RenderableModule[];
 
 export class PipelineState {
-	public panel = $state<TicketPanel>(DEFAULT_TICKET_PANEL);
+	public panel = $state<TicketPanel>({} as TicketPanel);
 
-	constructor(panel?: TicketPanel) {
+	constructor(guild_id: string, panel?: TicketPanel) {
 		if (panel) this.panel = panel;
+		else {
+			this.panel = DEFAULT_TICKET_PANEL(guild_id);
+		}
 	}
 
 	get modules() {
@@ -133,8 +136,8 @@ export function clean_or_throw(pl: Pipeline): RenderablePipeline {
 	throw new Error('unclean pipeline was passed!');
 }
 
-export function init_pipeline_state(initial_data?: TicketPanel) {
-	return setContext(PIPELINE_KEY, new PipelineState(initial_data));
+export function init_pipeline_state(guild_id: string, initial_data?: TicketPanel) {
+	return setContext(PIPELINE_KEY, new PipelineState(guild_id, initial_data));
 }
 
 export function use_pipeline() {

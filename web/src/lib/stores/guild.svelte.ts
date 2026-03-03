@@ -10,6 +10,7 @@ import {
 } from '$lib/types/internal_api';
 import { ZMonitor, type Monitor } from '@watcher/shared';
 import { err, ok, Result } from 'neverthrow';
+import { getContext, setContext } from 'svelte';
 import z from 'zod';
 
 type UserFetchCallback = (v: Result<DiscordUser, unknown>) => void;
@@ -26,8 +27,17 @@ class GuildState {
 	pending_users: Map<string, UserFetchCallback[]> = new Map();
 	batch_timeout_id: number | NodeJS.Timeout | null = null;
 
+	constructor(guild_id: string) {
+		this.guild_id = guild_id;
+	}
+
 	get is_ready() {
 		return !!this.guild_id;
+	}
+
+	get guild_id_throws() {
+		if (!this.guild_id) throw new Error('guild_id was not set!');
+		return this.guild_id;
 	}
 
 	set_roles(new_roles: DiscordRole[]) {
@@ -192,4 +202,14 @@ class GuildState {
 	}
 }
 
-export const guild_state = new GuildState();
+const GUILDSTATE_KEY = Symbol('GUILDSTATE');
+
+export function init_guild_state(guild_id: string) {
+	return setContext(GUILDSTATE_KEY, new GuildState(guild_id));
+}
+
+export function use_guild_state() {
+	const state = getContext<GuildState>(GUILDSTATE_KEY);
+	if (!state) throw new Error('use_guild_state called outside of provider');
+	return state;
+}
