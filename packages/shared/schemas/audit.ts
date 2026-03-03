@@ -57,7 +57,7 @@ export const ZAuditData = z.object({
   guild_id: z.string(),
   executor_id: z.string(),
   reason: z.string().nullish(),
-  timestamp: z.coerce.date().transform((d) => d.getTime()),
+  timestamp: z.coerce.date(),
   data: z.preprocess((val) => {
     if (typeof val === "string") {
       // We dont have neverthrow here :(

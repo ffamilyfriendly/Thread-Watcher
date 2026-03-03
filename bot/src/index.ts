@@ -14,13 +14,6 @@ import { redis } from '@providers/redis';
 
 const logger = Logger.child('Shard');
 
-database.create_tables().then((res) => {
-  if (res.isErr()) {
-    logger.error('Could not create tables!', res.error);
-    process.exit(1);
-  }
-});
-
 async function load_events() {
   return load_module_as_and<PrivateEvent>('./src/ipcEvents/manager', (events_array) => {
     for (const event of events_array) {

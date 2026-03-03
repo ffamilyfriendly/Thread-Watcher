@@ -139,7 +139,7 @@ export type Pipeline = z.output<typeof ZPipeline>;
 
 // Panel related stuff
 export const ZTicketPanel = z.object({
-  id: z.string(),
+  panel_id: z.string(),
   name: z.string().nullish(),
   description: z.string().nullish(),
   should_watch_ticket: z.coerce.boolean(),
@@ -152,6 +152,8 @@ export const ZTicketPanel = z.object({
   resolved_embed: ZEmbed,
   pipeline: ZPipeline,
 });
+
+export const ZEditTicketPanel = ZTicketPanel.partial();
 
 export const ZTicket = z.object({
   id: z.string(),
@@ -166,10 +168,11 @@ export const ZTicket = z.object({
   closed_at: z.coerce.date().nullish(),
 });
 export type TicketPanel = z.output<typeof ZTicketPanel>;
+export type EditTicketPanel = z.output<typeof ZEditTicketPanel>;
 export type TicketPanelMeta = Omit<TicketPanel, "id">;
 
 export const DEFAULT_TICKET_PANEL: TicketPanel = {
-  id: "",
+  panel_id: "",
   description: "",
   should_watch_ticket: true,
   should_GPT_summarize_ticket: true,

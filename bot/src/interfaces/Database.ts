@@ -10,6 +10,7 @@ import {
   Guild,
   ThreadSearchData,
   TicketPanel,
+  EditTicketPanel,
 } from '@watcher/shared';
 
 export type DatabaseError = SqliteError | Error;
@@ -27,7 +28,7 @@ interface CoreUtils {
 
 interface CoreThread {
   insert_thread: (thread: InsertThreadData) => DBResult;
-  delete_thread: (thread_id: string) => DBResult<number>;
+  delete_thread: (thread_id: string) => DBResult;
   set_thread_manager: (thread_id: string, mgr?: string) => DBResult;
   set_thread_auto_archive: (thread_id: string, auto_archive_duration: Date) => DBResult;
   set_thread_watched: (thread_id: string, is_watched: boolean) => DBResult;
@@ -98,18 +99,18 @@ interface Audit {
 /* 'CREATE TABLE IF NOT EXISTS guilds (guild_id INTEGER PRIMARY KEY, left_at TIMESTAMP, granted_SKU TEXT)', */
 
 interface Guilds {
+  ensure_guild: (guild_id: string) => DBResult;
   get_guild_info: (guild_id: string) => DBResult<Guild | null>;
   remove_data_from_inactive_guilds: (inactive_time_in_seconds?: number) => DBResult;
   upsert_guild_info: (guild_id: string, data: Omit<Guild, 'guild_id'>) => DBResult;
 }
 
 interface Tickets {
-  insert_ticket_panel: (guild_id: string, panel: TicketPanel) => DBResult;
-  update_ticket_panel: (panel_id: string, data: Omit<TicketPanel, 'id'>) => DBResult;
+  insert_ticket_panel: (guild_id: string, panel: Omit<TicketPanel, 'panel_id'>) => DBResult<string>;
+  update_ticket_panel: (panel_id: string, data: Omit<EditTicketPanel, 'id'>) => DBResult;
   delete_ticket_panel: (panel_id: string) => DBResult;
   get_ticket_panels: (guild_id: string) => DBResult<TicketPanel[]>;
+  get_ticket_panel: (panel_id: string) => DBResult<TicketPanel | null>;
 }
 
-export interface Database extends Core, GuildSettings, Audit, Guilds, Tickets {
-  create_tables: () => DBResult;
-}
+export interface Database extends Core, GuildSettings, Audit, Guilds, Tickets {}

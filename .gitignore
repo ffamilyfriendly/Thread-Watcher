@@ -3,3 +3,4 @@
 */config.json5
 *.db
 *.tgz
+/bot/drizzle

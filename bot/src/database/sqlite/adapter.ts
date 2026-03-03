@@ -1,0 +1,511 @@
+import { err, ok, Result, ResultAsync } from 'neverthrow';
+import sql, { Database as SqliteDb } from 'bun:sqlite';
+import { ConfigType } from 'utilities/config';
+import { clean_keys, with_error_handling, with_schema } from 'database';
+import { join, resolve as resolve_path } from 'path';
+import { create as create_tar } from 'tar';
+import { map_err } from 'utilities/error';
+import { z } from 'zod';
+import { Database, DatabaseError } from 'interfaces/Database';
+import { drizzle, BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
+import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
+import {
+  AuditData,
+  BaseMonitor,
+  EditMonitor,
+  FilterData,
+  Guild,
+  ZAuditData,
+  ZMonitor,
+  ZGuild,
+  ThreadSearchData,
+  TicketPanel,
+  ZTicketPanel,
+  EditTicketPanel,
+} from '@watcher/shared';
+
+import * as schema from './schema';
+import {
+  and,
+  count,
+  eq,
+  inArray,
+  lte,
+  SQLWrapper,
+  sql as sqlstmt,
+  getTableColumns,
+  isNotNull,
+  lt,
+} from 'drizzle-orm';
+
+export default class Sqlite implements Database {
+  private raw_db: SqliteDb;
+  private drizzle: BunSQLiteDatabase<typeof schema>;
+  private _config: ConfigType;
+
+  constructor(config: ConfigType) {
+    this.raw_db = new sql(config.database.database_path);
+    this.drizzle = drizzle(this.raw_db, { schema });
+    migrate(this.drizzle, { migrationsFolder: './drizzle' });
+    this._config = config;
+  }
+
+  @with_error_handling
+  async close() {
+    this.raw_db.close();
+    return ok();
+  }
+
+  @with_error_handling
+  async should_fail_gracefully(fail_with_promise: boolean) {
+    if (!fail_with_promise) throw new Error('Something went wrong! (Thrown)');
+
+    // unawaited promises WILL FAIL regardless of the decorator
+    await new Promise((_resolve, reject) => {
+      reject('Something went wrong! (Promise)');
+    });
+
+    return ok();
+  }
+
+  @with_error_handling
+  async ensure_guild(guild_id: string) {
+    await this.drizzle.insert(schema.Guilds).values({ guild_id }).onConflictDoNothing();
+    return ok();
+  }
+
+  @with_error_handling
+  async insert_ticket_panel(guild_id: string, panel: Omit<TicketPanel, 'panel_id'>) {
+    await this.ensure_guild(guild_id);
+    const val = await this.drizzle
+      .insert(schema.TicketPanels)
+      .values({
+        guild_id,
+        ...panel,
+        panel_id: undefined, // Force undefined to get generation
+      })
+      .returning({ id: schema.TicketPanels.panel_id });
+
+    return ok(val[0]?.id);
+  }
+
+  @with_error_handling
+  async get_ticket_panels(guild_id: string) {
+    const res = await this.drizzle.query.TicketPanels.findMany({
+      where: eq(schema.TicketPanels.guild_id, guild_id),
+    });
+
+    return with_schema(res, z.array(ZTicketPanel));
+  }
+
+  @with_error_handling
+  async get_ticket_panel(panel_id: string) {
+    const val = await this.drizzle.query.TicketPanels.findFirst({
+      where: eq(schema.TicketPanels.panel_id, panel_id),
+    });
+
+    if (!val) return ok(null);
+
+    return with_schema(val, ZTicketPanel);
+  }
+
+  @with_error_handling
+  async update_ticket_panel(panel_id: string, data: Omit<EditTicketPanel, 'id'>) {
+    await this.drizzle
+      .update(schema.TicketPanels)
+      .set(data)
+      .where(eq(schema.TicketPanels.panel_id, panel_id));
+    return ok();
+  }
+
+  @with_error_handling
+  async delete_ticket_panel(panel_id: string) {
+    await this.drizzle
+      .delete(schema.TicketPanels)
+      .where(eq(schema.TicketPanels.panel_id, panel_id));
+    return ok();
+  }
+
+  @with_error_handling
+  async insert_thread(thread: {
+    thread_id: string;
+    guild_id: string;
+    parent_channel_id?: string | null;
+    due_archive: Date;
+    managed_by?: string | null;
+  }) {
+    await this.ensure_guild(thread.guild_id);
+    await this.drizzle.insert(schema.Threads).values({ ...thread, is_watched: true });
+    return ok();
+  }
+
+  @with_error_handling
+  async delete_thread(thread_id: string) {
+    await this.drizzle.delete(schema.Threads).where(eq(schema.Threads.thread_id, thread_id));
+    return ok();
+  }
+
+  @with_error_handling
+  async set_thread_auto_archive(thread_id: string, auto_archive_duration: Date) {
+    await this.drizzle
+      .update(schema.Threads)
+      .set({ due_archive: auto_archive_duration })
+      .where(eq(schema.Threads.thread_id, thread_id));
+    return ok();
+  }
+
+  @with_error_handling
+  async set_thread_watched(thread_id: string, is_watched: boolean) {
+    await this.drizzle
+      .update(schema.Threads)
+      .set({ is_watched })
+      .where(eq(schema.Threads.thread_id, thread_id));
+    return ok();
+  }
+
+  @with_error_handling
+  async set_thread_manager(thread_id: string, mgr?: string) {
+    await this.drizzle
+      .update(schema.Threads)
+      .set({ managed_by: mgr })
+      .where(eq(schema.Threads.thread_id, thread_id));
+    return ok();
+  }
+
+  @with_error_handling
+  async get_thread(thread_id: string) {
+    const val = await this.drizzle.query.Threads.findFirst({
+      where: eq(schema.Threads.thread_id, thread_id),
+    });
+    return ok(val ?? null);
+  }
+
+  @with_error_handling
+  async get_threads_in_guild(guild_id: string, watched: boolean) {
+    const val = await this.drizzle.query.Threads.findMany({
+      where: and(eq(schema.Threads.guild_id, guild_id), eq(schema.Threads.is_watched, watched)),
+    });
+    return ok(val);
+  }
+
+  @with_error_handling
+  async get_paginated_threads_in_guild(guild_id: string, limit: number, filters: ThreadSearchData) {
+    const conditions: SQLWrapper[] = [
+      eq(schema.Threads.guild_id, guild_id),
+      eq(schema.Threads.is_watched, true),
+    ];
+
+    if (filters.monitor_id) {
+      conditions.push(eq(schema.Threads.managed_by, filters.monitor_id));
+    }
+
+    if (filters.parent_channel_id) {
+      conditions.push(eq(schema.Threads.parent_channel_id, filters.parent_channel_id));
+    }
+
+    const offset = limit * filters.page;
+
+    const val = await this.drizzle.query.Threads.findMany({
+      where: and(...conditions),
+      limit,
+      offset,
+    });
+
+    return ok(val);
+  }
+
+  @with_error_handling
+  async get_watched_threads_count(guild_id: string) {
+    const val = await this.drizzle
+      .select({ count: count() })
+      .from(schema.Threads)
+      .where(and(eq(schema.Threads.guild_id, guild_id), eq(schema.Threads.is_watched, true)));
+
+    return ok(val[0]?.count);
+  }
+
+  static STALE_BUFFER_MINUTES = 5;
+  static STALE_BUFFER_MS = this.STALE_BUFFER_MINUTES * 60 * 1000;
+  @with_error_handling
+  async get_stale_threads(buffer_in_ms = Sqlite.STALE_BUFFER_MS) {
+    const now = Date.now();
+    const stale_thresh = new Date(now + buffer_in_ms);
+
+    const val = await this.drizzle.query.Threads.findMany({
+      where: and(
+        lte(schema.Threads.due_archive, stale_thresh),
+        eq(schema.Threads.is_watched, true),
+      ),
+    });
+
+    return ok(val);
+  }
+
+  @with_error_handling
+  async get_stale_threads_for_guilds(guild_ids: string[], buffer_in_ms = Sqlite.STALE_BUFFER_MS) {
+    const now = Date.now();
+    const stale_thresh = new Date(now + buffer_in_ms);
+
+    const val = await this.drizzle.query.Threads.findMany({
+      where: and(
+        lte(schema.Threads.due_archive, stale_thresh),
+        eq(schema.Threads.is_watched, true),
+        inArray(schema.Threads.guild_id, guild_ids),
+      ),
+    });
+
+    return ok(val);
+  }
+
+  @with_error_handling
+  async set_guild_setting_value(
+    guild_id: string,
+    setting_id: string,
+    setting_value: string,
+  ): Promise<Result<void, DatabaseError>> {
+    await this.ensure_guild(guild_id);
+    await this.drizzle.insert(schema.Settings).values({
+      guild_id,
+      setting_id,
+      setting_value,
+    });
+    return ok();
+  }
+
+  @with_error_handling
+  async get_guild_setting_value(guild_id: string, setting_id: string) {
+    const val = await this.drizzle.query.Settings.findFirst({
+      where: and(
+        eq(schema.Settings.guild_id, guild_id),
+        eq(schema.Settings.setting_id, setting_id),
+      ),
+    });
+
+    return ok(val?.setting_value ?? null);
+  }
+
+  @with_error_handling
+  async get_guild_settings(guild_id: string) {
+    const val = await this.drizzle.query.Settings.findMany({
+      where: eq(schema.Settings.guild_id, guild_id),
+    });
+
+    return ok(val);
+  }
+
+  @with_error_handling
+  async delete_guild_setting_value(guild_id: string, setting_id: string) {
+    await this.drizzle
+      .delete(schema.Settings)
+      .where(
+        and(eq(schema.Settings.guild_id, guild_id), eq(schema.Settings.setting_id, setting_id)),
+      );
+    return ok();
+  }
+
+  @with_error_handling
+  async insert_monitor(channel: Omit<BaseMonitor, 'manages_threads_count'>, filters?: FilterData) {
+    await this.ensure_guild(channel.guild_id);
+    await this.drizzle.insert(schema.Monitors).values({
+      ...channel,
+      ...filters,
+      role_whitelist: filters?.role_whitelist?.join(','),
+      tags: filters?.tags?.join(','),
+      regex: filters?.regex?.source,
+    });
+    return ok();
+  }
+
+  @with_error_handling
+  async get_monitor(channel_id: string) {
+    const thread_count = this.drizzle
+      .select({ count: count() })
+      .from(schema.Threads)
+      .where(eq(schema.Threads.managed_by, schema.Monitors.target_id));
+
+    const val = await this.drizzle
+      .select({
+        ...getTableColumns(schema.Monitors),
+        manages_threads_count: sqlstmt<number>`(${thread_count})`.mapWith(Number),
+      })
+      .from(schema.Monitors)
+      .where(
+        and(eq(schema.Monitors.target_id, channel_id), eq(schema.Monitors.is_suspended, false)),
+      );
+
+    return with_schema(val[0], ZMonitor);
+  }
+
+  @with_error_handling
+  async get_monitors_in_guild(guild_id: string) {
+    const thread_count = this.drizzle
+      .select({ count: count() })
+      .from(schema.Threads)
+      .where(eq(schema.Threads.managed_by, schema.Monitors.target_id));
+
+    const val = await this.drizzle
+      .select({
+        ...getTableColumns(schema.Monitors),
+        manages_threads_count: sqlstmt<number>`(${thread_count})`.mapWith(Number),
+      })
+      .from(schema.Monitors)
+      .where(and(eq(schema.Monitors.guild_id, guild_id), eq(schema.Monitors.is_suspended, false)));
+
+    return with_schema(val, z.array(ZMonitor));
+  }
+
+  @with_error_handling
+  async delete_monitor(channel_id: string) {
+    await this.drizzle.delete(schema.Monitors).where(eq(schema.Monitors.target_id, channel_id));
+    return ok();
+  }
+
+  @with_error_handling
+  async get_monitors_count(guild_id: string) {
+    const val = await this.drizzle
+      .select({ count: count() })
+      .from(schema.Monitors)
+      .where(and(eq(schema.Monitors.guild_id, guild_id)));
+    return ok(val[0]?.count);
+  }
+
+  /*
+  id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id TEXT NOT NULL, executor_id TEXT NOT NULL, data TEXT NOT NULL, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+  */
+  @with_error_handling
+  async insert_audit_log(log: Omit<AuditData, 'id' | 'timestamp'>) {
+    await this.ensure_guild(log.guild_id);
+    await this.drizzle.insert(schema.Audit).values(log);
+    return ok();
+  }
+
+  @with_error_handling
+  async get_audit_logs(guild_id: string, limit: number, before_id?: number) {
+    const conditions = [eq(schema.Audit.guild_id, guild_id)];
+
+    if (before_id) {
+      conditions.push(lte(schema.Audit.id, before_id));
+    }
+
+    const val = await this.drizzle.query.Audit.findMany({
+      where: and(...conditions),
+      orderBy: schema.Audit.id,
+      limit,
+    });
+
+    return with_schema(val, z.array(ZAuditData)).map((logs) => ({
+      logs,
+      next_cursor: val.length ? val[val.length - 1].id : null,
+    }));
+  }
+
+  @with_error_handling
+  async get_audit_log(id: number) {
+    const val = await this.drizzle.query.Audit.findFirst({
+      where: eq(schema.Audit.id, id),
+    });
+
+    return with_schema(val, ZAuditData).andThen((row) => {
+      if (!row) return err(new Error('not found'));
+      return ok(row);
+    });
+  }
+
+  @with_error_handling
+  async clean_expired_logs() {
+    await this.drizzle.delete(schema.Audit).where(
+      sqlstmt`unixepoch(${schema.Audit.timestamp}) < unixepoch('now') - COALESCE(
+        (SELECT ${schema.Settings.setting_value} FROM ${schema.Settings}
+         WHERE ${schema.Settings.guild_id} = ${schema.Audit.guild_id}
+         AND ${schema.Settings.setting_id} = 'AUDIT_LOG_RETENTION'),
+        86400
+      )`,
+    );
+
+    return ok();
+  }
+
+  @with_error_handling
+  async get_guild_info(guild_id: string) {
+    const val = await this.drizzle.query.Guilds.findFirst({
+      where: eq(schema.Guilds.guild_id, guild_id),
+    });
+
+    if (!val) return ok(null);
+
+    return with_schema(val, ZGuild);
+  }
+
+  @with_error_handling
+  async upsert_guild_info(guild_id: string, data: Omit<Guild, 'guild_id'>) {
+    await this.drizzle
+      .insert(schema.Guilds)
+      .values({ guild_id, ...data })
+      .onConflictDoUpdate({
+        set: data,
+        target: schema.Guilds.guild_id,
+      });
+    return ok();
+  }
+
+  @with_error_handling
+  async edit_monitor(channel_id: string, data: EditMonitor) {
+    await this.drizzle
+      .update(schema.Monitors)
+      .set({
+        ...data,
+        regex: data.regex?.source,
+      })
+      .where(eq(schema.Monitors.target_id, channel_id));
+    return ok();
+  }
+
+  @with_error_handling
+  async remove_data_from_inactive_guilds(
+    inactive_time_in_seconds = this._config.database.keep_dead_servers_in_db_seconds,
+  ) {
+    const cutoff_date = new Date(Date.now() - inactive_time_in_seconds * 1000);
+    await this.drizzle
+      .delete(schema.Guilds)
+      .where(and(isNotNull(schema.Guilds.left_at), lt(schema.Guilds.left_at, cutoff_date)));
+    return ok();
+  }
+
+  @with_error_handling
+  async count_watched_threads() {
+    const val = await this.drizzle
+      .select({ count: count() })
+      .from(schema.Threads)
+      .where(eq(schema.Threads.is_watched, true));
+    return ok(val[0]?.count);
+  }
+
+  @with_error_handling
+  async count_monitored_channels() {
+    const val = await this.drizzle
+      .select({ count: count() })
+      .from(schema.Monitors)
+      .where(eq(schema.Monitors.is_suspended, false));
+    return ok(val[0]?.count);
+  }
+
+  @with_error_handling
+  async create_backup_file(backup_dir: string = this._config.database.backup_path) {
+    const backup_file_name = new Date().toISOString() + '.tgz';
+    const backup_file_full_path = join(backup_dir, backup_file_name);
+
+    const tar_promise = create_tar(
+      {
+        gzip: true,
+        file: backup_file_full_path,
+      },
+      [this.raw_db.filename],
+    );
+
+    const tar_result = await ResultAsync.fromPromise(tar_promise, map_err);
+
+    if (tar_result.isErr()) return err(tar_result.error);
+
+    return ok({ full_path: resolve_path(backup_file_full_path), file_name: backup_file_name });
+  }
+}

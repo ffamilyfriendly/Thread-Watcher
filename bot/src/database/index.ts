@@ -1,8 +1,9 @@
 import { Database, DatabaseError } from 'interfaces/Database';
 import { ConfigType } from 'utilities/config';
-import SqliteHandler from './sqlite';
+import SqliteHandler from './sqlite/adapter';
 import { err, ok, Result } from 'neverthrow';
 import { SQLiteError } from 'bun:sqlite';
+import z from 'zod';
 
 export default function get_database_instance(config: ConfigType): Database {
   let handler_type;
@@ -39,8 +40,8 @@ function handle_error(err_data: unknown) {
 }
 
 export function with_error_handling<T extends (...args: any[]) => any>(
-  target: any,
-  property_key: string,
+  _target: any,
+  _property_key: string,
   descriptor: TypedPropertyDescriptor<T>,
 ) {
   const original_method = descriptor.value!;
@@ -52,9 +53,10 @@ export function with_error_handling<T extends (...args: any[]) => any>(
     try {
       const result = await original_method.apply(this, args);
 
-      if (result && typeof result == 'object' && 'isOk' in result && 'isErr' in result) {
+      if (result && typeof result == 'object' && 'isOk' in result) {
         return result;
       }
+
       return ok(result);
     } catch (err_data) {
       return handle_error(err_data);
@@ -62,4 +64,16 @@ export function with_error_handling<T extends (...args: any[]) => any>(
   } as T;
 
   return descriptor;
+}
+
+type obj = { [k: string]: any };
+export function clean_keys<T extends Object>(obj: obj): Partial<obj> {
+  return Object.fromEntries(Object.entries(obj).filter(([_, value]) => value !== undefined));
+}
+
+export function with_schema<T>(data: unknown, schema: z.ZodType<T>): Result<T, z.ZodError<T>> {
+  const parsed = schema.safeParse(data);
+  if (parsed.success) return ok(parsed.data);
+
+  return err(parsed.error);
 }
