@@ -125,11 +125,12 @@ export default class ComponentService {
   }
 
   recieve_interaction(interaction: Interaction) {
-    if (!('customId' in interaction)) return;
+    if (!('customId' in interaction)) return ok();
 
     const callback = this.component_events.get(interaction.customId);
-    if (!callback) return;
+    if (!callback) return ok();
 
     callback(interaction);
+    return ok();
   }
 }

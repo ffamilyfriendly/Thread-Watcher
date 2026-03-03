@@ -20,6 +20,8 @@ export function get_file_paths(path: string, options?: FileOptions): string[] {
     if (info.isDirectory()) {
       if (!file.startsWith('_')) paths_arr.push(...get_file_paths(file_path, options));
     } else {
+      if (file.startsWith('_')) continue;
+
       if (options?.file_extention) {
         const allowed_extentions = Array.isArray(options.file_extention)
           ? options.file_extention

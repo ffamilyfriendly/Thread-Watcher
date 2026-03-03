@@ -12,7 +12,11 @@ async function get_modules(bypass_cache = false): Promise<Module[]> {
         resolve(mods); // Now we resolve the promise with the data
       },
       bypass_cache,
-    );
+    ).then((result) => {
+      if (result.isErr()) {
+        logger.error('Could not load Modules!', result.error);
+      }
+    });
   });
 }
 

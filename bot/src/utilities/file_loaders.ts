@@ -5,6 +5,7 @@ import { PrivateEvent } from 'interfaces/PrivateEvents';
 import { Client, Collection } from 'discord.js';
 import { Logger } from 'tslog';
 import { BotIpcClient } from './ipc_clients';
+import { logger } from '@providers/logger';
 
 export async function load_events(client: Client, refresh_events = false) {
   return load_module_as_and<Event>(
@@ -12,6 +13,7 @@ export async function load_events(client: Client, refresh_events = false) {
     (modules) => {
       for (const event of modules) {
         if (refresh_events) client.removeAllListeners(event.event_name);
+        logger.silly(`Bound ${event.event_name}`);
         client.on(event.event_name, event.event_callback);
       }
     },

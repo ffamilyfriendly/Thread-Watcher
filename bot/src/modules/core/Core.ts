@@ -11,6 +11,7 @@ import ThreadService from 'services/ThreadService';
 import { Logger } from 'tslog';
 import { map_err } from 'utilities/error';
 import { try_log } from 'utilities/log_channel_stuff';
+import on_interaction from './_cmd_handler';
 
 async function fetch_responsible_manager(thread: ThreadChannel) {
   const res_thread = await thread_service.get_thread(thread.id);
@@ -189,15 +190,6 @@ async function on_thread_delete(thread: ThreadChannel, l: Logger<unknown>) {
     return err(map_err(changes.error));
   }
 
-  if (changes.value != 0) {
-    audit_service.log_thread_unwatch(
-      thread.id,
-      thread.guildId,
-      client.user?.id!,
-      `Thread was deleted`,
-    );
-  }
-
   return ok();
 }
 
@@ -224,6 +216,7 @@ const module: Module = {
   on_thread_create,
   on_thread_delete,
   on_message_create,
+  on_interaction,
 };
 
 export default module;

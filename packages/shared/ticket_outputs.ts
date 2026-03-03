@@ -78,6 +78,29 @@ function generate_role(name = "role"): ModuleProperty {
   };
 }
 
+function generate_channel(name = "channel"): ModuleProperty {
+  return {
+    name,
+    value: [
+      {
+        name: "id",
+        value: "string",
+        description: "the channels discord ID",
+      },
+      {
+        name: "name",
+        value: "string",
+        description: "the name",
+      },
+      {
+        name: "tag",
+        value: "string",
+        description: "tags the user",
+      },
+    ],
+  };
+}
+
 function generate_string_select(name = "selection"): ModuleProperty {
   return {
     name,

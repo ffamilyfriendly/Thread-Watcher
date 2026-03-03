@@ -77,6 +77,7 @@ export const ZModule = z.object({
   conditional_type: z.enum(["AND", "OR"]),
   conditionals: z.array(ZConditional).max(TW_MAX_ALLOWED_CONDITIONS),
 });
+export type BaseModule = z.output<typeof ZModule>;
 
 // This modules does not really exist. It's injected and includes variables such as the selected role and so forth
 export const ZFakeEnvModule = ZModule.extend({
