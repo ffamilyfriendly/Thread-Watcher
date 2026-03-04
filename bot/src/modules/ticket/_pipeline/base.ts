@@ -1,7 +1,7 @@
-import { PipelineModule } from '@watcher/shared';
+import { PipelineModule, SelectionStart, TicketPanel } from '@watcher/shared';
 import { ButtonInteraction, Guild, StringSelectMenuInteraction, User } from 'discord.js';
 import { Pipeline } from './state';
-import { ok, Result } from 'neverthrow';
+import { err, ok, Result } from 'neverthrow';
 import { Logger } from 'tslog';
 
 namespace Op {
@@ -53,11 +53,18 @@ namespace Op {
 }
 
 type ValueContainerValue = ValidPropertyReturn | (() => ValidPropertyReturn) | ValueContainer;
+
+type MappedProps = Record<string, ValidPropertyReturn | Record<string, unknown>>;
+
 export class ValueContainer {
   constructor(
     public exports: Record<string, ValueContainerValue>,
     private default_value: ValidPropertyReturn,
   ) {}
+
+  set(key: string, value: ValueContainerValue) {
+    this.exports[key] = value;
+  }
 
   get(keys: string[]): ValidPropertyReturn {
     const key = keys.shift();
@@ -75,6 +82,22 @@ export class ValueContainer {
     return value;
   }
 
+  all(): MappedProps {
+    const rv: MappedProps = {};
+
+    for (const [name, value] of Object.entries(this.exports)) {
+      if (value instanceof ValueContainer) {
+        rv[name] = value.all();
+      } else if (typeof value === 'function') {
+        rv[name] = value();
+      } else {
+        rv[name] = value;
+      }
+    }
+
+    return rv;
+  }
+
   static from_user(user: User): ValueContainer {
     return new ValueContainer(
       {
@@ -83,6 +106,26 @@ export class ValueContainer {
         tag: user.tag,
       },
       user.id,
+    );
+  }
+
+  static from_string_select_interaction(
+    int: StringSelectMenuInteraction,
+    data: SelectionStart,
+  ): Result<ValueContainer, Error> {
+    const value = int.values[0];
+    const option = data.options.find((opt) => opt.option_id === value);
+    if (!value || !option) return err(new Error("missing 'value' or 'option'"));
+
+    return ok(
+      new ValueContainer(
+        {
+          id: value,
+          label: option.title,
+          description: option.description ?? null,
+        },
+        value,
+      ),
     );
   }
 }
@@ -95,7 +138,7 @@ export type SupportedInteractionTypeWithGuild = SupportedInteractionType & {
 export type ValidPropertyReturn = string | number | (string | number)[] | null;
 
 export abstract class DefaultModule<TModType extends PipelineModule> {
-  private l: Logger<unknown>;
+  protected l: Logger<unknown>;
 
   constructor(
     protected self: TModType,

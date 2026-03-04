@@ -26,27 +26,32 @@ export default class AssignChannel extends DefaultModule<TypedPipelineModule<'AS
   }
 
   async run(interaction: SupportedInteractionTypeWithGuild): Promise<Result<void, Error>> {
-    if (!this.self.channel_id) return ok();
+    if (!this.self.channel_id) {
+      this.l.silly("no 'channel_id' selected. Skipping");
+      return ok();
+    }
 
+    this.l.silly(
+      `Changing assigned channel: ${this.pipeline.assigned_channel} -> ${this.self.channel_id}`,
+    );
     this.pipeline.assigned_channel = this.self.channel_id;
 
     const channel_res = await ResultAsync.fromPromise(
       interaction.guild.channels.fetch(this.self.channel_id),
       map_err,
     );
-    if (channel_res.isErr()) return err(channel_res.error);
-    if (!channel_res.value) return err(new Error('no such channel exists'));
+    if (channel_res.isErr()) {
+      this.l.error(`Could not fetch channel with ID '${this.channel_id}'`, channel_res.error);
+      return err(channel_res.error);
+    }
+    if (!channel_res.value) {
+      this.l.error(`Channel with ID '${this.channel_id}' does not exist`);
+      return err(new Error('no such channel exists'));
+    }
 
     this.channel_id = channel_res.value.id;
     this.channel_name = channel_res.value.name;
 
     return ok();
-  }
-
-  get_property(id: string[]): ValidPropertyReturn {
-    if (id.shift() !== 'channel') return null;
-    const prop_name = id.shift();
-    if (prop_name === 'id') return this.channel_id ?? null;
-    else return this.channel_name ?? null;
   }
 }

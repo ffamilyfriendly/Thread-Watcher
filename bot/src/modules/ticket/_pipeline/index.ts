@@ -4,15 +4,13 @@ import { Pipeline } from './state';
 import { SupportedInteractionType, SupportedInteractionTypeWithGuild } from './base';
 
 export async function start_pipeline(panel: TicketPanel, interaction: SupportedInteractionType) {
-  const pipeline = Pipeline.from(panel, interaction.user);
+  const pipeline = Pipeline.from(panel, interaction);
 
   let active_interaction: SupportedInteractionType = interaction;
   for (const module of pipeline.modules_arr) {
     const res = await module.run_module(active_interaction as SupportedInteractionTypeWithGuild);
     if (res.isErr()) {
-      await interaction.editReply({
-        content: `Pipeline failed at ${module.id}: ${res.error.message}`,
-      });
+      pipeline.resolve_error(active_interaction, module, res.error);
       break;
     }
 
@@ -21,5 +19,5 @@ export async function start_pipeline(panel: TicketPanel, interaction: SupportedI
     if (res.value) active_interaction = res.value;
   }
 
-  active_interaction.reply({ flags: 'Ephemeral', content: 'Hi :D' });
+  await pipeline.resolve_ticket(active_interaction);
 }
