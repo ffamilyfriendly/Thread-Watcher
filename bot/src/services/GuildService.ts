@@ -1,4 +1,4 @@
-import { ZGuild } from '@watcher/shared';
+import { Guild, ZGuild } from '@watcher/shared';
 import { Database } from 'interfaces/Database';
 import Redis from 'ioredis';
 import { err, ok } from 'neverthrow';
@@ -27,14 +27,54 @@ export default class GuildService {
     return ok(db_res.value);
   }
 
-  async set_left_at(guild_id: string) {
+  async deduct_ai_tokens(guild_id: string, amount: number) {
     this.r.del(guild_id);
-    return this.db.upsert_guild_info(guild_id, { left_at: new Date() });
+    const guild = await this.get_guild_info(guild_id);
+    if (guild.isErr()) return err(guild.isErr());
+    if (!guild.value) return err('Guild not found!');
+    const g = guild.value;
+
+    let remaining_to_deduct = amount;
+
+    if (g.monthly_tokens > 0) {
+      const deduct = Math.min(g.monthly_tokens, remaining_to_deduct);
+      g.monthly_tokens -= deduct;
+      remaining_to_deduct -= deduct;
+    }
+
+    if (remaining_to_deduct > 0) {
+      g.persistent_tokens = Math.max(g.persistent_tokens - remaining_to_deduct, 0);
+    }
+
+    return this.db.upsert_guild_info(guild_id, {
+      monthly_tokens: g.monthly_tokens,
+      persistent_tokens: g.persistent_tokens,
+    });
+  }
+
+  async update_guild(the_guild_id_fr_twn: string, updated_values: Partial<Guild>) {
+    this.r.del(the_guild_id_fr_twn);
+    const { guild_id, ...update } = updated_values;
+    return this.db.upsert_guild_info(the_guild_id_fr_twn, update);
+  }
+
+  async set_persistent_ai_tokens(guild_id: string, amount: number) {
+    return this.update_guild(guild_id, { persistent_tokens: amount });
+  }
+
+  async set_monthly_tokens(guild_id: string, amount: number) {
+    return this.update_guild(guild_id, {
+      monthly_tokens: amount,
+      monthly_tokens_last_granted: new Date(),
+    });
+  }
+
+  async set_left_at(guild_id: string) {
+    return this.update_guild(guild_id, { left_at: new Date() });
   }
 
   async set_guild_SKU(guild_id: string, SKU: string | null) {
-    this.r.del(guild_id);
-    return this.db.upsert_guild_info(guild_id, { granted_SKU: SKU });
+    return this.update_guild(guild_id, { granted_SKU: SKU });
   }
 
   async nullify_left_at(guild_id: string) {

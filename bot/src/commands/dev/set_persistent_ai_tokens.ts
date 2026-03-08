@@ -11,16 +11,15 @@ async function run(
   ctx: CommandContext,
 ): Promise<Result<void, CommandError>> {
   const guild_id = interaction.options.getString('guild_id', true);
-  const sku_value = interaction.options.getString('sku', true);
-  const sku = sku_value === 'NONE' ? null : sku_value;
+  const tokens_amount = interaction.options.getNumber('tokens', true);
 
-  const r = await guild_service.set_guild_SKU(guild_id, sku);
+  const r = await guild_service.set_persistent_ai_tokens(guild_id, tokens_amount);
 
   if (r.isErr()) return err(r.error);
 
   ctx.build_embed({
-    title: 'Granted sku!',
-    description: `gave sku \`${sku}\` to \`${guild_id}\``,
+    title: 'Granted tokens!',
+    description: `set persistent tokens to \`${tokens_amount}\` for guild \`${guild_id}\``,
     style: 'success',
     ephermal: true,
     auto_respond: true,
@@ -30,18 +29,11 @@ async function run(
 }
 
 const command_data = new SlashCommandBuilder()
-  .setName('set-sku')
-  .setDescription('(DEV ONLY) set SKU value for a guild')
+  .setName('set-persistent-tokens')
+  .setDescription('(DEV ONLY) set persistent AI tokens of a guild')
   .addStringOption((o) => o.setName('guild_id').setDescription('id of guild').setRequired(true))
-  .addStringOption((o) =>
-    o
-      .setName('sku')
-      .setDescription('the SKU you want to grant')
-      .setChoices([
-        { name: 'Premium', value: config.paywall.basic_sku },
-        { name: 'None', value: 'NONE' },
-      ])
-      .setRequired(true),
+  .addNumberOption((o) =>
+    o.setName('tokens').setDescription('the tokens you want to grant').setRequired(true),
   );
 
 const command: Command = {

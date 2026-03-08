@@ -13,7 +13,7 @@ type ModuleRegistry = {
 
 export const MODULE_COMPONENTS: ModuleRegistry = {
 	ASSIGN_ROLE: RoleAssign,
-	GENERATE_ANSWER: GenerateAnswer,
+	NARROW_ISSUE: GenerateAnswer,
 	ASSIGN_CHANNEL: ChannelAssign,
 	ASSIGN_NAME: SetName
 };

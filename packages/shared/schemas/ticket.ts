@@ -15,7 +15,8 @@ export const DISCORD_CHANNEL_NAME_MAX_LEN = 100;
 // Service restraints
 export const TW_MAX_CHARS_IN_OPERANT_VALUE = 100;
 export const TW_MAX_ALLOWED_CONDITIONS = 10;
-export const TW_AI_PROMPT_MAX_LEN = 255;
+export const TW_AI_PERSONA_MAX_LEN = 500;
+export const TW_AI_RULES_MAX_LEN = 2500;
 
 // Generic stuff used both in panel and pipeline
 export const ZEmbedField = z.object({
@@ -108,20 +109,19 @@ export const ZAssignName = ZModule.extend({
 });
 
 // Changes the assigned role of the ticket
-export const ZGenerateAnswer = ZModule.extend({
-  prompt: z
+export const ZAIIssueNarrower = ZModule.extend({
+  persona: z
     .string()
-    .max(
-      TW_AI_PROMPT_MAX_LEN,
-      `prompt cannot be above ${TW_AI_PROMPT_MAX_LEN} characters.`,
-    )
-    .nullish(),
-  type: z.literal("GENERATE_ANSWER").default("GENERATE_ANSWER"),
+    .max(TW_AI_PERSONA_MAX_LEN)
+    .default("A helpful support assistant"),
+  rules: z.string().max(TW_AI_RULES_MAX_LEN).default("Be polite and concise"),
+  type: z.literal("NARROW_ISSUE").default("NARROW_ISSUE"),
+  max_responses: z.number().min(0).max(10).default(3),
 });
 
 export const ZPipelineModule = z.discriminatedUnion("type", [
   ZAssignRole,
-  ZGenerateAnswer,
+  ZAIIssueNarrower,
   ZFakeEnvModule,
   ZAssignChannel,
   ZAssignName,

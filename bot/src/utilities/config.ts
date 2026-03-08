@@ -61,13 +61,15 @@ const BucketStorage = z.object({
 const ZPaywall = z.object({
   enabled: z.boolean(),
   basic_sku: z.string(),
-  extended_sku: z.string(),
 });
 
 const ZAi = z.object({
+  monthly_tokens_premium: z.number(),
+  initial_free_tokens: z.number(),
   mistral_key: z.string(),
   agents: z.object({
     regex_agent: z.string(),
+    issue_narrower: z.string(),
   }),
 });
 

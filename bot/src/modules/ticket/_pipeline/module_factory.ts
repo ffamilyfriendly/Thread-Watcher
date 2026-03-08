@@ -3,14 +3,14 @@ import AssignRole from './modules/AssignRole';
 import { err, ok, Result } from 'neverthrow';
 import AssignChannel from './modules/AssignChannel';
 import { DefaultModule, IPipeline } from './base';
-import GenerateAnswer from './modules/GenerateAnswer';
+import IssueNarrower from './modules/IssueNarrower';
 
 type ModuleConstructor = new (self: any, pipeline: IPipeline) => DefaultModule<any>;
 
 const MODULE_REGISTRY: Partial<Record<PipelineModule['type'], ModuleConstructor>> = {
   ASSIGN_ROLE: AssignRole,
   ASSIGN_CHANNEL: AssignChannel,
-  GENERATE_ANSWER: GenerateAnswer,
+  NARROW_ISSUE: IssueNarrower,
 };
 
 export function create_module(

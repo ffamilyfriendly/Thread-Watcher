@@ -28,3 +28,13 @@
 	border-radius: 0.15rem;
 	padding: 0.25rem 0.5rem;
 }
+
+.indented {
+	background-color: color-mix(in srgb, var(--clr) 90%, white);
+	padding: 0.25rem 0.5rem;
+	border-radius: 0.25rem;
+}
+
+p.wrap {
+	text-wrap: wrap;
+}

@@ -102,7 +102,7 @@ interface Guilds {
   ensure_guild: (guild_id: string) => DBResult;
   get_guild_info: (guild_id: string) => DBResult<Guild | null>;
   remove_data_from_inactive_guilds: (inactive_time_in_seconds?: number) => DBResult;
-  upsert_guild_info: (guild_id: string, data: Omit<Guild, 'guild_id'>) => DBResult;
+  upsert_guild_info: (guild_id: string, data: Partial<Omit<Guild, 'guild_id'>>) => DBResult;
 }
 
 interface Tickets {

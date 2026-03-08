@@ -11,10 +11,15 @@ import {
   EmbedBuilder,
   Message,
   RestOrArray,
+  SendableChannels,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
 } from 'discord.js';
-import { define_secure_event, SecurePrivateEvent } from 'interfaces/PrivateEvents';
+import {
+  CallbackResponse,
+  define_secure_event,
+  SecurePrivateEvent,
+} from 'interfaces/PrivateEvents';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 
@@ -84,6 +89,36 @@ function get_start_id(panel_id: string) {
   return `start:${panel_id}`;
 }
 
+async function update_existing_message(
+  message: Message,
+  embed: EmbedBuilder,
+  row: ActionRowBuilder<StringSelectMenuBuilder> | ActionRowBuilder<ButtonBuilder>,
+): Promise<CallbackResponse<{ message_id: string }>> {
+  const d_message = await ResultAsync.fromPromise(
+    message.edit({ embeds: [embed], components: [row] }) as Promise<Message<true>>,
+    map_err,
+  );
+
+  if (d_message.isErr()) return err(d_message.error);
+
+  return ok({ message_id: d_message.value.id });
+}
+
+async function send_new_message(
+  channel: SendableChannels,
+  embed: EmbedBuilder,
+  row: ActionRowBuilder<StringSelectMenuBuilder> | ActionRowBuilder<ButtonBuilder>,
+): Promise<CallbackResponse<{ message_id: string }>> {
+  const d_message = await ResultAsync.fromPromise(
+    channel.send({ embeds: [embed], components: [row] }) as Promise<Message<true>>,
+    map_err,
+  );
+
+  if (d_message.isErr()) return err(d_message.error);
+
+  return ok({ message_id: d_message.value.id });
+}
+
 export default define_secure_event('send_embed', async (data) => {
   const panel_response = await ticket_service.get_panel(data.panel_id);
   if (panel_response.isErr()) return err(panel_response.error);
@@ -99,16 +134,20 @@ export default define_secure_event('send_embed', async (data) => {
   if (!d_channel.value?.isSendable()) return err(new Error('Channel is not sendable'));
 
   const channel = d_channel.value;
+
+  const message = panel.discord_message_id
+    ? ResultAsync.fromPromise(channel.messages.fetch(panel.discord_message_id), map_err)
+    : null;
+
   const embed = commencement_to_embed(panel.commencement_embed);
 
   const actionrow = get_init_row(panel.commencement_method, get_start_id(panel.panel_id));
 
-  const d_message = await ResultAsync.fromPromise(
-    channel.send({ embeds: [embed], components: [actionrow] }) as Promise<Message<true>>,
-    map_err,
-  );
-
-  if (d_message.isErr()) return err(d_message.error);
-
-  return ok({ message_id: d_message.value.id });
+  if (message) {
+    const msg = await message;
+    if (msg.isErr()) return send_new_message(channel, embed, actionrow); // if we're getting an err on the message it most likely means it's deleted.
+    return await update_existing_message(msg.value, embed, actionrow);
+  } else {
+    return await send_new_message(channel, embed, actionrow);
+  }
 });

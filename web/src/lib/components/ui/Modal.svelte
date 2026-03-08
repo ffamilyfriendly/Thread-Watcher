@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import btn_style from '$lib/style/button.module.scss';
+	import { click_outside } from '$lib/client/attachments/click_outside';
 
 	interface Props {
 		children: Snippet;
@@ -16,7 +17,7 @@
 </script>
 
 <div transition:fly class="container">
-	<div class={['modal', ...other_class_names]}>
+	<div {@attach click_outside(() => set_open = false)} class={['modal', ...other_class_names]}>
 		<div class="top_row">
 			<h3>{title}</h3>
 

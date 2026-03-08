@@ -51,7 +51,10 @@ export class Vacuum {
   }
 }
 
-type AnyInteractionEmitterBuilder = AnyComponentBuilder | ModalBuilder | RoleSelectMenuBuilder;
+export type AnyInteractionEmitterBuilder =
+  | AnyComponentBuilder
+  | ModalBuilder
+  | RoleSelectMenuBuilder;
 
 export default class ComponentService {
   // 5 minutes as a fallback timeout in case one was not supplied
@@ -66,9 +69,19 @@ export default class ComponentService {
     timeout = ComponentService.DEFAULT_TIMEOUT_IN_MS,
   ) {
     const component_type_name = component.constructor.name;
-    const component_instance_id = `${component_type_name}-${crypto.randomUUID()}`;
+    let component_instance_id = `${component_type_name}-${crypto.randomUUID()}`;
 
-    component.setCustomId(component_instance_id);
+    const existing_custom_id = (component.data as any).custom_id;
+
+    // We DO NOT set a custom ID if there already is one and it starts with '_'
+    // This is to allow the functionality I need in the IssueNarrower class among other where the button and event handling is abstracted away
+    const existing_custom_id_already_exists =
+      existing_custom_id &&
+      typeof existing_custom_id === 'string' &&
+      existing_custom_id.startsWith('_');
+
+    if (existing_custom_id_already_exists) component_instance_id = existing_custom_id;
+    else component.setCustomId(component_instance_id);
 
     const auto_cleanup = setTimeout(() => {
       this.component_events.delete(component_instance_id);

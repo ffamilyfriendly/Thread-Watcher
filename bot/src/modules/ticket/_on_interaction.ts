@@ -27,7 +27,7 @@ export default async function on_interaction(
     return ok();
   }
 
-  start_pipeline(panel.value, interaction);
+  start_pipeline(panel.value, interaction, l);
 
   return ok();
 }

@@ -12,12 +12,15 @@ import Database from 'providers/database';
 import Client from 'providers/client';
 import { commands } from '@providers/commands';
 import { ipc_client } from '@providers/ipc/bot_ipc_client';
+import { entitlement_service } from '@providers/services/entitlement_service';
+import { LocalClientProvider } from 'services/EntitlementService';
 
 const logger = Logger.with_name('bot');
 const config = Config.instance;
 const client = Client.instance;
 const database = Database.instance;
 const redis = Redis.instance;
+entitlement_service.set_provider(new LocalClientProvider(client));
 
 async function bootstrap() {
   initialize_i18n(logger);

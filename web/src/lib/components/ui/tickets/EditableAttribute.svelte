@@ -154,7 +154,7 @@
 	.wrapper {
 		display: flex;
 		align-items: center;
-		width: max-content;
+		width: fit-content;
 		position: relative;
 		gap: 0.5rem;
 		min-width: 0;

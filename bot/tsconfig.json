@@ -22,7 +22,7 @@
       "@providers/*": ["./providers/*"]
     }
   },
-  "files": ["src/index.ts", "src/bot.ts", "src/deploy.ts"],
+  "files": ["src/index.ts", "src/bot.ts", "src/scripts/deploy.ts", "src/scripts/gen_docs.ts"],
   "include": ["src/**/*.ts"],
   "exclude": ["**/node_modules", "dist"]
 }

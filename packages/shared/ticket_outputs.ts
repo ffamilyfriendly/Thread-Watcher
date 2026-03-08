@@ -2,7 +2,7 @@ import type z from "zod";
 import {
   type TicketPanelMeta,
   ZAssignRole,
-  ZGenerateAnswer,
+  ZAIIssueNarrower,
   type PipelineModule,
   ZAssignChannel,
   ZAssignName,
@@ -132,13 +132,13 @@ const ASSIGN_ROLE: ModuleObject = {
   schema: ZAssignRole,
 };
 
-const GENERATE_ANSWER: ModuleObject = {
+const NARROW_ISSUE: ModuleObject = {
   name: "Generate Answer",
   accent_clr: "#10A37F",
   properties: () => [
     { name: "answer", value: "string", description: "The AI generated answer" },
   ],
-  schema: ZGenerateAnswer,
+  schema: ZAIIssueNarrower,
 };
 
 const ROOT_ENV_MODULE: ModuleObject = {
@@ -199,7 +199,7 @@ const ASSIGN_NAME: ModuleObject = {
 
 export const MODULE_OUTPUTS: ModuleRegistry = {
   ASSIGN_ROLE,
-  GENERATE_ANSWER,
+  NARROW_ISSUE,
   ROOT_ENV_MODULE,
   ASSIGN_CHANNEL,
   ASSIGN_NAME,

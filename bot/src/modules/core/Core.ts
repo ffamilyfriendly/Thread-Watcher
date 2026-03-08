@@ -31,7 +31,7 @@ async function fetch_responsible_manager(thread: ThreadChannel) {
     const res = await channel_service.get_monitor(id);
     if (res.isOk() && res.value) {
       if (res.value.target_id === res.value.guild_id) {
-        const entitlement_answer = await entitlement_service.has_basic(client, res.value.guild_id);
+        const entitlement_answer = await entitlement_service.has_premium(res.value.guild_id);
         if (entitlement_answer.isErr()) return err(entitlement_answer.error);
         if (entitlement_answer.value === false) return ok(null);
       }

@@ -11,8 +11,12 @@ import Logger from '@providers/logger';
 import { database } from '@providers/database';
 import { config } from '@providers/config';
 import { redis } from '@providers/redis';
+import { entitlement_service } from '@providers/services/entitlement_service';
+import { IpcProvider } from 'services/EntitlementService';
 
 const logger = Logger.child('Shard');
+
+entitlement_service.set_provider(new IpcProvider(ipc_client));
 
 async function load_events() {
   return load_module_as_and<PrivateEvent>('./src/ipcEvents/manager', (events_array) => {

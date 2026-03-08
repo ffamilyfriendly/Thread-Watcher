@@ -207,33 +207,18 @@ export namespace Policies {
     });
   }
 
-  export async function has_basic_entitlement(
+  export async function is_premium_subscriber(
     req: RequestWithUser,
   ): Promise<Result<PolicyResult, Error>> {
     const guild_id = get_valid_guild_id(req);
     if (guild_id.isErr()) return err(guild_id.error);
 
-    const result = await entitlement_service.has_basic(ipc_client, guild_id.value);
+    const result = await entitlement_service.has_premium(guild_id.value);
     if (result.isErr()) return err(result.error);
 
     return ok({
       passes: result.value,
-      message: `'${req.user_id}' does not have the basic premium tier`,
-    });
-  }
-
-  export async function has_extended_entitlement(
-    req: RequestWithUser,
-  ): Promise<Result<PolicyResult, Error>> {
-    const guild_id = get_valid_guild_id(req);
-    if (guild_id.isErr()) return err(guild_id.error);
-
-    const result = await entitlement_service.has_extended(ipc_client, guild_id.value);
-    if (result.isErr()) return err(result.error);
-
-    return ok({
-      passes: result.value,
-      message: `'${req.user_id}' does not have the basic premium tier`,
+      message: `'${req.user_id}' is not subscribed to premium!`,
     });
   }
 

@@ -1,8 +1,26 @@
 import { PipelineModule, SelectionStart, TicketPanel } from '@watcher/shared';
-import { ButtonInteraction, Guild, StringSelectMenuInteraction, User } from 'discord.js';
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonInteraction,
+  ButtonStyle,
+  ColorResolvable,
+  ComponentEmojiResolvable,
+  EmbedBuilder,
+  EmojiResolvable,
+  Guild,
+  Interaction,
+  ModalSubmitInteraction,
+  StringSelectMenuInteraction,
+  User,
+} from 'discord.js';
 import { Pipeline } from './state';
-import { err, ok, Result } from 'neverthrow';
+import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Logger } from 'tslog';
+import { component_service } from '@providers/services/component_service';
+import { map_err } from 'utilities/error';
+import { safe_reply } from './safe_reply';
+import { config } from '@providers/config';
 
 namespace Op {
   export function and(v: boolean[]): boolean {
@@ -57,16 +75,22 @@ type ValueContainerValue = ValidPropertyReturn | (() => ValidPropertyReturn) | V
 type MappedProps = Record<string, ValidPropertyReturn | Record<string, unknown>>;
 
 export class ValueContainer {
+  is_activated = true;
   constructor(
     public exports: Record<string, ValueContainerValue>,
     private default_value: ValidPropertyReturn,
   ) {}
+
+  activate() {
+    this.is_activated = true;
+  }
 
   set(key: string, value: ValueContainerValue) {
     this.exports[key] = value;
   }
 
   get(keys: string[]): ValidPropertyReturn {
+    if (!this.is_activated) return null;
     const key = keys.shift();
     if (!key) return null;
 
@@ -83,11 +107,12 @@ export class ValueContainer {
   }
 
   all(): MappedProps {
+    if (!this.is_activated) return {};
     const rv: MappedProps = {};
 
     for (const [name, value] of Object.entries(this.exports)) {
       if (value instanceof ValueContainer) {
-        rv[name] = value.all();
+        if (value.is_activated) rv[name] = value.all();
       } else if (typeof value === 'function') {
         rv[name] = value();
       } else {
@@ -96,6 +121,17 @@ export class ValueContainer {
     }
 
     return rv;
+  }
+
+  static value_into_string(value: ValidPropertyReturn, variable_name?: 'Unknown'): string {
+    if (!value) return `\`? ${variable_name} ?\``;
+    if (Array.isArray(value)) return value.join(', ');
+    if (typeof value === 'number') return value.toString();
+    return value;
+  }
+
+  static string_into_args(str: string) {
+    return str.split('.');
   }
 
   static from_user(user: User): ValueContainer {
@@ -190,21 +226,94 @@ export abstract class DefaultModule<TModType extends PipelineModule> {
     return this.self.conditional_type === 'AND' ? Op.and(bools) : Op.or(bools);
   }
 
+  async ensure_fresh_interaction(
+    interaction: Interaction,
+    extra_buttons: ButtonBuilder[] = [],
+    display_overides?: {
+      proceed_button_text?: string;
+      proceed_button_style?: ButtonStyle;
+      proceed_button_emoji?: ComponentEmojiResolvable;
+      embed_title?: string;
+      embed_description?: string;
+      embed_colour?: ColorResolvable;
+    },
+  ): Promise<Result<SupportedInteractionType, Error>> {
+    if (interaction.isAutocomplete())
+      return err(
+        new Error(
+          'AutoComplete interaction handed to module (this should never happen, good job if you managed it)',
+        ),
+      );
+
+    const is_valid_supported_interaction_type =
+      interaction.isButton() || interaction.isStringSelectMenu();
+    const is_fresh_interation = !interaction.replied && !interaction.deferred;
+
+    if (is_valid_supported_interaction_type && is_fresh_interation) {
+      return ok(interaction);
+    }
+
+    const action_row = new ActionRowBuilder<ButtonBuilder>();
+    const button = new ButtonBuilder();
+    button.setStyle(display_overides?.proceed_button_style ?? ButtonStyle.Primary);
+    button.setLabel(display_overides?.proceed_button_text ?? 'Proceed');
+    if (display_overides?.proceed_button_emoji)
+      button.setEmoji(display_overides.proceed_button_emoji);
+
+    action_row.addComponents([button, ...extra_buttons]);
+
+    const buttons = [button, ...extra_buttons];
+
+    const promises = buttons.map((btn) => {
+      return component_service.wait_for_interaction(
+        btn,
+        (int) => int.user.id === interaction.user.id,
+      );
+    });
+
+    const embed = new EmbedBuilder();
+    embed.setTitle(display_overides?.embed_title ?? 'Please press button');
+    embed.setColor(display_overides?.embed_colour ?? (config.style.info.colour as ColorResolvable));
+    if (display_overides?.embed_description)
+      embed.setDescription(display_overides.embed_description);
+
+    const could_send_reply = await safe_reply(interaction, {
+      embeds: [embed],
+      components: [action_row],
+      flags: 'Ephemeral',
+    });
+    if (could_send_reply.isErr()) {
+      this.l.error('could not prompt user input', could_send_reply.error);
+      return err(could_send_reply.error);
+    }
+
+    const reply_results = await ResultAsync.fromPromise(Promise.race(promises), map_err);
+    if (reply_results.isErr()) return err(reply_results.error);
+    if (reply_results.value.isErr()) return err(map_err(reply_results.value.error));
+    const resolved_button = reply_results.value.value;
+
+    return ok(resolved_button);
+  }
+
   protected abstract run(
     interaction: SupportedInteractionTypeWithGuild,
   ): Promise<Result<SupportedInteractionTypeWithGuild | void, Error>>;
 
-  run_module(interaction: SupportedInteractionTypeWithGuild) {
+  async run_module(interaction: SupportedInteractionTypeWithGuild) {
     const is_satisfied = this.satisfies_conditionals();
 
-    this.l.silly(`Module ${this.id} satisfied: ${is_satisfied}`);
+    this.l.silly(`Conditionals satisfied: ${is_satisfied}`);
+    if (!is_satisfied) return ok();
 
-    if (!is_satisfied) {
-      // might do some logging or whatever here
-      return ok();
+    this.exports.activate();
+
+    const result = await this.run(interaction);
+
+    if (result.isErr()) {
+      this.l.error(`Ran into a fatal error`, result.error);
     }
 
-    return this.run(interaction);
+    return result;
   }
 }
 
@@ -212,6 +321,7 @@ export interface IPipeline {
   assigned_roles: string[];
   assigned_channel: string;
   logger: Logger<unknown>;
+  exports: ValueContainer;
 
   get_property(id: string): ValidPropertyReturn;
 }

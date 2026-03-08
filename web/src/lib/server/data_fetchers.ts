@@ -14,6 +14,7 @@ import {
 } from '$lib/types/internal_api';
 import {
 	ZAuditData,
+	ZGuildSubscription,
 	ZHydratedThreadData,
 	ZMonitor,
 	ZThreadData,
@@ -101,6 +102,17 @@ export async function fetch_extended_audit(
 		logs: audit_objs,
 		next_cursor: audit_res.value.next_cursor
 	});
+}
+
+export async function fetch_entitlements(guild_id: string, user_id: string) {
+	return get_cached_or(
+		`dash:guild:${guild_id}:subscribed`,
+		ZGuildSubscription,
+		() => {
+			return json_fetch(`/guilds/${guild_id}/subscription`, { user_id }, ZGuildSubscription);
+		},
+		60
+	);
 }
 
 export async function _fetch_channel(guild_id: string, user_id: string, channel_id: string) {

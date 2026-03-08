@@ -12,6 +12,7 @@ import { ai_client } from '@providers/ai';
 import { config } from '@providers/config';
 import { ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
+import { ai_service } from '@providers/services/ai_service';
 
 const router = Router();
 
@@ -79,7 +80,7 @@ router.post(
     // if monitor id is same as server this is a server wide monitor
     // which requires the BASIC premium tier
     if (monitor.target_id === monitor.guild_id) {
-      const entitled_res = await entitlement_service.has_basic(ipc_client, guild_id);
+      const entitled_res = await entitlement_service.has_premium(guild_id);
       if (entitled_res.isErr()) {
         return res.status(500).json({
           code: 500,
@@ -154,51 +155,17 @@ router.post(
     }
 
     const prompt = body_parsed.data.prompt;
-    if (!prompt) {
-      return res.status(400).json({
-        code: 400,
-        message: "malformed request. Missing 'prompt'",
-      });
-    }
 
-    const ai_res_promise = ai_client.beta.conversations.start({
-      agentId: config.ai.agents.regex_agent,
-      inputs: [
-        { role: 'assistant', content: sys_str },
-        { role: 'user', content: prompt.toString().substring(0, 100) },
-      ],
-    });
-
-    const result = await ResultAsync.fromPromise(ai_res_promise, map_err);
-
-    if (result.isErr()) {
+    const ai_response = await ai_service.get_regex(prompt, guild_id);
+    if (ai_response.isErr()) {
       return res.status(500).json({
         code: 500,
         message: 'could not generate regex',
-        _details: result.error,
+        _details: ai_response.error,
       });
     }
 
-    for (const response of result.value.outputs) {
-      if (response.type === 'message.output') {
-        console.log(response.content);
-        if (typeof response.content != 'string') continue;
-
-        const parsed = ZAiRegexResponse.safeParse(JSON.parse(response.content));
-        if (parsed.success) return res.json({ prompt: parsed.data.prompt });
-        else
-          return res.status(500).json({
-            code: 402,
-            message: 'AI returned faulty response',
-            _details: parsed.error,
-          });
-      }
-    }
-
-    return res.status(500).json({
-      code: 500,
-      message: 'AI did not return a regex',
-    });
+    res.json(ai_response.value);
   },
 );
 

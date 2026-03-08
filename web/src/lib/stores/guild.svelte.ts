@@ -8,7 +8,7 @@ import {
 	type DiscordUser,
 	type GuildOverview
 } from '$lib/types/internal_api';
-import { ZMonitor, type Monitor } from '@watcher/shared';
+import { ZGuildSubscription, ZMonitor, type Monitor } from '@watcher/shared';
 import { err, ok, Result } from 'neverthrow';
 import { getContext, setContext } from 'svelte';
 import z from 'zod';
@@ -22,6 +22,7 @@ class GuildState {
 	guild_id = $state<string>();
 	guild = $state<GuildOverview>();
 	monitors = $state<Map<string, Monitor>>(new Map());
+	is_subscribed = $state<boolean>();
 
 	batch_wait_ms = 100;
 	pending_users: Map<string, UserFetchCallback[]> = new Map();
@@ -38,6 +39,16 @@ class GuildState {
 	get guild_id_throws() {
 		if (!this.guild_id) throw new Error('guild_id was not set!');
 		return this.guild_id;
+	}
+
+	async get_guild_subscription(guild_id: string) {
+		const result = await fetch_as_json(
+			`/api/guild/${guild_id}/subscription`,
+			undefined,
+			ZGuildSubscription
+		);
+		if (result.isOk()) this.is_subscribed = result.value.is_subscribed;
+		return result;
 	}
 
 	set_roles(new_roles: DiscordRole[]) {

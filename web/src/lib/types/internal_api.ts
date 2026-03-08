@@ -47,7 +47,7 @@ export const ZGuildOverview = z.object({
 	monitors_active: z.number(),
 	owned_by_shard: z.number(),
 	guild_settings: ZMappedSettings,
-	entitlements: z.enum(['EXTENDED', 'BASIC', 'NONE']).default('NONE'),
+	entitlements: z.boolean(),
 	guild: ZDJSGuild
 });
 

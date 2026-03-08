@@ -1,15 +1,21 @@
 import { BaseModule, PipelineModule, TicketPanel } from '@watcher/shared';
 import AssignRole from './modules/AssignRole';
-import { ok, Result, ResultAsync } from 'neverthrow';
+import { err, ok, Result, ResultAsync } from 'neverthrow';
 import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonInteraction,
   ButtonStyle,
+  ChannelType,
   ColorResolvable,
   EmbedBuilder,
+  ForumThreadChannel,
   Interaction,
+  PrivateThreadChannel,
+  PublicThreadChannel,
   StringSelectMenuInteraction,
+  ThreadAutoArchiveDuration,
+  ThreadChannel,
   User,
 } from 'discord.js';
 import { create_module } from './module_factory';
@@ -29,6 +35,8 @@ import { parsedType } from 'zod/v4/core/util.cjs';
 import z from 'zod';
 import { map_err } from 'utilities/error';
 import { config } from '@providers/config';
+import { generate_embed } from './components/embed';
+import { safe_reply } from './safe_reply';
 
 const log_obj_schema = z
   .object({
@@ -67,6 +75,9 @@ export class Pipeline implements IPipeline {
   }
 
   private write_log() {
+    this.logger.warn('NOT WRITING LOG TO R2.\nREMEMBER TO DELETE THIS');
+    return true;
+
     const [info_start, info_end] = this.create_header('INFORMATION ABOUT THIS FILE');
     let buf: string[] = [
       info_start,
@@ -111,18 +122,24 @@ export class Pipeline implements IPipeline {
     );
   }
 
-  constructor(data: TicketPanel, int: Interaction, author: User) {
+  constructor(
+    private data: TicketPanel,
+    int: Interaction,
+    author: User,
+  ) {
     this.assigned_channel = data.initial_channel_id;
     this.assigned_roles = data.initial_assigned_roles;
-    this.logger = new Logger({ hideLogPositionForProduction: true, type: 'hidden' });
+    this.logger = new Logger({ hideLogPositionForProduction: true });
 
     this.logger.attachTransport((log_obj) => this.append_log(log_obj));
 
-    this.exports = new ValueContainer(
+    this.exports = new ValueContainer({}, 'ENV_ROOT');
+
+    const this_env = new ValueContainer(
       {
         user: ValueContainer.from_user(author),
         assigned_roles: () => this.assigned_roles,
-        id: this.ticket_id,
+        ID: this.ticket_id,
         number: () => 2,
         name: this.name,
       },
@@ -140,9 +157,11 @@ export class Pipeline implements IPipeline {
           container_res.error,
         );
       } else {
-        this.exports.set('selection', container_res.value);
+        this_env.set('selection', container_res.value);
       }
     }
+
+    this.exports.set('env', this_env);
   }
 
   async resolve_error(int: SupportedInteractionType, mod: DefaultModule<any>, error: Error) {
@@ -163,33 +182,58 @@ export class Pipeline implements IPipeline {
     btn_logs.setLabel('View Logs');
     row.addComponents(btn_logs);
 
-    int.reply({ embeds: [embed], components: [row], flags: 'Ephemeral' });
+    safe_reply(int, { embeds: [embed], components: [row], flags: 'Ephemeral' });
   }
 
   async resolve_ticket(int: SupportedInteractionType) {
     if (this.is_resolved) return;
     this.write_log();
+
+    if (!int.guild) return int.editReply('no guild');
+
+    const fetched_parent_channel = await ResultAsync.fromPromise(
+      int.guild?.channels.fetch(this.assigned_channel),
+      map_err,
+    );
+
+    if (fetched_parent_channel.isErr()) {
+      return int.editReply(fetched_parent_channel.error.message);
+    }
+
+    if (!fetched_parent_channel.value)
+      return int.editReply(`Bro <#${this.assigned_channel}> ain't a real channel`);
+    if (!('threads' in fetched_parent_channel.value))
+      return int.editReply('Cuh this cant hold threads');
+    const parent = fetched_parent_channel.value;
+    const start_embed = generate_embed(this.data.resolved_embed, this.exports);
+
+    let prom: Promise<ThreadChannel>;
+    if (!parent.isTextBased() || parent.type === ChannelType.GuildAnnouncement)
+      return err(new Error('cba dealing with this rn'));
+
+    prom = parent.threads.create({
+      name: this.name,
+      reason: `ticket: ${this.ticket_id}`,
+      type: ChannelType.PrivateThread,
+    });
+
+    const tc_res = await ResultAsync.fromPromise(prom, map_err);
+    if (tc_res.isErr()) return int.editReply('could not create thread cuh :/ ' + tc_res.error);
+
+    const msg_unsafe = await tc_res.value.send({ embeds: [start_embed] });
+
+    safe_reply(int, {
+      content: `Yay!!!!!!!! thread created...... <#${tc_res.value.id}> ${msg_unsafe.url}`,
+    });
   }
 
   get_property(id: string): ValidPropertyReturn {
-    const id_arr = id.split('.');
-    const module_id = id_arr.shift();
-    if (!module_id) return null;
-    if (module_id === 'env') return this.exports.get(id_arr);
-    const module = this.modules.get(module_id);
-    return module?.exports.get(id_arr) ?? null;
+    const id_arr = ValueContainer.string_into_args(id);
+    return this.exports.get(id_arr);
   }
 
   get_all_properties(): Record<string, ValidPropertyReturn | Record<string, unknown>> {
-    const rv: Record<string, ValidPropertyReturn | Record<string, unknown>> = {};
-
-    rv['env'] = this.exports.all();
-
-    for (const mod of this.modules_arr) {
-      rv[mod.id] = mod.exports.all();
-    }
-
-    return rv;
+    return this.exports.all();
   }
 
   static from(data: TicketPanel, int: Interaction): Pipeline {
@@ -201,6 +245,12 @@ export class Pipeline implements IPipeline {
         logger.warn(module_instance.error);
         continue;
       }
+
+      // We set 'is_activated' to false to not pollute any env dump with null values.
+      // This gets set to true automatically shortly before the module is ran
+      module_instance.value.exports.is_activated = false;
+
+      pipeline.exports.set(module_instance.value.id, module_instance.value.exports);
       pipeline.modules.set(module_instance.value.id, module_instance.value);
     }
 

@@ -1,4 +1,5 @@
 import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
+import { logger } from '@providers/logger';
 import { ticket_service } from '@providers/services/ticket_service';
 import { ZEditTicketPanel, ZTicketPanel } from '@watcher/shared';
 import { Router } from 'express';
@@ -84,6 +85,12 @@ router.post(
         _details: msg_id.error,
       });
     }
+
+    ticket_service
+      .update_panel(panel_id, { discord_message_id: msg_id.value.message_id })
+      .then((r) => {
+        if (msg_id.isErr()) logger.error('Could not update ticket panel message ID', msg_id.error);
+      });
 
     res.json(msg_id.value);
   },

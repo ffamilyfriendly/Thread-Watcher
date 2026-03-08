@@ -37,10 +37,10 @@
   "scripts": {
     "build": "npx tsc",
     "start": "bun ./src/index.ts",
-    "check_deps": "bun ./src/check_deps.ts",
+    "check_deps": "bun ./src/scripts/check_deps.ts",
     "gen_docs": "bun ./src/gen_docs.ts",
-    "deploy:dev": "bun ./src/deploy.ts -local",
-    "deploy:prod": "bun ./src/deploy.ts",
+    "deploy:dev": "bun ./src/scripts/deploy.ts -local",
+    "deploy:prod": "bun ./src/scripts/deploy.ts",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write ."

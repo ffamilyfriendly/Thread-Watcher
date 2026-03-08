@@ -50,7 +50,7 @@
 				<div class="head">
 					<div class="meta">
 						<h3 class="space-grotesk">{title}</h3>
-						<p class="description">
+						<p class="description jetbrains-mono-300">
 							{@render description()}
 						</p>
 					</div>

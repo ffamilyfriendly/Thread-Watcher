@@ -38,6 +38,27 @@ router.post('/viewable', async (req, res) => {
 });
 
 router.get(
+  '/:guild_id/subscription',
+  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  async (req, res) => {
+    const guild_id = req.params.guild_id as string;
+    const entitlement = await entitlement_service.has_premium(guild_id);
+    if (entitlement.isErr())
+      return res.status(500).json({
+        code: 500,
+        message: `Could not get entitlement for '${guild_id}'`,
+        _details: entitlement.error,
+      });
+
+    // Intended to have multiple tiers, but we're doing only one
+
+    return res.json({
+      is_subscribed: entitlement.value,
+    });
+  },
+);
+
+router.get(
   '/:guild_id',
   enforce_policy(Policies.Common.bot_master_or_guild_master),
   async (req, res) => {
@@ -49,7 +70,7 @@ router.get(
         channel_service.get_monitor_count(guild_id),
         ipc_client.get_shard_from_guild_id(guild_id),
         setting_service.get_guild_settings(guild_id),
-        entitlement_service.get_highest_sku(ipc_client, guild_id),
+        entitlement_service.has_premium(guild_id),
         ipc_client.send_to_shard_having_guild<Guild>(guild_id, 'get_guild', {
           guild_id,
         }),

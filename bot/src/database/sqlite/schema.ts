@@ -1,3 +1,4 @@
+import { config } from '@providers/config';
 import { integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 const date_now = () => new Date();
@@ -52,8 +53,8 @@ export const Guilds = sqliteTable('guilds', {
   guild_id: text('guild_id').primaryKey(),
   left_at: integer('left_at', { mode: 'timestamp' }),
   granted_SKU: text('granted_SKU'),
-  monthly_tokens: integer('monthly_tokens'),
-  persistent_tokens: integer('persistent_tokens'),
+  monthly_tokens: integer('monthly_tokens').default(0),
+  persistent_tokens: integer('persistent_tokens').default(config.ai.initial_free_tokens),
   monthly_tokens_last_granted: integer('monthly_tokens_last_granted', { mode: 'timestamp' }),
 });
 

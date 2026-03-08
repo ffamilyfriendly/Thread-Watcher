@@ -80,7 +80,6 @@ export default class Sqlite implements Database {
     const val = await this.drizzle
       .insert(schema.TicketPanels)
       .values({
-        guild_id,
         ...panel,
         panel_id: undefined, // Force undefined to get generation
       })
@@ -437,7 +436,7 @@ export default class Sqlite implements Database {
   }
 
   @with_error_handling
-  async upsert_guild_info(guild_id: string, data: Omit<Guild, 'guild_id'>) {
+  async upsert_guild_info(guild_id: string, data: Partial<Omit<Guild, 'guild_id'>>) {
     await this.drizzle
       .insert(schema.Guilds)
       .values({ guild_id, ...data })
