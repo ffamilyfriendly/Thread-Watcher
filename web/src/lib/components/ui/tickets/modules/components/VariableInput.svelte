@@ -15,10 +15,12 @@
 		value = `{{${str}}}`;
 		show_selector = false;
 	}
+
+	let button_ref = $state<HTMLButtonElement>();
 </script>
 
 <div class={['container', style.text_input]}>
-	<button onclick={() => (show_selector = !show_selector)}>
+	<button bind:this={button_ref} onclick={() => (show_selector = !show_selector)}>
 		<Variable />
 	</button>
 	<input bind:value />
@@ -26,6 +28,7 @@
 
 {#if show_selector}
 	<VariableSelector
+		input_ref={button_ref}
 		bind:show_this={show_selector}
 		before_uid={module_uid}
 		on_selected={handle_selected}

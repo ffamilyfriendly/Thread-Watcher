@@ -96,11 +96,14 @@
 		node.focus();
 		node.select();
 	}
+
+	let item_ref = $state<HTMLElement>();
 </script>
 
 <div class="wrapper">
-	{#if show_variable_picker}
+	{#if show_variable_picker && item_ref}
 		<VariableSelector
+			input_ref={item_ref}
 			{before_uid}
 			bind:show_this={show_variable_picker}
 			on_selected={insert_picked_var}
@@ -111,6 +114,7 @@
 		<div class="content">
 			{#if use_text_area}
 				<textarea
+					bind:this={item_ref}
 					{...textarea_attrs}
 					use:focus
 					style:width
@@ -122,6 +126,7 @@
 				></textarea>
 			{:else}
 				<input
+					bind:this={item_ref}
 					{...input_attrs}
 					use:focus
 					class="edit"

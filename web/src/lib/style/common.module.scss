@@ -3,6 +3,10 @@
 	align-items: center;
 }
 
+.space_between {
+	justify-content: space-between;
+}
+
 .flex_col {
 	display: flex;
 	flex-direction: column;

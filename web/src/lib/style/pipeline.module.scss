@@ -27,6 +27,7 @@
 	border: none;
 	border-radius: 0.15rem;
 	padding: 0.25rem 0.5rem;
+	cursor: pointer;
 }
 
 .indented {
@@ -36,6 +37,16 @@
 }
 
 .number {
+	background-color: color-mix(in srgb, var(--clr) 90%, white);
+	border: 1px solid color-mix(in srgb, var(--clr) 80%, white);
+	color: white;
+	padding: 0.25rem;
+	border-radius: 0.15rem;
+}
+
+.text {
+	outline: none;
+	border: none;
 	background-color: color-mix(in srgb, var(--clr) 90%, white);
 	border: 1px solid color-mix(in srgb, var(--clr) 80%, white);
 	color: white;

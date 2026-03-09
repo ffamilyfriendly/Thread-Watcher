@@ -5,34 +5,35 @@
 	import { fly } from 'svelte/transition';
 
 	interface Props {
-		value: SelectionStart;
+		placeholder: string,
+		options: StringSelectOption[]
 	}
 
-	const { value = $bindable() }: Props = $props();
+	let { options = $bindable(), placeholder = $bindable() }: Props = $props();
 
 	let is_expanded = $state(false);
 
 	function get_new_option_id() {
-		if (value.options.length === 0) return `option_0`;
-		const last_option_id = Number(value.options[value.options.length - 1].option_id.split('_')[1]);
+		if (options.length === 0) return `option_0`;
+		const last_option_id = Number(options[options.length - 1].option_id.split('_')[1]);
 		return `option_${last_option_id + 1}`;
 	}
 
 	function add_new_field() {
-		value.options.push({
+		options.push({
 			title: 'New Option',
 			option_id: get_new_option_id()
 		});
 	}
 
 	function remove_option(opt_id: string) {
-		value.options = value.options.filter((v) => v.option_id !== opt_id).filter(Boolean);
+		options = options.filter((v) => v.option_id !== opt_id).filter(Boolean);
 	}
 </script>
 
 <div class="container">
 	<div class="select">
-		<EditableAttribute max={150} bind:value={value.placeholder}>
+		<EditableAttribute max={150} bind:value={placeholder}>
 			{#snippet display(v)}
 				<p class="placeholder">{v}</p>
 			{/snippet}
@@ -75,10 +76,10 @@
 
 	{#if is_expanded}
 		<div transition:fly={{ duration: 400, y: -30, opacity: 0.2 }} class="options">
-			{#each value.options as opt (opt.option_id)}
+			{#each options as opt (opt.option_id)}
 				{@render option_field(opt)}
 			{/each}
-			<button disabled={value.options.length === 25} onclick={add_new_field} class="add_new_field"
+			<button disabled={options.length === 25} onclick={add_new_field} class="add_new_field"
 				>Add New</button
 			>
 		</div>

@@ -6,6 +6,7 @@
 	import PermissionsSection from './components/PermissionsSection.svelte';
 	import { use_pipeline } from '$lib/stores/pipeline.svelte';
 	import common from '$lib/style/common.module.scss';
+	import IDSelector from './components/IDSelector.svelte';
 
 	interface Props {
 		module: PipelineModule;
@@ -18,12 +19,6 @@
 
 	const accent = $derived(MODULE_OUTPUTS[module.type].accent_clr);
 	const pipeline = use_pipeline();
-	function on_input(e: Event) {
-		const input = e.target as HTMLInputElement;
-		const val = input.value.replace(/\s/g, '_').replace(/[^\w]/g, '').slice(0, 20);
-
-		module.id = val;
-	}
 
 	function handle_drag_start(e: DragEvent) {
 		e.dataTransfer?.setData('optype', 'move');
@@ -34,7 +29,7 @@
 		pipeline.delete_module(module.uid);
 	}
 
-	let expanded = $state(true);
+	let expanded = $state(false);
 </script>
 
 <div
@@ -63,17 +58,7 @@
 				</div>
 
 				<div class="footer">
-					<div class="fella">
-						<p class="jetbrains-mono">ID</p>
-						<input
-							class="jetbrains-mono"
-							bind:value={module.id}
-							oninput={on_input}
-							spellcheck="false"
-							pattern="\w+"
-							maxlength="20"
-						/>
-					</div>
+					<IDSelector bind:id={module.id} />
 				</div>
 			</div>
 		{:else}
@@ -190,26 +175,6 @@
 					opacity: 0.7;
 				}
 			}
-		}
-	}
-
-	.fella {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		outline: 2px solid color-mix(in srgb, var(--clr) 80%, white);
-
-		p {
-			background-color: color-mix(in srgb, var(--clr) 80%, white);
-			padding: 0.15rem;
-		}
-
-		input {
-			background-color: transparent;
-			color: inherit;
-			opacity: 0.9;
-			border: none;
-			padding: 0.15rem;
 		}
 	}
 </style>

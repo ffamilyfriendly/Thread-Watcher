@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { click_outside } from '$lib/client/attachments/click_outside';
+	import { portal } from '$lib/client/attachments/portal';
 	import { use_pipeline } from '$lib/stores/pipeline.svelte';
 	import { ArrowRightFromLine, List, Percent, TextInitial } from '@lucide/svelte';
 	import { type ModuleProperty } from '@watcher/shared';
@@ -11,8 +12,9 @@
 		on_selected: (selected: string) => void;
 		before_uid?: string;
 		show_this?: boolean;
+		input_ref: HTMLElement;
 	}
-	let { on_selected, before_uid, show_this = $bindable() }: Props = $props();
+	let { on_selected, before_uid, show_this = $bindable(), input_ref }: Props = $props();
 
 	let modules = $state(pipe_state.get_all_properties());
 
@@ -135,6 +137,7 @@
 
 <div
 	class="selector"
+	{@attach portal(input_ref)}
 	{@attach show_this && click_outside(() => (show_this = false))}
 	transition:fly={{ duration: 200 }}
 >

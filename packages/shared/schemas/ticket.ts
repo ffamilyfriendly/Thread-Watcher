@@ -151,19 +151,25 @@ export const ZModalComponentBase = z.object({
     .string()
     .min(1)
     .max(100)
-    .default(() => crypto.randomUUID()),
+    .default(() => crypto.randomUUID()), // Not the most user friendly standard option but it will do for now
   required: z.boolean().default(true),
 });
 
 export const ZModalBaseSelect = ZModalComponentBase.extend({
-  placeholder: z.string().max(DISCORD_MAX_CHARS_IN_PLACEHOLDER).nullish(),
+  placeholder: z
+    .string()
+    .max(DISCORD_MAX_CHARS_IN_PLACEHOLDER)
+    .default("Select a value"),
   min_values: z.number().min(0).max(25).default(1),
   max_values: z.number().max(25).default(1),
 });
+export type BaseSelect = z.output<typeof ZModalBaseSelect>;
 
 export const ZModalStringSelect = ZModalBaseSelect.extend({
-  placeholder: z.string().max(DISCORD_MAX_CHARS_IN_PLACEHOLDER).nullish(),
-  options: z.array(ZStringSelectionOption).max(DISCORD_MAX_FIELDS_IN_EMBED),
+  options: z
+    .array(ZStringSelectionOption)
+    .max(DISCORD_MAX_FIELDS_IN_EMBED)
+    .default([]),
   type: z.literal("STRING_SELECT").default("STRING_SELECT"),
 });
 
@@ -180,15 +186,18 @@ export const ZModalChannelSelect = ZModalBaseSelect.extend({
   channel_types: z.array(z.number()).max(17).nullish(),
   type: z.literal("CHANNEL_SELECT").default("CHANNEL_SELECT"),
 });
-export const ZFileUpload = ZModalComponentBase.extend({
+export const ZModalFileUpload = ZModalComponentBase.extend({
   min_values: z.number().min(0).max(10).default(1),
   max_values: z.number().max(10).default(1),
   type: z.literal("FILE_UPLOAD").default("FILE_UPLOAD"),
 });
 
+export const DISCORD_MAX_TEXT_INPUT_LEN = 4000;
 export const ZModalTextInput = ZModalComponentBase.extend({
-  min_length: z.number().min(0).max(4000).default(0),
-  max_length: z.number().min(1).max(4000).default(4000),
+  // The reason for these being named 'min_values' and 'max_values' is so we can use the same Wrapper on the frontend
+  // for configuring these 2 values
+  min_values: z.number().min(0).max(4000).default(0),
+  max_values: z.number().min(1).max(DISCORD_MAX_TEXT_INPUT_LEN).default(4000),
   value: z.string().max(400).nullish(),
   placeholder: z.string().max(DISCORD_MAX_CHARS_IN_PLACEHOLDER).nullish(),
   type: z.literal("TEXT_INPUT").default("TEXT_INPUT"),
@@ -196,23 +205,34 @@ export const ZModalTextInput = ZModalComponentBase.extend({
 
 export const ZModalComponent = z.discriminatedUnion("type", [
   ZModalTextInput,
-  ZFileUpload,
+  ZModalFileUpload,
   ZModalChannelSelect,
   ZModalMentionableSelect,
   ZModalRoleSelect,
   ZModalUserSelect,
   ZModalStringSelect,
 ]);
+export type ModalComponent = z.output<typeof ZModalComponent>;
+
+export type TypedComponent<T extends ModalComponent["type"]> = Extract<
+  ModalComponent,
+  { type: T }
+>;
 
 export const ZModalLabelComponent = z.object({
+  uid: z.string().default(() => crypto.randomUUID()), // This is mostly for frontend ease
   label: z.string().min(3).max(DISCORD_MODAL_LABEL_MAX).default("Label Name"),
   description: z.string().max(DISCORD_MODAL_DESCRIPTION_MAX).nullish(),
   component: ZModalComponent,
 });
 
+export const DISCORD_MAX_LABELS_IN_MODAL = 5;
 export const ZQuestionModal = ZModule.extend({
   title: z.string().max(45).default("Details"),
-  labels: z.array(ZModalLabelComponent).max(5).default([]),
+  labels: z
+    .array(ZModalLabelComponent)
+    .max(DISCORD_MAX_LABELS_IN_MODAL)
+    .default([]),
   type: z.literal("MODAL_QUESTION").default("MODAL_QUESTION"),
 });
 export type QuestionModal = z.output<typeof ZQuestionModal>;

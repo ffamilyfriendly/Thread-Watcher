@@ -6,7 +6,7 @@ import SetName from './SetName.svelte';
 import NarrowAnswer from './NarrowAnswer.svelte';
 import OpenTicket from './OpenTicket.svelte';
 import SilentResolve from './SilentResolve.svelte';
-import QuestionModule from './QuestionModule.svelte';
+import QuestionModule from './QuestionModule/QuestionModule.svelte';
 
 export type RenderableModuleTypes = Exclude<PipelineModule['type'], 'ROOT_ENV_MODULE'>;
 

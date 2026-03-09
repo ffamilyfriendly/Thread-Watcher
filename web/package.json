@@ -35,6 +35,7 @@
 	},
 	"dependencies": {
 		"@auth/sveltekit": "^1.11.1",
+		"@floating-ui/dom": "^1.7.6",
 		"@lucide/svelte": "^0.561.0",
 		"@watcher/shared": "^1.0.0",
 		"ioredis": "^5.8.2",

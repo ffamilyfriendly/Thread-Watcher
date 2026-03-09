@@ -131,7 +131,7 @@
 			<ButtonConfigurator bind:value={init_w_btn_state} />
 		{/snippet}
 		{#snippet select_conf()}
-			<StringSelectConfigurator bind:value={init_w_select_state} />
+			<StringSelectConfigurator bind:options={init_w_select_state.options} bind:placeholder={init_w_select_state.placeholder} />
 		{/snippet}
 
 		<TabbedView
