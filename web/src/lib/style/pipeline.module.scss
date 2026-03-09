@@ -35,6 +35,14 @@
 	border-radius: 0.25rem;
 }
 
+.number {
+	background-color: color-mix(in srgb, var(--clr) 90%, white);
+	border: 1px solid color-mix(in srgb, var(--clr) 80%, white);
+	color: white;
+	padding: 0.25rem;
+	border-radius: 0.15rem;
+}
+
 p.wrap {
 	text-wrap: wrap;
 }

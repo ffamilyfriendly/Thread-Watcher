@@ -6,9 +6,14 @@ import {
   type PipelineModule,
   ZAssignChannel,
   ZAssignName,
+  ZOpenTicket,
+  ZSilentlyResolve,
+  ZModalComponent,
+  ZQuestionModal,
+  type QuestionModal,
 } from "./schemas/ticket";
 
-export type ModulePropertyTypes = "string" | "number" | "array";
+export type ModulePropertyTypes = "string" | "number" | "array" | `${string}[]`;
 export interface ModuleProperty {
   name: string;
   description?: string;
@@ -17,7 +22,10 @@ export interface ModuleProperty {
 
 export enum ModuleCategory {
   ASSIGNMENT,
+  AI,
+  RESOLVERS,
   UNASSIGNED,
+  INPUTS,
 }
 
 export interface ModuleObject<T extends PipelineModule = PipelineModule> {
@@ -34,7 +42,7 @@ type CategoryNames = {
 };
 
 type ModuleRegistry = {
-  [K in PipelineModule["type"]]: ModuleObject;
+  [K in PipelineModule["type"]]: ModuleObject<any>;
 };
 
 function generate_user(name = "user"): ModuleProperty {
@@ -133,11 +141,12 @@ const ASSIGN_ROLE: ModuleObject = {
 };
 
 const NARROW_ISSUE: ModuleObject = {
-  name: "Generate Answer",
+  name: "Define Issue",
   accent_clr: "#10A37F",
   properties: () => [
-    { name: "answer", value: "string", description: "The AI generated answer" },
+    { name: "issue", value: "string", description: "The narrowed down issue" },
   ],
+  category: ModuleCategory.AI,
   schema: ZAIIssueNarrower,
 };
 
@@ -197,17 +206,63 @@ const ASSIGN_NAME: ModuleObject = {
   schema: ZAssignName,
 };
 
+const OPEN_TICKET: ModuleObject = {
+  name: "Open Ticket",
+  accent_clr: "#24a411",
+  category: ModuleCategory.RESOLVERS,
+  properties: () => [],
+  schema: ZOpenTicket,
+};
+
+const SILENT_RESOLVE: ModuleObject = {
+  name: "Silently Resolve",
+  accent_clr: "#a43d11",
+  category: ModuleCategory.RESOLVERS,
+  properties: () => [],
+  schema: ZSilentlyResolve,
+};
+
+const MODAL_QUESTION: ModuleObject<QuestionModal> = {
+  name: "Modal Question",
+  accent_clr: "#143123",
+  category: ModuleCategory.INPUTS,
+  schema: ZQuestionModal,
+  properties: (self) => {
+    const properties: ModuleProperty[] = [];
+
+    for (const label of self.labels) {
+      const comp = label.component;
+
+      if (comp.type === "USER_SELECT") {
+        if (comp.max_values === 1)
+          properties.push(generate_user(comp.custom_id));
+        else properties.push({ name: comp.custom_id, value: "user[]" });
+      } else if (comp.type === "TEXT_INPUT") {
+        properties.push({ name: comp.custom_id, value: "string" });
+      }
+    }
+
+    return properties;
+  },
+};
+
 export const MODULE_OUTPUTS: ModuleRegistry = {
   ASSIGN_ROLE,
   NARROW_ISSUE,
   ROOT_ENV_MODULE,
   ASSIGN_CHANNEL,
   ASSIGN_NAME,
+  OPEN_TICKET,
+  SILENT_RESOLVE,
+  MODAL_QUESTION,
 };
 
 export const CATEGORY_NAMES: CategoryNames = {
   [ModuleCategory.ASSIGNMENT]: "Assignment",
   [ModuleCategory.UNASSIGNED]: "Misc",
+  [ModuleCategory.AI]: "Ai",
+  [ModuleCategory.RESOLVERS]: "Resolvers",
+  [ModuleCategory.INPUTS]: "Inputs",
 };
 
 export type ModuleType = keyof typeof MODULE_OUTPUTS;

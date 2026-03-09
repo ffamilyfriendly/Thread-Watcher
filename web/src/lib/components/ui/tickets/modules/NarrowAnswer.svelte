@@ -6,6 +6,7 @@
 	import common from "$lib/style/common.module.scss"
 	import { Info } from '@lucide/svelte';
 	import { tooltip } from '$lib/client/attachments/tooltip';
+	import Cheng from './components/Cheng.svelte';
 
 	interface Props {
 		module: TypedPipelineModule<"NARROW_ISSUE">;
@@ -22,10 +23,9 @@ Define the agent's <b>personality and tone.</b></br><small>(ex: 'a witty tech ex
 
 </script>
 
-<BaseModule title="Generate Answer" bind:module>
+<BaseModule title="Narrow Answer" bind:module>
 	{#snippet description()}
-		The <code>Generate Answer</code> module allows you to automatically answer whatever a user might need
-		help with.
+		Narrows down the user issue by asking questions
 	{/snippet}
 
 	<div class="grid">
@@ -57,10 +57,10 @@ Define the agent's <b>personality and tone.</b></br><small>(ex: 'a witty tech ex
 			</EditableAttribute>
 		</div>
 	</div>
-	<div>
-		<b>Followup Questions</b>
-		<input type="number" min="0" max="10" bind:value={module.max_responses} />
-	</div>
+
+	<Cheng title="Max Rounds" description="How many times the AI can ask follow up questions">
+		<input type="number" min="0" max="10" class={[style.number, "jetbrains-mono-300"]} bind:value={module.max_responses} />
+	</Cheng>
 </BaseModule>
 
 <style lang="scss">

@@ -105,6 +105,10 @@
 		--clr: #121212;
 	}
 
+	.description {
+		font-size: smaller;
+	}
+
 	.draggable {
 		cursor: move;
 	}
@@ -177,7 +181,7 @@
 			align-items: start;
 
 			.meta {
-				max-width: 45ch;
+				width: 50%;
 				background-color: color-mix(in srgb, var(--clr) 95%, var(--accent));
 				border: 2px solid color-mix(in srgb, var(--clr) 80%, var(--accent));
 				padding: 0.5rem;

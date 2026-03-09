@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { TypedPipelineModule } from '@watcher/shared';
+	import { ZModalChannelSelect, type TypedPipelineModule } from '@watcher/shared';
 	import BaseModule from './BaseModule.svelte';
 	import RolePicker from '../../settings/RolePicker.svelte';
 	import Toggle from '../../Toggle.svelte';
@@ -10,9 +10,14 @@
 	const guild_state = use_guild_state()
 
 	interface Props {
-		module: TypedPipelineModule<'ASSIGN_ROLE'>;
+		module: TypedPipelineModule<"MODAL_QUESTION">;
 	}
 	let { module = $bindable() }: Props = $props();
+
+    function new_channel_select() {
+        const d = ZModalChannelSelect.parse({  })
+        return d
+    }
 </script>
 
 <BaseModule title="Assign Role" bind:module>
@@ -23,9 +28,19 @@
 		> will be pinged when the ticket is created or updated, and its members will gain access to manage
 		the ticket in the dashboard.
 	{/snippet}
-	<RolePicker bind:value={module.role_id} roles={guild_state.roles} />
 
-	<Cheng title="Append" description="Add this role to 'assigned roles' instead of replacing">
-		<Toggle bind:value={module.append} />
-	</Cheng>
+    {#each module.labels as label (label.component.custom_id)}
+        <div class="lable">
+            <p>{label.label}</p>
+            <p>{label.description}</p>
+        </div>
+
+        CONTENT HERE
+
+        <div>
+            <p>Component ID</p>
+            <input bind:value={label.component.custom_id} />
+        </div>
+    {/each}
+    <button onclick={() => module.labels.push({ label: "New Label", description: "hi", component: new_channel_select() })}>hi</button>
 </BaseModule>

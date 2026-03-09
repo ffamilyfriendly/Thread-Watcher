@@ -35,7 +35,7 @@ export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NA
   constructor(self: TypedPipelineModule<'NARROW_ISSUE'>, pipeline: IPipeline) {
     const exports = new ValueContainer(
       {
-        narrowed: () => this.narrowed_summary ?? null,
+        issue: () => this.narrowed_summary ?? null,
       },
       self.rules ?? null,
     );
@@ -57,26 +57,6 @@ export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NA
     );
 
     return m;
-  }
-
-  private async get_fresh_interaction(int: Interaction, clarification_query: string) {
-    const skip_button = new ButtonBuilder();
-    const button_id = `_skip_${int.id}`;
-    skip_button.setStyle(ButtonStyle.Secondary);
-    skip_button.setLabel('Skip');
-    skip_button.setCustomId(button_id);
-
-    const response = await super.ensure_fresh_interaction(int, [skip_button], {
-      proceed_button_text: 'Clarify',
-      embed_title: 'Clarification Requested',
-      embed_description: clarification_query,
-    });
-    if (response.isErr()) return err(response.error);
-
-    return ok({
-      interaction: response.value,
-      should_skip: response.value.customId === button_id,
-    });
   }
 
   private async handle_followup(
@@ -106,46 +86,58 @@ export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NA
     const vacuum = new Vacuum();
 
     return new Promise(async (resolve) => {
-      const perr = (e: Error) => err(e);
+      const perr = (e: Error) => resolve(err(e));
 
       vacuum.add(
-        component_service.wait_for_interaction_callback(clarify_button, filter, async (btn_int) => {
-          const modal = this.create_question_modal(clarification_query);
-          const modal_promise = component_service.wait_for_interaction(modal, filter);
+        component_service.wait_for_interaction_callback(
+          clarify_button,
+          filter,
+          async (btn_int) => {
+            const modal = this.create_question_modal(clarification_query);
+            const modal_promise = component_service.wait_for_interaction(modal, filter);
 
-          const show_modal = await ResultAsync.fromPromise(btn_int.showModal(modal), map_err);
-          const modal_response = await modal_promise;
-          if (modal_response.isErr()) return perr(map_err(modal_response));
-          if (show_modal.isErr()) {
-            this.l.error(`Could not show follow-up question to user`, show_modal.error);
-            return perr(show_modal.error);
-          }
+            const show_modal = await ResultAsync.fromPromise(btn_int.showModal(modal), map_err);
+            const modal_response = await modal_promise;
+            if (modal_response.isErr()) return perr(map_err(modal_response));
+            if (show_modal.isErr()) {
+              this.l.error(`Could not show follow-up question to user`, show_modal.error);
+              return perr(show_modal.error);
+            }
 
-          const followup_clarification = modal_response.value.fields.getTextInputValue(
-            this.self.uid,
-          );
-          const followup_res = await ai.narrow(followup_clarification);
-          if (followup_res.isErr()) return perr(followup_res.error);
+            const followup_clarification = modal_response.value.fields.getTextInputValue(
+              this.self.uid,
+            );
+            const followup_res = await ai.narrow(followup_clarification);
+            if (followup_res.isErr()) return perr(followup_res.error);
 
-          vacuum.clean();
-          return resolve(
-            ok({
-              should_skip: false,
-              interaction: modal_response.value,
-              ai_res: followup_res.value,
-            }),
-          );
-        }),
-        component_service.wait_for_interaction_callback(skip_button, filter, (btn_int) => {
-          vacuum.clean();
-          return resolve(
-            ok({
-              should_skip: true,
-              interaction: btn_int,
-              ai_res: null,
-            }),
-          );
-        }),
+            vacuum.clean();
+            return resolve(
+              ok({
+                should_skip: false,
+                interaction: modal_response.value,
+                ai_res: followup_res.value,
+              }),
+            );
+          },
+          undefined,
+          () => perr(new Error('Timed out')),
+        ),
+        component_service.wait_for_interaction_callback(
+          skip_button,
+          filter,
+          (btn_int) => {
+            vacuum.clean();
+            return resolve(
+              ok({
+                should_skip: true,
+                interaction: btn_int,
+                ai_res: null,
+              }),
+            );
+          },
+          undefined,
+          () => perr(new Error('Timed out')),
+        ),
       );
 
       action_row.addComponents([clarify_button, skip_button]);
@@ -193,8 +185,9 @@ export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NA
       return err(initial_response.error);
     }
 
+    this.narrowed_summary = initial_response.value.internal_summary;
+
     if (initial_response.value.is_clarified) {
-      this.narrowed_summary = initial_response.value.internal_summary;
       return ok();
     }
 

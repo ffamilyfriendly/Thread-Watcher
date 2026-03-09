@@ -3,12 +3,13 @@
 		value?: boolean | null;
 		width?: `${number}px` | `${number}rem`;
 		height?: `${number}px` | `${number}rem`;
+		class_name?: string
 	}
 
-	let { value = $bindable(), width, height }: Props = $props();
+	let { value = $bindable(), width, height, class_name }: Props = $props();
 </script>
 
-<div style:width style:height class="outer">
+<div style:width style:height class={["outer", class_name]}>
 	<div class:activated={value} class="inner">
 		<button aria-label="toggle knob" onclick={() => (value = !value)} class="knob"></button>
 	</div>

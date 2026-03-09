@@ -11,6 +11,8 @@ export const DISCORD_MAX_CHARS_IN_BUTTON_LABEL = 80;
 export const DISCORD_MAX_CHARS_IN_OPTION = 100; // Value is the same for id, label, and description
 export const DISCORD_SNOWFLAKE_MAX_LEN = 19;
 export const DISCORD_CHANNEL_NAME_MAX_LEN = 100;
+export const DISCORD_MODAL_LABEL_MAX = 45;
+export const DISCORD_MODAL_DESCRIPTION_MAX = 100;
 
 // Service restraints
 export const TW_MAX_CHARS_IN_OPERANT_VALUE = 100;
@@ -114,10 +116,106 @@ export const ZAIIssueNarrower = ZModule.extend({
     .string()
     .max(TW_AI_PERSONA_MAX_LEN)
     .default("A helpful support assistant"),
-  rules: z.string().max(TW_AI_RULES_MAX_LEN).default("Be polite and concise"),
+  rules: z
+    .string()
+    .max(TW_AI_RULES_MAX_LEN)
+    .default(
+      "If the user is reporting someone make sure the user ID is present",
+    ),
   type: z.literal("NARROW_ISSUE").default("NARROW_ISSUE"),
   max_responses: z.number().min(0).max(10).default(3),
 });
+
+export const ZOpenTicket = ZModule.extend({
+  embed: ZEmbed.default({
+    title: "Ticket Opened",
+    fields: [],
+    description: "Thank you for opening the ticket <@{{env.user.id}}>",
+    colour: "#420677",
+  }),
+  type: z.literal("OPEN_TICKET").default("OPEN_TICKET"),
+});
+
+export const ZSilentlyResolve = ZModule.extend({
+  embed: ZEmbed.default({
+    title: "Answer",
+    fields: [],
+    description: "Provide an answer here",
+    colour: "#77066e",
+  }),
+  type: z.literal("SILENT_RESOLVE").default("SILENT_RESOLVE"),
+});
+
+export const ZModalComponentBase = z.object({
+  custom_id: z // We do not need to worry about the custom IDs colliding as this is "namespaced" to only the modal
+    .string()
+    .min(1)
+    .max(100)
+    .default(() => crypto.randomUUID()),
+  required: z.boolean().default(true),
+});
+
+export const ZModalBaseSelect = ZModalComponentBase.extend({
+  placeholder: z.string().max(DISCORD_MAX_CHARS_IN_PLACEHOLDER).nullish(),
+  min_values: z.number().min(0).max(25).default(1),
+  max_values: z.number().max(25).default(1),
+});
+
+export const ZModalStringSelect = ZModalBaseSelect.extend({
+  placeholder: z.string().max(DISCORD_MAX_CHARS_IN_PLACEHOLDER).nullish(),
+  options: z.array(ZStringSelectionOption).max(DISCORD_MAX_FIELDS_IN_EMBED),
+  type: z.literal("STRING_SELECT").default("STRING_SELECT"),
+});
+
+export const ZModalUserSelect = ZModalBaseSelect.extend({
+  type: z.literal("USER_SELECT").default("USER_SELECT"),
+});
+export const ZModalRoleSelect = ZModalBaseSelect.extend({
+  type: z.literal("ROLE_SELECT").default("ROLE_SELECT"),
+});
+export const ZModalMentionableSelect = ZModalBaseSelect.extend({
+  type: z.literal("MENTIONABLE_SELECT").default("MENTIONABLE_SELECT"),
+});
+export const ZModalChannelSelect = ZModalBaseSelect.extend({
+  channel_types: z.array(z.number()).max(17).nullish(),
+  type: z.literal("CHANNEL_SELECT").default("CHANNEL_SELECT"),
+});
+export const ZFileUpload = ZModalComponentBase.extend({
+  min_values: z.number().min(0).max(10).default(1),
+  max_values: z.number().max(10).default(1),
+  type: z.literal("FILE_UPLOAD").default("FILE_UPLOAD"),
+});
+
+export const ZModalTextInput = ZModalComponentBase.extend({
+  min_length: z.number().min(0).max(4000).default(0),
+  max_length: z.number().min(1).max(4000).default(4000),
+  value: z.string().max(400).nullish(),
+  placeholder: z.string().max(DISCORD_MAX_CHARS_IN_PLACEHOLDER).nullish(),
+  type: z.literal("TEXT_INPUT").default("TEXT_INPUT"),
+});
+
+export const ZModalComponent = z.discriminatedUnion("type", [
+  ZModalTextInput,
+  ZFileUpload,
+  ZModalChannelSelect,
+  ZModalMentionableSelect,
+  ZModalRoleSelect,
+  ZModalUserSelect,
+  ZModalStringSelect,
+]);
+
+export const ZModalLabelComponent = z.object({
+  label: z.string().min(3).max(DISCORD_MODAL_LABEL_MAX).default("Label Name"),
+  description: z.string().max(DISCORD_MODAL_DESCRIPTION_MAX).nullish(),
+  component: ZModalComponent,
+});
+
+export const ZQuestionModal = ZModule.extend({
+  title: z.string().max(45).default("Details"),
+  labels: z.array(ZModalLabelComponent).max(5).default([]),
+  type: z.literal("MODAL_QUESTION").default("MODAL_QUESTION"),
+});
+export type QuestionModal = z.output<typeof ZQuestionModal>;
 
 export const ZPipelineModule = z.discriminatedUnion("type", [
   ZAssignRole,
@@ -125,6 +223,9 @@ export const ZPipelineModule = z.discriminatedUnion("type", [
   ZFakeEnvModule,
   ZAssignChannel,
   ZAssignName,
+  ZOpenTicket,
+  ZSilentlyResolve,
+  ZQuestionModal,
 ]);
 export type PipelineModule = z.output<typeof ZPipelineModule>;
 export type TypedPipelineModule<T extends PipelineModule["type"]> = Extract<

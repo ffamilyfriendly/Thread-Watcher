@@ -75,9 +75,6 @@ export class Pipeline implements IPipeline {
   }
 
   private write_log() {
-    this.logger.warn('NOT WRITING LOG TO R2.\nREMEMBER TO DELETE THIS');
-    return true;
-
     const [info_start, info_end] = this.create_header('INFORMATION ABOUT THIS FILE');
     let buf: string[] = [
       info_start,
@@ -166,6 +163,7 @@ export class Pipeline implements IPipeline {
 
   async resolve_error(int: SupportedInteractionType, mod: DefaultModule<any>, error: Error) {
     if (this.is_resolved) return;
+    this.is_resolved = true;
     this.write_log();
 
     const embed = new EmbedBuilder();
@@ -187,6 +185,7 @@ export class Pipeline implements IPipeline {
 
   async resolve_ticket(int: SupportedInteractionType) {
     if (this.is_resolved) return;
+    this.is_resolved = true;
     this.write_log();
 
     if (!int.guild) return int.editReply('no guild');

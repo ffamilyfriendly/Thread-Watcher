@@ -66,7 +66,8 @@ export default class ComponentService {
     component: T,
     filter: FilterFunction<InteractionForComponent<T>>,
     callback: (interaction: InteractionForComponent<T>) => void,
-    timeout = ComponentService.DEFAULT_TIMEOUT_IN_MS,
+    timeout_in_ms = ComponentService.DEFAULT_TIMEOUT_IN_MS,
+    on_timeout?: () => void,
   ) {
     const component_type_name = component.constructor.name;
     let component_instance_id = `${component_type_name}-${crypto.randomUUID()}`;
@@ -85,7 +86,8 @@ export default class ComponentService {
 
     const auto_cleanup = setTimeout(() => {
       this.component_events.delete(component_instance_id);
-    }, timeout);
+      if (on_timeout) on_timeout();
+    }, timeout_in_ms);
 
     const cleanup = () => {
       clearTimeout(auto_cleanup);
