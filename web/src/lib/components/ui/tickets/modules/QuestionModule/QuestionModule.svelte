@@ -3,7 +3,6 @@
 		DISCORD_MAX_LABELS_IN_MODAL,
 		ZModalChannelSelect,
 		ZModalFileUpload,
-		ZModalMentionableSelect,
 		ZModalRoleSelect,
 		ZModalStringSelect,
 		ZModalTextInput,
@@ -16,34 +15,41 @@
 	import { use_guild_state } from '$lib/stores/guild.svelte';
 	import IDSelector from '../components/IDSelector.svelte';
 	import { Trash2 } from '@lucide/svelte';
-	import { get_typed_component, LABEL_COMPONENTS } from './configurators/configurator_registry';
+	import { get_typed_component } from './configurators/configurator_registry';
 	import EditableAttribute from '../../EditableAttribute.svelte';
-	import { s_tooltip, tooltip } from '$lib/client/attachments/tooltip';
+	import { s_tooltip } from '$lib/client/attachments/tooltip';
 	import style from '$lib/style/pipeline.module.scss';
-
-	const guild_state = use_guild_state();
 
 	interface Props {
 		module: TypedPipelineModule<'MODAL_QUESTION'>;
 	}
 	let { module = $bindable() }: Props = $props();
 
+	function generate_custom_id(select_type: ModalComponent['type']) {
+		const label_incramentors_arr = module.labels
+			.filter((lbl) => lbl.component.type === select_type)
+			.map((lbl) => Number(lbl.component.custom_id.split('_').pop()))
+			.filter((n) => !isNaN(n));
+		const highest_assigned_id = Math.max(...label_incramentors_arr, 0);
+
+		return `${select_type}_${highest_assigned_id + 1}`;
+	}
+
 	function new_component(select_type: ModalComponent['type']) {
+		const custom_id = generate_custom_id(select_type);
 		switch (select_type) {
 			case 'ROLE_SELECT':
-				return ZModalRoleSelect.parse({});
+				return ZModalRoleSelect.parse({ custom_id });
 			case 'USER_SELECT':
-				return ZModalUserSelect.parse({});
-			case 'MENTIONABLE_SELECT':
-				return ZModalMentionableSelect.parse({});
+				return ZModalUserSelect.parse({ custom_id });
 			case 'CHANNEL_SELECT':
-				return ZModalChannelSelect.parse({});
+				return ZModalChannelSelect.parse({ custom_id });
 			case 'TEXT_INPUT':
-				return ZModalTextInput.parse({});
+				return ZModalTextInput.parse({ custom_id });
 			case 'STRING_SELECT':
-				return ZModalStringSelect.parse({});
+				return ZModalStringSelect.parse({ custom_id });
 			case 'FILE_UPLOAD':
-				return ZModalFileUpload.parse({});
+				return ZModalFileUpload.parse({ custom_id });
 		}
 	}
 
@@ -59,10 +65,6 @@
 		{
 			label: 'Channel Select',
 			type: 'CHANNEL_SELECT'
-		},
-		{
-			label: 'Mentionable Select',
-			type: 'MENTIONABLE_SELECT'
 		},
 		{
 			label: 'User Select',

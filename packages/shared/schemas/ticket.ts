@@ -181,9 +181,6 @@ export const ZModalUserSelect = ZModalBaseSelect.extend({
 export const ZModalRoleSelect = ZModalBaseSelect.extend({
   type: z.literal("ROLE_SELECT").default("ROLE_SELECT"),
 });
-export const ZModalMentionableSelect = ZModalBaseSelect.extend({
-  type: z.literal("MENTIONABLE_SELECT").default("MENTIONABLE_SELECT"),
-});
 export const ZModalChannelSelect = ZModalBaseSelect.extend({
   channel_types: z.array(z.number()).max(17).nullish(),
   type: z.literal("CHANNEL_SELECT").default("CHANNEL_SELECT"),
@@ -209,7 +206,6 @@ export const ZModalComponent = z.discriminatedUnion("type", [
   ZModalTextInput,
   ZModalFileUpload,
   ZModalChannelSelect,
-  ZModalMentionableSelect,
   ZModalRoleSelect,
   ZModalUserSelect,
   ZModalStringSelect,
@@ -278,7 +274,6 @@ export const ZTicketPanel = ZTicketPanelMeta.extend({
   initial_channel_id: z.string(), // The channel the ticket will open in (if pipeline does not alter)
   commencement_embed: ZEmbed,
   commencement_method: z.union([ZButtonStart, ZSelectionStart]),
-  resolved_embed: ZEmbed, // REMOVE THIS
   pipeline: ZPipeline,
 });
 

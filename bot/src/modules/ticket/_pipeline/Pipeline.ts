@@ -22,6 +22,7 @@ import { config } from '@providers/config';
 import { generate_embed } from './components/embed';
 import { safe_reply } from './helpers/safe_reply';
 import { ValidPropertyReturn, ValueContainer } from './ValueContainter';
+import { ok } from 'assert';
 
 const log_obj_schema = z
   .object({
@@ -122,24 +123,22 @@ export class Pipeline implements IPipeline {
         user: ValueContainer.from_user(author),
         assigned_roles: () => this.assigned_roles,
         ID: this.ticket_id,
-        number: () => 2,
         name: this.name,
       },
       this.ticket_id,
     );
 
     if (data.commencement_method.type === 'SELECTION' && int.isStringSelectMenu()) {
-      const container_res = ValueContainer.from_string_select_interaction(
-        int,
-        data.commencement_method,
-      );
-      if (container_res.isErr()) {
-        this.logger.error(
-          `Could not initialize string_select_interaction ValueContainer`,
-          container_res.error,
+      if (int.values.length > 1) {
+        this_env.set(
+          'selection',
+          ValueContainer.from_string_selections(int.values, data.commencement_method.options),
         );
       } else {
-        this_env.set('selection', container_res.value);
+        this_env.set(
+          'selection',
+          ValueContainer.from_string_select(int.values[0], data.commencement_method.options),
+        );
       }
     }
 
@@ -169,6 +168,10 @@ export class Pipeline implements IPipeline {
   }
 
   async resolve_ticket(int: SupportedInteractionType) {
+    this.logger.error(
+      "IMPL 'resolve_ticket'. This should NOT send the embed or create the thread. This should be handled by other pipeline module",
+    );
+    return;
     if (this.is_resolved) return;
     this.is_resolved = true;
     this.write_log();
@@ -189,7 +192,6 @@ export class Pipeline implements IPipeline {
     if (!('threads' in fetched_parent_channel.value))
       return int.editReply('Cuh this cant hold threads');
     const parent = fetched_parent_channel.value;
-    const start_embed = generate_embed(this.data.resolved_embed, this.exports);
 
     let prom: Promise<ThreadChannel>;
     if (!parent.isTextBased() || parent.type === ChannelType.GuildAnnouncement)
@@ -204,10 +206,8 @@ export class Pipeline implements IPipeline {
     const tc_res = await ResultAsync.fromPromise(prom, map_err);
     if (tc_res.isErr()) return int.editReply('could not create thread cuh :/ ' + tc_res.error);
 
-    const msg_unsafe = await tc_res.value.send({ embeds: [start_embed] });
-
     safe_reply(int, {
-      content: `Yay!!!!!!!! thread created...... <#${tc_res.value.id}> ${msg_unsafe.url}`,
+      content: `Yay!!!!!!!! thread created...... <#${tc_res.value.id}> `,
     });
   }
 

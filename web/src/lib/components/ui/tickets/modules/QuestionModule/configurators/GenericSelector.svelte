@@ -6,7 +6,7 @@
 	import { s_tooltip } from '$lib/client/attachments/tooltip';
 
 	interface Props {
-		data: TypedComponent<'USER_SELECT' | 'ROLE_SELECT' | 'MENTIONABLE_SELECT'>;
+		data: TypedComponent<'USER_SELECT' | 'ROLE_SELECT'>;
 		this_uid: string;
 	}
 

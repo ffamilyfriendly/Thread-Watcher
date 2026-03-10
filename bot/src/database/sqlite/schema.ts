@@ -72,7 +72,6 @@ export const TicketPanels = sqliteTable('ticketpanels', {
   initial_channel_id: text('initial_channel_id').notNull(),
   commencement_embed: text('commencement_embed', { mode: 'json' }).notNull(),
   commencement_method: text('commencement_method', { mode: 'json' }).notNull(),
-  resolved_embed: text('resolved_embed', { mode: 'json' }).notNull(),
   pipeline: text('pipeline', { mode: 'json' }).notNull(),
 });
 

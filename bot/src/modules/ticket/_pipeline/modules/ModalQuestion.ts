@@ -1,14 +1,12 @@
-import { ModalComponent, TypedComponent, TypedPipelineModule } from '@watcher/shared';
+import { TypedComponent, TypedPipelineModule } from '@watcher/shared';
 import { DefaultModule, IPipeline, SupportedInteractionTypeWithGuild } from '../DefaultModule';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import {
   BaseSelectMenuBuilder,
   ChannelSelectMenuBuilder,
-  ComponentType,
   LabelBuilder,
   ModalBuilder,
   ModalSubmitInteraction,
-  SelectMenuType,
   TextInputBuilder,
   TextInputStyle,
   UserSelectMenuBuilder,
@@ -26,7 +24,7 @@ export default class ModalQuestion extends DefaultModule<TypedPipelineModule<'MO
   }
 
   set_default_select_values(
-    v: TypedComponent<'CHANNEL_SELECT' | 'USER_SELECT' | 'MENTIONABLE_SELECT' | 'STRING_SELECT'>,
+    v: TypedComponent<'CHANNEL_SELECT' | 'USER_SELECT' | 'STRING_SELECT'>,
     builder: BaseSelectMenuBuilder<any>,
   ) {
     builder.setRequired(v.required);
@@ -98,16 +96,34 @@ export default class ModalQuestion extends DefaultModule<TypedPipelineModule<'MO
         const value = int.fields.getTextInputValue(comp.custom_id);
         this.exports.set(comp.custom_id, value);
       } else if (comp.type === 'USER_SELECT') {
-        const field = int.fields.getSelectedUsers(comp.custom_id);
+        const field = int.fields.getSelectedUsers(comp.custom_id, comp.required);
         const user_arr = field?.values().toArray();
         this.exports.set(comp.custom_id, ValueContainer.from_users(user_arr ?? []));
       } else if (comp.type === 'STRING_SELECT') {
         const field = int.fields.getStringSelectValues(comp.custom_id);
-        this.exports.set(comp.custom_id, field.values().toArray());
+        this.exports.set(
+          comp.custom_id,
+          ValueContainer.from_string_selections(field.values().toArray() ?? [], comp.options),
+        );
       } else if (comp.type === 'CHANNEL_SELECT') {
-        const field = int.fields.getSelectedChannels(comp.custom_id);
+        const field = int.fields.getSelectedChannels(
+          comp.custom_id,
+          comp.required,
+          comp.channel_types ?? [],
+        );
         const chan_arr = field?.values().toArray();
         this.exports.set(comp.custom_id, ValueContainer.from_channels(chan_arr ?? []));
+      } else if (comp.type === 'ROLE_SELECT') {
+        const chan_arr = int.fields
+          .getSelectedRoles(comp.custom_id, comp.required)
+          ?.values()
+          .toArray()
+          .filter((ch) => ch !== null);
+        this.exports.set(comp.custom_id, ValueContainer.from_roles(chan_arr ?? []));
+      } else if (comp.type === 'FILE_UPLOAD') {
+        const file_arr =
+          int.fields.getUploadedFiles(comp.custom_id, comp.required)?.values().toArray() ?? [];
+        this.exports.set(comp.custom_id, ValueContainer.from_files(file_arr));
       }
     }
   }

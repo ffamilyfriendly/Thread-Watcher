@@ -1,9 +1,4 @@
-import type {
-	ModalComponent,
-	PipelineModule,
-	TypedComponent,
-	TypedPipelineModule
-} from '@watcher/shared';
+import type { ModalComponent, TypedComponent } from '@watcher/shared';
 import type { Component } from 'svelte';
 import StringSelect from './StringSelect.svelte';
 import TextInput from './TextInput.svelte';
@@ -23,7 +18,6 @@ export const LABEL_COMPONENTS: ComponentRegistry = {
 	STRING_SELECT: StringSelect,
 	TEXT_INPUT: TextInput,
 	USER_SELECT: GenericSelect,
-	MENTIONABLE_SELECT: GenericSelect,
 	ROLE_SELECT: GenericSelect,
 	CHANNEL_SELECT: ChannelSelect,
 	FILE_UPLOAD: FileSelect

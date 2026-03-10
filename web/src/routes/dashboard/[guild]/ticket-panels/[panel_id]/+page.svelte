@@ -163,12 +163,6 @@
 			]}
 		/>
 
-		<h2>Ticket Started Embed</h2>
-		<EmbedConfigurator
-			use_variable_picker={true}
-			bind:value={pipeline_state.panel.resolved_embed}
-		/>
-
 		<h2>Pipeline</h2>
 		<Pipeline />
 		<button class={[btn_style.button, btn_style.tetriary]} onclick={export_pipeline_as_json}>

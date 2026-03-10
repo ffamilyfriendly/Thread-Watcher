@@ -11,13 +11,12 @@ import {
   ZQuestionModal,
   type QuestionModal,
 } from "../schemas/ticket";
-import { CONTRACTS, type ContractType } from "./contracts";
+import { AllowedTypes, CONTRACTS, type ContractType } from "./contracts";
 
-export type ModulePropertyTypes = "string" | "number" | "array" | `${string}[]`;
 export interface ModuleProperty {
   name: string;
   description?: string;
-  value: ModulePropertyTypes | ModuleProperty[];
+  value: AllowedTypes | ModuleProperty[];
   is_array?: boolean;
 }
 
@@ -69,92 +68,14 @@ type ModuleRegistry = {
   [K in PipelineModule["type"]]: ModuleObject<any>;
 };
 
-function generate_user(name = "user"): ModuleProperty {
-  return {
-    name,
-    value: [
-      {
-        name: "id",
-        value: "string",
-        description: "the users discord ID",
-      },
-      {
-        name: "username",
-        value: "string",
-        description: "the username",
-      },
-      {
-        name: "tag",
-        value: "string",
-        description: "tags the user",
-      },
-    ],
-  };
-}
+const generate_user = (name = "user", is_array_of = false) =>
+  from_contract(name, "USER", is_array_of);
 
-function generate_role(name = "role"): ModuleProperty {
-  return {
-    name,
-    value: [
-      {
-        name: "id",
-        value: "string",
-        description: "id of the role",
-      },
-      {
-        name: "name",
-        value: "string",
-        description: "name of role",
-      },
-    ],
-  };
-}
+const generate_role = (name = "role", is_array_of = false) =>
+  from_contract(name, "ROLE", is_array_of);
 
-function generate_channel(name = "channel"): ModuleProperty {
-  return {
-    name,
-    value: [
-      {
-        name: "id",
-        value: "string",
-        description: "the channels discord ID",
-      },
-      {
-        name: "name",
-        value: "string",
-        description: "the name",
-      },
-      {
-        name: "tag",
-        value: "string",
-        description: "tags the user",
-      },
-    ],
-  };
-}
-
-function generate_string_select(name = "selection"): ModuleProperty {
-  return {
-    name,
-    value: [
-      {
-        name: "id",
-        value: "string",
-        description: "the ID of this option",
-      },
-      {
-        name: "label",
-        value: "string",
-        description: "the label of this option",
-      },
-      {
-        name: "description",
-        value: "string",
-        description: "the description of this option",
-      },
-    ],
-  };
-}
+const generate_string_select = (name = "selection", is_array_of = false) =>
+  from_contract(name, "STRINGSELECT", is_array_of);
 
 const ASSIGN_ROLE: ModuleObject = {
   properties: () => [generate_role("selected")],
@@ -180,19 +101,11 @@ const ROOT_ENV_MODULE: ModuleObject = {
   properties: (_self, panel) => {
     const props: ModuleProperty[] = [
       generate_user("user"),
-      {
-        name: "assigned_roles",
-        value: "array",
-        description: "the role(s) assigned",
-      },
+      generate_role("assigned_roles", true),
       {
         name: "ID",
         value: "string",
         description: "the ID of this ticket",
-      },
-      {
-        name: "number",
-        value: "number",
       },
       {
         name: "name",
@@ -214,9 +127,7 @@ const ASSIGN_CHANNEL: ModuleObject = {
   name: "Assign Channel",
   accent_clr: "#121212",
   category: ModuleCategory.ASSIGNMENT,
-  properties: (_self) => {
-    return [];
-  },
+  properties: (_self) => [from_contract("channel", "CHANNEL")],
   schema: ZAssignChannel,
 };
 
@@ -255,16 +166,35 @@ const MODAL_QUESTION: ModuleObject<QuestionModal> = {
     return self.labels.map((label) => {
       const comp = label.component;
 
-      if (comp.type === "USER_SELECT")
-        return from_contract(comp.custom_id, "USER", comp.max_values > 1);
+      const is_array = comp.max_values > 1;
+
       if (comp.type === "TEXT_INPUT") {
         return {
           name: comp.custom_id,
           value: "string",
-          is_array: comp.max_values > 1,
+          description: "answer",
         };
       }
-      return { name: comp.custom_id, value: "string" };
+
+      if (comp.type === "USER_SELECT")
+        return from_contract(comp.custom_id, "USER", is_array);
+      if (comp.type === "CHANNEL_SELECT")
+        return from_contract(comp.custom_id, "CHANNEL", is_array);
+      if (comp.type === "FILE_UPLOAD")
+        return from_contract(comp.custom_id, "FILE", is_array);
+      if (comp.type === "ROLE_SELECT")
+        return from_contract(comp.custom_id, "ROLE", is_array);
+      if (comp.type === "STRING_SELECT")
+        return from_contract(comp.custom_id, "STRINGSELECT", is_array);
+
+      // We should never ever reach this provided we handle all component types.
+      // had to provide a return here tho as the type checker gets angry otherwise
+      return {
+        name: "__ERR",
+        value: "boolean",
+        description:
+          "this should NEVER be seen. If you see this, please contact dev.",
+      };
     });
   },
 };

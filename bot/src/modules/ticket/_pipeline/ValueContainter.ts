@@ -1,20 +1,19 @@
-import { SelectionStart } from '@watcher/shared';
-import { Channel, DMChannel, StringSelectMenuInteraction, User } from 'discord.js';
-import { err, ok, Result } from 'neverthrow';
+import { StringSelectOption } from '@watcher/shared';
+import { ContractLeafValue, ContractObject, ContractType } from '@watcher/shared/tickets/contracts';
+import { APIRole, Attachment, Channel, Role, User } from 'discord.js';
 
 export type ValueContainerValue =
-  | ValidPropertyReturn
-  | (() => ValidPropertyReturn)
+  | ContractLeafValue
+  | (() => ContractLeafValue)
   | ValueContainer
   | ValueContainer[];
-export type MappedProps = Record<string, ValidPropertyReturn | Record<string, unknown> | unknown[]>;
-export type ValidPropertyReturn = string | number | (string | number)[] | null;
+export type MappedProps = Record<string, ContractLeafValue | Record<string, unknown> | unknown[]>;
 
 export class ValueContainer {
   is_activated = true;
   constructor(
     public exports: Record<string, ValueContainerValue>,
-    private default_value: ValidPropertyReturn,
+    private default_value: ContractLeafValue,
   ) {}
 
   static is_array(value: unknown): value is ValueContainer[] {
@@ -29,7 +28,7 @@ export class ValueContainer {
     this.exports[key] = value;
   }
 
-  get(keys: string[]): ValidPropertyReturn {
+  get(keys: string[]): ContractLeafValue {
     if (!this.is_activated) return null;
     const key = keys.shift()?.match(/(?<key_name>[\w-_]+)(\[(?<index>\d+)\]|)/);
     if (!key) return null;
@@ -79,10 +78,11 @@ export class ValueContainer {
     return rv;
   }
 
-  static value_into_string(value: ValidPropertyReturn, variable_name?: 'Unknown'): string {
-    if (!value) return `\`? ${variable_name} ?\``;
+  static value_into_string(value: ContractLeafValue, variable_name?: 'Unknown'): string {
+    if (value === null) return `\`? ${variable_name} ?\``;
     if (Array.isArray(value)) return value.join(', ');
     if (typeof value === 'number') return value.toString();
+    if (typeof value === 'boolean') return value ? 'True' : 'False';
     return value;
   }
 
@@ -90,13 +90,26 @@ export class ValueContainer {
     return str.split('.');
   }
 
+  static from_contract<Tname extends ContractType>(
+    _contract_name: Tname,
+    object: ContractObject<Tname>,
+    default_value: ContractLeafValue,
+  ) {
+    return new ValueContainer(object, default_value);
+  }
+
+  static from_role(role: Role | APIRole): ValueContainer {
+    return this.from_contract('ROLE', { id: role.id, name: role.name }, role.id);
+  }
+
+  static from_roles(roles: (Role | APIRole)[]): ValueContainer[] {
+    return roles.map((r) => this.from_role(r));
+  }
+
   static from_user(user: User): ValueContainer {
-    return new ValueContainer(
-      {
-        id: user.id,
-        username: user.username,
-        tag: `<@${user.id}>`,
-      },
+    return this.from_contract(
+      'USER',
+      { id: user.id, username: user.username, tag: `<@${user.id}>` },
       user.id,
     );
   }
@@ -108,32 +121,51 @@ export class ValueContainer {
   static from_channel(channel: Channel): ValueContainer {
     let name = 'name' in channel ? channel.name : null;
 
-    return new ValueContainer(
-      {
-        id: channel.id,
-        name: name,
-      },
-      channel.id,
+    return this.from_contract('CHANNEL', { id: channel.id, name }, channel.id);
+  }
+
+  static from_channels(channels: Channel[]): ValueContainer[] {
+    return channels.map((ch) => this.from_channel(ch));
+  }
+
+  static from_string_select(value: string, options: StringSelectOption[]): ValueContainer {
+    const option = options.find((opt) => opt.option_id === value);
+
+    const title = option?.title ?? null;
+    const description = option?.description ?? null;
+
+    return this.from_contract(
+      'STRINGSELECT',
+      { id: value, label: title, description: description },
+      value,
     );
   }
 
-  static from_string_select_interaction(
-    int: StringSelectMenuInteraction,
-    data: SelectionStart,
-  ): Result<ValueContainer, Error> {
-    const value = int.values[0];
-    const option = data.options.find((opt) => opt.option_id === value);
-    if (!value || !option) return err(new Error("missing 'value' or 'option'"));
+  static from_string_selections(values: string[], options: StringSelectOption[]): ValueContainer[] {
+    return values.map((v) => this.from_string_select(v, options));
+  }
 
-    return ok(
-      new ValueContainer(
-        {
-          id: value,
-          label: option.title,
-          description: option.description ?? null,
-        },
-        value,
-      ),
+  static from_file(file: Attachment) {
+    return this.from_contract(
+      'FILE',
+      {
+        width: file.width,
+        height: file.height,
+        size: file.size,
+        duration: file.duration,
+        title: file.title,
+        name: file.name,
+        description: file.description,
+        spoiler: file.spoiler,
+        url: file.url,
+        proxy_url: file.proxyURL,
+        content_type: file.contentType,
+      },
+      file.id,
     );
+  }
+
+  static from_files(files: Attachment[]) {
+    return files.map((f) => this.from_file(f));
   }
 }
