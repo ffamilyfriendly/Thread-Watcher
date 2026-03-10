@@ -6,7 +6,7 @@ import { join, resolve as resolve_path } from 'path';
 import { create as create_tar } from 'tar';
 import { map_err } from 'utilities/error';
 import { z } from 'zod';
-import { Database, DatabaseError } from 'interfaces/Database';
+import { Database, DatabaseError, TicketInsertion } from 'interfaces/Database';
 import { drizzle, BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import {
@@ -23,6 +23,7 @@ import {
   ZTicketPanel,
   EditTicketPanel,
   ZTicketPanelMeta,
+  ZTicket,
 } from '@watcher/shared';
 
 import * as schema from './schema';
@@ -487,6 +488,21 @@ export default class Sqlite implements Database {
       .from(schema.Monitors)
       .where(eq(schema.Monitors.is_suspended, false));
     return ok(val[0]?.count);
+  }
+
+  @with_error_handling
+  async insert_ticket(td: TicketInsertion) {
+    await this.ensure_guild(td.guild_id);
+    await this.drizzle.insert(schema.Ticket).values(td);
+    return ok();
+  }
+
+  @with_error_handling
+  async get_ticket(ticket_id: string) {
+    const res = await this.drizzle.query.Ticket.findFirst({
+      where: eq(schema.Ticket.ticket_id, ticket_id),
+    });
+    return with_schema(res, ZTicket);
   }
 
   @with_error_handling

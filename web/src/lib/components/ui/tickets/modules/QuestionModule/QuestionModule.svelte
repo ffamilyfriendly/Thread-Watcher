@@ -12,7 +12,6 @@
 	} from '@watcher/shared';
 	import BaseModule from '../BaseModule.svelte';
 	import Toggle from '../../../Toggle.svelte';
-	import { use_guild_state } from '$lib/stores/guild.svelte';
 	import IDSelector from '../components/IDSelector.svelte';
 	import { Trash2 } from '@lucide/svelte';
 	import { get_typed_component } from './configurators/configurator_registry';

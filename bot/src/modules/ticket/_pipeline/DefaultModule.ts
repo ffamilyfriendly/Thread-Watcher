@@ -12,6 +12,7 @@ import {
   Interaction,
   ModalSubmitInteraction,
   StringSelectMenuInteraction,
+  ThreadChannel,
   User,
 } from 'discord.js';
 import { err, ok, Result } from 'neverthrow';
@@ -20,7 +21,8 @@ import { component_service } from '@providers/services/component_service';
 import { map_err } from 'utilities/error';
 import { safe_reply_or_followup } from './helpers/safe_reply';
 import { config } from '@providers/config';
-import { ValidPropertyReturn, ValueContainer } from './ValueContainter';
+import { ValueContainer } from './ValueContainter';
+import { ContractLeafValue } from '@watcher/shared/tickets/contracts';
 
 namespace Op {
   export function and(v: boolean[]): boolean {
@@ -31,7 +33,7 @@ namespace Op {
     return !!v.find((v) => v);
   }
 
-  export function starts_with(v1: ValidPropertyReturn, v2: ValidPropertyReturn): boolean {
+  export function starts_with(v1: ContractLeafValue, v2: ContractLeafValue): boolean {
     if (!v2) return false;
 
     if (typeof v1 === 'string') {
@@ -42,7 +44,7 @@ namespace Op {
     return v1?.toString().startsWith(v2.toString()) ?? false;
   }
 
-  export function ends_with(v1: ValidPropertyReturn, v2: ValidPropertyReturn): boolean {
+  export function ends_with(v1: ContractLeafValue, v2: ContractLeafValue): boolean {
     if (!v2) return false;
 
     if (typeof v1 === 'string') {
@@ -53,19 +55,20 @@ namespace Op {
     return v1?.toString().endsWith(v2.toString()) ?? false;
   }
 
-  export function not_null(v1: ValidPropertyReturn): boolean {
+  export function not_null(v1: ContractLeafValue): boolean {
     return !!v1;
   }
 
-  export function includes(v1: ValidPropertyReturn, v2: ValidPropertyReturn): boolean {
+  export function includes(v1: ContractLeafValue, v2: ContractLeafValue): boolean {
     if (typeof v2 !== 'string') return false;
-    if (!v1) return false;
+    if (typeof v1 === 'boolean') return false;
     if (typeof v1 === 'number') return false;
+    if (v1 === null) return false;
 
     return v1.includes(v2);
   }
 
-  export function eq(v1: ValidPropertyReturn, v2: ValidPropertyReturn): boolean {
+  export function eq(v1: ContractLeafValue, v2: ContractLeafValue): boolean {
     return v1 == v2;
   }
 }
@@ -215,8 +218,13 @@ export abstract class DefaultModule<TModType extends PipelineModule> {
 export interface IPipeline {
   assigned_roles: string[];
   assigned_channel: string;
+  ticket_name: string;
   logger: Logger<unknown>;
   exports: ValueContainer;
 
-  get_property(id: string): ValidPropertyReturn;
+  get_property(id: string): ContractLeafValue;
+  start_ticket_with_thread(
+    int: SupportedInteractionType,
+    ticket_thread: ThreadChannel,
+  ): Promise<Result<unknown, Error>>;
 }

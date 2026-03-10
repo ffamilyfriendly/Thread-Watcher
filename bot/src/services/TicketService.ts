@@ -1,5 +1,5 @@
-import { EditTicketPanel, TicketPanel, ZTicketPanel } from '@watcher/shared';
-import { Database } from 'interfaces/Database';
+import { EditTicketPanel, Ticket, TicketPanel, ZTicket, ZTicketPanel } from '@watcher/shared';
+import { Database, TicketInsertion } from 'interfaces/Database';
 import Redis from 'ioredis';
 import { ok } from 'neverthrow';
 import RedisWrapper from 'utilities/redis';
@@ -33,6 +33,22 @@ export default class TicketService {
     if (db_res.isOk()) {
       panel_data.panel_id = db_res.value;
       this.r.set(['panel', panel_data.panel_id], panel_data, ZTicketPanel);
+    }
+
+    return db_res;
+  }
+
+  async insert_ticket(ticket_data: TicketInsertion) {
+    return this.db.insert_ticket(ticket_data);
+  }
+
+  async get_ticket(ticket_id: string) {
+    const cached = await this.r.get(['ticket', ticket_id], ZTicket);
+    if (cached.isOk() && cached.value) return ok(cached.value);
+
+    const db_res = await this.db.get_ticket(ticket_id);
+    if (db_res.isOk()) {
+      this.r.set(['ticket', ticket_id], db_res.value, ZTicket);
     }
 
     return db_res;

@@ -10,7 +10,7 @@ export async function start_pipeline(
   interaction: SupportedInteractionType,
   l: Logger<unknown>,
 ) {
-  const pipeline = Pipeline.from(panel, interaction);
+  const pipeline = Pipeline.from(panel);
 
   ResultAsync.fromPromise(
     interaction.message.edit({ components: interaction.message.components }),
@@ -28,6 +28,12 @@ export async function start_pipeline(
     return err(def_await.error);
   }
 
+  const pipeline_population_res = await pipeline.populate_value_container(interaction);
+  if (pipeline_population_res.isErr()) {
+    l.error('could not populate pipeline values', pipeline_population_res.error);
+    return err(pipeline_population_res.error);
+  }
+
   let active_interaction: SupportedInteractionType = interaction;
   for (const module of pipeline.modules_arr) {
     const res = await module.run_module(active_interaction as SupportedInteractionTypeWithGuild);
@@ -40,7 +46,18 @@ export async function start_pipeline(
     // Switch out the active interaction (if applicable).
     // If we keep using the initial interaction we'll get "Unknown Interaction" errors
     if (res.value) active_interaction = res.value;
+    if (pipeline.resolved) {
+      pipeline.logger.info(`Pipeline resolved on Module '${module.id}'!`);
+      break;
+    }
   }
 
-  await pipeline.resolve_ticket(active_interaction);
+  if (!pipeline.resolved) {
+    l.warn(`Pipeline '${panel.panel_id}' ran without resolving on ticket '${pipeline.ticket_id}'`);
+    return pipeline.resolve_error(
+      active_interaction,
+      { id: 'PIPELINE' },
+      new Error('Pipeline ended without resolving'),
+    );
+  }
 }

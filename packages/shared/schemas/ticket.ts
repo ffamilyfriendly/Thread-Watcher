@@ -129,6 +129,7 @@ export const ZAIIssueNarrower = ZModule.extend({
 });
 
 export const ZOpenTicket = ZModule.extend({
+  private_thread: z.boolean().default(true),
   embed: ZEmbed.default({
     title: "Ticket Opened",
     fields: [],
@@ -280,11 +281,13 @@ export const ZTicketPanel = ZTicketPanelMeta.extend({
 export const ZEditTicketPanel = ZTicketPanel.partial();
 
 export const ZTicket = z.object({
-  id: z.string(),
+  ticket_id: z.string(),
+  guild_id: z.string(),
   discord_channel_id: z.string(),
   name: z.string(),
   owner: z.string(),
   panel_id: z.string(),
+  variable_dump: z.record(z.string(), z.unknown()),
   status: z.enum(["OPEN", "CLOSED"]),
   assigned_to_roles: z.array(z.string()),
   claimed_by_user_id: z.string().nullish(),
@@ -292,6 +295,7 @@ export const ZTicket = z.object({
   closed_at: z.coerce.date().nullish(),
 });
 
+export type Ticket = z.output<typeof ZTicket>;
 export type TicketPanel = z.output<typeof ZTicketPanel>;
 export type EditTicketPanel = z.output<typeof ZEditTicketPanel>;
 export type TicketPanelMeta = Omit<TicketPanel, "id">;

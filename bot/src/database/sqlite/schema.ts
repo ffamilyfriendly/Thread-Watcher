@@ -83,10 +83,12 @@ export const Ticket = sqliteTable('tickets', {
   discord_channel_id: text('discord_channel_id').notNull(),
   name: text('name').notNull(),
   owner: text('owner').notNull(),
+  variable_dump: text('variable_dump', { mode: 'json' }).notNull(),
+  status: text('status').notNull().default('OPEN'),
   panel_id: text('panel_id')
     .notNull()
     .references(() => TicketPanels.panel_id),
-  assigned_to_roles: text('assined_to_roles').notNull(),
+  assigned_to_roles: text('assined_to_roles', { mode: 'json' }).notNull(),
   claimed_by_user_id: text('claimed_by_user_id'),
   created_at: integer('created_at', { mode: 'timestamp' }).$defaultFn(date_now),
   closed_at: integer('closed_at', { mode: 'timestamp' }),

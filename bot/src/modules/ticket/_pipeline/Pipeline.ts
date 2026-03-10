@@ -1,15 +1,13 @@
 import { TicketPanel } from '@watcher/shared';
-import { err, ResultAsync } from 'neverthrow';
+import { err, ok, Result, ResultAsync } from 'neverthrow';
 import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ChannelType,
   ColorResolvable,
   EmbedBuilder,
   Interaction,
   ThreadChannel,
-  User,
 } from 'discord.js';
 import { create_module } from './helpers/module_factory';
 import { logger } from '@providers/logger';
@@ -19,10 +17,12 @@ import { s3 } from '@providers/s3_client';
 import z from 'zod';
 import { map_err } from 'utilities/error';
 import { config } from '@providers/config';
-import { generate_embed } from './components/embed';
-import { safe_reply } from './helpers/safe_reply';
-import { ValidPropertyReturn, ValueContainer } from './ValueContainter';
-import { ok } from 'assert';
+import { safe_reply_or_followup } from './helpers/safe_reply';
+import { ValueContainer } from './ValueContainter';
+import { ticket_service } from '@providers/services/ticket_service';
+import { ContractLeafValue } from '@watcher/shared/tickets/contracts';
+import { create_ticket_opened } from './components/embed';
+import { interpolate_string } from './helpers/var_string';
 
 const log_obj_schema = z
   .object({
@@ -40,10 +40,18 @@ export class Pipeline implements IPipeline {
   assigned_channel: string;
   exports: ValueContainer;
   readonly ticket_id = crypto.randomUUID();
-  name = 'Ticket';
+  name = 'Ticket-{{env.user.id}}';
   logger: Logger<unknown>;
   private is_resolved = false;
   private logs: ILogObj[] = [];
+
+  get ticket_name() {
+    return interpolate_string(this.name, this.exports);
+  }
+
+  get resolved() {
+    return this.is_resolved;
+  }
 
   get modules_arr() {
     return this.modules.values();
@@ -80,7 +88,7 @@ export class Pipeline implements IPipeline {
     this.logs.forEach((obj) => {
       const log_line = log_obj_schema.safeParse(obj);
       if (!log_line.success) {
-        this.logger.warn('could not parse logger message', log_line.error);
+        this.logger.warn('could not parse logger message', log_line.error, obj);
       } else {
         const { _meta, ...lines } = log_line.data;
 
@@ -105,47 +113,52 @@ export class Pipeline implements IPipeline {
     );
   }
 
-  constructor(
-    private data: TicketPanel,
-    int: Interaction,
-    author: User,
-  ) {
+  constructor(private data: TicketPanel) {
     this.assigned_channel = data.initial_channel_id;
     this.assigned_roles = data.initial_assigned_roles;
     this.logger = new Logger({ hideLogPositionForProduction: true });
-
     this.logger.attachTransport((log_obj) => this.append_log(log_obj));
-
     this.exports = new ValueContainer({}, 'ENV_ROOT');
+  }
+
+  async populate_value_container(int: Interaction) {
+    if (!int.guild) return err(new Error('interaction does not have guild object!'));
+    const roles_res = await ResultAsync.fromPromise(int.guild.roles.fetch(), map_err);
+    if (roles_res.isErr()) return err(roles_res.error);
 
     const this_env = new ValueContainer(
       {
-        user: ValueContainer.from_user(author),
-        assigned_roles: () => this.assigned_roles,
+        user: ValueContainer.from_user(int.user),
         ID: this.ticket_id,
-        name: this.name,
+        name: () => this.ticket_name, // This cant be static as the getter interpolates the values
       },
       this.ticket_id,
     );
 
-    if (data.commencement_method.type === 'SELECTION' && int.isStringSelectMenu()) {
+    const applicable_roles = roles_res.value
+      .values()
+      .filter((r) => this.data.initial_assigned_roles.includes(r.id));
+
+    if (this.data.commencement_method.type === 'SELECTION' && int.isStringSelectMenu()) {
       if (int.values.length > 1) {
         this_env.set(
           'selection',
-          ValueContainer.from_string_selections(int.values, data.commencement_method.options),
+          ValueContainer.from_string_selections(int.values, this.data.commencement_method.options),
         );
       } else {
         this_env.set(
           'selection',
-          ValueContainer.from_string_select(int.values[0], data.commencement_method.options),
+          ValueContainer.from_string_select(int.values[0], this.data.commencement_method.options),
         );
       }
     }
 
+    this_env.set('assigned_roles', ValueContainer.from_roles(applicable_roles.toArray()));
     this.exports.set('env', this_env);
+    return ok();
   }
 
-  async resolve_error(int: SupportedInteractionType, mod: DefaultModule<any>, error: Error) {
+  async resolve_error(int: SupportedInteractionType, mod: { id: string }, error: Error) {
     if (this.is_resolved) return;
     this.is_resolved = true;
     this.write_log();
@@ -164,64 +177,52 @@ export class Pipeline implements IPipeline {
     btn_logs.setLabel('View Logs');
     row.addComponents(btn_logs);
 
-    safe_reply(int, { embeds: [embed], components: [row], flags: 'Ephemeral' });
+    safe_reply_or_followup(int, { embeds: [embed], components: [row], flags: 'Ephemeral' });
   }
 
-  async resolve_ticket(int: SupportedInteractionType) {
-    this.logger.error(
-      "IMPL 'resolve_ticket'. This should NOT send the embed or create the thread. This should be handled by other pipeline module",
-    );
-    return;
-    if (this.is_resolved) return;
+  async start_ticket_with_thread(
+    int: SupportedInteractionType,
+    ticket_thread: ThreadChannel,
+  ): Promise<Result<unknown, Error>> {
+    if (this.is_resolved) return err(new Error('pipeline is already resolved!'));
     this.is_resolved = true;
-    this.write_log();
+    const ticket_name = this.ticket_name;
+    const insert_ticket_res = await ticket_service.insert_ticket({
+      ticket_id: this.ticket_id,
+      name: ticket_name,
+      panel_id: this.data.panel_id,
+      guild_id: this.data.guild_id,
+      owner: int.user.id,
+      assigned_to_roles: this.assigned_roles,
+      variable_dump: this.get_all_properties(),
+      discord_channel_id: ticket_thread.id,
+    });
 
-    if (!int.guild) return int.editReply('no guild');
-
-    const fetched_parent_channel = await ResultAsync.fromPromise(
-      int.guild?.channels.fetch(this.assigned_channel),
-      map_err,
-    );
-
-    if (fetched_parent_channel.isErr()) {
-      return int.editReply(fetched_parent_channel.error.message);
+    if (insert_ticket_res.isErr()) {
+      this.logger.error(`Could not commit ticket to database!`);
+      return err(insert_ticket_res.error as Error);
     }
 
-    if (!fetched_parent_channel.value)
-      return int.editReply(`Bro <#${this.assigned_channel}> ain't a real channel`);
-    if (!('threads' in fetched_parent_channel.value))
-      return int.editReply('Cuh this cant hold threads');
-    const parent = fetched_parent_channel.value;
+    const [embed, row] = create_ticket_opened(ticket_name, this.ticket_id, ticket_thread.url);
 
-    let prom: Promise<ThreadChannel>;
-    if (!parent.isTextBased() || parent.type === ChannelType.GuildAnnouncement)
-      return err(new Error('cba dealing with this rn'));
-
-    prom = parent.threads.create({
-      name: this.name,
-      reason: `ticket: ${this.ticket_id}`,
-      type: ChannelType.PrivateThread,
-    });
-
-    const tc_res = await ResultAsync.fromPromise(prom, map_err);
-    if (tc_res.isErr()) return int.editReply('could not create thread cuh :/ ' + tc_res.error);
-
-    safe_reply(int, {
-      content: `Yay!!!!!!!! thread created...... <#${tc_res.value.id}> `,
+    return safe_reply_or_followup(int, {
+      embeds: [embed],
+      components: [row],
+      flags: 'Ephemeral',
     });
   }
 
-  get_property(id: string): ValidPropertyReturn {
+  get_property(id: string): ContractLeafValue {
     const id_arr = ValueContainer.string_into_args(id);
     return this.exports.get(id_arr);
   }
 
-  get_all_properties(): Record<string, ValidPropertyReturn | Record<string, unknown> | unknown[]> {
+  get_all_properties(): Record<string, ContractLeafValue | Record<string, unknown> | unknown[]> {
     return this.exports.all();
   }
 
-  static from(data: TicketPanel, int: Interaction): Pipeline {
-    const pipeline = new Pipeline(data, int, int.user);
+  static from(data: TicketPanel): Pipeline {
+    const pipeline = new Pipeline(data);
 
     for (const module_data of data.pipeline) {
       const module_instance = create_module(module_data, pipeline);

@@ -1,5 +1,12 @@
 import { Embed } from '@watcher/shared';
-import { APIEmbedField, ColorResolvable, EmbedBuilder } from 'discord.js';
+import {
+  ActionRowBuilder,
+  APIEmbedField,
+  ButtonBuilder,
+  ButtonStyle,
+  ColorResolvable,
+  EmbedBuilder,
+} from 'discord.js';
 import { interpolate_string } from '../helpers/var_string';
 import { ValueContainer } from '../ValueContainter';
 
@@ -11,7 +18,7 @@ export function generate_embed(embed_data: Embed, variables: ValueContainer): Em
     embed.setDescription(interpolate_string(embed_data.description, variables));
 
   for (const field of embed_data.fields) {
-    const field_title = interpolate_string(field.text, variables);
+    const field_title = interpolate_string(field.title, variables);
     const field_text = interpolate_string(field.text, variables);
     const embed_field: APIEmbedField = {
       name: field_title,
@@ -23,4 +30,25 @@ export function generate_embed(embed_data: Embed, variables: ValueContainer): Em
   }
 
   return embed;
+}
+
+export function create_ticket_opened(
+  ticket_name: string,
+  ticket_id: string,
+  ticket_channel_link: string,
+): [EmbedBuilder, ActionRowBuilder<ButtonBuilder>] {
+  const embed = new EmbedBuilder();
+  const row = new ActionRowBuilder<ButtonBuilder>();
+
+  embed.setTitle(`Ticket Created`);
+  embed.setDescription(`Ticket ${ticket_name} created!`);
+  embed.setFooter({ text: `Ticket ID: ${ticket_id}` });
+
+  const open_ticket_btn = new ButtonBuilder();
+  open_ticket_btn.setStyle(ButtonStyle.Link);
+  open_ticket_btn.setLabel('Open Ticket');
+  open_ticket_btn.setURL(ticket_channel_link);
+  row.addComponents(open_ticket_btn);
+
+  return [embed, row];
 }

@@ -43,10 +43,10 @@ export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NA
     const m = new ModalBuilder();
 
     m.setTitle('Clarification');
+    m.addTextDisplayComponents((td) => td.setContent(question));
     m.addLabelComponents((c) =>
       c
         .setLabel('Clarification')
-        .setDescription(question)
         .setTextInputComponent((ti) =>
           ti.setStyle(TextInputStyle.Paragraph).setCustomId(this.self.uid),
         ),
@@ -93,16 +93,19 @@ export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NA
             const modal_promise = component_service.wait_for_interaction(modal, filter);
 
             const show_modal = await ResultAsync.fromPromise(btn_int.showModal(modal), map_err);
-            const modal_response = await modal_promise;
-            if (modal_response.isErr()) return perr(map_err(modal_response));
             if (show_modal.isErr()) {
-              this.l.error(`Could not show follow-up question to user`, show_modal.error);
+              this.l.error(`Could not show follow-up question to user`);
               return perr(show_modal.error);
             }
+            const modal_response = await modal_promise;
+            if (modal_response.isErr()) return perr(map_err(modal_response));
 
             const followup_clarification = modal_response.value.fields.getTextInputValue(
               this.self.uid,
             );
+
+            this.l.info(`user answered: ${followup_clarification}`);
+
             const followup_res = await ai.narrow(followup_clarification);
             if (followup_res.isErr()) return perr(followup_res.error);
 
@@ -193,6 +196,7 @@ export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NA
     let last_interaction: Interaction = interaction;
     for (let round = 0; round < this.self.max_responses; round++) {
       if (!clarification_query) return err(new Error("no 'clarification_query' was passed!"));
+      this.l.info(`Asking user: ${clarification_query}`);
       const followup_res = await this.handle_followup(
         clarification_query,
         last_interaction,

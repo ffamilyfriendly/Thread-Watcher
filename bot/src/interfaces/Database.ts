@@ -12,6 +12,7 @@ import {
   TicketPanel,
   EditTicketPanel,
   TicketPanelMetaObj,
+  Ticket,
 } from '@watcher/shared';
 
 export type DatabaseError = SqliteError | Error;
@@ -106,12 +107,16 @@ interface Guilds {
   upsert_guild_info: (guild_id: string, data: Partial<Omit<Guild, 'guild_id'>>) => DBResult;
 }
 
+export type TicketInsertion = Omit<Ticket, 'closed_at' | 'status' | 'created_at'>;
+
 interface Tickets {
   insert_ticket_panel: (guild_id: string, panel: Omit<TicketPanel, 'panel_id'>) => DBResult<string>;
   update_ticket_panel: (panel_id: string, data: Omit<EditTicketPanel, 'id'>) => DBResult;
   delete_ticket_panel: (panel_id: string) => DBResult;
   get_ticket_panels: (guild_id: string) => DBResult<TicketPanelMetaObj[]>;
   get_ticket_panel: (panel_id: string) => DBResult<TicketPanel | null>;
+  insert_ticket: (ticket: TicketInsertion) => DBResult;
+  get_ticket: (ticket_id: string) => DBResult<Ticket>;
 }
 
 export interface Database extends Core, GuildSettings, Audit, Guilds, Tickets {}

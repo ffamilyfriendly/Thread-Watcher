@@ -5,6 +5,7 @@ import AssignChannel from '../modules/AssignChannel';
 import { DefaultModule, IPipeline } from '../DefaultModule';
 import IssueNarrower from '../modules/IssueNarrower';
 import ModalQuestion from '../modules/ModalQuestion';
+import OpenTicket from '../modules/OpenTicket';
 
 type ModuleConstructor = new (self: any, pipeline: IPipeline) => DefaultModule<any>;
 
@@ -13,6 +14,7 @@ const MODULE_REGISTRY: Partial<Record<PipelineModule['type'], ModuleConstructor>
   ASSIGN_CHANNEL: AssignChannel,
   NARROW_ISSUE: IssueNarrower,
   MODAL_QUESTION: ModalQuestion,
+  OPEN_TICKET: OpenTicket,
 };
 
 export function create_module(
