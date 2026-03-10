@@ -106,10 +106,12 @@ router.get(
     if (ticket_panels.isErr()) {
       return res.status(500).json({
         code: 500,
-        message: 'something went wrong',
+        message: 'could not get panels',
         _details: ticket_panels.error,
       });
     }
+
+    return res.json(ticket_panels.value);
   },
 );
 

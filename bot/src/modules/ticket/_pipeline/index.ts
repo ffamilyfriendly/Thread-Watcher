@@ -1,6 +1,6 @@
 import { TicketPanel } from '@watcher/shared';
-import { Pipeline } from './state';
-import { SupportedInteractionType, SupportedInteractionTypeWithGuild } from './base';
+import { Pipeline } from './Pipeline';
+import { SupportedInteractionType, SupportedInteractionTypeWithGuild } from './DefaultModule';
 import { err, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import { Logger } from 'tslog';

@@ -1,14 +1,8 @@
-import { BaseModule, TypedPipelineModule } from '@watcher/shared';
+import { TypedPipelineModule } from '@watcher/shared';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { client } from '@providers/client';
 import { map_err } from 'utilities/error';
-import {
-  DefaultModule,
-  IPipeline,
-  SupportedInteractionTypeWithGuild,
-  ValidPropertyReturn,
-  ValueContainer,
-} from '../base';
+import { DefaultModule, IPipeline, SupportedInteractionTypeWithGuild } from '../DefaultModule';
+import { ValueContainer } from '../ValueContainter';
 
 export default class AssignChannel extends DefaultModule<TypedPipelineModule<'ASSIGN_CHANNEL'>> {
   private channel_id?: string;

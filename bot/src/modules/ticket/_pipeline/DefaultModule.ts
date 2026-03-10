@@ -14,13 +14,13 @@ import {
   StringSelectMenuInteraction,
   User,
 } from 'discord.js';
-import { Pipeline } from './state';
-import { err, ok, Result, ResultAsync } from 'neverthrow';
+import { err, ok, Result } from 'neverthrow';
 import { Logger } from 'tslog';
 import { component_service } from '@providers/services/component_service';
 import { map_err } from 'utilities/error';
-import { safe_reply } from './safe_reply';
+import { safe_reply_or_followup } from './helpers/safe_reply';
 import { config } from '@providers/config';
+import { ValidPropertyReturn, ValueContainer } from './ValueContainter';
 
 namespace Op {
   export function and(v: boolean[]): boolean {
@@ -70,108 +70,11 @@ namespace Op {
   }
 }
 
-type ValueContainerValue = ValidPropertyReturn | (() => ValidPropertyReturn) | ValueContainer;
-
-type MappedProps = Record<string, ValidPropertyReturn | Record<string, unknown>>;
-
-export class ValueContainer {
-  is_activated = true;
-  constructor(
-    public exports: Record<string, ValueContainerValue>,
-    private default_value: ValidPropertyReturn,
-  ) {}
-
-  activate() {
-    this.is_activated = true;
-  }
-
-  set(key: string, value: ValueContainerValue) {
-    this.exports[key] = value;
-  }
-
-  get(keys: string[]): ValidPropertyReturn {
-    if (!this.is_activated) return null;
-    const key = keys.shift();
-    if (!key) return null;
-
-    const value = this.exports[key];
-
-    if (value instanceof ValueContainer) {
-      if (keys.length === 0) return this.default_value;
-      return value.get(keys);
-    }
-
-    if (typeof value === 'function') return value();
-
-    return value;
-  }
-
-  all(): MappedProps {
-    if (!this.is_activated) return {};
-    const rv: MappedProps = {};
-
-    for (const [name, value] of Object.entries(this.exports)) {
-      if (value instanceof ValueContainer) {
-        if (value.is_activated) rv[name] = value.all();
-      } else if (typeof value === 'function') {
-        rv[name] = value();
-      } else {
-        rv[name] = value;
-      }
-    }
-
-    return rv;
-  }
-
-  static value_into_string(value: ValidPropertyReturn, variable_name?: 'Unknown'): string {
-    if (!value) return `\`? ${variable_name} ?\``;
-    if (Array.isArray(value)) return value.join(', ');
-    if (typeof value === 'number') return value.toString();
-    return value;
-  }
-
-  static string_into_args(str: string) {
-    return str.split('.');
-  }
-
-  static from_user(user: User): ValueContainer {
-    return new ValueContainer(
-      {
-        id: user.id,
-        username: user.username,
-        tag: user.tag,
-      },
-      user.id,
-    );
-  }
-
-  static from_string_select_interaction(
-    int: StringSelectMenuInteraction,
-    data: SelectionStart,
-  ): Result<ValueContainer, Error> {
-    const value = int.values[0];
-    const option = data.options.find((opt) => opt.option_id === value);
-    if (!value || !option) return err(new Error("missing 'value' or 'option'"));
-
-    return ok(
-      new ValueContainer(
-        {
-          id: value,
-          label: option.title,
-          description: option.description ?? null,
-        },
-        value,
-      ),
-    );
-  }
-}
-
 export type SupportedInteractionType = ButtonInteraction | StringSelectMenuInteraction;
 export type SupportedInteractionTypeWithGuild = SupportedInteractionType & {
   guildId: string;
   guild: Guild;
 };
-export type ValidPropertyReturn = string | number | (string | number)[] | null;
 
 export abstract class DefaultModule<TModType extends PipelineModule> {
   protected l: Logger<unknown>;
@@ -228,7 +131,6 @@ export abstract class DefaultModule<TModType extends PipelineModule> {
 
   async ensure_fresh_interaction(
     interaction: Interaction,
-    extra_buttons: ButtonBuilder[] = [],
     display_overides?: {
       proceed_button_text?: string;
       proceed_button_style?: ButtonStyle;
@@ -260,16 +162,11 @@ export abstract class DefaultModule<TModType extends PipelineModule> {
     if (display_overides?.proceed_button_emoji)
       button.setEmoji(display_overides.proceed_button_emoji);
 
-    action_row.addComponents([button, ...extra_buttons]);
-
-    const buttons = [button, ...extra_buttons];
-
-    const promises = buttons.map((btn) => {
-      return component_service.wait_for_interaction(
-        btn,
-        (int) => int.user.id === interaction.user.id,
-      );
-    });
+    const btn_promise = component_service.wait_for_interaction(
+      button,
+      (int) => int.user.id === interaction.user.id,
+    );
+    action_row.addComponents(button);
 
     const embed = new EmbedBuilder();
     embed.setTitle(display_overides?.embed_title ?? 'Please press button');
@@ -277,7 +174,7 @@ export abstract class DefaultModule<TModType extends PipelineModule> {
     if (display_overides?.embed_description)
       embed.setDescription(display_overides.embed_description);
 
-    const could_send_reply = await safe_reply(interaction, {
+    const could_send_reply = await safe_reply_or_followup(interaction, {
       embeds: [embed],
       components: [action_row],
       flags: 'Ephemeral',
@@ -287,12 +184,10 @@ export abstract class DefaultModule<TModType extends PipelineModule> {
       return err(could_send_reply.error);
     }
 
-    const reply_results = await ResultAsync.fromPromise(Promise.race(promises), map_err);
-    if (reply_results.isErr()) return err(reply_results.error);
-    if (reply_results.value.isErr()) return err(map_err(reply_results.value.error));
-    const resolved_button = reply_results.value.value;
+    const reply_results = await btn_promise;
+    if (reply_results.isErr()) return err(map_err(reply_results.error));
 
-    return ok(resolved_button);
+    return ok(reply_results.value);
   }
 
   protected abstract run(

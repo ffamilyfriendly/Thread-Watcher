@@ -1,4 +1,4 @@
-import { json_fetch, safe_fetch } from '$lib/server/api';
+import { FancyAPIError, json_fetch, safe_fetch } from '$lib/server/api';
 import { get_cached_or } from '$lib/server/cache.js';
 import { map_err } from '$lib/error_helper.js';
 import {} from '$lib/types/discord';
@@ -79,24 +79,21 @@ export async function load({ locals, params }) {
 	);
 
 	if (promises.isErr()) {
-		return error(500, 'could not get channels or roles');
+		throw promises.error;
 	}
 
 	const [channels, roles, guild] = promises.value;
 
 	if (channels.isErr()) {
-		console.log('CANT GET CHANNELS', channels.error);
-		return error(500, 'could not get channels');
+		throw channels.error;
 	}
 
 	if (roles.isErr()) {
-		console.log(roles.error);
-		return error(500, 'could not get roles');
+		throw roles.error;
 	}
 
 	if (guild.isErr()) {
-		console.log(guild.error);
-		return error(500, 'could not get guild info');
+		throw guild.error;
 	}
 
 	return {

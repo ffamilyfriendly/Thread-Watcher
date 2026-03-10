@@ -1,42 +1,27 @@
-import { BaseModule, PipelineModule, TicketPanel } from '@watcher/shared';
-import AssignRole from './modules/AssignRole';
-import { err, ok, Result, ResultAsync } from 'neverthrow';
+import { TicketPanel } from '@watcher/shared';
+import { err, ResultAsync } from 'neverthrow';
 import {
   ActionRowBuilder,
   ButtonBuilder,
-  ButtonInteraction,
   ButtonStyle,
   ChannelType,
   ColorResolvable,
   EmbedBuilder,
-  ForumThreadChannel,
   Interaction,
-  PrivateThreadChannel,
-  PublicThreadChannel,
-  StringSelectMenuInteraction,
-  ThreadAutoArchiveDuration,
   ThreadChannel,
   User,
 } from 'discord.js';
-import { create_module } from './module_factory';
+import { create_module } from './helpers/module_factory';
 import { logger } from '@providers/logger';
-import {
-  DefaultModule,
-  IPipeline,
-  SupportedInteractionType,
-  SupportedInteractionTypeWithGuild,
-  ValidPropertyReturn,
-  ValueContainer,
-} from './base';
-import { ILogObj, ILogObjMeta, Logger } from 'tslog';
-import { writeFileSync } from 'fs';
+import { DefaultModule, IPipeline, SupportedInteractionType } from './DefaultModule';
+import { ILogObj, Logger } from 'tslog';
 import { s3 } from '@providers/s3_client';
-import { parsedType } from 'zod/v4/core/util.cjs';
 import z from 'zod';
 import { map_err } from 'utilities/error';
 import { config } from '@providers/config';
 import { generate_embed } from './components/embed';
-import { safe_reply } from './safe_reply';
+import { safe_reply } from './helpers/safe_reply';
+import { ValidPropertyReturn, ValueContainer } from './ValueContainter';
 
 const log_obj_schema = z
   .object({
@@ -231,7 +216,7 @@ export class Pipeline implements IPipeline {
     return this.exports.get(id_arr);
   }
 
-  get_all_properties(): Record<string, ValidPropertyReturn | Record<string, unknown>> {
+  get_all_properties(): Record<string, ValidPropertyReturn | Record<string, unknown> | unknown[]> {
     return this.exports.all();
   }
 

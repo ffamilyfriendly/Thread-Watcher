@@ -9,4 +9,4 @@
 	let { data = $bindable() }: Props = $props();
 </script>
 
-<SelectWrapper bind:data>hi</SelectWrapper>
+<SelectWrapper bind:data>File Select</SelectWrapper>

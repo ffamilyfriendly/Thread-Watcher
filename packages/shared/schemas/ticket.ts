@@ -19,6 +19,8 @@ export const TW_MAX_CHARS_IN_OPERANT_VALUE = 100;
 export const TW_MAX_ALLOWED_CONDITIONS = 10;
 export const TW_AI_PERSONA_MAX_LEN = 500;
 export const TW_AI_RULES_MAX_LEN = 2500;
+export const TW_PANEL_NAME_MIN = 3;
+export const TW_PANEL_NAME_MAX = 50;
 
 // Generic stuff used both in panel and pipeline
 export const ZEmbedField = z.object({
@@ -161,7 +163,7 @@ export const ZModalBaseSelect = ZModalComponentBase.extend({
     .max(DISCORD_MAX_CHARS_IN_PLACEHOLDER)
     .default("Select a value"),
   min_values: z.number().min(0).max(25).default(1),
-  max_values: z.number().max(25).default(1),
+  max_values: z.number().min(1).max(25).default(1),
 });
 export type BaseSelect = z.output<typeof ZModalBaseSelect>;
 
@@ -259,12 +261,16 @@ export type RenderableModule = TypedPipelineModule<
 export const ZPipeline = z.array(ZPipelineModule);
 export type Pipeline = z.output<typeof ZPipeline>;
 
-// Panel related stuff
-export const ZTicketPanel = z.object({
-  panel_id: z.string(),
+export const ZTicketPanelMeta = z.object({
+  panel_id: z.string().min(TW_PANEL_NAME_MIN).max(TW_PANEL_NAME_MAX),
   guild_id: z.string(),
   name: z.string().nullish(),
   description: z.string().nullish(),
+});
+export type TicketPanelMetaObj = z.output<typeof ZTicketPanelMeta>;
+
+// Panel related stuff
+export const ZTicketPanel = ZTicketPanelMeta.extend({
   should_watch_ticket: z.coerce.boolean(),
   should_GPT_summarize_ticket: z.coerce.boolean(),
   discord_message_id: z.string().nullish(), // The message ID of the panel. Used to edit updated panels / check if we've sent the panel message
@@ -272,7 +278,7 @@ export const ZTicketPanel = z.object({
   initial_channel_id: z.string(), // The channel the ticket will open in (if pipeline does not alter)
   commencement_embed: ZEmbed,
   commencement_method: z.union([ZButtonStart, ZSelectionStart]),
-  resolved_embed: ZEmbed,
+  resolved_embed: ZEmbed, // REMOVE THIS
   pipeline: ZPipeline,
 });
 
@@ -290,6 +296,7 @@ export const ZTicket = z.object({
   created_at: z.coerce.date(),
   closed_at: z.coerce.date().nullish(),
 });
+
 export type TicketPanel = z.output<typeof ZTicketPanel>;
 export type EditTicketPanel = z.output<typeof ZEditTicketPanel>;
 export type TicketPanelMeta = Omit<TicketPanel, "id">;

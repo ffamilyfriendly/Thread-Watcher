@@ -23,6 +23,18 @@ export async function safe_reply(
   return ResultAsync.fromPromise(promise, map_err);
 }
 
+export async function safe_reply_or_followup(
+  interaction: RepliableInteraction,
+  content: InteractionReplyOptions,
+) {
+  let promise: Promise<Message<boolean> | InteractionResponse<boolean>>;
+
+  if (interaction.replied || interaction.deferred) promise = interaction.followUp(content);
+  else promise = interaction.reply(content);
+
+  return ResultAsync.fromPromise(promise, map_err);
+}
+
 export async function safe_update(
   interaction: RepliableInteraction,
   content: InteractionUpdateOptions,

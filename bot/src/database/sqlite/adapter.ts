@@ -22,6 +22,7 @@ import {
   TicketPanel,
   ZTicketPanel,
   EditTicketPanel,
+  ZTicketPanelMeta,
 } from '@watcher/shared';
 
 import * as schema from './schema';
@@ -94,7 +95,7 @@ export default class Sqlite implements Database {
       where: eq(schema.TicketPanels.guild_id, guild_id),
     });
 
-    return with_schema(res, z.array(ZTicketPanel));
+    return with_schema(res, z.array(ZTicketPanelMeta));
   }
 
   @with_error_handling

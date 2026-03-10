@@ -1,8 +1,17 @@
 <script lang="ts">
 	import { click_outside } from '$lib/client/attachments/click_outside';
 	import { portal } from '$lib/client/attachments/portal';
+	import { s_tooltip, tooltip } from '$lib/client/attachments/tooltip';
 	import { use_pipeline } from '$lib/stores/pipeline.svelte';
-	import { ArrowRightFromLine, List, Percent, TextInitial } from '@lucide/svelte';
+	import {
+		ArrowRightFromLine,
+		Info,
+		List,
+		ListCheck,
+		ListIcon,
+		Percent,
+		TextInitial
+	} from '@lucide/svelte';
 	import { type ModuleProperty } from '@watcher/shared';
 	import { fly } from 'svelte/transition';
 
@@ -29,13 +38,16 @@
 	const flat_options = $derived.by(() => {
 		const list: { path: string; name: string; type: string }[] = [];
 
-		const walk = (key: string, values: ModuleProperty[], prev_key?: string) => {
+		const walk = (key: string, values: ModuleProperty[], prev_path?: string, is_array = false) => {
+			const current_segment = key + (is_array ? '[0]' : '');
+			const current_path = prev_path ? `${prev_path}.${current_segment}` : current_segment;
+
 			values.forEach((v) => {
 				if (Array.isArray(v.value)) {
-					walk(v.name, v.value, key);
+					walk(v.name, v.value, key, v.is_array);
 				} else {
 					list.push({
-						path: [prev_key, key, v.name].filter(Boolean).join('.'),
+						path: `${current_path}.${v.name}`,
 						name: v.name,
 						type: v.value
 					});
@@ -74,6 +86,7 @@
 
 	function selection_made(variable: string) {
 		if (show_this) show_this = false;
+		console.log('VARIABLE', variable);
 		on_selected(variable);
 	}
 
@@ -106,24 +119,31 @@
 	{/if}
 {/snippet}
 
-{#snippet show_value(key: string, values: ModuleProperty[], prev_key?: string)}
+{#snippet show_value(key: string, values: ModuleProperty[], prev_path?: string, is_array = false)}
+	{@const current_segment = key + (is_array ? '[0]' : '')}
+	{@const current_path = prev_path ? `${prev_path}.${current_segment}` : current_segment}
+
 	<div class="section" style="--side_clr: {str_to_vibrant_clr(key)};">
-		<span class="name">{key}</span>
+		<span class="name">
+			{#if is_array}<ListIcon color={'white'} size={'1rem'} />{/if}
+			{key}
+		</span>
 		<ul>
 			{#each values as value}
 				{#if Array.isArray(value.value)}
-					{@render show_value(value.name, value.value, key)}
+					{@render show_value(value.name, value.value, current_path, value.is_array)}
 				{:else}
-					{@const path = [prev_key, key, value.name].filter(Boolean).join('.')}
-					{@const is_active = flat_options[selected_index]?.path === path}
+					{@const full_path = `${current_path}.${value.name}`}
+					{@const is_active = flat_options[selected_index]?.path === full_path}
+
 					<li class="row" class:active={is_active}>
 						<button
-							onclick={() => selection_made([prev_key, key, value.name].filter(Boolean).join('.'))}
+							type="button"
+							onclick={() => selection_made(full_path)}
 							class="click_event_wrapper"
 						>
 							{@render get_icon(value)}
 							<p>{value.name}</p>
-
 							{#if value.description}
 								<p class="description">{value.description}</p>
 							{/if}
@@ -199,6 +219,9 @@
 		.name {
 			color: color-mix(in srgb, var(--side_clr, white) 50%, white);
 			font-weight: bold;
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
 		}
 
 		border-left: 2px solid var(--side_clr, var(--primary-800));

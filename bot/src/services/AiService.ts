@@ -12,7 +12,7 @@ import { ZAiRegexResponse } from '@watcher/shared';
 import { logger } from '@providers/logger';
 import EntitlementService from './EntitlementService';
 import { client } from '@providers/client';
-import { ValueContainer } from 'modules/ticket/_pipeline/base';
+import { ValueContainer } from 'modules/ticket/_pipeline/DefaultModule';
 import { IssueNarrower } from './AIWrappers/IssueNarrower';
 
 export interface AIModel {

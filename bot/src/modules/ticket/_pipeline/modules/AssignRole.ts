@@ -1,12 +1,8 @@
 import { TypedPipelineModule } from '@watcher/shared';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
-import {
-  DefaultModule,
-  IPipeline,
-  SupportedInteractionTypeWithGuild,
-  ValueContainer,
-} from '../base';
+import { DefaultModule, IPipeline, SupportedInteractionTypeWithGuild } from '../DefaultModule';
+import { ValueContainer } from '../ValueContainter';
 
 export default class AssignRole extends DefaultModule<TypedPipelineModule<'ASSIGN_ROLE'>> {
   constructor(self: TypedPipelineModule<'ASSIGN_ROLE'>, pipeline: IPipeline) {

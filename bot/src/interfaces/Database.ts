@@ -11,6 +11,7 @@ import {
   ThreadSearchData,
   TicketPanel,
   EditTicketPanel,
+  TicketPanelMetaObj,
 } from '@watcher/shared';
 
 export type DatabaseError = SqliteError | Error;
@@ -109,7 +110,7 @@ interface Tickets {
   insert_ticket_panel: (guild_id: string, panel: Omit<TicketPanel, 'panel_id'>) => DBResult<string>;
   update_ticket_panel: (panel_id: string, data: Omit<EditTicketPanel, 'id'>) => DBResult;
   delete_ticket_panel: (panel_id: string) => DBResult;
-  get_ticket_panels: (guild_id: string) => DBResult<TicketPanel[]>;
+  get_ticket_panels: (guild_id: string) => DBResult<TicketPanelMetaObj[]>;
   get_ticket_panel: (panel_id: string) => DBResult<TicketPanel | null>;
 }
 

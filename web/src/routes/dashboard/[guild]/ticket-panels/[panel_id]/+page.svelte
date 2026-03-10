@@ -19,13 +19,13 @@
 	import StringSelectConfigurator from '$lib/components/ui/tickets/StringSelectConfigurator.svelte';
 	import { fetch_as_json } from '$lib/client/fetch.js';
 	import { use_guild_state } from '$lib/stores/guild.svelte.js';
-	import common from "$lib/style/common.module.scss"
+	import common from '$lib/style/common.module.scss';
 	import z from 'zod';
 	import { goto } from '$app/navigation';
 
 	const { data, params }: PageProps = $props();
 
-	const guild_state = use_guild_state()
+	const guild_state = use_guild_state();
 
 	// svelte-ignore state_referenced_locally
 	let pipeline_state = $state(init_pipeline_state(guild_state.guild_id_throws, data.panel));
@@ -73,33 +73,44 @@
 			return add_toast_from_error(panel_validation_result.error);
 		}
 
-		const res = await fetch_as_json(`/api/panel`, {
-			body: JSON.stringify(panel_validation_result.data),
-			method: create_new ? 'POST' : 'PUT'
-		}, z.object({ panel_id: z.string().default(pipeline_state.panel.panel_id) }));
+		const res = await fetch_as_json(
+			`/api/panel`,
+			{
+				body: JSON.stringify(panel_validation_result.data),
+				method: create_new ? 'POST' : 'PUT'
+			},
+			z.object({ panel_id: z.string().default(pipeline_state.panel.panel_id) })
+		);
 
 		if (res.isErr()) {
 			return add_toast_from_error(res.error);
 		}
 
-		if(create_new) {
-			add_toast({ type: "success", message: "Created panel!" })
-			goto(`/dashboard/${guild_state.guild_id}/ticket-panels/${res.value.panel_id}`)
+		if (create_new) {
+			add_toast({ type: 'success', message: 'Created panel!' });
+			goto(`/dashboard/${guild_state.guild_id}/ticket-panels/${res.value.panel_id}`);
 		} else {
-			add_toast({ type: "success", message: "updated panel!", timeout: 1500 })
+			add_toast({ type: 'success', message: 'updated panel!', timeout: 1500 });
 		}
 	}
 
 	async function update_message() {
-		const res = await fetch_as_json(`/api/panel/${pipeline_state.panel.panel_id}/send_message`, {
-			method: "POST",
-			body: JSON.stringify({ panel_id: pipeline_state.panel.panel_id, guild_id: guild_state.guild_id })
-		}, z.object({ message_id: z.string() }))
+		const res = await fetch_as_json(
+			`/api/panel/${pipeline_state.panel.panel_id}/send_message`,
+			{
+				method: 'POST',
+				body: JSON.stringify({
+					panel_id: pipeline_state.panel.panel_id,
+					guild_id: guild_state.guild_id
+				})
+			},
+			z.object({ message_id: z.string() })
+		);
 
-		if(res.isErr()) return add_toast_from_error(res.error)
+		if (res.isErr()) return add_toast_from_error(res.error);
 
-		console.log(res.value)
-		alert("OK")
+		console.log(res.value);
+		alert('OK');
 	}
 
 	const create_new = $derived(params.panel_id === 'new');
@@ -124,14 +135,17 @@
 	</div>
 
 	<div class="pipeline">
-		<h2>Opening Embed</h2>
+		<h2>Panel Embed</h2>
 		<EmbedConfigurator bind:value={pipeline_state.panel.commencement_embed} />
 
 		{#snippet btn_conf()}
 			<ButtonConfigurator bind:value={init_w_btn_state} />
 		{/snippet}
 		{#snippet select_conf()}
-			<StringSelectConfigurator bind:options={init_w_select_state.options} bind:placeholder={init_w_select_state.placeholder} />
+			<StringSelectConfigurator
+				bind:options={init_w_select_state.options}
+				bind:placeholder={init_w_select_state.placeholder}
+			/>
 		{/snippet}
 
 		<TabbedView
@@ -149,7 +163,7 @@
 			]}
 		/>
 
-		<h2>Closing Embed</h2>
+		<h2>Ticket Started Embed</h2>
 		<EmbedConfigurator
 			use_variable_picker={true}
 			bind:value={pipeline_state.panel.resolved_embed}
@@ -195,10 +209,14 @@
 		</div>
 
 		<div class={[common.row, common.gap_medium]}>
-			<button disabled={create_new} onclick={update_message} class={[btn_style.button, btn_style.tetriary, 'updatebtn']}>
+			<button
+				disabled={create_new}
+				onclick={update_message}
+				class={[btn_style.button, btn_style.tetriary, 'updatebtn']}
+			>
 				Send Embed
 			</button>
-	
+
 			<button onclick={create_ticket} class={[btn_style.button, btn_style.primary, 'updatebtn']}>
 				{create_new ? 'Create' : 'Update'}
 			</button>

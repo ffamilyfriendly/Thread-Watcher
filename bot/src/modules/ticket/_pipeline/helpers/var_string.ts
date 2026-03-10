@@ -1,4 +1,4 @@
-import { ValueContainer } from './base';
+import { ValueContainer } from '../ValueContainter';
 
 export function interpolate_string(raw_str: string, tree: ValueContainer): string {
   return raw_str.replace(/{{(.+)}}/gm, (whole_str, variable, ...args) => {

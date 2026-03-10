@@ -1,7 +1,7 @@
 import { Embed } from '@watcher/shared';
-import { ValueContainer } from '../base';
 import { APIEmbedField, ColorResolvable, EmbedBuilder } from 'discord.js';
-import { interpolate_string } from '../var_string';
+import { interpolate_string } from '../helpers/var_string';
+import { ValueContainer } from '../ValueContainter';
 
 export function generate_embed(embed_data: Embed, variables: ValueContainer): EmbedBuilder {
   const embed = new EmbedBuilder();

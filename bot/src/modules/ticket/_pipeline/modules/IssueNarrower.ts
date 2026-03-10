@@ -1,13 +1,8 @@
 import { TypedPipelineModule } from '@watcher/shared';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
-import {
-  DefaultModule,
-  IPipeline,
-  SupportedInteractionTypeWithGuild,
-  ValueContainer,
-} from '../base';
-import { interpolate_string } from '../var_string';
+import { DefaultModule, IPipeline, SupportedInteractionTypeWithGuild } from '../DefaultModule';
+import { interpolate_string } from '../helpers/var_string';
 import { ai_service } from '@providers/services/ai_service';
 import {
   ActionRow,
@@ -25,9 +20,10 @@ import {
 } from 'discord.js';
 import { component_service } from '@providers/services/component_service';
 import { NarrowAnswer, IssueNarrower as Narrower } from 'services/AIWrappers/IssueNarrower';
-import { safe_reply, safe_update } from '../safe_reply';
+import { safe_reply, safe_reply_or_followup, safe_update } from '../helpers/safe_reply';
 import { config } from '@providers/config';
 import { Vacuum } from 'services/ComponentService';
+import { ValueContainer } from '../ValueContainter';
 
 export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NARROW_ISSUE'>> {
   private narrowed_summary?: string;
@@ -142,9 +138,10 @@ export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NA
 
       action_row.addComponents([clarify_button, skip_button]);
 
-      const embed_reply = await safe_reply(interaction, {
+      const embed_reply = await safe_reply_or_followup(interaction, {
         embeds: [embed],
         components: [action_row],
+        flags: 'Ephemeral',
       });
       if (embed_reply.isErr()) return perr(embed_reply.error);
     });

@@ -8,16 +8,40 @@ import {
   ZAssignName,
   ZOpenTicket,
   ZSilentlyResolve,
-  ZModalComponent,
   ZQuestionModal,
   type QuestionModal,
-} from "./schemas/ticket";
+} from "../schemas/ticket";
+import { CONTRACTS, type ContractType } from "./contracts";
 
 export type ModulePropertyTypes = "string" | "number" | "array" | `${string}[]`;
 export interface ModuleProperty {
   name: string;
   description?: string;
   value: ModulePropertyTypes | ModuleProperty[];
+  is_array?: boolean;
+}
+
+function from_contract(
+  name: string,
+  type: ContractType,
+  is_array = false,
+): ModuleProperty {
+  const contract = CONTRACTS[type];
+
+  const properties = Object.entries(contract.props).map(
+    ([prop_name, info]) => ({
+      name: prop_name,
+      value: info.type,
+      description: info.desc,
+    }),
+  );
+
+  return {
+    name,
+    value: properties,
+    is_array,
+    description: is_array ? `a list of ${type.toLowerCase()}s` : undefined,
+  };
 }
 
 export enum ModuleCategory {
@@ -228,21 +252,20 @@ const MODAL_QUESTION: ModuleObject<QuestionModal> = {
   category: ModuleCategory.INPUTS,
   schema: ZQuestionModal,
   properties: (self) => {
-    const properties: ModuleProperty[] = [];
-
-    for (const label of self.labels) {
+    return self.labels.map((label) => {
       const comp = label.component;
 
-      if (comp.type === "USER_SELECT") {
-        if (comp.max_values === 1)
-          properties.push(generate_user(comp.custom_id));
-        else properties.push({ name: comp.custom_id, value: "user[]" });
-      } else if (comp.type === "TEXT_INPUT") {
-        properties.push({ name: comp.custom_id, value: "string" });
+      if (comp.type === "USER_SELECT")
+        return from_contract(comp.custom_id, "USER", comp.max_values > 1);
+      if (comp.type === "TEXT_INPUT") {
+        return {
+          name: comp.custom_id,
+          value: "string",
+          is_array: comp.max_values > 1,
+        };
       }
-    }
-
-    return properties;
+      return { name: comp.custom_id, value: "string" };
+    });
   },
 };
 

@@ -1,5 +1,6 @@
 import { SHARED_API_SECRET, API_URI } from '$env/static/private';
 import { map_err } from '$lib/error_helper';
+import { ZAPIError } from '@watcher/shared';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import type z from 'zod';
 
@@ -11,6 +12,17 @@ export class APIError extends Error {
 		super(message);
 		this.status_code = status_code;
 		this.raw_err = raw_err;
+	}
+}
+
+export class FancyAPIError extends Error {
+	status_code: number;
+	dev_details?: Object;
+
+	constructor(message: string, code: number, dev_details?: Object) {
+		super(message);
+		this.status_code = code;
+		this.dev_details = dev_details;
 	}
 }
 
@@ -69,18 +81,11 @@ async function write_nice_error(req: Response) {
 	const body_text = text_res.value;
 	try {
 		const json = JSON.parse(body_text);
-		if (json && typeof json === 'object' && 'message' in json) {
-			if ('_details' in json) {
-				console.error('details', json._details);
-			}
-
-			return new APIError(json.message, body_text, req.status);
-		}
+		const parse = ZAPIError.parse(json);
+		return new FancyAPIError(parse.message, parse.code, parse._details);
 	} catch {
 		return new APIError(body_text.substring(0, 500) || req.statusText, body_text, req.status);
 	}
-
-	return new APIError(req.statusText, req.statusText, req.status);
 }
 
 export async function json_fetch<T>(

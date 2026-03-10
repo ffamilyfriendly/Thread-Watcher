@@ -1,9 +1,10 @@
 import { PipelineModule } from '@watcher/shared';
-import AssignRole from './modules/AssignRole';
+import AssignRole from '../modules/AssignRole';
 import { err, ok, Result } from 'neverthrow';
-import AssignChannel from './modules/AssignChannel';
-import { DefaultModule, IPipeline } from './base';
-import IssueNarrower from './modules/IssueNarrower';
+import AssignChannel from '../modules/AssignChannel';
+import { DefaultModule, IPipeline } from '../DefaultModule';
+import IssueNarrower from '../modules/IssueNarrower';
+import ModalQuestion from '../modules/ModalQuestion';
 
 type ModuleConstructor = new (self: any, pipeline: IPipeline) => DefaultModule<any>;
 
@@ -11,6 +12,7 @@ const MODULE_REGISTRY: Partial<Record<PipelineModule['type'], ModuleConstructor>
   ASSIGN_ROLE: AssignRole,
   ASSIGN_CHANNEL: AssignChannel,
   NARROW_ISSUE: IssueNarrower,
+  MODAL_QUESTION: ModalQuestion,
 };
 
 export function create_module(

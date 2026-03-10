@@ -1,6 +1,7 @@
 import { DefaultSession } from '@auth/sveltekit';
 import { JWT } from '@auth/core/jwt';
 import { User } from '@auth/core/types';
+import type { Session } from '@auth/sveltekit';
 
 declare module '@auth/core/types' {
 	interface Session {
@@ -27,7 +28,9 @@ declare module '@auth/core/jwt' {
 declare global {
 	namespace App {
 		// interface Error {}
-		// interface Locals {}
+		interface Locals {
+			user: Session['user'];
+		}
 		// interface PageData {}
 		// interface PageState {}
 		// interface Platform {}
