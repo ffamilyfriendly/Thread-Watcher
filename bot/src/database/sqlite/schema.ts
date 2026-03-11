@@ -80,7 +80,7 @@ export const Ticket = sqliteTable('tickets', {
   guild_id: text('guild_id')
     .notNull()
     .references(() => Guilds.guild_id, { onDelete: 'cascade' }),
-  discord_channel_id: text('discord_channel_id').notNull(),
+  discord_channel_id: text('discord_channel_id').notNull().unique(),
   name: text('name').notNull(),
   owner: text('owner').notNull(),
   variable_dump: text('variable_dump', { mode: 'json' }).notNull(),

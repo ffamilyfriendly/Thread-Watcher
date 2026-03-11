@@ -10,19 +10,22 @@ import {
   EmojiResolvable,
   Guild,
   Interaction,
+  ModalBuilder,
   ModalSubmitInteraction,
   StringSelectMenuInteraction,
   ThreadChannel,
   User,
 } from 'discord.js';
-import { err, ok, Result } from 'neverthrow';
+import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Logger } from 'tslog';
 import { component_service } from '@providers/services/component_service';
 import { map_err } from 'utilities/error';
-import { safe_reply_or_followup } from './helpers/safe_reply';
+import { safe_reply_or_followup } from 'utilities/interaction_helpers';
 import { config } from '@providers/config';
 import { ValueContainer } from './ValueContainter';
 import { ContractLeafValue } from '@watcher/shared/tickets/contracts';
+import { get_default_embed, get_default_proceed, get_default_skip } from './components/modal_cta';
+import { Vacuum } from 'services/ComponentService';
 
 namespace Op {
   export function and(v: boolean[]): boolean {
@@ -132,17 +135,16 @@ export abstract class DefaultModule<TModType extends PipelineModule> {
     return this.self.conditional_type === 'AND' ? Op.and(bools) : Op.or(bools);
   }
 
-  async ensure_fresh_interaction(
+  async ensure_modal_shown(
     interaction: Interaction,
-    display_overides?: {
-      proceed_button_text?: string;
-      proceed_button_style?: ButtonStyle;
-      proceed_button_emoji?: ComponentEmojiResolvable;
-      embed_title?: string;
-      embed_description?: string;
-      embed_colour?: ColorResolvable;
+    modal: ModalBuilder,
+    options?: {
+      proceed_button?: ButtonBuilder;
+      open_modal_button?: ButtonBuilder;
+      skip_button?: ButtonBuilder | false;
+      embed?: EmbedBuilder;
     },
-  ): Promise<Result<SupportedInteractionType, Error>> {
+  ): Promise<Result<ModalSubmitInteraction | ButtonInteraction, Error>> {
     if (interaction.isAutocomplete())
       return err(
         new Error(
@@ -150,47 +152,75 @@ export abstract class DefaultModule<TModType extends PipelineModule> {
         ),
       );
 
-    const is_valid_supported_interaction_type =
-      interaction.isButton() || interaction.isStringSelectMenu();
-    const is_fresh_interation = !interaction.replied && !interaction.deferred;
+    const embed = options?.embed ?? get_default_embed();
+    const proceed_btn = options?.proceed_button ?? get_default_proceed();
+    const skip_btn =
+      options?.skip_button === false ? null : (options?.skip_button ?? get_default_skip());
 
-    if (is_valid_supported_interaction_type && is_fresh_interation) {
-      return ok(interaction);
-    }
+    const btn_row = new ActionRowBuilder<ButtonBuilder>();
+    btn_row.addComponents(proceed_btn);
+    if (skip_btn) btn_row.addComponents(skip_btn);
 
-    const action_row = new ActionRowBuilder<ButtonBuilder>();
-    const button = new ButtonBuilder();
-    button.setStyle(display_overides?.proceed_button_style ?? ButtonStyle.Primary);
-    button.setLabel(display_overides?.proceed_button_text ?? 'Proceed');
-    if (display_overides?.proceed_button_emoji)
-      button.setEmoji(display_overides.proceed_button_emoji);
+    const component_vacuum = new Vacuum();
 
-    const btn_promise = component_service.wait_for_interaction(
-      button,
-      (int) => int.user.id === interaction.user.id,
-    );
-    action_row.addComponents(button);
+    const filter = (int: Interaction) => int.user.id === interaction.user.id;
 
-    const embed = new EmbedBuilder();
-    embed.setTitle(display_overides?.embed_title ?? 'Please press button');
-    embed.setColor(display_overides?.embed_colour ?? (config.style.info.colour as ColorResolvable));
-    if (display_overides?.embed_description)
-      embed.setDescription(display_overides.embed_description);
+    return new Promise(async (resolve) => {
+      const on_timeout = () => resolve(err(new Error('timed out')));
 
-    const could_send_reply = await safe_reply_or_followup(interaction, {
-      embeds: [embed],
-      components: [action_row],
-      flags: 'Ephemeral',
+      component_vacuum.add(
+        component_service.wait_for_interaction_callback(
+          proceed_btn,
+          filter,
+          async (btn_int) => {
+            const could_show_modal = await ResultAsync.fromPromise(
+              btn_int.showModal(modal),
+              map_err,
+            );
+            if (could_show_modal.isErr()) {
+              component_vacuum.clean();
+              return resolve(err(could_show_modal.error));
+            }
+          },
+          undefined,
+          on_timeout,
+        ),
+        component_service.wait_for_interaction_callback(
+          modal,
+          filter,
+          (modal_int) => {
+            component_vacuum.clean();
+            return resolve(ok(modal_int));
+          },
+          undefined,
+          on_timeout,
+        ),
+      );
+
+      if (skip_btn)
+        component_vacuum.add(
+          component_service.wait_for_interaction_callback(
+            skip_btn,
+            filter,
+            (btn_int) => {
+              component_vacuum.clean();
+              return resolve(ok(btn_int));
+            },
+            undefined,
+            on_timeout,
+          ),
+        );
+
+      const send_res = await safe_reply_or_followup(interaction, {
+        components: [btn_row],
+        embeds: [embed],
+        flags: 'Ephemeral',
+      });
+      if (send_res.isErr()) {
+        component_vacuum.clean();
+        return resolve(err(send_res.error));
+      }
     });
-    if (could_send_reply.isErr()) {
-      this.l.error('could not prompt user input', could_send_reply.error);
-      return err(could_send_reply.error);
-    }
-
-    const reply_results = await btn_promise;
-    if (reply_results.isErr()) return err(map_err(reply_results.error));
-
-    return ok(reply_results.value);
   }
 
   protected abstract run(
@@ -221,6 +251,7 @@ export interface IPipeline {
   ticket_name: string;
   logger: Logger<unknown>;
   exports: ValueContainer;
+  readonly data: TicketPanel;
 
   get_property(id: string): ContractLeafValue;
   start_ticket_with_thread(

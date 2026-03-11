@@ -9,45 +9,7 @@ import {
   SlashCommandSubcommandsOnlyBuilder,
 } from 'discord.js';
 import { Result } from 'neverthrow';
-import { DatabaseError } from './Database';
-
-type LacksPermission = 'bot' | 'user';
-
-export class PermissionsError extends Error {
-  missing_perm: PermissionResolvable;
-  whos_lackin: LacksPermission;
-
-  constructor(required_permission: PermissionResolvable, whos_lackin: LacksPermission = 'user') {
-    super(`${whos_lackin} is missing the perm ${required_permission}`);
-    this.name = 'PermissionsError';
-    this.missing_perm = required_permission;
-    this.whos_lackin = whos_lackin;
-  }
-}
-
-export class GenericCommandError extends Error {
-  title: string;
-  message: string;
-  docs_slug?: string;
-
-  constructor(title: string, message: string, docs_slug?: string) {
-    super(message);
-    this.title = title;
-    this.message = message;
-    this.docs_slug = docs_slug;
-  }
-}
-
-export class EntitlementsError extends Error {
-  sku_id: string;
-  option_name?: string;
-
-  constructor(sku_id: string, option?: string) {
-    super(`Proceeding requires SKU ${sku_id}`);
-    this.option_name = option;
-    this.sku_id = sku_id;
-  }
-}
+import { CommandError } from 'utilities/error/def';
 
 export interface AccessControl {
   developer_only?: boolean;
@@ -66,8 +28,6 @@ export enum RegistrationScope {
   // For command we dont want registered anywhere by default
   NONE,
 }
-
-export type CommandError = DatabaseError | PermissionsError | GenericCommandError;
 
 export interface GuildChatInteraction extends ChatInputCommandInteraction {
   guild: Guild;

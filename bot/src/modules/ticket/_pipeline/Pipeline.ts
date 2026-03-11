@@ -14,10 +14,10 @@ import { logger } from '@providers/logger';
 import { DefaultModule, IPipeline, SupportedInteractionType } from './DefaultModule';
 import { ILogObj, Logger } from 'tslog';
 import { s3 } from '@providers/s3_client';
-import z from 'zod';
+import z, { string } from 'zod';
 import { map_err } from 'utilities/error';
 import { config } from '@providers/config';
-import { safe_reply_or_followup } from './helpers/safe_reply';
+import { safe_reply_or_followup } from 'utilities/interaction_helpers';
 import { ValueContainer } from './ValueContainter';
 import { ticket_service } from '@providers/services/ticket_service';
 import { ContractLeafValue } from '@watcher/shared/tickets/contracts';
@@ -32,7 +32,20 @@ const log_obj_schema = z
       logLevelId: z.number(),
     }),
   })
-  .catchall(z.string());
+  .catchall(
+    z.unknown().transform((val) => {
+      if (typeof val === 'string') return val;
+      if (val instanceof Error) {
+        return '<ERROR>' + val.message + '</ERROR>';
+      }
+
+      if (val && typeof val === 'object' && 'message' in val) {
+        return '<ERROR>' + String(val.message) + '</ERROR>';
+      }
+
+      return String(val);
+    }),
+  );
 
 export class Pipeline implements IPipeline {
   modules: Map<string, DefaultModule<any>> = new Map();
@@ -113,7 +126,7 @@ export class Pipeline implements IPipeline {
     );
   }
 
-  constructor(private data: TicketPanel) {
+  constructor(readonly data: TicketPanel) {
     this.assigned_channel = data.initial_channel_id;
     this.assigned_roles = data.initial_assigned_roles;
     this.logger = new Logger({ hideLogPositionForProduction: true });

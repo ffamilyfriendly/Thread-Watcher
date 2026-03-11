@@ -14,16 +14,13 @@ import {
   SlashCommandBuilder,
 } from 'discord.js';
 
-import {
-  CommandError,
-  GuildChatInteraction,
-  RegistrationScope,
-} from 'interfaces/BaseCommandInterface';
+import { GuildChatInteraction, RegistrationScope } from 'interfaces/BaseCommandInterface';
 import { type Command } from 'interfaces/Command';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
 import { CommandContext } from 'utilities/command_context';
 import { map_err } from 'utilities/error';
+import { CommandError } from 'utilities/error/def';
 
 type DisplayType = 'THREADS' | 'CHANNELS';
 

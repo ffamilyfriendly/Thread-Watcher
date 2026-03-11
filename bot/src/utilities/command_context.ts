@@ -11,7 +11,6 @@ import {
   messageLink,
 } from 'discord.js';
 import i18next from 'i18next';
-import { CommandError } from 'interfaces/BaseCommandInterface';
 import { ok, err, Result, ResultAsync } from 'neverthrow';
 import { get_audit_embed, PartialAuditObject } from 'services/AuditService';
 import { map_err } from './error';
@@ -20,6 +19,7 @@ import { type ConfigType } from './config';
 import Config from '../providers/config';
 import LoggerInstance from '../providers/logger';
 import { Logger } from 'tslog';
+import { CommandError } from './error/def';
 const config = Config.instance;
 const logger = LoggerInstance.instance;
 

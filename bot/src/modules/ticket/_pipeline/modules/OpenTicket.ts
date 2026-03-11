@@ -13,6 +13,9 @@ import {
   TextChannel,
   ThreadChannel,
 } from 'discord.js';
+import { thread_service } from '@providers/services/thread_service';
+import { audit_service } from '@providers/services/audit_service';
+import { get_action_row } from '../components/ticket_opened';
 
 export default class OpenTicket extends DefaultModule<TypedPipelineModule<'OPEN_TICKET'>> {
   constructor(self: TypedPipelineModule<'OPEN_TICKET'>, pipeline: IPipeline) {
@@ -92,9 +95,12 @@ export default class OpenTicket extends DefaultModule<TypedPipelineModule<'OPEN_
 
     const user_id = this.pipeline.get_property('env.user.id');
 
+    const log_link = `https://cdn.threadwatcher.xyz/logs/${this.pipeline.get_property('env.ID')}_pipeline.txt`;
+
     const message: MessageCreateOptions = {
       embeds: [embed],
-      content: `<@${user_id}>\n${this.pipeline.assigned_roles.map((r) => `<@&${r}>`).join(', ')}`,
+      components: [get_action_row()],
+      content: `<@${user_id}>\n${this.pipeline.assigned_roles.map((r) => `<@&${r}>`).join(', ')}\n-# [(pipeline logs)](${log_link})`,
     };
     const ticket_name = this.pipeline.ticket_name;
     const thread_channel = await (channel.isThreadOnly()
@@ -103,6 +109,21 @@ export default class OpenTicket extends DefaultModule<TypedPipelineModule<'OPEN_
     if (thread_channel.isErr()) {
       this.l.error(`Could not create thread in ${channel.name} (${channel.id})`);
       return err(thread_channel.error);
+    }
+
+    if (this.pipeline.data.should_watch_ticket) {
+      const could_watch_thread = await thread_service.watch_thread(thread_channel.value);
+
+      if (could_watch_thread.isErr()) {
+        this.l.warn('could NOT watch ticket');
+      } else this.l.info('watched ticket thread');
+
+      audit_service.log_thread_watch(
+        thread_channel.value.id,
+        interaction.guildId,
+        interaction.client.user.id,
+        `Ticket panel set to watch tickets`,
+      );
     }
 
     const could_start_ticket = await this.pipeline.start_ticket_with_thread(

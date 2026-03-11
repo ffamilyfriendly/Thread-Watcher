@@ -6,7 +6,7 @@ import { join, resolve as resolve_path } from 'path';
 import { create as create_tar } from 'tar';
 import { map_err } from 'utilities/error';
 import { z } from 'zod';
-import { Database, DatabaseError, TicketInsertion } from 'interfaces/Database';
+import { Database, TicketInsertion } from 'interfaces/Database';
 import { drizzle, BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import {
@@ -39,6 +39,7 @@ import {
   isNotNull,
   lt,
 } from 'drizzle-orm';
+import { DatabaseError } from 'utilities/error/def';
 
 export default class Sqlite implements Database {
   private raw_db: SqliteDb;
@@ -503,6 +504,16 @@ export default class Sqlite implements Database {
       where: eq(schema.Ticket.ticket_id, ticket_id),
     });
     return with_schema(res, ZTicket);
+  }
+
+  @with_error_handling
+  async get_ticket_id_from_thread(thread_id: string) {
+    const res = await this.drizzle
+      .select({ ticket_id: schema.Ticket.ticket_id })
+      .from(schema.Ticket)
+      .where(eq(schema.Ticket.discord_channel_id, thread_id))
+      .limit(1);
+    return ok(res.at(0)?.ticket_id ?? null);
   }
 
   @with_error_handling

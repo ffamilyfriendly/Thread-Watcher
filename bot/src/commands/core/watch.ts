@@ -7,12 +7,12 @@ import {
   SlashCommandBuilder,
   ThreadChannel,
 } from 'discord.js';
-import { CommandError, RegistrationScope } from 'interfaces/BaseCommandInterface';
+import { RegistrationScope } from 'interfaces/BaseCommandInterface';
 import { type Command } from 'interfaces/Command';
-import { DatabaseError } from 'interfaces/Database';
 import { err, Result } from 'neverthrow';
 import { PartialAuditObject } from 'services/AuditService';
 import { CommandContext } from 'utilities/command_context';
+import { CommandError, DatabaseError } from 'utilities/error/def';
 
 async function run(
   interaction: ChatInputCommandInteraction,

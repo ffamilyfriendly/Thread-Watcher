@@ -4,14 +4,7 @@ import {
   Interaction,
   InteractionType,
 } from 'discord.js';
-import {
-  BaseCommand,
-  Command,
-  EntitlementsError,
-  GuildChatInteraction,
-  PermissionsError,
-} from 'interfaces/Command';
-import { handle_error } from 'utilities/handle_interaction_error';
+import { BaseCommand, Command, GuildChatInteraction } from 'interfaces/Command';
 import { map_err } from 'utilities/error';
 import { CommandContext } from 'utilities/command_context';
 import Config from '@providers/config';
@@ -19,8 +12,9 @@ import Commands from '@providers/commands';
 import As from '@providers/services/audit_service';
 import Lgr from '@providers/logger';
 import ComponentService from '@providers/services/component_service';
-import { Logger } from 'tslog';
 import { err, ok } from 'neverthrow';
+import EmbeddableError from 'utilities/error/EmbeddableError';
+import { EntitlementsError, PermissionsError } from 'utilities/error/def';
 
 const config = Config.instance;
 const commands = Commands.instance;
@@ -34,10 +28,9 @@ function is_standalone_command(command?: BaseCommand): command is Command {
 
 function check_command_gatekeeping(interaction: ChatInputCommandInteraction, command: BaseCommand) {
   if (command.access_control.developer_only && !config.owners.includes(interaction.user.id)) {
-    return handle_error(
-      new Error(`this command can only be ran by the developers of the bot`),
+    return EmbeddableError.handle_error(
       interaction,
-      'dev-only',
+      new Error('this command can only be ran by the devs'),
     );
   }
 
@@ -52,11 +45,13 @@ function check_command_gatekeeping(interaction: ChatInputCommandInteraction, com
         command.access_control.invoker_requires_permission,
       );
 
-      if (!has_perms)
-        return handle_error(
-          new PermissionsError(command.access_control.invoker_requires_permission, 'user'),
-          interaction,
+      if (!has_perms) {
+        const error = new PermissionsError(
+          command.access_control.invoker_requires_permission,
+          'user',
         );
+        return error.send_error(interaction);
+      }
     }
   }
 
@@ -68,11 +63,10 @@ function check_command_gatekeeping(interaction: ChatInputCommandInteraction, com
         .permissionsFor(client_as_member)
         .has(command.access_control.bot_requires_permission);
 
-      if (!has_perms)
-        return handle_error(
-          new PermissionsError(command.access_control.bot_requires_permission, 'bot'),
-          interaction,
-        );
+      if (!has_perms) {
+        const error = new PermissionsError(command.access_control.bot_requires_permission, 'bot');
+        return error.send_error(interaction);
+      }
     }
   }
 
@@ -83,7 +77,10 @@ function check_command_gatekeeping(interaction: ChatInputCommandInteraction, com
       (entitlement) => entitlement.id === SKU_ID,
     );
 
-    if (!entitlement_active) return handle_error(new EntitlementsError(SKU_ID), interaction);
+    if (!entitlement_active) {
+      const error = new EntitlementsError(SKU_ID);
+      return error.send_error(interaction);
+    }
   }
 
   return true;
@@ -91,14 +88,16 @@ function check_command_gatekeeping(interaction: ChatInputCommandInteraction, com
 
 async function handle_command_interaction(interaction: ChatInputCommandInteraction) {
   if (!interaction.inGuild()) {
-    const error = new Error(`Thread-Watcher only works in guilds`);
-    handle_error(error, interaction);
-    return err(error);
+    const e = new Error(`Thread-Watcher only works in guilds`);
+    EmbeddableError.handle_error(interaction, e);
+    return err(e);
   }
 
   let command = commands.get(interaction.commandName);
   const audit_builder = audit_service.get_builder_from_command_interaction(interaction);
   audit_builder.set_cmd_args(interaction);
+
+  const handle_error = (err: Error) => EmbeddableError.handle_error(interaction, err);
   const handle_err = audit_builder.bind_err_func(handle_error);
 
   if (!command) {

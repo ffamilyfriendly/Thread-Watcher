@@ -1,8 +1,7 @@
 import { client } from '@providers/client';
 import { ticket_service } from '@providers/services/ticket_service';
-import { ButtonStart, Embed, EmbedField, SelectionStart, TicketPanel } from '@watcher/shared';
+import { ButtonStart, Embed, SelectionStart, TicketPanel } from '@watcher/shared';
 import {
-  ActionRow,
   ActionRowBuilder,
   APIEmbedField,
   ButtonBuilder,
@@ -10,16 +9,11 @@ import {
   ColorResolvable,
   EmbedBuilder,
   Message,
-  RestOrArray,
   SendableChannels,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
 } from 'discord.js';
-import {
-  CallbackResponse,
-  define_secure_event,
-  SecurePrivateEvent,
-} from 'interfaces/PrivateEvents';
+import { CallbackResponse, define_secure_event } from 'interfaces/PrivateEvents';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 

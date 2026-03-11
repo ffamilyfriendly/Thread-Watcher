@@ -5,7 +5,7 @@ import {
 } from '@mistralai/mistralai/models/components';
 import { AgentsApiV1ConversationsAppendRequest } from '@mistralai/mistralai/models/operations';
 import { config } from '@providers/config';
-import { ValueContainer } from 'modules/ticket/_pipeline/DefaultModule';
+import { ValueContainer } from 'modules/ticket/_pipeline/ValueContainter';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import AiService from 'services/AiService';
 import { map_err } from 'utilities/error';

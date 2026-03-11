@@ -14,8 +14,7 @@ import {
   TicketPanelMetaObj,
   Ticket,
 } from '@watcher/shared';
-
-export type DatabaseError = SqliteError | Error;
+import { DatabaseError } from 'utilities/error/def';
 
 interface InsertThreadData extends Omit<ThreadData, 'is_watched' | 'due_archive'> {
   due_archive: Date;
@@ -117,6 +116,7 @@ interface Tickets {
   get_ticket_panel: (panel_id: string) => DBResult<TicketPanel | null>;
   insert_ticket: (ticket: TicketInsertion) => DBResult;
   get_ticket: (ticket_id: string) => DBResult<Ticket>;
+  get_ticket_id_from_thread: (thread_id: string) => DBResult<string | null>;
 }
 
 export interface Database extends Core, GuildSettings, Audit, Guilds, Tickets {}

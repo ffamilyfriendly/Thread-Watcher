@@ -9,9 +9,10 @@ import {
   User,
 } from 'discord.js';
 import i18next from 'i18next';
-import { Database, DatabaseError } from 'interfaces/Database';
+import { Database } from 'interfaces/Database';
 import { err, ok, Result } from 'neverthrow';
 import { map_err } from 'utilities/error';
+import { DatabaseError } from 'utilities/error/def';
 
 // Matches your ZAuditTypes literal values
 export const AUDIT_TYPES_LIST = [

@@ -1,9 +1,10 @@
 import { redis } from '@providers/redis';
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { CommandError, RegistrationScope } from 'interfaces/BaseCommandInterface';
+import { RegistrationScope } from 'interfaces/BaseCommandInterface';
 import { type Command } from 'interfaces/Command';
 import { err, Result, ResultAsync } from 'neverthrow';
 import { CommandContext } from 'utilities/command_context';
+import { CommandError } from 'utilities/error/def';
 
 async function run(
   interaction: ChatInputCommandInteraction,

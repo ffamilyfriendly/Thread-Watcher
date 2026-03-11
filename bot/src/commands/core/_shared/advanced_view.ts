@@ -17,13 +17,13 @@ import {
   TextInputStyle,
   ThreadChannel,
 } from 'discord.js';
-import { GenericCommandError } from 'interfaces/BaseCommandInterface';
-import { handle_error_generic } from 'utilities/handle_interaction_error';
 import regex_is_safe from 'safe-regex';
 import { Vacuum } from 'services/ComponentService';
 import { CommandContext } from 'utilities/command_context';
 import { FilterData } from '@watcher/shared';
 import { component_service } from '@providers/services/component_service';
+import { GenericCommandError } from 'utilities/error/def';
+import EmbeddableError from 'utilities/error/EmbeddableError';
 
 export interface State<TContext = unknown> {
   components: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder | RoleSelectMenuBuilder>[];
@@ -75,20 +75,18 @@ async function handle_set_regex_button(interaction: ButtonInteraction, state: St
   await interaction.showModal(modal_to_show);
   const res = await modal_promise;
 
-  if (res.isErr()) return handle_error_generic(interaction, new Error(res.error));
+  if (res.isErr()) return EmbeddableError.handle_error(interaction, new Error(res.error));
 
   const modal_interaction = res.value;
   const reg_exp = modal_interaction.fields.getTextInputValue('advanced_regex');
 
   if (!regex_is_safe(reg_exp)) {
-    return handle_error_generic(
-      modal_interaction,
-      new GenericCommandError(
-        'Unsafe Regex',
-        `the provided regex:\`\`\`\n${reg_exp}\n\`\`\`was deemed unsafe`,
-        'usage/advanced-filtering#rejected-regex',
-      ),
+    const error = new GenericCommandError(
+      'Unsafe Regex',
+      `the provided regex:\`\`\`\n${reg_exp}\n\`\`\`was deemed unsafe`,
+      'usage/advanced-filtering#rejected-regex',
     );
+    return error.send_error(modal_interaction);
   }
 
   if (modal_interaction.isFromMessage()) {
@@ -104,13 +102,11 @@ function handle_clear_regex_button(interaction: ButtonInteraction, state: State)
 
 function handle_test_regex_button(interaction: ButtonInteraction, state: State) {
   if (!state.filters.regex) {
-    return handle_error_generic(
-      interaction,
-      new GenericCommandError(
-        'No Regex Set',
-        `You've not selected a Regex so there's nothing to test`,
-      ),
+    const error = new GenericCommandError(
+      'No Regex Set',
+      `You've not selected a Regex so there's nothing to test`,
     );
+    return error.send_error(interaction);
   }
 
   const test_threads = state.threads.slice(0, 20);

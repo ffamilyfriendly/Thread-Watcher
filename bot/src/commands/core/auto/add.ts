@@ -5,11 +5,7 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 
-import {
-  CommandError,
-  GuildChatInteraction,
-  RegistrationScope,
-} from 'interfaces/BaseCommandInterface';
+import { GuildChatInteraction, RegistrationScope } from 'interfaces/BaseCommandInterface';
 import { type SubCommand } from 'interfaces/Command';
 import { err, Result } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
@@ -19,6 +15,7 @@ import { map_err } from 'utilities/error';
 import { get_target } from '../_shared/check_channel_values';
 import { channel_service } from '@providers/services/channel_service';
 import { audit_service } from '@providers/services/audit_service';
+import { CommandError } from 'utilities/error/def';
 
 async function handle_execution(state: State, interaction: Interaction, context: null) {
   const did_work = await channel_service.add_monitor(

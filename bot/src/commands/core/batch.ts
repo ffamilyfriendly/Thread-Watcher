@@ -8,11 +8,7 @@ import {
   ThreadChannel,
 } from 'discord.js';
 
-import {
-  CommandError,
-  GuildChatInteraction,
-  RegistrationScope,
-} from 'interfaces/BaseCommandInterface';
+import { GuildChatInteraction, RegistrationScope } from 'interfaces/BaseCommandInterface';
 import { type Command } from 'interfaces/Command';
 
 import { err, ok, Result, ResultAsync } from 'neverthrow';
@@ -28,6 +24,7 @@ import { audit_service } from '@providers/services/audit_service';
 import { client } from '@providers/client';
 import { thread_service } from '@providers/services/thread_service';
 import { channel_service } from '@providers/services/channel_service';
+import { CommandError } from 'utilities/error/def';
 
 async function fetch_all_threads_from_parent(channel: Channel | Guild) {
   let thread_list: ThreadChannel[] = [];

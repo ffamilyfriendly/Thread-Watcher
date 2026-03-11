@@ -1,28 +1,24 @@
 import { TypedPipelineModule } from '@watcher/shared';
-import { err, ok, Result, ResultAsync } from 'neverthrow';
+import { err, ok, Result } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import { DefaultModule, IPipeline, SupportedInteractionTypeWithGuild } from '../DefaultModule';
 import { interpolate_string } from '../helpers/var_string';
 import { ai_service } from '@providers/services/ai_service';
 import {
-  ActionRow,
-  ActionRowBuilder,
   ButtonBuilder,
+  ButtonInteraction,
   ButtonStyle,
   ChatInputCommandInteraction,
   ColorResolvable,
   EmbedBuilder,
   Interaction,
   ModalBuilder,
-  ModalSubmitInteraction,
   RepliableInteraction,
   TextInputStyle,
 } from 'discord.js';
-import { component_service } from '@providers/services/component_service';
 import { NarrowAnswer, IssueNarrower as Narrower } from 'services/AIWrappers/IssueNarrower';
-import { safe_reply, safe_reply_or_followup, safe_update } from '../helpers/safe_reply';
+import { safe_update } from '../helpers/safe_reply';
 import { config } from '@providers/config';
-import { Vacuum } from 'services/ComponentService';
 import { ValueContainer } from '../ValueContainter';
 
 export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NARROW_ISSUE'>> {
@@ -66,7 +62,6 @@ export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NA
     >
   > {
     const embed = new EmbedBuilder();
-    const action_row = new ActionRowBuilder<ButtonBuilder>();
     embed.setTitle('Clarification Requested');
     embed.setColor(config.style.info.colour as ColorResolvable);
     embed.setDescription(clarification_query);
@@ -77,76 +72,34 @@ export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NA
     skip_button.setStyle(ButtonStyle.Secondary);
     skip_button.setLabel('Skip');
 
-    const filter = (int: Interaction) => int.user.id === interaction.user.id;
+    const modal = this.create_question_modal(clarification_query);
 
-    const vacuum = new Vacuum();
+    const modal_response = await super.ensure_modal_shown(interaction, modal, {
+      proceed_button: clarify_button,
+      skip_button,
+      embed,
+    });
 
-    return new Promise(async (resolve) => {
-      const perr = (e: Error) => resolve(err(e));
-
-      vacuum.add(
-        component_service.wait_for_interaction_callback(
-          clarify_button,
-          filter,
-          async (btn_int) => {
-            const modal = this.create_question_modal(clarification_query);
-            const modal_promise = component_service.wait_for_interaction(modal, filter);
-
-            const show_modal = await ResultAsync.fromPromise(btn_int.showModal(modal), map_err);
-            if (show_modal.isErr()) {
-              this.l.error(`Could not show follow-up question to user`);
-              return perr(show_modal.error);
-            }
-            const modal_response = await modal_promise;
-            if (modal_response.isErr()) return perr(map_err(modal_response));
-
-            const followup_clarification = modal_response.value.fields.getTextInputValue(
-              this.self.uid,
-            );
-
-            this.l.info(`user answered: ${followup_clarification}`);
-
-            const followup_res = await ai.narrow(followup_clarification);
-            if (followup_res.isErr()) return perr(followup_res.error);
-
-            vacuum.clean();
-            return resolve(
-              ok({
-                should_skip: false,
-                interaction: modal_response.value,
-                ai_res: followup_res.value,
-              }),
-            );
-          },
-          undefined,
-          () => perr(new Error('Timed out')),
-        ),
-        component_service.wait_for_interaction_callback(
-          skip_button,
-          filter,
-          (btn_int) => {
-            vacuum.clean();
-            return resolve(
-              ok({
-                should_skip: true,
-                interaction: btn_int,
-                ai_res: null,
-              }),
-            );
-          },
-          undefined,
-          () => perr(new Error('Timed out')),
-        ),
-      );
-
-      action_row.addComponents([clarify_button, skip_button]);
-
-      const embed_reply = await safe_reply_or_followup(interaction, {
-        embeds: [embed],
-        components: [action_row],
-        flags: 'Ephemeral',
+    if (modal_response.isErr()) return err(map_err(modal_response));
+    if (modal_response.value instanceof ButtonInteraction) {
+      return ok({
+        should_skip: true,
+        interaction: modal_response.value,
+        ai_res: null,
       });
-      if (embed_reply.isErr()) return perr(embed_reply.error);
+    }
+
+    const followup_clarification = modal_response.value.fields.getTextInputValue(this.self.uid);
+
+    this.l.info(`user answered: ${followup_clarification}`);
+
+    const followup_res = await ai.narrow(followup_clarification);
+    if (followup_res.isErr()) return err(followup_res.error);
+
+    return ok({
+      should_skip: false,
+      interaction: modal_response.value,
+      ai_res: followup_res.value,
     });
   }
 

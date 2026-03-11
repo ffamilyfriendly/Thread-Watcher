@@ -5,10 +5,11 @@ import {
   ChatInputCommandInteraction,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { CommandError, RegistrationScope } from 'interfaces/BaseCommandInterface';
+import { RegistrationScope } from 'interfaces/BaseCommandInterface';
 import { type SubCommand } from 'interfaces/Command';
 import { err, Result } from 'neverthrow';
 import { CommandContext } from 'utilities/command_context';
+import { CommandError } from 'utilities/error/def';
 
 async function run(
   interaction: ChatInputCommandInteraction,

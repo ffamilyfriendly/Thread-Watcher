@@ -1,8 +1,9 @@
 import { config } from '@providers/config';
 import { entitlement_service } from '@providers/services/entitlement_service';
 import { Channel, ChannelType, Guild, GuildBasedChannel } from 'discord.js';
-import { EntitlementsError, GuildChatInteraction } from 'interfaces/BaseCommandInterface';
+import { GuildChatInteraction } from 'interfaces/BaseCommandInterface';
 import { err, ok } from 'neverthrow';
+import { EntitlementsError } from 'utilities/error/def';
 
 const ALLOWED_CHANNEL_TYPES = [
   ChannelType.GuildCategory,
@@ -26,7 +27,7 @@ export async function get_target(interaction: GuildChatInteraction) {
   const global = interaction.options.getBoolean('global');
 
   if (global) {
-    const has_sku = await entitlement_service.has_basic(interaction);
+    const has_sku = await entitlement_service.has_premium(interaction.guildId);
     if (has_sku.isErr()) return err(has_sku.error);
 
     if (!has_sku.value) return err(new EntitlementsError(config.paywall.basic_sku, 'global'));

@@ -3,6 +3,7 @@ import { DefaultModule, IPipeline, SupportedInteractionTypeWithGuild } from '../
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import {
   BaseSelectMenuBuilder,
+  ButtonInteraction,
   ChannelSelectMenuBuilder,
   LabelBuilder,
   ModalBuilder,
@@ -133,35 +134,21 @@ export default class ModalQuestion extends DefaultModule<TypedPipelineModule<'MO
   ): Promise<Result<SupportedInteractionTypeWithGuild | void, Error>> {
     const modal = this.create_modal();
 
-    const int_res = await this.ensure_fresh_interaction(interaction);
-    if (int_res.isErr()) return err(int_res.error);
-
-    const modal_promise = component_service.wait_for_interaction(
-      modal,
-      (int) => int.user.id === int_res.value.user.id,
-    );
-
-    const show_modal_promise = await ResultAsync.fromPromise(
-      int_res.value.showModal(modal),
-      map_err,
-    );
-    if (show_modal_promise.isErr()) {
-      this.l.error('Could not show question modal', show_modal_promise.error);
-      return err(show_modal_promise.error);
-    }
-
-    const modal_res = await modal_promise;
+    const modal_res = await super.ensure_modal_shown(interaction, modal, { skip_button: false });
     if (modal_res.isErr()) {
-      this.l.error(`Modal response error`, modal_res.error);
-      return err(map_err(modal_res.error));
+      this.l.error('Could not show question modal', modal_res.error);
+      return err(modal_res.error);
+    }
+    if (modal_res.value instanceof ButtonInteraction) {
+      this.l.error('Question Modal was skipped (not supported)');
+      return err(new Error('was skipped'));
     }
 
     this.populate_variables(modal_res.value);
 
-    const upd_repl = await safe_update(modal_res.value, { content: 'hi' });
+    const upd_repl = await safe_update(modal_res.value, { components: [] });
     if (upd_repl.isErr()) {
-      console.error(upd_repl.error);
-      this.l.error('ERROR!!!!!');
+      this.l.error('could not update embed');
       return err(upd_repl.error);
     }
 

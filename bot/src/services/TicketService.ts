@@ -1,8 +1,9 @@
 import { EditTicketPanel, Ticket, TicketPanel, ZTicket, ZTicketPanel } from '@watcher/shared';
 import { Database, TicketInsertion } from 'interfaces/Database';
 import Redis from 'ioredis';
-import { ok } from 'neverthrow';
+import { err, ok } from 'neverthrow';
 import RedisWrapper from 'utilities/redis';
+import z from 'zod';
 
 export default class TicketService {
   static readonly CACHE_TTL_SECONDS = 900;
@@ -40,6 +41,18 @@ export default class TicketService {
 
   async insert_ticket(ticket_data: TicketInsertion) {
     return this.db.insert_ticket(ticket_data);
+  }
+
+  async get_ticket_from_thread_id(thread_id: string) {
+    const cached = await this.r.get(['assoc', thread_id], z.string());
+    if (cached.isOk() && cached.value) return this.get_ticket(cached.value);
+
+    const db_res = await this.db.get_ticket_id_from_thread(thread_id);
+    if (db_res.isErr()) return err(db_res.error);
+    if (!db_res.value) return ok(null);
+    this.r.set(['assoc', thread_id], db_res.value, z.string());
+
+    return this.get_ticket(db_res.value);
   }
 
   async get_ticket(ticket_id: string) {

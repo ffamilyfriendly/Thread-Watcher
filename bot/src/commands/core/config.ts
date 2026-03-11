@@ -7,11 +7,7 @@ import {
   MessageActionRowComponentBuilder,
   SlashCommandBuilder,
 } from 'discord.js';
-import {
-  CommandError,
-  GuildChatInteraction,
-  RegistrationScope,
-} from 'interfaces/BaseCommandInterface';
+import { GuildChatInteraction, RegistrationScope } from 'interfaces/BaseCommandInterface';
 import { type Command } from 'interfaces/Command';
 import settings_map from 'interfaces/Settings';
 import { err, ok, Result } from 'neverthrow';
@@ -28,6 +24,7 @@ import { map_err } from 'utilities/error';
 import { safe_parse } from 'utilities/parsing';
 import { setting_service } from '@providers/services/setting_service';
 import { component_service } from '@providers/services/component_service';
+import { CommandError } from 'utilities/error/def';
 
 function create_buttons() {
   const apply_button = new ButtonBuilder().setStyle(ButtonStyle.Primary).setLabel('Save');

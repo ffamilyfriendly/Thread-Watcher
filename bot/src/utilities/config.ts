@@ -83,6 +83,7 @@ export const ZConfig = z.object({
   ai: ZAi,
   owners: z.array(z.string()),
   devServer: z.string().nonempty(),
+  support_server_link: z.url().default('https://botsuite.co/join'),
   logWebhook: z.string().url().startsWith('https://discord.com').optional(),
   style: Style,
 });
