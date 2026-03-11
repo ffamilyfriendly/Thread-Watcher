@@ -17,9 +17,10 @@ import {
   TextInputStyle,
 } from 'discord.js';
 import { NarrowAnswer, IssueNarrower as Narrower } from 'services/AIWrappers/IssueNarrower';
-import { safe_update } from '../helpers/safe_reply';
+import { ensure_deferred, safe_reply_or_followup, safe_update } from '../helpers/safe_reply';
 import { config } from '@providers/config';
 import { ValueContainer } from '../ValueContainter';
+import { mistral_thinking_embed } from '../components/embed';
 
 export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NARROW_ISSUE'>> {
   private narrowed_summary?: string;
@@ -51,16 +52,11 @@ export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NA
     return m;
   }
 
-  private async handle_followup(
-    clarification_query: string,
-    interaction: RepliableInteraction,
-    ai: Narrower,
-  ): Promise<
-    Result<
-      { should_skip: boolean; ai_res: NarrowAnswer | null; interaction: RepliableInteraction },
-      Error
-    >
-  > {
+  private create_CTA_components(clarification_query: string): {
+    proceed_button: ButtonBuilder;
+    skip_button: ButtonBuilder;
+    embed: EmbedBuilder;
+  } {
     const embed = new EmbedBuilder();
     embed.setTitle('Clarification Requested');
     embed.setColor(config.style.info.colour as ColorResolvable);
@@ -72,35 +68,7 @@ export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NA
     skip_button.setStyle(ButtonStyle.Secondary);
     skip_button.setLabel('Skip');
 
-    const modal = this.create_question_modal(clarification_query);
-
-    const modal_response = await super.ensure_modal_shown(interaction, modal, {
-      proceed_button: clarify_button,
-      skip_button,
-      embed,
-    });
-
-    if (modal_response.isErr()) return err(map_err(modal_response));
-    if (modal_response.value instanceof ButtonInteraction) {
-      return ok({
-        should_skip: true,
-        interaction: modal_response.value,
-        ai_res: null,
-      });
-    }
-
-    const followup_clarification = modal_response.value.fields.getTextInputValue(this.self.uid);
-
-    this.l.info(`user answered: ${followup_clarification}`);
-
-    const followup_res = await ai.narrow(followup_clarification);
-    if (followup_res.isErr()) return err(followup_res.error);
-
-    return ok({
-      should_skip: false,
-      interaction: modal_response.value,
-      ai_res: followup_res.value,
-    });
+    return { proceed_button: clarify_button, skip_button, embed };
   }
 
   async create_end_embed(interaction: RepliableInteraction) {
@@ -108,7 +76,7 @@ export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NA
       return err(new Error('interaction was ChatInputCommandInteraction'));
     }
 
-    const embed = new EmbedBuilder();
+    const embed = super.get_themed_embed();
     embed.setTitle('Described issue');
     embed.setDescription(this.narrowed_summary ?? '<none generated>');
     embed.setFooter({ text: 'synthesized by AI' });
@@ -132,10 +100,15 @@ export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NA
       this.pipeline.exports,
     );
 
+    await safe_reply_or_followup(interaction, {
+      flags: 'Ephemeral',
+      embeds: [this.get_themed_embed(mistral_thinking_embed)],
+    });
+
     const initial_response = await issue_narrower.narrow();
     if (initial_response.isErr()) {
-      this.l.error('could not start issue narrowing conversation!', initial_response.error.message);
-      return err(initial_response.error);
+      this.l.error('could not start issue narrowing conversation!');
+      return err(map_err(initial_response.error));
     }
 
     this.narrowed_summary = initial_response.value.internal_summary;
@@ -149,28 +122,37 @@ export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NA
     let last_interaction: Interaction = interaction;
     for (let round = 0; round < this.self.max_responses; round++) {
       if (!clarification_query) return err(new Error("no 'clarification_query' was passed!"));
-      this.l.info(`Asking user: ${clarification_query}`);
-      const followup_res = await this.handle_followup(
-        clarification_query,
+
+      const modal_res = await super.ensure_modal_shown(
         last_interaction,
-        issue_narrower,
+        this.create_question_modal(clarification_query),
+        { ...this.create_CTA_components(clarification_query), use_update_instead: true },
       );
-      if (followup_res.isErr()) {
-        this.l.error(`Could not get followup answer`, followup_res.error);
-        return err(followup_res.error);
-      }
 
-      last_interaction = followup_res.value.interaction;
-
-      if (followup_res.value.should_skip) {
+      if (modal_res.isErr()) return err(modal_res.error);
+      if (modal_res.value instanceof ButtonInteraction) {
+        last_interaction = modal_res.value;
         this.l.silly(`User skipped AI narrowing on round ${round}/${this.self.max_responses}`);
         break;
       }
+      last_interaction = modal_res.value;
+      await safe_update(last_interaction, {
+        embeds: [this.get_themed_embed(mistral_thinking_embed)],
+        components: [],
+      });
 
-      if (followup_res.value.ai_res) {
-        this.narrowed_summary = followup_res.value.ai_res.internal_summary;
-        clarification_query = followup_res.value.ai_res.clarification_query;
-        if (followup_res.value.ai_res.is_clarified) break;
+      const followup_clarification = modal_res.value.fields.getTextInputValue(this.self.uid);
+
+      this.l.info(`user answered: ${followup_clarification}`);
+
+      const followup_res = await issue_narrower.narrow(followup_clarification);
+      if (followup_res.isErr()) return err(map_err(followup_res.error));
+
+      this.narrowed_summary = followup_res.value.internal_summary;
+      clarification_query = followup_res.value.clarification_query;
+
+      if (followup_res.value.is_clarified) {
+        break;
       }
     }
 

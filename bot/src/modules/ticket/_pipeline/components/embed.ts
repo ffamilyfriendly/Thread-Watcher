@@ -52,3 +52,8 @@ export function create_ticket_opened(
 
   return [embed, row];
 }
+
+export function mistral_thinking_embed(e: EmbedBuilder) {
+  e.setTitle('Thinking...');
+  e.setDescription('Issue is being processed by Mistral Ai.');
+}

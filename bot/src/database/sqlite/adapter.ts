@@ -549,7 +549,10 @@ export default class Sqlite implements Database {
 
   @with_error_handling
   async update_ticket(ticket_id: string, data: EditTicket) {
-    this.drizzle.update(schema.Ticket).set(data).where(eq(schema.Ticket.ticket_id, ticket_id));
+    await this.drizzle
+      .update(schema.Ticket)
+      .set(data)
+      .where(eq(schema.Ticket.ticket_id, ticket_id));
     return ok();
   }
 

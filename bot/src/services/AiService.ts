@@ -45,6 +45,17 @@ export default class AiService {
     private entitlement_service: EntitlementService,
   ) {}
 
+  static compute_cost_micro_eurocents(
+    model_name: AiModelName,
+    input_tokens: number,
+    output_tokens: number,
+  ): number {
+    const model = AiModels[model_name];
+    const input_cost = (input_tokens * model.eur_per_1m_tokens_input) / 10_000;
+    const output_cost = (output_tokens * model.eur_per_1m_token_output) / 10_000;
+    return Math.ceil((input_cost + output_cost) * 10_000);
+  }
+
   private should_be_given_tokens(d: Date) {
     const avg_month = 1000 * 60 * 60 * 24 * 30;
     const now = new Date();
@@ -78,13 +89,17 @@ export default class AiService {
       });
     }
 
-    const quota_total = guild_obj.value.persistent_tokens + guild_obj.value.monthly_tokens;
-    const last_granted_monthly_tokens = guild_obj.value.monthly_tokens_last_granted;
+    const total_budget =
+      guild_obj.value.persistent_budget_eurocents + guild_obj.value.monthly_budget_eurocents;
+
+    const quota_total =
+      guild_obj.value.persistent_budget_eurocents + guild_obj.value.monthly_budget_eurocents;
+    const last_granted_monthly_tokens = guild_obj.value.monthly_budget_last_granted;
 
     return ok({
       total: quota_total,
-      persistent: guild_obj.value.persistent_tokens,
-      monthly: guild_obj.value.monthly_tokens,
+      persistent: guild_obj.value.persistent_budget_eurocents,
+      monthly: guild_obj.value.monthly_budget_eurocents,
       last_granted_monthly_tokens,
       should_be_granted_tokens: last_granted_monthly_tokens
         ? this.should_be_given_tokens(last_granted_monthly_tokens)
@@ -109,27 +124,49 @@ export default class AiService {
    * @param guild_id
    * @param required_tokens
    */
-  private async preflight(guild_id: string, model_name: AiModelName, required_tokens: number) {
-    let token_count = 0;
-    const guild_quota_info = await this.check_quota_for_guild(guild_id);
-    if (guild_quota_info.isErr()) return err(guild_quota_info.error);
-    if (guild_quota_info.value.should_be_granted_tokens) {
-      const tokens_given = await this.grant_monthly_tokens(guild_id);
-      if (tokens_given.isErr()) return err(tokens_given.error);
+  public async preflight(
+    guild_id: string,
+    model_name: AiModelName,
+    estimated_input_tokens: number,
+    estimated_output_tokens: number,
+  ) {
+    const guild_quota = await this.check_quota_for_guild(guild_id);
+    if (guild_quota.isErr()) return err(guild_quota.error);
 
-      token_count = guild_quota_info.value.persistent + tokens_given.value;
-    } else token_count = guild_quota_info.value.total;
+    let remaining = guild_quota.value.total;
 
-    return ok(token_count > AiService.token_to_millicent(model_name, required_tokens));
+    if (guild_quota.value.should_be_granted_tokens) {
+      const granted = await this.grant_monthly_tokens(guild_id);
+      if (granted.isErr()) return err(granted.error);
+      remaining += granted.value;
+    }
+
+    const estimated_cose = AiService.compute_cost_micro_eurocents(
+      model_name,
+      estimated_input_tokens,
+      estimated_output_tokens,
+    );
+    return ok(remaining >= estimated_cose);
   }
 
-  async deduct_quota(guild_id: string, model_name: AiModelName, tokens_used: number) {
-    const cost_of_operation = AiService.token_to_millicent(model_name, tokens_used);
+  async deduct_quota(
+    guild_id: string,
+    model_name: AiModelName,
+    input_tokens: number,
+    output_tokens: number,
+  ) {
+    const cost_of_operation = AiService.compute_cost_micro_eurocents(
+      model_name,
+      input_tokens,
+      output_tokens,
+    );
     return this.guild_service.deduct_ai_tokens(guild_id, cost_of_operation);
   }
 
   async get_regex(prompt: string, guild_id: string) {
-    const allowed_run_function = (await this.preflight(guild_id, 'mistral-tiny-latest', 500)).match(
+    const allowed_run_function = (
+      await this.preflight(guild_id, 'mistral-tiny-latest', 300, 200)
+    ).match(
       (v) => v,
       (error) => {
         this.logger.error(`Could not run preflight checks for 'get_regex'`, error);
@@ -152,7 +189,10 @@ export default class AiService {
     if (ai_res.isErr()) return err(ai_res);
     if (!ai_res.value.usage.totalTokens) return err(new Error('could not get tokens used!'));
 
-    this.deduct_quota(guild_id, 'mistral-tiny-latest', ai_res.value.usage.totalTokens).then((r) => {
+    const { promptTokens, completionTokens } = ai_res.value.usage;
+    if (!promptTokens || !completionTokens) return err(new Error('could not get usage tokens'));
+
+    this.deduct_quota(guild_id, 'mistral-tiny-latest', promptTokens, completionTokens).then((r) => {
       if (r.isErr()) this.logger.error(`Could not deduct points for '${guild_id}'`, r.error);
     });
 
@@ -176,15 +216,11 @@ export default class AiService {
     const result_async = await ResultAsync.fromPromise(t, map_err);
 
     if (result_async.isOk()) {
-      if (!result_async.value.usage.totalTokens) {
-        this.logger.warn(`Could not deduct AI quota for '${guild_id}' as 'totalTokens' was null`);
-      } else {
-        this.deduct_quota(guild_id, model_name, result_async.value.usage.totalTokens).then((r) => {
-          if (r.isErr()) {
-            this.logger.warn(`Could not deduct AI quota for '${guild_id}'`, r.error);
-          }
-        });
-      }
+      const { promptTokens, completionTokens } = result_async.value.usage;
+      if (!promptTokens || !completionTokens) return err(new Error('could not get usage tokens'));
+      this.deduct_quota(guild_id, model_name, promptTokens, completionTokens).then((r) => {
+        if (r.isErr()) this.logger.warn(`Could not deduct AI quota for '${guild_id}'`, r.error);
+      });
     }
 
     return result_async;

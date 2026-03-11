@@ -8,6 +8,7 @@ import { start_pipeline } from './_pipeline';
 import mark_ticket_as_resolved from './_actions/mark_resolved';
 import EmbeddableError from 'utilities/error/EmbeddableError';
 import add_note_action from './_actions/add_note';
+import claim_ticket_action from './_actions/claim_ticket';
 
 function get_panel_id(id: string) {
   if (!id.startsWith('start:')) return null;
@@ -30,11 +31,6 @@ async function handle_panel_interaction(
   const panel = await ticket_service.get_panel(panel_id);
   if (panel.isErr()) return err(map_err(panel.error));
 
-  if (!panel.value) {
-    interaction.reply(`Panel \`${panel_id}\` was not found. Sorry :(`);
-    return ok();
-  }
-
   start_pipeline(panel.value, interaction, l);
 
   return ok();
@@ -51,9 +47,6 @@ async function handle_ticket_action(
 
   const ticket = await ticket_service.get_ticket_from_thread_id(interaction.channelId);
   if (ticket.isErr()) return err(map_err(ticket.error));
-  if (!ticket.value) {
-    return EmbeddableError.handle_error(interaction, new Error('no such ticket'));
-  }
 
   let result: ActionReturnType | null = null;
   switch (action_name) {
@@ -63,11 +56,14 @@ async function handle_ticket_action(
     case 'add_note':
       result = add_note_action(interaction, ticket.value);
       break;
+    case 'claim_ticket':
+      result = claim_ticket_action(interaction, ticket.value);
+      break;
   }
 
   if (result) {
     const res = await result;
-    if (res.isErr()) return EmbeddableError.handle_error(interaction, res.error);
+    if (res.isErr()) return err(res.error);
   }
 
   return ok();
@@ -83,7 +79,7 @@ export default async function on_interaction(
   if (panel_id) return handle_panel_interaction(panel_id, interaction, l);
 
   const ticket_action = get_ticket_action(interaction.customId);
-  if (ticket_action) handle_ticket_action(ticket_action, interaction, l);
+  if (ticket_action) return handle_ticket_action(ticket_action, interaction, l);
 
   return ok();
 }

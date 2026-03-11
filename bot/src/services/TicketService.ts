@@ -10,7 +10,9 @@ import {
 import { ThreadChannel } from 'discord.js';
 import { Database, TicketInsertion } from 'interfaces/Database';
 import Redis from 'ioredis';
-import { err, ok } from 'neverthrow';
+import { err, ok, Result } from 'neverthrow';
+import { map_err } from 'utilities/error';
+import { PanelNotFound, ThreadIdNotFound, TicketNotFound } from 'utilities/error/def';
 import RedisWrapper from 'utilities/redis';
 import z from 'zod';
 
@@ -24,17 +26,16 @@ export default class TicketService {
     this.r = new RedisWrapper(redis, TicketService.CACHE_TTL_SECONDS, 'ticketservice');
   }
 
-  async get_panel(panel_id: string) {
+  async get_panel(panel_id: string): Promise<Result<TicketPanel, Error>> {
     const cached = await this.r.get(['panel', panel_id], ZTicketPanel);
     if (cached.isOk() && cached.value) return ok(cached.value);
 
     const db_res = await this.db.get_ticket_panel(panel_id);
+    if (db_res.isErr()) return err(map_err(db_res.error));
+    if (!db_res.value) return err(new PanelNotFound(panel_id));
 
-    if (db_res.isOk() && db_res.value) {
-      this.r.set(['panel', panel_id], db_res.value, ZTicketPanel);
-    }
-
-    return db_res;
+    this.r.set(['panel', panel_id], db_res.value, ZTicketPanel);
+    return ok(db_res.value);
   }
 
   async insert_panel(panel_data: TicketPanel) {
@@ -68,22 +69,22 @@ export default class TicketService {
 
     const db_res = await this.db.get_ticket_id_from_thread(thread_id);
     if (db_res.isErr()) return err(db_res.error);
-    if (!db_res.value) return ok(null);
+    if (!db_res.value) return err(new ThreadIdNotFound(thread_id));
     this.r.set(['assoc', thread_id], db_res.value, z.string());
 
     return this.get_ticket(db_res.value);
   }
 
-  async get_ticket(ticket_id: string) {
+  async get_ticket(ticket_id: string): Promise<Result<Ticket, Error>> {
     const cached = await this.r.get(['ticket', ticket_id], ZTicket);
     if (cached.isOk() && cached.value) return ok(cached.value);
 
     const db_res = await this.db.get_ticket(ticket_id);
-    if (db_res.isOk()) {
-      this.r.set(['ticket', ticket_id], db_res.value, ZTicket);
-    }
+    if (db_res.isErr()) return err(map_err(db_res.error));
+    if (!db_res.value) return err(new TicketNotFound(ticket_id));
 
-    return db_res;
+    this.r.set(['ticket', ticket_id], db_res.value, ZTicket);
+    return ok(db_res.value);
   }
 
   async insert_ticket_note(note: InsertTicketNote) {

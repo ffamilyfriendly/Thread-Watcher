@@ -137,7 +137,6 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
   const result = await command.run(interaction_as_guild_safe, command_context);
   if (result.isErr()) {
     const error = map_err(result.error);
-    handle_err(error, interaction);
     return err(error);
   } else {
     audit_builder.commit();
@@ -182,6 +181,6 @@ export default async function on_interaction(interaction: Interaction, _l: any) 
     case InteractionType.ApplicationCommandAutocomplete:
       return await handle_autocomplete_interaction(interaction);
     default:
-      return await component_service.recieve_interaction(interaction);
+      return component_service.recieve_interaction(interaction);
   }
 }

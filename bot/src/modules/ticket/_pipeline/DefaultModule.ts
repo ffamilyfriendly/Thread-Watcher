@@ -1,4 +1,4 @@
-import { PipelineModule, SelectionStart, TicketPanel } from '@watcher/shared';
+import { MODULE_OUTPUTS, PipelineModule, SelectionStart, TicketPanel } from '@watcher/shared';
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -20,7 +20,7 @@ import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Logger } from 'tslog';
 import { component_service } from '@providers/services/component_service';
 import { map_err } from 'utilities/error';
-import { safe_reply_or_followup } from 'utilities/interaction_helpers';
+import { safe_reply_or_followup, safe_update } from 'utilities/interaction_helpers';
 import { config } from '@providers/config';
 import { ValueContainer } from './ValueContainter';
 import { ContractLeafValue } from '@watcher/shared/tickets/contracts';
@@ -140,9 +140,9 @@ export abstract class DefaultModule<TModType extends PipelineModule> {
     modal: ModalBuilder,
     options?: {
       proceed_button?: ButtonBuilder;
-      open_modal_button?: ButtonBuilder;
       skip_button?: ButtonBuilder | false;
       embed?: EmbedBuilder;
+      use_update_instead?: boolean;
     },
   ): Promise<Result<ModalSubmitInteraction | ButtonInteraction, Error>> {
     if (interaction.isAutocomplete())
@@ -211,16 +211,30 @@ export abstract class DefaultModule<TModType extends PipelineModule> {
           ),
         );
 
-      const send_res = await safe_reply_or_followup(interaction, {
-        components: [btn_row],
-        embeds: [embed],
-        flags: 'Ephemeral',
-      });
-      if (send_res.isErr()) {
+      let promise: Result<unknown, Error>;
+
+      if (options?.use_update_instead) {
+        promise = await safe_update(interaction, { components: [btn_row], embeds: [embed] });
+      } else {
+        promise = await safe_reply_or_followup(interaction, {
+          components: [btn_row],
+          embeds: [embed],
+          flags: 'Ephemeral',
+        });
+      }
+      if (promise.isErr()) {
         component_vacuum.clean();
-        return resolve(err(send_res.error));
+        return resolve(err(promise.error));
       }
     });
+  }
+
+  public get_themed_embed(configure_embed?: (e: EmbedBuilder) => void): EmbedBuilder {
+    const module_meta = MODULE_OUTPUTS[this.self.type];
+    const e = new EmbedBuilder();
+    e.setColor(module_meta.accent_clr);
+    configure_embed?.(e);
+    return e;
   }
 
   protected abstract run(

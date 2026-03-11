@@ -78,3 +78,20 @@ export async function safe_update(
 
   return ResultAsync.fromPromise(promise, map_err);
 }
+
+export async function safe_delete(interaction: RepliableInteraction) {
+  if (interaction_is_clean(interaction)) {
+    if (interaction.isMessageComponent() || interaction.isModalSubmit()) {
+      const ack = await ResultAsync.fromPromise(interaction.deferUpdate(), map_err);
+      if (ack.isErr()) return err(ack.error);
+    } else {
+      const ack = await ResultAsync.fromPromise(
+        interaction.deferReply({ flags: 'Ephemeral' }),
+        map_err,
+      );
+      if (ack.isErr()) return err(ack.error);
+    }
+  }
+
+  return ResultAsync.fromPromise(interaction.deleteReply(), map_err);
+}

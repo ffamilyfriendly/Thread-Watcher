@@ -4,6 +4,7 @@ import { SupportedInteractionType, SupportedInteractionTypeWithGuild } from './D
 import { err, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import { Logger } from 'tslog';
+import { TicketPipelineModuleError } from 'utilities/error/def';
 
 export async function start_pipeline(
   panel: TicketPanel,
@@ -19,15 +20,6 @@ export async function start_pipeline(
     if (edit_res.isErr()) l.warn('Could not edit message to clear selection', edit_res.error);
   });
 
-  const def_await = await ResultAsync.fromPromise(
-    interaction.deferReply({ flags: 'Ephemeral' }),
-    map_err,
-  );
-  if (def_await.isErr()) {
-    l.error('could not defer interaction', def_await.error);
-    return err(def_await.error);
-  }
-
   const pipeline_population_res = await pipeline.populate_value_container(interaction);
   if (pipeline_population_res.isErr()) {
     l.error('could not populate pipeline values', pipeline_population_res.error);
@@ -39,8 +31,8 @@ export async function start_pipeline(
     const res = await module.run_module(active_interaction as SupportedInteractionTypeWithGuild);
 
     if (res.isErr()) {
-      pipeline.resolve_error(active_interaction, module, res.error);
-      break;
+      await pipeline.before_exit();
+      return err(new TicketPipelineModuleError(module, res.error, pipeline.ticket_id));
     }
 
     // Switch out the active interaction (if applicable).
@@ -52,12 +44,15 @@ export async function start_pipeline(
     }
   }
 
+  await pipeline.before_exit();
+
   if (!pipeline.resolved) {
-    l.warn(`Pipeline '${panel.panel_id}' ran without resolving on ticket '${pipeline.ticket_id}'`);
-    return pipeline.resolve_error(
-      active_interaction,
-      { id: 'PIPELINE' },
-      new Error('Pipeline ended without resolving'),
+    return err(
+      new TicketPipelineModuleError(
+        { id: 'PIPELINE' },
+        new Error('Pipeline exited without resolving'),
+        pipeline.ticket_id,
+      ),
     );
   }
 }

@@ -129,7 +129,7 @@ export class Pipeline implements IPipeline {
   constructor(readonly data: TicketPanel) {
     this.assigned_channel = data.initial_channel_id;
     this.assigned_roles = data.initial_assigned_roles;
-    this.logger = new Logger({ hideLogPositionForProduction: true });
+    this.logger = new Logger({ hideLogPositionForProduction: true, name: 'PIPELINE' });
     this.logger.attachTransport((log_obj) => this.append_log(log_obj));
     this.exports = new ValueContainer({}, 'ENV_ROOT');
   }
@@ -171,26 +171,9 @@ export class Pipeline implements IPipeline {
     return ok();
   }
 
-  async resolve_error(int: SupportedInteractionType, mod: { id: string }, error: Error) {
-    if (this.is_resolved) return;
-    this.is_resolved = true;
+  async before_exit(): Promise<void> {
     this.write_log();
-
-    const embed = new EmbedBuilder();
-    embed.setColor(config.style.error.colour as ColorResolvable);
-    embed.setTitle(`${config.style.error.emoji} Panel Failed`);
-    embed.setDescription(
-      `Panel ran into a non-continuable state on module \`${mod.id}\`.\nWe're sorry about this, please try again later.`,
-    );
-
-    const row = new ActionRowBuilder<ButtonBuilder>();
-    const btn_logs = new ButtonBuilder();
-    btn_logs.setStyle(ButtonStyle.Link);
-    btn_logs.setURL(`https://cdn.threadwatcher.xyz/logs/${this.ticket_id}_pipeline.txt`);
-    btn_logs.setLabel('View Logs');
-    row.addComponents(btn_logs);
-
-    safe_reply_or_followup(int, { embeds: [embed], components: [row], flags: 'Ephemeral' });
+    return;
   }
 
   async start_ticket_with_thread(

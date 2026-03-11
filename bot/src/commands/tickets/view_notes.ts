@@ -43,12 +43,22 @@ async function run(
   await ensure_deferred(interaction);
   const ticket = await ticket_service.get_ticket_from_thread_id(interaction.channelId);
   if (ticket.isErr()) return err(ticket.error);
-  if (!ticket.value) return err(new Error('ticket was null!'));
 
-  const notes = await ticket_service.get_ticket_notes(ticket.value.ticket_id, 25, 0);
+  const notes = await ticket_service.get_ticket_notes(ticket.value.ticket_id, 20, 0);
   if (notes.isErr()) return err(notes.error);
 
   const sections: Map<string, SectionBuilder> = new Map();
+
+  if (notes.value.length === 0) {
+    const n_sec = new SectionBuilder();
+    n_sec.addTextDisplayComponents((td) =>
+      td.setContent(
+        `# No notes found!\n**${ticket.value.name}** (\`${ticket.value.ticket_id}\`) has no notes.\n-# You can create a note with \`/ticket new-note\``,
+      ),
+    );
+    n_sec.setThumbnailAccessory((tn) => tn.setURL(interaction.user.displayAvatarURL()));
+    sections.set('__NONE', n_sec);
+  }
 
   for (const note of notes.value) {
     const fetched_user = await ResultAsync.fromPromise(
@@ -59,10 +69,10 @@ async function run(
     const n_sec = new SectionBuilder();
 
     n_sec.setThumbnailAccessory((tn) => tn.setURL(fetched_user.value.displayAvatarURL()));
-    n_sec.addTextDisplayComponents(
-      (td) => td.setContent(`## ${fetched_user.value.username}`),
-      (td) => td.setContent(`> ${note.text}`),
-      (td) => td.setContent(`-# ${note.created_at.toISOString()}`),
+    n_sec.addTextDisplayComponents((td) =>
+      td.setContent(
+        `### ${fetched_user.value.username}\n> ${note.text}\n-# ⌚ ${note.created_at.toISOString()}`,
+      ),
     );
 
     sections.set(note.note_id, n_sec);

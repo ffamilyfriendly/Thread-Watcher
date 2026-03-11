@@ -116,6 +116,15 @@ export class IssueNarrower {
   }
 
   async narrow(input?: string) {
+    const preflight = await this.service.preflight(
+      this.guild_id,
+      'mistral-medium-latest',
+      500,
+      500,
+    );
+    if (preflight.isErr()) return err(preflight.error);
+    if (!preflight.value) return err(new Error('you do not have enough tokens!'));
+
     let answer: Result<string | MessageOutputContentChunks[], Error>;
     if (this.conversation_id && !input)
       return err(new Error(`'conversation_id' was set but no input passed.`));
@@ -130,6 +139,10 @@ export class IssueNarrower {
 
     const formatted = ZNarrowAnswer.safeParse(JSON.parse(answer.value));
     if (!formatted.success) return err(formatted.error);
+
+    if (formatted.data.is_clarified) {
+      await this.delete_conversation();
+    }
 
     return ok(formatted.data);
   }

@@ -61,6 +61,20 @@
       "title": "Premium Feature Required",
       "command_requires_sku": "The **{{command_tag}}** command is a premium feature. [Upgrade now]({{link}}) to unlock this and other advanced tools for your server.",
       "command_option_requires_sku": "The **{{option_name}}** option is part of Thread-Watcher’s premium features. [Upgrade here]({{link}}) to access it."
+    },
+    "ticket": {
+      "ticket_not_found_title": "Ticket not found!",
+      "ticket_not_found_body": "ticket with ticket-id `{{ticket_id}}` could not be found.",
+      "panel_not_found_title": "Panel not found!",
+      "panel_not_found_body": "Panel with panel-id `{{panel_id}}` could not be found.",
+      "ticket_not_found_from_channel_title": "Ticket not found!",
+      "ticket_not_found_from_channel_body": "Channel <#{{channel_id}}> is not related to any tickets!",
+      "ticket_not_found_from_channel_body_footer": "Ensure you're using this command in a ticket.",
+      "required_assigned_roles_title": "Not Allowed",
+      "required_assigned_roles_body": "This action requires one of the roles assigned to this ticket\n{{assigned_roles}}",
+      "required_assigned_roles_body_or_ownership": "This action requires one of the roles assigned to this ticket or that you created the ticket\n{{assigned_roles}}",
+      "pipeline_failed_title": "Pipeline failed!",
+      "pipeline_failed_desc": "Panel ran into an error on module `{{module_id}} and cannot continue.\n-# Original error below`"
     }
   }
 }

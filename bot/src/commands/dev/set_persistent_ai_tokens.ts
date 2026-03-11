@@ -11,15 +11,16 @@ async function run(
   ctx: CommandContext,
 ): Promise<Result<void, CommandError>> {
   const guild_id = interaction.options.getString('guild_id', true);
-  const tokens_amount = interaction.options.getNumber('tokens', true);
+  const eur_amount = interaction.options.getNumber('cost', true);
+  const micro_eurocents = Math.round(eur_amount * 100 * 10_000);
 
-  const r = await guild_service.set_persistent_ai_tokens(guild_id, tokens_amount);
+  const r = await guild_service.set_persistent_ai_tokens(guild_id, micro_eurocents);
 
   if (r.isErr()) return err(r.error);
 
   ctx.build_embed({
     title: 'Granted tokens!',
-    description: `set persistent tokens to \`${tokens_amount}\` for guild \`${guild_id}\``,
+    description: `Set persistent AI budget to \`€${eur_amount.toFixed(4)}\` (\`${micro_eurocents}\` micro-eurocents) for guild \`${guild_id}\``,
     style: 'success',
     ephermal: true,
     auto_respond: true,
@@ -33,7 +34,10 @@ const command_data = new SlashCommandBuilder()
   .setDescription('(DEV ONLY) set persistent AI tokens of a guild')
   .addStringOption((o) => o.setName('guild_id').setDescription('id of guild').setRequired(true))
   .addNumberOption((o) =>
-    o.setName('tokens').setDescription('the tokens you want to grant').setRequired(true),
+    o
+      .setName('cost')
+      .setDescription('the cost (in EUR) you are giving to the server')
+      .setRequired(true),
   );
 
 const command: Command = {

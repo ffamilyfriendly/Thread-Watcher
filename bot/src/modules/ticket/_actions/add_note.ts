@@ -10,7 +10,7 @@ import { err, ok, ResultAsync } from 'neverthrow';
 import { Ticket } from '@watcher/shared';
 import { map_err } from 'utilities/error';
 import { component_service } from '@providers/services/component_service';
-import { member_has_role_overlap } from './shared';
+import { member_has_role_overlap, member_has_role_overlap_or_fail } from './shared';
 import { safe_reply, safe_update } from 'utilities/interaction_helpers';
 import { ticket_service } from '@providers/services/ticket_service';
 import { delete_note_btn, note_inserted } from './components/embeds';
@@ -24,8 +24,9 @@ export default async function add_note_action(
   if (int instanceof ModalSubmitInteraction)
     return err(new Error('this function cannot be ran with ModalSubmitInteraction'));
   if (!int.member) return err(new Error('member object required'));
-  if (!member_has_role_overlap(int.member, ticket.assigned_to_roles))
-    return err(new Error('you cannot do that'));
+
+  const can_do_action = member_has_role_overlap_or_fail(int.member, ticket.assigned_to_roles);
+  if (can_do_action.isErr()) return err(can_do_action.error);
 
   const modal = new ModalBuilder();
   modal.setTitle(`Add note for ${ticket.name}`);

@@ -8,15 +8,7 @@ import { Ticket } from '@watcher/shared';
 import { get_action_row } from '../_pipeline/components/ticket_opened';
 import { ValueContainer } from '../_pipeline/ValueContainter';
 import { generate_embed } from '../_pipeline/components/embed';
-import { member_has_role_overlap } from './shared';
-
-function can_close_ticket(int: RepliableInteraction, ticket: Ticket): boolean {
-  const has_assigned_role = int.member
-    ? member_has_role_overlap(int.member, ticket.assigned_to_roles)
-    : false;
-  const user_is_opener = int.user.id === ticket.owner;
-  return has_assigned_role || user_is_opener;
-}
+import { can_close_ticket_or_fail } from './shared';
 
 async function update_buttons(int: RepliableInteraction, start_message_id: string) {
   if (!int.channel) return ok();
@@ -45,7 +37,6 @@ async function do_resolved_actions(thread: ThreadChannel, ticket_id_or_ticket: s
 
   const panel_obj = await ticket_service.get_panel(ticket.panel_id);
   if (panel_obj.isErr()) return err(panel_obj.error);
-  if (!panel_obj.value) return err('no such panel!');
 
   const ticket_close_res = await ticket_service.mark_resolved(ticket.ticket_id);
   if (ticket_close_res.isErr()) return err(ticket_close_res.error);
@@ -73,19 +64,14 @@ export default async function mark_ticket_as_resolved(
   int: RepliableInteraction,
   ticket: Ticket,
 ): ActionReturnType {
+  if (!('channel' in int) || !int.channel || !int.channel.isThread())
+    return err(new Error('wrong'));
+
   const def_prom = await ensure_deferred(int);
   if (def_prom.isErr()) return err(def_prom.error);
-  if (!int.channel?.isThread() || !int.channelId) {
-    return err(new Error('expects a thread as parent'));
-  }
 
-  if (ticket.status === 'CLOSED') {
-    return err(new Error('This ticket is already resolved!'));
-  }
-
-  if (!can_close_ticket(int, ticket)) {
-    return err(new Error('you cannot resolve this ticket'));
-  }
+  const can_close = can_close_ticket_or_fail(int, ticket);
+  if (can_close.isErr()) return err(can_close.error);
 
   await update_buttons(int, ticket.start_message_id);
   const close_res = await do_resolved_actions(int.channel, ticket);

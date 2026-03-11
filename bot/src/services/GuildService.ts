@@ -36,19 +36,22 @@ export default class GuildService {
 
     let remaining_to_deduct = amount;
 
-    if (g.monthly_tokens > 0) {
-      const deduct = Math.min(g.monthly_tokens, remaining_to_deduct);
-      g.monthly_tokens -= deduct;
+    if (g.monthly_budget_eurocents > 0) {
+      const deduct = Math.min(g.monthly_budget_eurocents, remaining_to_deduct);
+      g.monthly_budget_eurocents -= deduct;
       remaining_to_deduct -= deduct;
     }
 
     if (remaining_to_deduct > 0) {
-      g.persistent_tokens = Math.max(g.persistent_tokens - remaining_to_deduct, 0);
+      g.persistent_budget_eurocents = Math.max(
+        g.persistent_budget_eurocents - remaining_to_deduct,
+        0,
+      );
     }
 
     return this.db.upsert_guild_info(guild_id, {
-      monthly_tokens: g.monthly_tokens,
-      persistent_tokens: g.persistent_tokens,
+      monthly_budget_eurocents: g.monthly_budget_eurocents,
+      persistent_budget_eurocents: g.persistent_budget_eurocents,
     });
   }
 
@@ -59,13 +62,13 @@ export default class GuildService {
   }
 
   async set_persistent_ai_tokens(guild_id: string, amount: number) {
-    return this.update_guild(guild_id, { persistent_tokens: amount });
+    return this.update_guild(guild_id, { persistent_budget_eurocents: amount });
   }
 
   async set_monthly_tokens(guild_id: string, amount: number) {
     return this.update_guild(guild_id, {
-      monthly_tokens: amount,
-      monthly_tokens_last_granted: new Date(),
+      monthly_budget_eurocents: amount,
+      monthly_budget_last_granted: new Date(),
     });
   }
 
