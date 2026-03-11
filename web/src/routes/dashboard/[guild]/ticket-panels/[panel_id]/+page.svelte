@@ -163,6 +163,9 @@
 			]}
 		/>
 
+		<h2>Resolve Embed</h2>
+		<EmbedConfigurator bind:value={pipeline_state.panel.resolve_embed} use_variable_picker={true} />
+
 		<h2>Pipeline</h2>
 		<Pipeline />
 		<button class={[btn_style.button, btn_style.tetriary]} onclick={export_pipeline_as_json}>

@@ -1,4 +1,13 @@
-import { EditTicketPanel, Ticket, TicketPanel, ZTicket, ZTicketPanel } from '@watcher/shared';
+import {
+  EditTicket,
+  EditTicketPanel,
+  InsertTicketNote,
+  Ticket,
+  TicketPanel,
+  ZTicket,
+  ZTicketPanel,
+} from '@watcher/shared';
+import { ThreadChannel } from 'discord.js';
 import { Database, TicketInsertion } from 'interfaces/Database';
 import Redis from 'ioredis';
 import { err, ok } from 'neverthrow';
@@ -43,6 +52,16 @@ export default class TicketService {
     return this.db.insert_ticket(ticket_data);
   }
 
+  async update_ticket(ticket_id: string, data: EditTicket) {
+    this.r.del(['ticket', ticket_id]);
+    return this.db.update_ticket(ticket_id, data);
+  }
+
+  async mark_resolved(ticket_id: string) {
+    this.r.del(['ticket', ticket_id]);
+    return this.db.update_ticket(ticket_id, { status: 'CLOSED', closed_at: new Date() });
+  }
+
   async get_ticket_from_thread_id(thread_id: string) {
     const cached = await this.r.get(['assoc', thread_id], z.string());
     if (cached.isOk() && cached.value) return this.get_ticket(cached.value);
@@ -65,6 +84,18 @@ export default class TicketService {
     }
 
     return db_res;
+  }
+
+  async insert_ticket_note(note: InsertTicketNote) {
+    return this.db.insert_ticket_note(note);
+  }
+
+  async delete_ticket_note(note_id: string) {
+    return this.db.delete_ticket_note(note_id);
+  }
+
+  async get_ticket_notes(ticket_id: string, limit: number, offset: number) {
+    return this.db.get_ticket_notes(ticket_id, limit, offset);
   }
 
   async update_panel(panel_id: string, data: EditTicketPanel) {

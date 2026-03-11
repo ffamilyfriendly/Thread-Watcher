@@ -7,6 +7,7 @@ import { map_err } from 'utilities/error';
 import { start_pipeline } from './_pipeline';
 import mark_ticket_as_resolved from './_actions/mark_resolved';
 import EmbeddableError from 'utilities/error/EmbeddableError';
+import add_note_action from './_actions/add_note';
 
 function get_panel_id(id: string) {
   if (!id.startsWith('start:')) return null;
@@ -46,12 +47,22 @@ async function handle_ticket_action(
   interaction: Interaction,
   l: Logger<unknown>,
 ) {
-  if (!interaction.isRepliable()) return ok();
+  if (!interaction.isRepliable() || !interaction.channelId) return ok();
+
+  const ticket = await ticket_service.get_ticket_from_thread_id(interaction.channelId);
+  if (ticket.isErr()) return err(map_err(ticket.error));
+  if (!ticket.value) {
+    return EmbeddableError.handle_error(interaction, new Error('no such ticket'));
+  }
 
   let result: ActionReturnType | null = null;
   switch (action_name) {
     case 'mark_resolved':
-      result = mark_ticket_as_resolved(interaction);
+      result = mark_ticket_as_resolved(interaction, ticket.value);
+      break;
+    case 'add_note':
+      result = add_note_action(interaction, ticket.value);
+      break;
   }
 
   if (result) {

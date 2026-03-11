@@ -159,7 +159,14 @@ async function on_thread_update(old: ThreadChannel, thread: ThreadChannel, l: Lo
     return ok();
   }
 
-  if (thread.archived && thread.unarchivable) {
+  const thread_is_watched = await thread_service.get_thread(thread.id, true);
+  if (thread_is_watched.isErr()) return err(map_err(thread_is_watched.error));
+
+  const is_watched = thread_is_watched !== null;
+  const is_fixable = thread.archived && thread.unarchivable && !thread.locked;
+  const should_be_edited = is_watched && is_fixable;
+
+  if (should_be_edited) {
     const could_unarchive = await ResultAsync.fromPromise(
       // Make sure all flags carry over.
       // The Pinned flag is seemingly dropped when a thread is archived

@@ -23,25 +23,29 @@ export default class OpenTicket extends DefaultModule<TypedPipelineModule<'OPEN_
     super(self, pipeline, exports);
   }
 
-  private create_in_forum_channel(
+  private async create_in_forum_channel(
     message: MessageCreateOptions,
     name: string,
     channel: ForumChannel | MediaChannel,
-  ) {
-    return ResultAsync.fromPromise(
+  ): Promise<Result<[ThreadChannel, string], Error>> {
+    const thread = await ResultAsync.fromPromise(
       channel.threads.create({
         message,
         name,
       }),
       map_err,
     );
+    if (thread.isErr()) return err(thread.error);
+
+    // For these types of threads that require a starter message the ID of the thread is the same as that of the starting message
+    return ok([thread.value, thread.value.id]);
   }
 
   private async create_text_channel(
     message: MessageCreateOptions,
     name: string,
     channel: TextChannel | NewsChannel,
-  ) {
+  ): Promise<Result<[ThreadChannel, string], Error>> {
     let prom: Promise<ThreadChannel>;
     if (channel instanceof NewsChannel) {
       prom = channel.threads.create({
@@ -63,7 +67,7 @@ export default class OpenTicket extends DefaultModule<TypedPipelineModule<'OPEN_
     const msg_res = await ResultAsync.fromPromise(thread.value.send(message), map_err);
     if (msg_res.isErr()) return err(msg_res.error);
 
-    return ok(thread.value);
+    return ok([thread.value, msg_res.value.id]);
   }
 
   protected async run(
@@ -103,23 +107,25 @@ export default class OpenTicket extends DefaultModule<TypedPipelineModule<'OPEN_
       content: `<@${user_id}>\n${this.pipeline.assigned_roles.map((r) => `<@&${r}>`).join(', ')}\n-# [(pipeline logs)](${log_link})`,
     };
     const ticket_name = this.pipeline.ticket_name;
-    const thread_channel = await (channel.isThreadOnly()
+    const thread_channel_promise = await (channel.isThreadOnly()
       ? this.create_in_forum_channel(message, ticket_name, channel)
       : this.create_text_channel(message, ticket_name, channel));
-    if (thread_channel.isErr()) {
+    if (thread_channel_promise.isErr()) {
       this.l.error(`Could not create thread in ${channel.name} (${channel.id})`);
-      return err(thread_channel.error);
+      return err(thread_channel_promise.error);
     }
 
+    const [thread_channel, starter_message_id] = thread_channel_promise.value;
+
     if (this.pipeline.data.should_watch_ticket) {
-      const could_watch_thread = await thread_service.watch_thread(thread_channel.value);
+      const could_watch_thread = await thread_service.watch_thread(thread_channel);
 
       if (could_watch_thread.isErr()) {
         this.l.warn('could NOT watch ticket');
       } else this.l.info('watched ticket thread');
 
       audit_service.log_thread_watch(
-        thread_channel.value.id,
+        thread_channel.id,
         interaction.guildId,
         interaction.client.user.id,
         `Ticket panel set to watch tickets`,
@@ -128,7 +134,8 @@ export default class OpenTicket extends DefaultModule<TypedPipelineModule<'OPEN_
 
     const could_start_ticket = await this.pipeline.start_ticket_with_thread(
       interaction,
-      thread_channel.value,
+      thread_channel,
+      starter_message_id,
     );
     if (could_start_ticket.isErr()) return err(could_start_ticket.error);
 

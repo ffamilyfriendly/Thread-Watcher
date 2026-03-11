@@ -219,8 +219,6 @@ export default class ThreadService {
   static async should_be_watched(client: Client, thread: ThreadChannel, filters: FilterData) {
     if (thread.locked) return ok(false);
 
-    logger.silly('should_be_watched', thread.id, filters);
-
     const name_matches_regex = filters.regex?.test(thread.name) ?? true;
 
     const thread_guild = await ResultAsync.fromPromise(

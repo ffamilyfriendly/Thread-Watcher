@@ -168,4 +168,31 @@ export class ValueContainer {
   static from_files(files: Attachment[]) {
     return files.map((f) => this.from_file(f));
   }
+
+  static from_dump(
+    dump: Record<string, unknown>,
+    default_value: ContractLeafValue = null,
+  ): ValueContainer {
+    const exports: Record<string, ValueContainerValue> = {};
+
+    for (const [key, value] of Object.entries(dump)) {
+      if (
+        value === null ||
+        typeof value === 'string' ||
+        typeof value === 'number' ||
+        typeof value === 'boolean'
+      ) {
+        exports[key] = value;
+      } else if (Array.isArray(value)) {
+        if (value.length > 0 && typeof value[0] === 'object' && value[0] !== null) {
+          exports[key] = value.map((item) => this.from_dump(item as Record<string, unknown>));
+        }
+      } else if (typeof value === 'object' && value !== null) {
+        const child_default = (value as any).id ?? null;
+        exports[key] = this.from_dump(value as Record<string, unknown>, child_default);
+      }
+    }
+
+    return new ValueContainer(exports, default_value);
+  }
 }

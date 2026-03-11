@@ -33,21 +33,25 @@ export default class EmbeddableError extends Error {
     Error.captureStackTrace(this, this.constructor);
   }
 
-  private get_base_embed(): EmbedBuilder {
+  private get_base_embed(interaction: RepliableInteraction, t: I18nType): EmbedBuilder {
     const e = new EmbedBuilder();
     e.setColor(config.style.error.colour as ColorResolvable);
-    e.setTitle('Something went wrong');
+    e.setTitle(t('errors.fatal'));
     e.setTimestamp();
+    e.setFooter({ text: `Interaction: ${interaction.id}` });
 
     return e;
   }
 
-  private get_base_buttons(): ActionRowBuilder<ButtonBuilder> {
+  private get_base_buttons(
+    _interaction: RepliableInteraction,
+    t: I18nType,
+  ): ActionRowBuilder<ButtonBuilder> {
     const row = new ActionRowBuilder<ButtonBuilder>();
 
     const support_server_button = new ButtonBuilder()
       .setStyle(ButtonStyle.Link)
-      .setLabel('Get Help')
+      .setLabel(t('errors.get_help_btn_text'))
       .setEmoji('💬')
       .setURL(config.support_server_link);
     row.addComponents(support_server_button);
@@ -55,7 +59,7 @@ export default class EmbeddableError extends Error {
     if (this.doc_link) {
       const doc_link_button = new ButtonBuilder()
         .setStyle(ButtonStyle.Link)
-        .setLabel('Read More')
+        .setLabel(t('errors.read_docs_btn_text'))
         .setEmoji('📖')
         .setURL(this.doc_url);
       row.addComponents(doc_link_button);
@@ -64,7 +68,7 @@ export default class EmbeddableError extends Error {
     return row;
   }
 
-  protected get_i18n(interaction: Interaction): I18nType {
+  private get_i18n(interaction: Interaction): I18nType {
     return (key: string, options?: { [key: string]: unknown }) =>
       i18next.t(key, { lng: interaction.locale, ...options });
   }
@@ -85,8 +89,8 @@ export default class EmbeddableError extends Error {
 
   public send_error(interaction: RepliableInteraction) {
     const t = this.get_i18n(interaction);
-    const embed = this.get_base_embed();
-    const buttons = this.get_base_buttons();
+    const embed = this.get_base_embed(interaction, t);
+    const buttons = this.get_base_buttons(interaction, t);
     this.configure_embed(embed, interaction, t);
     this.configure_action_row(buttons, interaction, t);
     return safe_reply_or_followup(interaction, {

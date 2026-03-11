@@ -275,6 +275,8 @@ export const ZTicketPanel = ZTicketPanelMeta.extend({
   initial_channel_id: z.string(), // The channel the ticket will open in (if pipeline does not alter)
   commencement_embed: ZEmbed,
   commencement_method: z.union([ZButtonStart, ZSelectionStart]),
+  resolve_embed: ZEmbed,
+  resolve_behaviour: z.enum(["DELETE_THREAD", "LOCK_THREAD", "NOTHING"]),
   pipeline: ZPipeline,
 });
 
@@ -293,29 +295,55 @@ export const ZTicket = z.object({
   claimed_by_user_id: z.string().nullish(),
   created_at: z.coerce.date(),
   closed_at: z.coerce.date().nullish(),
+  start_message_id: z.string(),
 });
+export const ZEditTicket = ZTicket.omit({
+  ticket_id: true,
+  guild_id: true,
+  discord_channel_id: true,
+  variable_dump: true,
+  panel_id: true,
+  created_at: true,
+}).partial();
+
+export const ZTicketNote = z.object({
+  note_id: z.string(),
+  ticket_id: z.string(),
+  created_by: z.string(),
+  created_at: z.date(),
+  text: z.string().min(5).max(100),
+});
+export type TicketNote = z.output<typeof ZTicketNote>;
+
+export const ZInsertTicketNote = ZTicketNote.omit({
+  note_id: true,
+  created_at: true,
+});
+export type InsertTicketNote = z.output<typeof ZInsertTicketNote>;
 
 export type Ticket = z.output<typeof ZTicket>;
 export type TicketPanel = z.output<typeof ZTicketPanel>;
 export type EditTicketPanel = z.output<typeof ZEditTicketPanel>;
+export type EditTicket = z.output<typeof ZEditTicket>;
 export type TicketPanelMeta = Omit<TicketPanel, "id">;
 
 export const DEFAULT_TICKET_PANEL: (s: string) => TicketPanel = (
   guild_id: string,
 ) => ({
-  panel_id: "",
+  panel_id: "NEW_REQUIRES_ID_BLAH",
   guild_id,
   description: "",
   should_watch_ticket: true,
   should_GPT_summarize_ticket: true,
   initial_assigned_roles: [],
   initial_channel_id: "",
+  resolve_behaviour: "LOCK_THREAD",
   commencement_embed: {
     title: "Open Ticket",
     colour: "#1c2d69",
     fields: [],
   },
-  resolved_embed: {
+  resolve_embed: {
     title: "Ticket Closed",
     colour: "#211a2e",
     fields: [],

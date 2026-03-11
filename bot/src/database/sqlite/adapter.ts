@@ -6,7 +6,7 @@ import { join, resolve as resolve_path } from 'path';
 import { create as create_tar } from 'tar';
 import { map_err } from 'utilities/error';
 import { z } from 'zod';
-import { Database, TicketInsertion } from 'interfaces/Database';
+import { Database, DBResult, TicketInsertion } from 'interfaces/Database';
 import { drizzle, BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import {
@@ -24,6 +24,10 @@ import {
   EditTicketPanel,
   ZTicketPanelMeta,
   ZTicket,
+  EditTicket,
+  InsertTicketNote,
+  TicketNote,
+  ZTicketNote,
 } from '@watcher/shared';
 
 import * as schema from './schema';
@@ -51,6 +55,33 @@ export default class Sqlite implements Database {
     this.drizzle = drizzle(this.raw_db, { schema });
     migrate(this.drizzle, { migrationsFolder: './drizzle' });
     this._config = config;
+  }
+
+  @with_error_handling
+  async insert_ticket_note(data: InsertTicketNote) {
+    const rows = await this.drizzle
+      .insert(schema.TicketNote)
+      .values(data)
+      .returning({ note_id: schema.TicketNote.note_id });
+    return ok(rows[0].note_id);
+  }
+
+  @with_error_handling
+  async get_ticket_notes(ticket_id: string, limit: number, offset: number) {
+    const rows = await this.drizzle.query.TicketNote.findMany({
+      where: eq(schema.TicketNote.ticket_id, ticket_id),
+      limit,
+      offset,
+      orderBy: schema.TicketNote.created_at,
+    });
+
+    return with_schema(rows, z.array(ZTicketNote));
+  }
+
+  @with_error_handling
+  async delete_ticket_note(note_id: string) {
+    await this.drizzle.delete(schema.TicketNote).where(eq(schema.TicketNote.note_id, note_id));
+    return ok();
   }
 
   @with_error_handling
@@ -514,6 +545,12 @@ export default class Sqlite implements Database {
       .where(eq(schema.Ticket.discord_channel_id, thread_id))
       .limit(1);
     return ok(res.at(0)?.ticket_id ?? null);
+  }
+
+  @with_error_handling
+  async update_ticket(ticket_id: string, data: EditTicket) {
+    this.drizzle.update(schema.Ticket).set(data).where(eq(schema.Ticket.ticket_id, ticket_id));
+    return ok();
   }
 
   @with_error_handling

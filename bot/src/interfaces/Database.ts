@@ -13,6 +13,9 @@ import {
   EditTicketPanel,
   TicketPanelMetaObj,
   Ticket,
+  EditTicket,
+  InsertTicketNote,
+  TicketNote,
 } from '@watcher/shared';
 import { DatabaseError } from 'utilities/error/def';
 
@@ -116,7 +119,12 @@ interface Tickets {
   get_ticket_panel: (panel_id: string) => DBResult<TicketPanel | null>;
   insert_ticket: (ticket: TicketInsertion) => DBResult;
   get_ticket: (ticket_id: string) => DBResult<Ticket>;
+  update_ticket: (ticket_id: string, data: EditTicket) => DBResult;
   get_ticket_id_from_thread: (thread_id: string) => DBResult<string | null>;
+  // Ticket Notes
+  insert_ticket_note: (data: InsertTicketNote) => DBResult<string>;
+  get_ticket_notes: (ticket_id: string, limit: number, offset: number) => DBResult<TicketNote[]>;
+  delete_ticket_note: (note_id: string) => DBResult;
 }
 
 export interface Database extends Core, GuildSettings, Audit, Guilds, Tickets {}

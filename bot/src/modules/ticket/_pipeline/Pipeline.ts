@@ -196,6 +196,7 @@ export class Pipeline implements IPipeline {
   async start_ticket_with_thread(
     int: SupportedInteractionType,
     ticket_thread: ThreadChannel,
+    start_message_id: string,
   ): Promise<Result<unknown, Error>> {
     if (this.is_resolved) return err(new Error('pipeline is already resolved!'));
     this.is_resolved = true;
@@ -209,6 +210,7 @@ export class Pipeline implements IPipeline {
       assigned_to_roles: this.assigned_roles,
       variable_dump: this.get_all_properties(),
       discord_channel_id: ticket_thread.id,
+      start_message_id,
     });
 
     if (insert_ticket_res.isErr()) {

@@ -257,5 +257,6 @@ export interface IPipeline {
   start_ticket_with_thread(
     int: SupportedInteractionType,
     ticket_thread: ThreadChannel,
+    start_message_id: string,
   ): Promise<Result<unknown, Error>>;
 }

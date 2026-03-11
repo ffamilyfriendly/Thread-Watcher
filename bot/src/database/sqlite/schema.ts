@@ -72,6 +72,8 @@ export const TicketPanels = sqliteTable('ticketpanels', {
   initial_channel_id: text('initial_channel_id').notNull(),
   commencement_embed: text('commencement_embed', { mode: 'json' }).notNull(),
   commencement_method: text('commencement_method', { mode: 'json' }).notNull(),
+  resolve_embed: text('resolve_embed', { mode: 'json' }).notNull(),
+  resolve_behaviour: text('resolve_behaviour').notNull(),
   pipeline: text('pipeline', { mode: 'json' }).notNull(),
 });
 
@@ -81,15 +83,26 @@ export const Ticket = sqliteTable('tickets', {
     .notNull()
     .references(() => Guilds.guild_id, { onDelete: 'cascade' }),
   discord_channel_id: text('discord_channel_id').notNull().unique(),
+  start_message_id: text('start_message_id').notNull().unique(),
   name: text('name').notNull(),
   owner: text('owner').notNull(),
   variable_dump: text('variable_dump', { mode: 'json' }).notNull(),
   status: text('status').notNull().default('OPEN'),
   panel_id: text('panel_id')
     .notNull()
-    .references(() => TicketPanels.panel_id),
+    .references(() => TicketPanels.panel_id, { onDelete: 'cascade' }),
   assigned_to_roles: text('assined_to_roles', { mode: 'json' }).notNull(),
   claimed_by_user_id: text('claimed_by_user_id'),
   created_at: integer('created_at', { mode: 'timestamp' }).$defaultFn(date_now),
   closed_at: integer('closed_at', { mode: 'timestamp' }),
+});
+
+export const TicketNote = sqliteTable('ticket_notes', {
+  note_id: text().$defaultFn(random_id).primaryKey(),
+  ticket_id: text()
+    .notNull()
+    .references(() => Ticket.ticket_id, { onDelete: 'cascade' }),
+  created_by: text().notNull(),
+  created_at: integer({ mode: 'timestamp' }).$defaultFn(date_now),
+  text: text().notNull(),
 });

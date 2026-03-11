@@ -50,6 +50,8 @@
   "errors": {
     "fatal": "Fatal Error",
     "failed_without_clear_cause": "command failed without a clear cause.",
+    "get_help_btn_text": "Get Support",
+    "read_docs_btn_text": "Learn More",
     "permissions_err": {
       "you": "you have",
       "bot": "the bot has",
