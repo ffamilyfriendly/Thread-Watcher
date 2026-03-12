@@ -1,12 +1,12 @@
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import sql, { Database as SqliteDb } from 'bun:sqlite';
 import { ConfigType } from 'utilities/config';
-import { clean_keys, with_error_handling, with_schema } from 'database';
+import { with_error_handling, with_schema } from 'database';
 import { join, resolve as resolve_path } from 'path';
 import { create as create_tar } from 'tar';
 import { map_err } from 'utilities/error';
 import { z } from 'zod';
-import { Database, DBResult, TicketInsertion } from 'interfaces/Database';
+import { Database, TicketInsertion } from 'interfaces/Database';
 import { drizzle, BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import {
@@ -26,11 +26,11 @@ import {
   ZTicket,
   EditTicket,
   InsertTicketNote,
-  TicketNote,
   ZTicketNote,
 } from '@watcher/shared';
 
 import * as schema from './schema';
+import * as relations from './relations';
 import {
   and,
   count,
@@ -45,14 +45,17 @@ import {
 } from 'drizzle-orm';
 import { DatabaseError } from 'utilities/error/def';
 
+const full_schema = { ...schema, ...relations };
+type FullSchema = typeof full_schema;
+
 export default class Sqlite implements Database {
   private raw_db: SqliteDb;
-  private drizzle: BunSQLiteDatabase<typeof schema>;
+  private drizzle: BunSQLiteDatabase<FullSchema>;
   private _config: ConfigType;
 
   constructor(config: ConfigType) {
     this.raw_db = new sql(config.database.database_path);
-    this.drizzle = drizzle(this.raw_db, { schema });
+    this.drizzle = drizzle(this.raw_db, { schema: full_schema });
     migrate(this.drizzle, { migrationsFolder: './drizzle' });
     this._config = config;
   }
@@ -342,8 +345,8 @@ export default class Sqlite implements Database {
     await this.drizzle.insert(schema.Monitors).values({
       ...channel,
       ...filters,
-      role_whitelist: filters?.role_whitelist?.join(','),
-      tags: filters?.tags?.join(','),
+      role_whitelist: filters?.role_whitelist,
+      tags: filters?.tags,
       regex: filters?.regex?.source,
     });
     return ok();

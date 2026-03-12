@@ -1,66 +1,19 @@
 import z from "zod";
+import {
+  DISCORD_CHANNEL_NAME_MAX_LEN,
+  DISCORD_MAX_CHARS_IN_PLACEHOLDER,
+  DISCORD_MAX_FIELDS_IN_EMBED,
+  DISCORD_MAX_TEXT_INPUT_LEN,
+  DISCORD_MODAL_DESCRIPTION_MAX,
+  DISCORD_MODAL_LABEL_MAX,
+  DISCORD_SNOWFLAKE_MAX_LEN,
+  TW_AI_PERSONA_MAX_LEN,
+  TW_AI_RULES_MAX_LEN,
+  TW_MAX_ALLOWED_CONDITIONS,
+  TW_MAX_CHARS_IN_OPERANT_VALUE,
+} from "./constants";
+import { ZEmbed, ZStringSelectionOption } from "./discord";
 
-// Discord related constraints
-export const DISCORD_EMBED_TITLE_MAX_LEN = 256;
-export const DISCORD_EMBED_DESCRIPTION_MAX_LEN = 4096;
-export const DISCORD_MAX_FIELDS_IN_EMBED = 25;
-export const DISCORD_MAX_CHARS_IN_FIELD_TITLE = 256;
-export const DISCORD_MAX_CHARS_IN_FIELD_TEXT = 1024;
-export const DISCORD_MAX_CHARS_IN_PLACEHOLDER = 150;
-export const DISCORD_MAX_CHARS_IN_BUTTON_LABEL = 80;
-export const DISCORD_MAX_CHARS_IN_OPTION = 100; // Value is the same for id, label, and description
-export const DISCORD_SNOWFLAKE_MAX_LEN = 19;
-export const DISCORD_CHANNEL_NAME_MAX_LEN = 100;
-export const DISCORD_MODAL_LABEL_MAX = 45;
-export const DISCORD_MODAL_DESCRIPTION_MAX = 100;
-
-// Service restraints
-export const TW_MAX_CHARS_IN_OPERANT_VALUE = 100;
-export const TW_MAX_ALLOWED_CONDITIONS = 10;
-export const TW_AI_PERSONA_MAX_LEN = 500;
-export const TW_AI_RULES_MAX_LEN = 2500;
-export const TW_PANEL_NAME_MIN = 3;
-export const TW_PANEL_NAME_MAX = 50;
-
-// Generic stuff used both in panel and pipeline
-export const ZEmbedField = z.object({
-  title: z.string().max(DISCORD_MAX_CHARS_IN_FIELD_TITLE),
-  text: z.string().max(DISCORD_MAX_CHARS_IN_FIELD_TEXT),
-  is_inline: z.boolean().nullish(),
-});
-
-export const ZEmbed = z.object({
-  title: z.string().max(DISCORD_EMBED_TITLE_MAX_LEN),
-  description: z.string().max(DISCORD_EMBED_DESCRIPTION_MAX_LEN).nullish(),
-  fields: z.array(ZEmbedField).max(DISCORD_MAX_FIELDS_IN_EMBED),
-  colour: z
-    .string()
-    .regex(/^#[0-9a-fA-F]{6}$/, { error: "Must be valid colour hex" }),
-});
-export type EmbedField = z.output<typeof ZEmbedField>;
-export type Embed = z.output<typeof ZEmbed>;
-
-export const ZStringSelectionOption = z.object({
-  title: z.string().max(DISCORD_MAX_CHARS_IN_OPTION),
-  description: z.string().max(DISCORD_MAX_CHARS_IN_OPTION).nullish(),
-  option_id: z.string().max(DISCORD_MAX_CHARS_IN_OPTION),
-});
-export type StringSelectOption = z.output<typeof ZStringSelectionOption>;
-
-export const ZButtonStart = z.object({
-  type: z.literal("BUTTON"),
-  button_text: z.string().max(DISCORD_MAX_CHARS_IN_BUTTON_LABEL),
-});
-export type ButtonStart = z.output<typeof ZButtonStart>;
-
-export const ZSelectionStart = z.object({
-  type: z.literal("SELECTION"),
-  placeholder: z.string().max(DISCORD_MAX_CHARS_IN_PLACEHOLDER),
-  options: z.array(ZStringSelectionOption).max(DISCORD_MAX_FIELDS_IN_EMBED),
-});
-export type SelectionStart = z.output<typeof ZSelectionStart>;
-
-// Pipeline stuff
 export const ConditionalOperands = [
   "starts_with",
   "ends_with",
@@ -192,7 +145,6 @@ export const ZModalFileUpload = ZModalComponentBase.extend({
   type: z.literal("FILE_UPLOAD").default("FILE_UPLOAD"),
 });
 
-export const DISCORD_MAX_TEXT_INPUT_LEN = 4000;
 export const ZModalTextInput = ZModalComponentBase.extend({
   // The reason for these being named 'min_values' and 'max_values' is so we can use the same Wrapper on the frontend
   // for configuring these 2 values
@@ -257,100 +209,3 @@ export type RenderableModule = TypedPipelineModule<
 
 export const ZPipeline = z.array(ZPipelineModule);
 export type Pipeline = z.output<typeof ZPipeline>;
-
-export const ZTicketPanelMeta = z.object({
-  panel_id: z.string().min(TW_PANEL_NAME_MIN).max(TW_PANEL_NAME_MAX),
-  guild_id: z.string(),
-  name: z.string().nullish(),
-  description: z.string().nullish(),
-});
-export type TicketPanelMetaObj = z.output<typeof ZTicketPanelMeta>;
-
-// Panel related stuff
-export const ZTicketPanel = ZTicketPanelMeta.extend({
-  should_watch_ticket: z.coerce.boolean(),
-  should_GPT_summarize_ticket: z.coerce.boolean(),
-  discord_message_id: z.string().nullish(), // The message ID of the panel. Used to edit updated panels / check if we've sent the panel message
-  initial_assigned_roles: z.array(z.string()), // The roles that will be assigned to the ticket (if pipeline does not alter)
-  initial_channel_id: z.string(), // The channel the ticket will open in (if pipeline does not alter)
-  commencement_embed: ZEmbed,
-  commencement_method: z.union([ZButtonStart, ZSelectionStart]),
-  resolve_embed: ZEmbed,
-  resolve_behaviour: z.enum(["DELETE_THREAD", "LOCK_THREAD", "NOTHING"]),
-  pipeline: ZPipeline,
-});
-
-export const ZEditTicketPanel = ZTicketPanel.partial();
-
-export const ZTicket = z.object({
-  ticket_id: z.string(),
-  guild_id: z.string(),
-  discord_channel_id: z.string(),
-  name: z.string(),
-  owner: z.string(),
-  panel_id: z.string(),
-  variable_dump: z.record(z.string(), z.unknown()),
-  status: z.enum(["OPEN", "CLOSED"]),
-  assigned_to_roles: z.array(z.string()),
-  claimed_by_user_id: z.string().nullish(),
-  created_at: z.coerce.date(),
-  closed_at: z.coerce.date().nullish(),
-  start_message_id: z.string(),
-});
-export const ZEditTicket = ZTicket.omit({
-  ticket_id: true,
-  guild_id: true,
-  discord_channel_id: true,
-  variable_dump: true,
-  panel_id: true,
-  created_at: true,
-}).partial();
-
-export const ZTicketNote = z.object({
-  note_id: z.string(),
-  ticket_id: z.string(),
-  created_by: z.string(),
-  created_at: z.date(),
-  text: z.string().min(5).max(100),
-});
-export type TicketNote = z.output<typeof ZTicketNote>;
-
-export const ZInsertTicketNote = ZTicketNote.omit({
-  note_id: true,
-  created_at: true,
-});
-export type InsertTicketNote = z.output<typeof ZInsertTicketNote>;
-
-export type Ticket = z.output<typeof ZTicket>;
-export type TicketPanel = z.output<typeof ZTicketPanel>;
-export type EditTicketPanel = z.output<typeof ZEditTicketPanel>;
-export type EditTicket = z.output<typeof ZEditTicket>;
-export type TicketPanelMeta = Omit<TicketPanel, "id">;
-
-export const DEFAULT_TICKET_PANEL: (s: string) => TicketPanel = (
-  guild_id: string,
-) => ({
-  panel_id: "NEW_REQUIRES_ID_BLAH",
-  guild_id,
-  description: "",
-  should_watch_ticket: true,
-  should_GPT_summarize_ticket: true,
-  initial_assigned_roles: [],
-  initial_channel_id: "",
-  resolve_behaviour: "LOCK_THREAD",
-  commencement_embed: {
-    title: "Open Ticket",
-    colour: "#1c2d69",
-    fields: [],
-  },
-  resolve_embed: {
-    title: "Ticket Closed",
-    colour: "#211a2e",
-    fields: [],
-  },
-  pipeline: [],
-  commencement_method: {
-    type: "BUTTON",
-    button_text: "open ticket",
-  },
-});

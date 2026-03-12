@@ -1,0 +1,110 @@
+import z from "zod";
+import { TW_PANEL_NAME_MAX, TW_PANEL_NAME_MIN } from "./constants";
+import { ZButtonStart, ZEmbed, ZSelectionStart } from "./discord";
+import { ZPipeline } from "./pipeline";
+
+export const ZTicketPanelMeta = z.object({
+  panel_id: z.string().min(TW_PANEL_NAME_MIN).max(TW_PANEL_NAME_MAX),
+  guild_id: z.string(),
+  name: z.string().nullish(),
+  description: z.string().nullish(),
+});
+export type TicketPanelMetaObj = z.output<typeof ZTicketPanelMeta>;
+
+// Panel related stuff
+export const ZTicketPanel = ZTicketPanelMeta.extend({
+  should_watch_ticket: z.coerce.boolean(),
+  should_GPT_summarize_ticket: z.coerce.boolean(),
+  discord_message_id: z.string().nullish(), // The message ID of the panel. Used to edit updated panels / check if we've sent the panel message
+  initial_assigned_roles: z.array(z.string()), // The roles that will be assigned to the ticket (if pipeline does not alter)
+  initial_channel_id: z.string(), // The channel the ticket will open in (if pipeline does not alter)
+  commencement_embed: ZEmbed,
+  commencement_method: z.union([ZButtonStart, ZSelectionStart]),
+  resolve_embed: ZEmbed,
+  resolve_behaviour: z.enum(["DELETE_THREAD", "LOCK_THREAD", "NOTHING"]),
+  pipeline: ZPipeline,
+});
+
+export const ZEditTicketPanel = ZTicketPanel.partial();
+
+export const ZTicket = z.object({
+  ticket_id: z.string(),
+  guild_id: z.string(),
+  discord_channel_id: z.string(),
+  name: z.string(),
+  owner: z.string(),
+  panel_id: z.string(),
+  variable_dump: z.record(z.string(), z.unknown()),
+  status: z.enum(["OPEN", "CLOSED"]),
+  assigned_to_roles: z.array(z.string()),
+  claimed_by_user_id: z.string().nullish(),
+  created_at: z.coerce.date(),
+  closed_at: z.coerce.date().nullish(),
+  start_message_id: z.string(),
+});
+export const ZEditTicket = ZTicket.omit({
+  ticket_id: true,
+  guild_id: true,
+  discord_channel_id: true,
+  variable_dump: true,
+  panel_id: true,
+  created_at: true,
+}).partial();
+
+export const ZTicketNote = z.object({
+  note_id: z.string(),
+  ticket_id: z.string(),
+  created_by: z.string(),
+  created_at: z.date(),
+  text: z.string().min(5).max(100),
+});
+export type TicketNote = z.output<typeof ZTicketNote>;
+
+export const ZInsertTicketNote = ZTicketNote.omit({
+  note_id: true,
+  created_at: true,
+});
+export type InsertTicketNote = z.output<typeof ZInsertTicketNote>;
+
+export type Ticket = z.output<typeof ZTicket>;
+export type TicketPanel = z.output<typeof ZTicketPanel>;
+export type EditTicketPanel = z.output<typeof ZEditTicketPanel>;
+export type EditTicket = z.output<typeof ZEditTicket>;
+export type TicketPanelMeta = Omit<TicketPanel, "id">;
+
+const ZMessageAttachment = z.object({
+  attachment_id: z.string(),
+  message_id: z.string(),
+  filename: z.string(),
+  url: z.url(),
+  proxy_url: z.url().optional(),
+  file_size: z.number(),
+  content_type: z.string().optional(),
+  file_width: z.number().optional(),
+  file_height: z.number().optional(),
+  marked_nsfw: z.boolean(),
+});
+export type MessageAttachment = z.output<typeof ZMessageAttachment>;
+
+const ZMessage = z.object({
+  message_id: z.string(),
+  ticket_id: z.string(),
+  author_id: z.string(),
+  reply_to_message_id: z.string().optional(),
+  discord_message_link: z.url(),
+  created_at: z.date(),
+  text_content: z.string().optional(),
+  embeds: z.array(ZEmbed).default([]),
+});
+export type Message = z.output<typeof ZMessage>;
+
+const ZTicketSummarySegment = z.object({
+  summary_id: z.string(),
+  ticket_id: z.string(),
+  start_message_id: z.string(),
+  end_message_id: z.string(),
+  involved_users: z.array(z.string()).default([]),
+  created_at: z.date(),
+  summary_text: z.string(),
+});
+export type TicketSummarySegment = z.output<typeof ZTicketSummarySegment>;

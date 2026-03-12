@@ -10,7 +10,7 @@ import {
   ZSilentlyResolve,
   ZQuestionModal,
   type QuestionModal,
-} from "../schemas/ticket";
+} from "../schemas/tickets/ticket";
 import { AllowedTypes, CONTRACTS, type ContractType } from "./contracts";
 
 export interface ModuleProperty {

@@ -1,7 +1,11 @@
 import { ticket_service } from '@providers/services/ticket_service';
 import { APIGuildMember, GuildMember, RepliableInteraction, ThreadChannel } from 'discord.js';
 import { err, ok, ResultAsync } from 'neverthrow';
-import { ensure_deferred, safe_reply_or_followup } from 'utilities/interaction_helpers';
+import {
+  ensure_deferred,
+  safe_delete,
+  safe_reply_or_followup,
+} from 'utilities/interaction_helpers';
 import { ActionReturnType } from '../_on_interaction';
 import { map_err } from 'utilities/error';
 import { Ticket } from '@watcher/shared';
@@ -9,6 +13,7 @@ import { get_action_row } from '../_pipeline/components/ticket_opened';
 import { ValueContainer } from '../_pipeline/ValueContainter';
 import { generate_embed } from '../_pipeline/components/embed';
 import { can_close_ticket_or_fail } from './shared';
+import { confirm_resolve_ticket, get_ticket_resolved_buttons } from './components/embeds';
 
 async function update_buttons(int: RepliableInteraction, start_message_id: string) {
   if (!int.channel) return ok();
@@ -46,7 +51,10 @@ async function do_resolved_actions(thread: ThreadChannel, ticket_id_or_ticket: s
 
   const variables = ValueContainer.from_dump(ticket.variable_dump);
   const embed = generate_embed(panel_obj.value.resolve_embed, variables);
-  const msg_sent = ResultAsync.fromPromise(thread.send({ embeds: [embed] }), map_err);
+  const msg_sent = ResultAsync.fromPromise(
+    thread.send({ embeds: [embed], components: [get_ticket_resolved_buttons(ticket.ticket_id)] }),
+    map_err,
+  );
 
   if (panel_obj.value.resolve_behaviour === 'LOCK_THREAD') {
     const m_sent_resolved = await msg_sent;
@@ -73,9 +81,14 @@ export default async function mark_ticket_as_resolved(
   const can_close = can_close_ticket_or_fail(int, ticket);
   if (can_close.isErr()) return err(can_close.error);
 
-  await update_buttons(int, ticket.start_message_id);
+  const ensure_intended = await confirm_resolve_ticket(int);
+  if (ensure_intended.isErr()) return err(ensure_intended.error);
+  if (!ensure_intended.value.should_continue)
+    return safe_delete(ensure_intended.value.btn_interaction);
+
+  await update_buttons(ensure_intended.value.btn_interaction, ticket.start_message_id);
   const close_res = await do_resolved_actions(int.channel, ticket);
   if (close_res.isErr()) return err(map_err(close_res.error));
 
-  return safe_reply_or_followup(int, { content: 'Closed Ticket!' });
+  return safe_delete(ensure_intended.value.btn_interaction);
 }

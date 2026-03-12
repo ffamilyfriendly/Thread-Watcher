@@ -93,10 +93,11 @@ export const Ticket = sqliteTable('tickets', {
   panel_id: text('panel_id')
     .notNull()
     .references(() => TicketPanels.panel_id, { onDelete: 'cascade' }),
-  assigned_to_roles: text('assined_to_roles', { mode: 'json' }).notNull(),
+  assigned_to_roles: text('assigned_to_roles', { mode: 'json' }).notNull(),
   claimed_by_user_id: text('claimed_by_user_id'),
   created_at: integer('created_at', { mode: 'timestamp' }).$defaultFn(date_now),
   closed_at: integer('closed_at', { mode: 'timestamp' }),
+  master_summary: text(),
 });
 
 export const TicketNote = sqliteTable('ticket_notes', {
@@ -107,4 +108,44 @@ export const TicketNote = sqliteTable('ticket_notes', {
   created_by: text().notNull(),
   created_at: integer({ mode: 'timestamp' }).$defaultFn(date_now),
   text: text().notNull(),
+});
+
+export const MessageAttachment = sqliteTable('ticket_message_attachments', {
+  attachment_id: text().$defaultFn(random_id).primaryKey(),
+  message_id: text()
+    .notNull()
+    .references(() => Message.message_id, { onDelete: 'cascade' }), // Unsure about this cascade? If a attachment is orphaned we want to delete it
+  filename: text().notNull(),
+  url: text().notNull(),
+  proxy_url: text(),
+  file_size: integer(),
+  content_type: text(),
+  file_width: integer(),
+  file_height: integer(),
+  marked_nsfw: integer({ mode: 'boolean' }),
+});
+
+export const Message = sqliteTable('ticket_message', {
+  message_id: text().$defaultFn(random_id).primaryKey(),
+  ticket_id: text()
+    .notNull()
+    .references(() => Ticket.ticket_id, { onDelete: 'cascade' }),
+  author_id: text().notNull(),
+  reply_to_message_id: text().references((): any => Message.message_id, { onDelete: 'set null' }),
+  discord_message_link: text().notNull(),
+  created_at: integer({ mode: 'timestamp' }).$defaultFn(date_now).notNull(),
+  text_content: text(),
+  embeds: text({ mode: 'json' }),
+});
+
+export const TicketSummary = sqliteTable('ticket_summary_segments', {
+  summary_id: text().$defaultFn(random_id).primaryKey(),
+  ticket_id: text()
+    .notNull()
+    .references(() => Ticket.ticket_id, { onDelete: 'cascade' }),
+  start_message_id: text().references(() => Message.message_id, { onDelete: 'set null' }),
+  end_message_id: text().references(() => Message.message_id, { onDelete: 'set null' }),
+  involved_users: text({ mode: 'json' }),
+  created_at: integer({ mode: 'timestamp' }).$defaultFn(date_now).notNull(),
+  summary_text: text(),
 });

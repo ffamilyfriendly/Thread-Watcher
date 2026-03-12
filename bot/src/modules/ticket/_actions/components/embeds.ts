@@ -96,6 +96,54 @@ export async function confirm_claim_ticket(
   });
 }
 
+export async function confirm_resolve_ticket(
+  interaction: RepliableInteraction,
+): Promise<Result<{ should_continue: boolean; btn_interaction: ButtonInteraction }, Error>> {
+  const e = base_embed();
+  e.setTitle('Resolve Ticket?');
+  e.setDescription(`You are about to mark this ticket as **resolved**`);
+  e.setFooter({ text: `This cannot be done.` });
+  e.setColor(config.style.warning.colour as ColorResolvable);
+  const action_row = new ActionRowBuilder<ButtonBuilder>();
+
+  const resolve_btn_id = `_claim${crypto.randomUUID()}`;
+  const cancel_btn_id = `_cancel${crypto.randomUUID()}`;
+
+  const btn_resolve = new ButtonBuilder()
+    .setLabel('Resolve')
+    .setStyle(ButtonStyle.Primary)
+    .setCustomId(resolve_btn_id);
+  const btn_cancel = new ButtonBuilder()
+    .setLabel('Cancel')
+    .setStyle(ButtonStyle.Secondary)
+    .setCustomId(cancel_btn_id);
+  action_row.addComponents(btn_resolve, btn_cancel);
+
+  const claim_promise = component_service.wait_for_interaction(
+    btn_resolve,
+    (int) => int.user.id === interaction.user.id,
+  );
+  const cancel_promise = component_service.wait_for_interaction(
+    btn_cancel,
+    (int) => int.user.id === interaction.user.id,
+  );
+
+  const could_reply = await safe_reply_or_followup(interaction, {
+    embeds: [e],
+    components: [action_row],
+    flags: 'Ephemeral',
+  });
+  if (could_reply.isErr()) return err(could_reply.error);
+
+  const btn_resolved = await Promise.race([claim_promise, cancel_promise]);
+  if (btn_resolved.isErr()) return err(map_err(btn_resolved.error));
+
+  return ok({
+    should_continue: btn_resolved.value.customId === resolve_btn_id,
+    btn_interaction: btn_resolved.value,
+  });
+}
+
 export function new_claim_embed(user: APIUser | User, ticket: Ticket) {
   let icon_url: string;
   if (!('displayAvatarURL' in user)) {
@@ -109,4 +157,15 @@ export function new_claim_embed(user: APIUser | User, ticket: Ticket) {
   e.setDescription('Assigned to this ticket!');
 
   return e;
+}
+
+export function get_ticket_resolved_buttons(ticket_id: string): ActionRowBuilder<ButtonBuilder> {
+  const action_row = new ActionRowBuilder<ButtonBuilder>();
+
+  const view_ticket_transcript = new ButtonBuilder();
+  view_ticket_transcript.setLabel('View Transcript');
+  view_ticket_transcript.setURL(`${config.web.hostname}/tickets/${ticket_id}`);
+  view_ticket_transcript.setStyle(ButtonStyle.Link);
+  action_row.addComponents(view_ticket_transcript);
+  return action_row;
 }

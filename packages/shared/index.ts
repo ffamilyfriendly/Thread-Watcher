@@ -5,7 +5,7 @@ export * from "./schemas/thread";
 export * from "./schemas/guild";
 export * from "./schemas/audit";
 export * from "./schemas/ai";
-export * from "./schemas/ticket";
+export * from "./schemas/tickets/ticket";
 export * from "./tickets/ticket_outputs";
 
 /*
