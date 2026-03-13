@@ -1,6 +1,12 @@
 import z from "zod";
 import { TW_PANEL_NAME_MAX, TW_PANEL_NAME_MIN } from "./constants";
-import { ZButtonStart, ZEmbed, ZSelectionStart } from "./discord";
+import {
+  ZButtonStart,
+  ZDiscordUser,
+  ZEmbed,
+  ZNativeDiscordEmbed,
+  ZSelectionStart,
+} from "./discord";
 import { ZPipeline } from "./pipeline";
 
 export const ZTicketPanelMeta = z.object({
@@ -75,28 +81,48 @@ export type TicketPanelMeta = Omit<TicketPanel, "id">;
 const ZMessageAttachment = z.object({
   attachment_id: z.string(),
   message_id: z.string(),
+  cdn_path: z.string(),
   filename: z.string(),
   url: z.url(),
-  proxy_url: z.url().optional(),
   file_size: z.number(),
-  content_type: z.string().optional(),
-  file_width: z.number().optional(),
-  file_height: z.number().optional(),
+  content_type: z.string().nullish(),
+  file_width: z.number().nullish(),
+  file_height: z.number().nullish(),
   marked_nsfw: z.boolean(),
+  flag: z
+    .enum([
+      "EXCEEDS_FREE_FILE_LIMIT",
+      "EXCEEDS_SIZE_LIMIT",
+      "IS_QUARANTINED",
+      "SPOOKY_FILE",
+      "UPLOAD_FAILED",
+      "IS_UPLOADING",
+      "NO_FILE_ENDING",
+      "SUSPICIOUS_FILENAME",
+    ])
+    .nullish(),
 });
-export type MessageAttachment = z.output<typeof ZMessageAttachment>;
+export type TicketMessageAttachment = z.output<typeof ZMessageAttachment>;
 
-const ZMessage = z.object({
+export const ZPublicMessageAttachment = ZMessageAttachment.omit({
+  cdn_path: true,
+}).extend({
+  access_url: z.url(),
+});
+export type PublicTicketMessageAttachment = z.output<
+  typeof ZPublicMessageAttachment
+>;
+
+export const ZTicketMessage = z.object({
   message_id: z.string(),
   ticket_id: z.string(),
   author_id: z.string(),
-  reply_to_message_id: z.string().optional(),
-  discord_message_link: z.url(),
+  reply_to_message_id: z.string().nullish(),
   created_at: z.date(),
-  text_content: z.string().optional(),
-  embeds: z.array(ZEmbed).default([]),
+  text_content: z.string().nullish(),
+  embeds: z.array(ZNativeDiscordEmbed).default([]),
 });
-export type Message = z.output<typeof ZMessage>;
+export type TicketMessage = z.output<typeof ZTicketMessage>;
 
 const ZTicketSummarySegment = z.object({
   summary_id: z.string(),
@@ -108,3 +134,30 @@ const ZTicketSummarySegment = z.object({
   summary_text: z.string(),
 });
 export type TicketSummarySegment = z.output<typeof ZTicketSummarySegment>;
+
+export const ZPublicTicketMessage = ZTicketMessage.extend({
+  attachments: z.array(ZPublicMessageAttachment).default([]),
+});
+export type PublicTicketMessage = z.output<typeof ZPublicTicketMessage>;
+
+export const ZTicketView = ZTicket.extend({
+  messages: z.object({
+    has_more: z.boolean(),
+    next_cursor: z.string().nullish(),
+    items: z.array(ZPublicTicketMessage).default([]),
+  }),
+  users: z.record(z.string(), ZDiscordUser).default({}),
+  summaries: z.array(ZTicketSummarySegment).default([]),
+});
+export type TicketView = z.output<typeof ZTicketView>;
+
+export const ZIntermediaryMessage = ZTicketMessage.extend({
+  attachments: z.array(ZMessageAttachment).default([]),
+});
+export type IntermediaryMessage = z.output<typeof ZIntermediaryMessage>;
+
+export const ZIntermediaryTicketView = ZTicket.extend({
+  messages: z.array(ZIntermediaryMessage).default([]),
+  summaries: z.array(ZTicketSummarySegment).default([]),
+});
+export type IntermediaryTicketView = z.output<typeof ZIntermediaryTicketView>;

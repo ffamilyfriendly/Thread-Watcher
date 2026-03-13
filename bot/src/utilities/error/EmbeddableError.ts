@@ -81,7 +81,8 @@ export default class EmbeddableError extends Error {
     interaction: RepliableInteraction,
     t: I18nType,
   ): void {
-    embed.setDescription(this.message);
+    // Should rethink this. We do NOT want to just dump the message content in case it contains secret stuff
+    embed.setDescription(this.message.substring(0, 100));
   }
 
   protected configure_action_row(

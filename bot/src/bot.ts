@@ -14,13 +14,19 @@ import { commands } from '@providers/commands';
 import { ipc_client } from '@providers/ipc/bot_ipc_client';
 import { entitlement_service } from '@providers/services/entitlement_service';
 import { LocalClientProvider } from 'services/EntitlementService';
+import { ticket_service } from '@providers/services/ticket_service';
+import { fetch_bot_context as fetch_user_bot_context } from 'fetchers/user_fetcher';
 
 const logger = Logger.with_name('bot');
 const config = Config.instance;
 const client = Client.instance;
 const database = Database.instance;
 const redis = Redis.instance;
+
+// set provider strategies
 entitlement_service.set_provider(new LocalClientProvider(client));
+ticket_service.set_user_fetcher(fetch_user_bot_context)
+
 
 async function bootstrap() {
   initialize_i18n(logger);

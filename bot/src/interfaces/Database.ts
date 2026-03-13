@@ -16,6 +16,9 @@ import {
   EditTicket,
   InsertTicketNote,
   TicketNote,
+  TicketMessage,
+  TicketMessageAttachment,
+  IntermediaryTicketView,
 } from '@watcher/shared';
 import { DatabaseError } from 'utilities/error/def';
 
@@ -121,10 +124,17 @@ interface Tickets {
   get_ticket: (ticket_id: string) => DBResult<Ticket>;
   update_ticket: (ticket_id: string, data: EditTicket) => DBResult;
   get_ticket_id_from_thread: (thread_id: string) => DBResult<string | null>;
+  get_extended_ticket: (ticket_id: string) => DBResult<IntermediaryTicketView>;
   // Ticket Notes
   insert_ticket_note: (data: InsertTicketNote) => DBResult<string>;
   get_ticket_notes: (ticket_id: string, limit: number, offset: number) => DBResult<TicketNote[]>;
   delete_ticket_note: (note_id: string) => DBResult;
+  // Ticket Messages,
+  insert_message: (data: TicketMessage) => DBResult;
+  insert_attachment: (data: TicketMessageAttachment) => DBResult;
+  insert_attachments: (data: TicketMessageAttachment[]) => DBResult;
+  update_attachment: (attachment_id: string, data: Partial<TicketMessageAttachment>) => DBResult;
+  delete_attachment: (attachment_id: string) => DBResult;
 }
 
 export interface Database extends Core, GuildSettings, Audit, Guilds, Tickets {}

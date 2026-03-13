@@ -6,7 +6,7 @@ import { join, resolve as resolve_path } from 'path';
 import { create as create_tar } from 'tar';
 import { map_err } from 'utilities/error';
 import { z } from 'zod';
-import { Database, TicketInsertion } from 'interfaces/Database';
+import { Database, DBResult, TicketInsertion } from 'interfaces/Database';
 import { drizzle, BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import {
@@ -27,6 +27,10 @@ import {
   EditTicket,
   InsertTicketNote,
   ZTicketNote,
+  TicketMessage,
+  TicketMessageAttachment,
+  IntermediaryTicketView,
+  ZIntermediaryTicketView,
 } from '@watcher/shared';
 
 import * as schema from './schema';
@@ -43,7 +47,7 @@ import {
   isNotNull,
   lt,
 } from 'drizzle-orm';
-import { DatabaseError } from 'utilities/error/def';
+import { DatabaseError, TicketNotFound } from 'utilities/error/def';
 
 const full_schema = { ...schema, ...relations };
 type FullSchema = typeof full_schema;
@@ -58,6 +62,60 @@ export default class Sqlite implements Database {
     this.drizzle = drizzle(this.raw_db, { schema: full_schema });
     migrate(this.drizzle, { migrationsFolder: './drizzle' });
     this._config = config;
+  }
+
+  @with_error_handling
+  async get_extended_ticket(ticket_id: string): DBResult<IntermediaryTicketView> {
+    const ticket = await this.drizzle.query.Ticket.findFirst({
+      where: eq(schema.Ticket.ticket_id, ticket_id),
+      with: {
+        messages: {
+          with: {
+            attachments: true,
+          },
+          limit: 51,
+          orderBy: schema.Message.created_at,
+        },
+        summaries: true,
+      },
+    });
+    if (!ticket) return err(new TicketNotFound(ticket_id));
+    return with_schema(ticket, ZIntermediaryTicketView);
+  }
+
+  @with_error_handling
+  async update_attachment(attachment_id: string, data: Partial<TicketMessageAttachment>) {
+    await this.drizzle
+      .update(schema.MessageAttachment)
+      .set(data)
+      .where(eq(schema.MessageAttachment.attachment_id, attachment_id));
+    return ok();
+  }
+
+  @with_error_handling
+  async delete_attachment(attachment_id: string) {
+    await this.drizzle
+      .delete(schema.MessageAttachment)
+      .where(eq(schema.MessageAttachment.attachment_id, attachment_id));
+    return ok();
+  }
+
+  @with_error_handling
+  async insert_attachments(data: TicketMessageAttachment[]) {
+    await this.drizzle.insert(schema.MessageAttachment).values(data);
+    return ok();
+  }
+
+  @with_error_handling
+  async insert_message(data: TicketMessage) {
+    await this.drizzle.insert(schema.Message).values(data);
+    return ok();
+  }
+
+  @with_error_handling
+  async insert_attachment(data: TicketMessageAttachment) {
+    await this.drizzle.insert(schema.MessageAttachment).values(data);
+    return ok();
   }
 
   @with_error_handling

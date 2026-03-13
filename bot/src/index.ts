@@ -13,10 +13,14 @@ import { config } from '@providers/config';
 import { redis } from '@providers/redis';
 import { entitlement_service } from '@providers/services/entitlement_service';
 import { IpcProvider } from 'services/EntitlementService';
+import { ticket_service } from '@providers/services/ticket_service';
+import { fetch_index_context as fetch_users_index_context } from 'fetchers/user_fetcher';
 
 const logger = Logger.child('Shard');
 
+// set provider strategies
 entitlement_service.set_provider(new IpcProvider(ipc_client));
+ticket_service.set_user_fetcher(fetch_users_index_context);
 
 async function load_events() {
   return load_module_as_and<PrivateEvent>('./src/ipcEvents/manager', (events_array) => {

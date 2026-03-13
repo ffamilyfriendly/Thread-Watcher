@@ -117,12 +117,13 @@ export const MessageAttachment = sqliteTable('ticket_message_attachments', {
     .references(() => Message.message_id, { onDelete: 'cascade' }), // Unsure about this cascade? If a attachment is orphaned we want to delete it
   filename: text().notNull(),
   url: text().notNull(),
-  proxy_url: text(),
   file_size: integer(),
+  cdn_path: text().notNull(),
   content_type: text(),
   file_width: integer(),
   file_height: integer(),
   marked_nsfw: integer({ mode: 'boolean' }),
+  flag: text(),
 });
 
 export const Message = sqliteTable('ticket_message', {
@@ -132,7 +133,6 @@ export const Message = sqliteTable('ticket_message', {
     .references(() => Ticket.ticket_id, { onDelete: 'cascade' }),
   author_id: text().notNull(),
   reply_to_message_id: text().references((): any => Message.message_id, { onDelete: 'set null' }),
-  discord_message_link: text().notNull(),
   created_at: integer({ mode: 'timestamp' }).$defaultFn(date_now).notNull(),
   text_content: text(),
   embeds: text({ mode: 'json' }),

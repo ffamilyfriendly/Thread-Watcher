@@ -46,3 +46,55 @@ export const ZSelectionStart = z.object({
   options: z.array(ZStringSelectionOption).max(DISCORD_MAX_FIELDS_IN_EMBED),
 });
 export type SelectionStart = z.output<typeof ZSelectionStart>;
+
+export const ZNativeDiscordEmbedField = z.object({
+  inline: z.boolean().optional(),
+  name: z.string(),
+  value: z.string(),
+});
+
+export const ZNativeDiscordEmbedFooter = z.object({
+  iconURL: z.string().optional(),
+  proxyIconURL: z.string().optional(),
+  text: z.string(),
+});
+
+export const ZNativeDiscordEmbedAuthor = z.object({
+  iconURL: z.string().optional(),
+  name: z.string(),
+  proxyIconURL: z.string().optional(),
+  url: z.string().optional(),
+});
+
+export const ZNativeDiscordEmbedMedia = z.object({
+  height: z.number().optional(),
+  proxyURL: z.string().optional(),
+  url: z.string().optional(),
+  width: z.number().optional(),
+});
+
+export const ZNativeDiscordEmbed = z.object({
+  title: z.string().nullish(),
+  description: z.string().nullish(),
+  hexColor: z.string().nullish(),
+  fields: z.array(ZNativeDiscordEmbedField).default([]),
+  footer: ZNativeDiscordEmbedFooter.nullish(),
+  author: ZNativeDiscordEmbedAuthor.nullish(),
+  thumbnail: ZNativeDiscordEmbedMedia.nullish(),
+  timestamp: z.string().nullish(),
+  url: z.string().nullish(),
+  video: ZNativeDiscordEmbedMedia.nullish(),
+});
+
+export const ZDiscordUser = z.object({
+  id: z.string(),
+  accentColor: z.number().nullish(),
+  avatar: z.string().nullish(),
+  bot: z.boolean(),
+  createdTimestamp: z.number(),
+  defaultAvatarURL: z.string(),
+  globalName: z.string().nullish(),
+  hexAccentColor: z.string().nullish(),
+  username: z.string(),
+});
+export type DiscordUser = z.output<typeof ZDiscordUser>;

@@ -56,6 +56,8 @@ const BucketStorage = z.object({
   url: z.url(),
   secret_access_key: z.string(),
   access_key_id: z.string(),
+  free_file_limit: z.number(),
+  global_file_limit: z.number(),
 });
 
 const ZPaywall = z.object({

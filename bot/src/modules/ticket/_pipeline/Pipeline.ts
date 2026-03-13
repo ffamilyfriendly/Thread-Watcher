@@ -201,7 +201,12 @@ export class Pipeline implements IPipeline {
       return err(insert_ticket_res.error as Error);
     }
 
-    const [embed, row] = create_ticket_opened(ticket_name, this.ticket_id, ticket_thread.url);
+    const [embed, row] = create_ticket_opened(
+      ticket_name,
+      this.ticket_id,
+      ticket_thread.url,
+      this.data.should_GPT_summarize_ticket,
+    );
 
     return safe_reply_or_followup(int, {
       embeds: [embed],

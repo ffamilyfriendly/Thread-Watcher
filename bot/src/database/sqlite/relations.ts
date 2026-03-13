@@ -30,3 +30,10 @@ export const attachmentRelations = relations(schema.MessageAttachment, ({ one })
     references: [schema.Message.message_id],
   }),
 }));
+
+export const ticketSummaryRelations = relations(schema.TicketSummary, ({ one }) => ({
+  ticket: one(schema.Ticket, {
+    fields: [schema.TicketSummary.ticket_id],
+    references: [schema.Ticket.ticket_id],
+  }),
+}));

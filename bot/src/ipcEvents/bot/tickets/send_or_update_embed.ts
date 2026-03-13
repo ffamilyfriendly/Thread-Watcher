@@ -1,4 +1,5 @@
 import { client } from '@providers/client';
+import { config } from '@providers/config';
 import { ticket_service } from '@providers/services/ticket_service';
 import { ButtonStart, Embed, SelectionStart, TicketPanel } from '@watcher/shared';
 import {
@@ -30,10 +31,13 @@ function field_thing(data: Embed['fields']): APIEmbedField[] {
 function commencement_to_embed(data: Embed): EmbedBuilder {
   const e = new EmbedBuilder();
 
+  const consent_str = `-# By proceeding you agree with Thread-Watcher's [Terms](${config.web.hostname}/policies/terms-of-service) and [Privacy Policy](${config.web.hostname}/policies/privacy-policy)`;
+
   e.setTitle(data.title);
   e.setColor(data.colour as ColorResolvable);
   e.setFields(field_thing(data.fields));
-  if (data.description) e.setDescription(data.description);
+  if (data.description) e.setDescription(data.description + `\n\n${consent_str}`);
+  else e.setDescription(consent_str);
 
   return e;
 }

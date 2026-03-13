@@ -6,6 +6,7 @@ import Redis from 'ioredis';
 import { map_err } from './error';
 import z from 'zod';
 import { with_schema } from 'database';
+import { ZDiscordUser } from '@watcher/shared';
 
 interface EnsuredSchemaCall<E extends z.ZodType, R extends z.ZodType> {
   event_name: string;
@@ -13,16 +14,18 @@ interface EnsuredSchemaCall<E extends z.ZodType, R extends z.ZodType> {
   expected_data: E;
 }
 
-const create_funcs = <T extends Record<string, EnsuredSchemaCall<z.ZodType, z.ZodType>>>(obj: T) =>
-  obj;
-
-export const FUNCS = create_funcs({
+export const FUNCS = {
   send_embed: {
     event_name: 'send_embed',
     expected_data: z.object({ panel_id: z.string() }),
     return_schema: z.object({ message_id: z.string() }),
   },
-});
+  fetch_users: {
+    event_name: 'fetch_guild_users',
+    expected_data: z.object({ user_ids: z.array(z.string()), guild_id: z.string() }),
+    return_schema: z.array(ZDiscordUser),
+  },
+} satisfies Record<string, EnsuredSchemaCall<z.ZodType, z.ZodType>>;
 
 function generate_request_id() {
   return randomBytes(16).toString('hex');
@@ -106,7 +109,9 @@ class BaseClient implements IpcClient {
     data: z.input<(typeof FUNCS)[K]['expected_data']>,
   ) {
     const details = FUNCS[key];
-    return this._send(shard, details.event_name, data, details.return_schema);
+    type ReturnSchema = (typeof FUNCS)[K]['return_schema'];
+    const schema = details.return_schema as unknown as z.ZodType<z.output<ReturnSchema>>;
+    return this._send<z.output<ReturnSchema>>(shard, details.event_name, data, schema);
   }
 }
 

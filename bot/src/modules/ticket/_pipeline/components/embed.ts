@@ -9,6 +9,7 @@ import {
 } from 'discord.js';
 import { interpolate_string } from '../helpers/var_string';
 import { ValueContainer } from '../ValueContainter';
+import { config } from '@providers/config';
 
 export function generate_embed(embed_data: Embed, variables: ValueContainer): EmbedBuilder {
   const embed = new EmbedBuilder();
@@ -36,12 +37,22 @@ export function create_ticket_opened(
   ticket_name: string,
   ticket_id: string,
   ticket_channel_link: string,
+  uses_ai: boolean,
 ): [EmbedBuilder, ActionRowBuilder<ButtonBuilder>] {
   const embed = new EmbedBuilder();
   const row = new ActionRowBuilder<ButtonBuilder>();
 
+  let description = `-# `;
+
+  if (uses_ai) {
+    description += `This ticket is summarized by AI, `;
+  }
+
+  description += `by talking in the ticket you agree with Thread-Watcher's [Terms](${config.web.hostname}/policies/terms-of-service) and [Privacy Policy](${config.web.hostname}/policies/privacy-policy)`;
+
   embed.setTitle(`Ticket Created`);
-  embed.setDescription(`Ticket ${ticket_name} created!`);
+  embed.setColor(config.style.success.colour as ColorResolvable);
+  embed.setDescription(description);
   embed.setFooter({ text: `Ticket ID: ${ticket_id}` });
 
   const open_ticket_btn = new ButtonBuilder();
