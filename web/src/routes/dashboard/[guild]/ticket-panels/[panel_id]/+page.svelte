@@ -77,7 +77,7 @@
 			`/api/panel`,
 			{
 				body: JSON.stringify(panel_validation_result.data),
-				method: create_new ? 'POST' : 'PUT'
+				method: "PUT"
 			},
 			z.object({ panel_id: z.string().default(pipeline_state.panel.panel_id) })
 		);
@@ -86,12 +86,8 @@
 			return add_toast_from_error(res.error);
 		}
 
-		if (create_new) {
-			add_toast({ type: 'success', message: 'Created panel!' });
-			goto(`/dashboard/${guild_state.guild_id}/ticket-panels/${res.value.panel_id}`);
-		} else {
-			add_toast({ type: 'success', message: 'updated panel!', timeout: 1500 });
-		}
+		add_toast({ type: 'success', message: 'updated panel!', timeout: 1500 });
+		
 	}
 
 	async function update_message() {
@@ -112,8 +108,6 @@
 		console.log(res.value);
 		alert('OK');
 	}
-
-	const create_new = $derived(params.panel_id === 'new');
 </script>
 
 <main class="view">
@@ -207,7 +201,6 @@
 
 		<div class={[common.row, common.gap_medium]}>
 			<button
-				disabled={create_new}
 				onclick={update_message}
 				class={[btn_style.button, btn_style.tetriary, 'updatebtn']}
 			>
@@ -215,7 +208,7 @@
 			</button>
 
 			<button onclick={create_ticket} class={[btn_style.button, btn_style.primary, 'updatebtn']}>
-				{create_new ? 'Create' : 'Update'}
+				Update
 			</button>
 		</div>
 	</div>

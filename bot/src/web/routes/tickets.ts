@@ -1,3 +1,5 @@
+import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
+import { attachment_service } from '@providers/services/attachment_service';
 import { ticket_service } from '@providers/services/ticket_service';
 import { Ticket, ZMessagesSearchFilters } from '@watcher/shared';
 import { Router, Response } from 'express';
@@ -31,6 +33,29 @@ router.get(
     }
 
     res.json(ticket_res.value);
+  },
+);
+
+router.post(
+  '/:ticket_id/resolve',
+  enforce_policy(Policies.user_can_view_ticket),
+  async (req, res: Response<unknown, TicketLocals>) => {
+    const ticket_id = req.params.ticket_id as string;
+
+    const could_mark_resolved = await ipc_client.send_shard(
+      res.locals.ticket.guild_id,
+      'mark_ticket_resolved',
+      { ticket_id },
+    );
+    if (could_mark_resolved.isErr()) {
+      return res.status(500).json({
+        code: 500,
+        message: 'could not resolve ticket!',
+        _details: could_mark_resolved.error,
+      });
+    }
+
+    res.json({ resolved: 'ok' });
   },
 );
 
@@ -113,6 +138,24 @@ router.delete(
     }
 
     return res.json({ note_id: note_id });
+  },
+);
+
+router.delete(
+  '/:ticket_id/attachment/:attachment_id',
+  enforce_policy(Policies.user_has_elevated_ticket_perms),
+  async (req, res: Response<unknown, TicketLocals>) => {
+    const attachment_id = req.params.attachment_id as string;
+    const could_set_flag = await attachment_service.set_flag(attachment_id, 'IS_QUARANTINED');
+    if (could_set_flag.isErr()) {
+      return res.status(500).json({
+        code: 500,
+        message: 'Could not flag attachment!',
+        _details: could_set_flag.error,
+      });
+    }
+
+    return res.json({ attachment_id });
   },
 );
 

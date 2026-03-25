@@ -10,6 +10,7 @@ import {
   EmojiResolvable,
   Guild,
   Interaction,
+  Message,
   ModalBuilder,
   ModalSubmitInteraction,
   StringSelectMenuInteraction,
@@ -271,6 +272,6 @@ export interface IPipeline {
   start_ticket_with_thread(
     int: SupportedInteractionType,
     ticket_thread: ThreadChannel,
-    start_message_id: string,
+    start_message: Message,
   ): Promise<Result<unknown, Error>>;
 }

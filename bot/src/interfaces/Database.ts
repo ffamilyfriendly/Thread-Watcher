@@ -148,6 +148,7 @@ interface Tickets {
   insert_summary: (data: Omit<TicketSummarySegment, 'summary_id' | 'created_at'>) => DBResult;
   insert_attachment: (data: TicketMessageAttachment) => DBResult;
   insert_attachments: (data: TicketMessageAttachment[]) => DBResult;
+  get_attachments: (ticket_id: string) => DBResult<TicketMessageAttachment[]>;
   update_attachment: (attachment_id: string, data: Partial<TicketMessageAttachment>) => DBResult;
   delete_attachment: (attachment_id: string) => DBResult;
 }

@@ -8,6 +8,9 @@
 	import { File, Menu } from '@lucide/svelte';
 	import common from '$lib/style/common.module.scss';
 	import ModNotes from '$lib/components/transcript/mod_notes/ModNotes.svelte';
+	import type { DiscordUser } from '@watcher/shared';
+	import { add_toast, add_toast_from_error } from '$lib/state/toasts.svelte';
+	import { map_err } from '$lib/error_helper';
 
 	const { data } = $props();
 
@@ -22,8 +25,13 @@
 		const week_as_ms = 1000 * 60 * 60 * 24 * 7;
 		return time_elapsed > week_as_ms;
 	});
+
 	const pipeline_logs_location = $derived(
 		`https://cdn.threadwatcher.xyz/logs/${data.ticket.ticket_id}_pipeline.txt`
+	);
+
+	const panel_location = $derived(
+		`/dashboard/${data.ticket.guild_id}/ticket-panels/${data.ticket.panel_id}`
 	);
 
 	const status = $derived.by(() => {
@@ -46,6 +54,27 @@
 
 	const show_overlay = $derived(viewport_width < 1000);
 	let navbar_extended = $state(true);
+
+	let user = $state<DiscordUser>();
+
+	$effect(() => {
+		gs.get_user(data.ticket.owner).then((r) => {
+			if (r.isErr()) return add_toast_from_error(map_err(r.error));
+			user = r.value;
+		});
+	});
+
+	let user_pfp = $derived.by(() => {
+		if (!user) return 'https://cdn.discordapp.com/embed/avatars/3.png';
+		if (user.avatar) return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}?size=80`;
+		return user.defaultAvatarURL;
+	});
+
+	async function mark_resolved() {
+		const res = await ts.mark_resolved();
+		if (res.isErr()) return add_toast_from_error(res.error);
+		add_toast({ type: 'success', label: 'Resolved Ticket!' });
+	}
 </script>
 
 <svelte:window bind:innerWidth={viewport_width} />
@@ -75,7 +104,18 @@
 				</div>
 			</div>
 
-			<button class={[btn_style.button, btn_style.primary]}>Resolve</button>
+			<button onclick={mark_resolved} class={[btn_style.button, btn_style.primary]}>Resolve</button>
+		</div>
+
+		<hr />
+
+		<h3 class="heading">Ticket User</h3>
+		<div class="user">
+			<img height={40} src={user_pfp} alt="user profile" />
+			<div class="meta">
+				<b>{user?.globalName ?? user?.username ?? 'unknown user'}</b>
+				<p>{user?.id ?? 'unknown user'}</p>
+			</div>
 		</div>
 
 		<hr />
@@ -86,25 +126,16 @@
 		{/if}
 
 		<h3 class="heading">Mod Notes</h3>
+		<small>Mod notes cannot be viewed by the ticket creator.</small>
 		<ModNotes />
 
+		<hr />
+
 		<div>
-			<a
-				target="_blank"
-				href={pipeline_logs_location}
-				class={[btn_style.button, btn_style.primary, logs_stale ? btn_style.disabled : '']}
-			>
-				<File />
-				Logs
-			</a>
-			<a
-				target="_blank"
-				href={pipeline_logs_location}
-				class={[btn_style.button, btn_style.primary, logs_stale ? btn_style.disabled : '']}
-			>
-				<File />
-				Panel
-			</a>
+			<a href={pipeline_logs_location} target="_blank"> Pipeline Logs </a>
+			<a href={panel_location} target="_blank"> Responsible Panel </a>
+			<a href="/policies/privacy-policy" target="_blank"> Privacy Policy </a>
+			<a href="/policies/terms-of-service" target="_blank"> Terms of Service </a>
 		</div>
 	</NavbarV2>
 </main>
@@ -119,6 +150,24 @@
 	main {
 		display: flex;
 		height: 100vh;
+	}
+
+	.user {
+		display: flex;
+		gap: 0.5rem;
+
+		.meta {
+			display: flex;
+			flex-direction: column;
+			p {
+				font-weight: 100;
+				opacity: 0.7;
+			}
+		}
+
+		img {
+			border-radius: 50%;
+		}
 	}
 
 	.heading {

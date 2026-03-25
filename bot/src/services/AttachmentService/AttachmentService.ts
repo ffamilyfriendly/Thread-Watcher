@@ -23,14 +23,22 @@ export default class AttachmentService {
 
   constructor(private db: Database) {}
 
-  get_img_location(
-    guild_id: string,
-    attachment_id: string,
-    file_name: string,
-    flag: TicketMessageAttachment['flag'],
-  ) {
+  async delete_attachments(ticket_id: string) {
+    const attachments = await this.db.get_attachments(ticket_id);
+    if (attachments.isErr()) return err(attachments.error);
+
+    let promises: ResultAsync<void, Error>[] = [];
+    for (const attachment of attachments.value) {
+      const deletion_promise = ResultAsync.fromPromise(s3.delete(attachment.cdn_path), map_err);
+      promises.push(deletion_promise);
+    }
+
+    return await ResultAsync.combineWithAllErrors(promises);
+  }
+
+  get_img_location(guild_id: string, attachment_id: string, file_name: string) {
     const location = `${guild_id}/${attachment_id}_${file_name}`;
-    return flag === 'IS_QUARANTINED' ? `quarantine/${location}` : location;
+    return location;
   }
 
   async perform_r2_upload(
@@ -107,7 +115,7 @@ export default class AttachmentService {
         file_width: attachment.width,
         marked_nsfw,
         flag: file_flag,
-        cdn_path: this.get_img_location(message.guildId, attachment.id, attachment.name, null),
+        cdn_path: this.get_img_location(message.guildId, attachment.id, attachment.name),
       });
 
       if (file_flag === 'IS_UPLOADING') to_upload.push(attachment);
@@ -122,7 +130,7 @@ export default class AttachmentService {
       this.queue.add(() =>
         this.process_upload(
           attachment,
-          this.get_img_location(message.guildId, attachment.id, attachment.name, null),
+          this.get_img_location(message.guildId, attachment.id, attachment.name),
         ),
       );
     }

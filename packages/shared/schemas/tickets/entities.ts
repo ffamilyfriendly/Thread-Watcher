@@ -78,7 +78,7 @@ export type EditTicketPanel = z.output<typeof ZEditTicketPanel>;
 export type EditTicket = z.output<typeof ZEditTicket>;
 export type TicketPanelMeta = Omit<TicketPanel, "id">;
 
-const ZMessageAttachment = z.object({
+export const ZMessageAttachment = z.object({
   attachment_id: z.string(),
   message_id: z.string(),
   cdn_path: z.string(),

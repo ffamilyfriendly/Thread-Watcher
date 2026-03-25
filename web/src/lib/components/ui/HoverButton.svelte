@@ -64,6 +64,8 @@
 		opacity: 0;
 		pointer-events: none;
 		transition: opacity 0.15s;
+		display: flex;
+		align-items: center;
 
 		&.visible {
 			opacity: 1;

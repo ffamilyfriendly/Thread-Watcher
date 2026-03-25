@@ -7,6 +7,7 @@ import {
   ColorResolvable,
   EmbedBuilder,
   Interaction,
+  Message,
   ThreadChannel,
 } from 'discord.js';
 import { create_module } from './helpers/module_factory';
@@ -23,6 +24,7 @@ import { ticket_service } from '@providers/services/ticket_service';
 import { ContractLeafValue } from '@watcher/shared/tickets/contracts';
 import { create_ticket_opened } from './components/embed';
 import { interpolate_string } from './helpers/var_string';
+import { client } from '@providers/client';
 
 const log_obj_schema = z
   .object({
@@ -179,7 +181,7 @@ export class Pipeline implements IPipeline {
   async start_ticket_with_thread(
     int: SupportedInteractionType,
     ticket_thread: ThreadChannel,
-    start_message_id: string,
+    start_message: Message<true>,
   ): Promise<Result<unknown, Error>> {
     if (this.is_resolved) return err(new Error('pipeline is already resolved!'));
     this.is_resolved = true;
@@ -193,12 +195,20 @@ export class Pipeline implements IPipeline {
       assigned_to_roles: this.assigned_roles,
       variable_dump: this.get_all_properties(),
       discord_channel_id: ticket_thread.id,
-      start_message_id,
+      start_message_id: start_message.id,
     });
 
     if (insert_ticket_res.isErr()) {
       this.logger.error(`Could not commit ticket to database!`);
       return err(insert_ticket_res.error as Error);
+    }
+
+    const could_commit_starter_message = await ticket_service.append_message(
+      this.ticket_id,
+      start_message,
+    );
+    if (could_commit_starter_message.isErr()) {
+      this.logger.error('Could not commit starter message');
     }
 
     const [embed, row] = create_ticket_opened(

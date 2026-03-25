@@ -37,6 +37,7 @@ import {
   ZIntermediaryMessage,
   TicketSummarySegment,
   ZTicketSummarySegment,
+  ZMessageAttachment,
 } from '@watcher/shared';
 
 import * as schema from './schema';
@@ -71,6 +72,18 @@ export default class Sqlite implements Database {
     this.drizzle = drizzle(this.raw_db, { schema: full_schema });
     migrate(this.drizzle, { migrationsFolder: './drizzle' });
     this._config = config;
+  }
+
+  @with_error_handling
+  async get_attachments(ticket_id: string) {
+    const attachments = await this.drizzle.query.MessageAttachment.findMany({
+      with: {
+        message: true,
+      },
+      where: eq(schema.Message.ticket_id, ticket_id),
+    });
+
+    return with_schema(attachments, z.array(ZMessageAttachment));
   }
 
   @with_error_handling

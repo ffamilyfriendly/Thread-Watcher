@@ -1,3 +1,4 @@
+import { config } from '@providers/config';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
 export function get_action_row(): ActionRowBuilder<ButtonBuilder> {

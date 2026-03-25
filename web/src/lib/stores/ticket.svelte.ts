@@ -77,6 +77,25 @@ export class TicketState {
 			this.ticket.notes = this.ticket.notes.filter((n) => n.note_id !== note_id);
 		return ok();
 	}
+
+	async flag_attachment(attachment_id: string) {
+		const could_flag = await fetch_as_json(
+			`/api/ticket/${this.ticket?.ticket_id}/attachment/${attachment_id}`,
+			{ method: 'DELETE' }
+		);
+		if (could_flag.isErr()) return err(could_flag.error);
+		this.messages.forEach((m) => m.attachments.filter((a) => a.attachment_id !== attachment_id));
+		return ok();
+	}
+
+	async mark_resolved() {
+		const could_resolve = await fetch_as_json(`/api/ticket/${this.ticket?.ticket_id}`, {
+			method: 'POST'
+		});
+		if (could_resolve.isErr()) return err(could_resolve.error);
+		this.ticket?.status === 'CLOSED';
+		return ok();
+	}
 }
 
 const TICKET_KEY = Symbol('ticket');

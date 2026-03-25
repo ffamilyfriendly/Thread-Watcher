@@ -32,7 +32,10 @@ async function update_buttons(int: RepliableInteraction, start_message_id: strin
   return ResultAsync.fromPromise(message_promise.value.edit({ components: [action_row] }), map_err);
 }
 
-async function do_resolved_actions(thread: ThreadChannel, ticket_id_or_ticket: string | Ticket) {
+export async function do_resolved_actions(
+  thread: ThreadChannel,
+  ticket_id_or_ticket: string | Ticket,
+) {
   let ticket: Ticket;
   if (typeof ticket_id_or_ticket === 'string') {
     const ticket_obj = await ticket_service.get_ticket(ticket_id_or_ticket);
@@ -52,7 +55,11 @@ async function do_resolved_actions(thread: ThreadChannel, ticket_id_or_ticket: s
   const variables = ValueContainer.from_dump(ticket.variable_dump);
   const embed = generate_embed(panel_obj.value.resolve_embed, variables);
   const msg_sent = ResultAsync.fromPromise(
-    thread.send({ embeds: [embed], components: [get_ticket_resolved_buttons(ticket.ticket_id)] }),
+    thread.send({
+      embeds: [embed],
+      components: [get_ticket_resolved_buttons(ticket.ticket_id)],
+      content: `<@${ticket.owner}>`,
+    }),
     map_err,
   );
 

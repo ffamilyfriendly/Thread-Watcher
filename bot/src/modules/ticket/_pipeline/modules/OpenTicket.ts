@@ -8,6 +8,7 @@ import {
   ChannelType,
   ForumChannel,
   MediaChannel,
+  Message,
   MessageCreateOptions,
   NewsChannel,
   TextChannel,
@@ -27,7 +28,7 @@ export default class OpenTicket extends DefaultModule<TypedPipelineModule<'OPEN_
     message: MessageCreateOptions,
     name: string,
     channel: ForumChannel | MediaChannel,
-  ): Promise<Result<[ThreadChannel, string], Error>> {
+  ): Promise<Result<[ThreadChannel, Message], Error>> {
     const thread = await ResultAsync.fromPromise(
       channel.threads.create({
         message,
@@ -37,15 +38,22 @@ export default class OpenTicket extends DefaultModule<TypedPipelineModule<'OPEN_
     );
     if (thread.isErr()) return err(thread.error);
 
+    const starter_message = await ResultAsync.fromPromise(
+      thread.value.fetchStarterMessage(),
+      map_err,
+    );
+    if (starter_message.isErr()) return err(starter_message.error);
+    if (!starter_message.value) return err(new Error('could not fetch starter message'));
+
     // For these types of threads that require a starter message the ID of the thread is the same as that of the starting message
-    return ok([thread.value, thread.value.id]);
+    return ok([thread.value, starter_message.value]);
   }
 
   private async create_text_channel(
     message: MessageCreateOptions,
     name: string,
     channel: TextChannel | NewsChannel,
-  ): Promise<Result<[ThreadChannel, string], Error>> {
+  ): Promise<Result<[ThreadChannel, Message], Error>> {
     let prom: Promise<ThreadChannel>;
     if (channel instanceof NewsChannel) {
       prom = channel.threads.create({
@@ -67,7 +75,7 @@ export default class OpenTicket extends DefaultModule<TypedPipelineModule<'OPEN_
     const msg_res = await ResultAsync.fromPromise(thread.value.send(message), map_err);
     if (msg_res.isErr()) return err(msg_res.error);
 
-    return ok([thread.value, msg_res.value.id]);
+    return ok([thread.value, msg_res.value]);
   }
 
   protected async run(
@@ -115,7 +123,7 @@ export default class OpenTicket extends DefaultModule<TypedPipelineModule<'OPEN_
       return err(thread_channel_promise.error);
     }
 
-    const [thread_channel, starter_message_id] = thread_channel_promise.value;
+    const [thread_channel, starter_message] = thread_channel_promise.value;
 
     if (this.pipeline.data.should_watch_ticket) {
       const could_watch_thread = await thread_service.watch_thread(thread_channel);
@@ -135,7 +143,7 @@ export default class OpenTicket extends DefaultModule<TypedPipelineModule<'OPEN_
     const could_start_ticket = await this.pipeline.start_ticket_with_thread(
       interaction,
       thread_channel,
-      starter_message_id,
+      starter_message,
     );
     if (could_start_ticket.isErr()) return err(could_start_ticket.error);
 

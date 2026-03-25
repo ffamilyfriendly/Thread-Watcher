@@ -9,6 +9,7 @@ import { ValueContainer } from 'modules/ticket/_pipeline/ValueContainter';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import AiService from 'services/AiService';
 import { map_err } from 'utilities/error';
+import { safe_json } from 'utilities/parsing';
 import z from 'zod';
 
 const ZNarrowAnswer = z
@@ -137,7 +138,10 @@ export class IssueNarrower {
         new Error(`AI answer was of type '${typeof answer.value}' when we expected 'string'`),
       );
 
-    const formatted = ZNarrowAnswer.safeParse(JSON.parse(answer.value));
+    const parsed = safe_json(answer.value);
+    if (parsed.isErr()) return err(parsed.error);
+
+    const formatted = ZNarrowAnswer.safeParse(parsed.value);
     if (!formatted.success) return err(formatted.error);
 
     if (formatted.data.is_clarified) {

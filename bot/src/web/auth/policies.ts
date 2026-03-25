@@ -137,7 +137,7 @@ export namespace Policies {
         guild_id.value,
         'check_user_perm',
         {
-          guild_id,
+          guild_id: guild_id.value,
           user_id: req.user_id,
           permission: perm_arr,
         },
@@ -171,7 +171,7 @@ export namespace Policies {
       guild_id.value,
       'check_user_guild_master',
       {
-        guild_id,
+        guild_id: guild_id.value,
         user_id: req.user_id,
       },
     );
@@ -194,7 +194,7 @@ export namespace Policies {
       guild_id.value,
       'check_user_bot_master',
       {
-        guild_id,
+        guild_id: guild_id.value,
         user_id: req.user_id,
       },
     );

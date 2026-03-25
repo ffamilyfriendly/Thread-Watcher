@@ -4,6 +4,8 @@
 	import type { Snippet } from 'svelte';
 	import type { Result } from 'neverthrow';
 	import { ChevronDown, ChevronUp, Delete } from '@lucide/svelte';
+	import { portal } from '$lib/client/attachments/portal';
+	import { click_outside } from '$lib/client/attachments/click_outside';
 
 	interface Props {
 		items: T[];
@@ -77,24 +79,6 @@
 	let container: HTMLDivElement | undefined = $state();
 
 	$effect(() => {
-		if (!window || !show_item_picker) return;
-
-		function handle_click(ev: PointerEvent) {
-			if (!ev.target || !(ev.target instanceof HTMLElement)) return;
-
-			const target_is_child = container?.contains(ev.target);
-			if (!target_is_child) {
-				show_item_picker = false;
-			}
-		}
-		window.addEventListener('click', handle_click);
-
-		return () => {
-			window.removeEventListener('click', handle_click);
-		};
-	});
-
-	$effect(() => {
 		const current_ids = (Array.isArray(value) ? value : value ? [value] : []).filter(
 			(str) => str.trim().length != 0
 		);
@@ -151,6 +135,8 @@
 
 	{#if show_item_picker}
 		<div
+			{@attach portal(container, { force_anchor_width: true })}
+			{@attach click_outside(() => show_item_picker = false)}
 			class="options"
 			in:fly={{ duration: 200, opacity: 0, y: -8 }}
 			out:fly={{ duration: 200, opacity: 0, y: -8 }}
@@ -300,7 +286,10 @@
 	}
 
 	.custom_id {
+		width: 100%;
+		display: flex;
 		input {
+			flex-grow: 1;
 			background-color: var(--background-700);
 
 			border: none;
