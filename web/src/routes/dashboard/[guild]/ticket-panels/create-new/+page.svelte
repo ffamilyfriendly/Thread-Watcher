@@ -2,7 +2,8 @@
 	import { goto } from "$app/navigation";
 	import { fetch_as_json } from "$lib/client/fetch";
 	import Button from "$lib/components/ui/Button.svelte";
-import ChannelPicker from "$lib/components/ui/settings/ChannelPicker.svelte";
+	import Subpage from "$lib/components/ui/DashNav/Subpage.svelte";
+    import ChannelPicker from "$lib/components/ui/settings/ChannelPicker.svelte";
 	import RolePicker from "$lib/components/ui/settings/RolePicker.svelte";
 	import { add_toast_from_error } from "$lib/state/toasts.svelte";
 	import { use_guild_state } from "$lib/stores/guild.svelte";
@@ -40,7 +41,12 @@ import ChannelPicker from "$lib/components/ui/settings/ChannelPicker.svelte";
     let roles = $state<string[]>()
 
     const can_create = $derived(name && channel && (roles?.length ?? 0) > 0)
+    
 </script>
+
+<Subpage>
+    hi
+</Subpage>
 
 <div class="container">
     <header>

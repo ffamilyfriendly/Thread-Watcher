@@ -17,14 +17,25 @@
 </script>
 
 
-<BasePicker {multiple} items={options} bind:value placeholder="Search Roles">
+<BasePicker {multiple} items={options} bind:value placeholder="Search Options">
 	{#snippet render_item(role)}
 		<div class="option">
 			{role.name}
+			{#if role.description}
+				<span class="description">{role.description}</span>
+			{/if}
 		</div>
 	{/snippet}
 </BasePicker>
 
 
 <style lang="scss">
+	.option {
+		display: flex;
+		flex-direction: column;
+
+		.description {
+			opacity: .5;
+		}
+	}
 </style>

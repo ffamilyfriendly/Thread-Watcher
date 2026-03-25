@@ -22,6 +22,10 @@
 	import common from '$lib/style/common.module.scss';
 	import z from 'zod';
 	import { goto } from '$app/navigation';
+	import Subpage from '$lib/components/ui/DashNav/Subpage.svelte';
+	import StringSelect from '$lib/components/ui/tickets/modules/QuestionModule/configurators/StringSelect.svelte';
+	import StringPicker from '$lib/components/ui/settings/StringPicker.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 
 	const { data, params }: PageProps = $props();
 
@@ -104,11 +108,12 @@
 		);
 
 		if (res.isErr()) return add_toast_from_error(res.error);
-
-		console.log(res.value);
-		alert('OK');
 	}
 </script>
+
+<Subpage>
+	<small>Editing panel</small>
+</Subpage>
 
 <main class="view">
 	<div class="panel_meta">
@@ -196,21 +201,34 @@
 		</div>
 		<div class="option">
 			<h3>Close Method</h3>
-			What we want to do when a ticket is resolved. Maybe: Delete Thread, Un-Watch thread, nothing
+			<StringPicker bind:value={pipeline_state.panel.resolve_behaviour} options={[
+				{
+					name: "Delete Thread",
+					description: "Deletes the ticket thread",
+					id: "DELETE_THREAD"
+				},
+				{
+					name: "Lock Thread",
+					description: "Locks the ticket thread",
+					id: "LOCK_THREAD"
+				},
+				{
+					name: "Nothing",
+					id: "NOTHING"
+				}
+			]} />
 		</div>
 
 		<div class={[common.row, common.gap_medium]}>
-			<button
-				onclick={update_message}
-				class={[btn_style.button, btn_style.tetriary, 'updatebtn']}
-			>
-				Send Embed
-			</button>
+			<Button variant="tetriary" load_with={update_message}>
+				Deploy Panel
+			</Button>
 
-			<button onclick={create_ticket} class={[btn_style.button, btn_style.primary, 'updatebtn']}>
+			<Button variant="primary" load_with={create_ticket}>
 				Update
-			</button>
+			</Button>
 		</div>
+		<small>* clicking "Deploy Panel" will send the embed in the <i>Assigned Channel</i>. If this channel cannot hold messages (such as a forum channel), you will get an error.</small>
 	</div>
 </main>
 

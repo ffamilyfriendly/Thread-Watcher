@@ -4,25 +4,28 @@
 	import DropDown from '$lib/components/ui/DropDown.svelte';
 	import { signOut } from '@auth/sveltekit/client';
 	import list_style from '$lib/style/list.module.scss';
-	import { sidebar_open } from '$lib/stores/sidebar';
-	import Hamburger from '$lib/components/ui/Hamburger.svelte';
-	import NavBar from '$lib/components/ui/NavBar.svelte';
+	import { Menu } from '@lucide/svelte';
+	import NavBar from '$lib/components/ui/DashNav/DashboardNavbar.svelte';
 
 	let inner_width = $state(0);
-	let should_be_open = $derived($sidebar_open || inner_width > 500);
-	let { children, data } = $props();
+	const should_show_overlay = $derived(inner_width < 600)
+	let sidebar_open = $state(true);
+	let should_be_open = $derived(sidebar_open || !should_show_overlay);
+	let { children } = $props();
 </script>
 
 <svelte:window bind:innerWidth={inner_width} />
 
+{#snippet hamburger()}
+	{#if should_show_overlay}
+	<button class="hamburger" onclick={() => sidebar_open = !sidebar_open}>
+		<Menu />
+	</button>
+	{/if}
+{/snippet}
+
 <nav class="top_nav">
-	<Hamburger
-		class={'hamburger'}
-		width={40}
-		open={$sidebar_open}
-		aria_label="open navbar"
-		on_click={() => ($sidebar_open = !$sidebar_open)}
-	/>
+	{@render hamburger()}
 	<div class="branding">
 		<img alt="Logo" src={logo} />
 		<span>Thread-Watcher</span>
@@ -52,7 +55,7 @@
 </nav>
 
 <div class="container">
-	<NavBar open={should_be_open} />
+	<NavBar overlay={should_show_overlay} should_be_open={should_be_open} hamburger={hamburger} />
 
 	<main>
 		{@render children()}
@@ -62,14 +65,20 @@
 <style lang="scss">
 	@use '../../lib/style/colours.scss';
 
-	:global(.hamburger) {
-		@media (min-width: 500px) {
-			display: none !important;
-		}
+	.hamburger {
+		cursor: pointer;
+		background-color: transparent;
+		color: white;
+		padding: .5rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: none;
 	}
 
 	.top_nav {
-		@extend .bg-background-600;
+		background-color: var(--background-600);
+		border-bottom: 1px solid color-mix(in srgb, var(--background-600) 90%, white);
 		height: var(--navbar_height);
 		display: flex;
 		align-items: center;

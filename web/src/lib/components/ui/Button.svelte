@@ -48,6 +48,12 @@
         --text: white;
     }
 
+    .tetriary {
+        --bg: rgba(255, 255, 255, 0.087);
+        --text: white;
+        background-color: transparent !important;
+    }
+
     .premium {
         --bg: var(--premium-500);
         --text: white;
@@ -72,10 +78,12 @@
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         user-select: none;
         background-color: var(--bg);
+        border: 1px solid color-mix(in srgb, var(--bg) 90%, white);
         color: var(--text);
         box-sizing: border-box;
 
         &:hover:not(:disabled) {
+            transform: scale(1.04);
             background-color: color-mix(in srgb, var(--bg) 90%, white);
         }
 

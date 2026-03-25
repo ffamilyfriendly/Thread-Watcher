@@ -38,8 +38,8 @@
 
 <style lang="scss">
 	aside {
-		background-color: #131313;
-		border-right: 1px solid color-mix(in srgb, #121212 90%, white);
+		background-color: var(--background-600);
+		border-right: 1px solid color-mix(in srgb, var(--background-600) 90%, white);
 		padding: 1rem;
 		height: 100%;
 		overflow-y: auto;

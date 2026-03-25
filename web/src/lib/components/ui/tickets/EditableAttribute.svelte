@@ -62,7 +62,7 @@
 		is_editing = false;
 	}
 
-	function resize(node: HTMLTextAreaElement, text: string | null | undefined) {
+	function resize(node: HTMLTextAreaElement, _text?: string) {
 		const update = () => {
 			node.style.height = `auto`;
 			node.style.height = `${node.scrollHeight}px`;
@@ -93,6 +93,7 @@
 	}
 
 	function focus(node: HTMLInputElement | HTMLTextAreaElement) {
+		if(node instanceof HTMLTextAreaElement) resize(node)
 		node.focus();
 		node.select();
 	}
