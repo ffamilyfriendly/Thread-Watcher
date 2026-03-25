@@ -89,6 +89,7 @@ export const ZConfig = z.object({
   support_server_link: z.url().default('https://botsuite.co/join'),
   logWebhook: z.string().url().startsWith('https://discord.com').optional(),
   style: Style,
+  crypto_key: z.string(),
 });
 
 export type ConfigType = z.infer<typeof ZConfig>;

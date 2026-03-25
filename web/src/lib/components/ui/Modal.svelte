@@ -47,6 +47,7 @@
 <style lang="scss">
 	dialog {
 		display: flex;
+		min-width: 300px;
 		flex-direction: column;
 		background-color: var(--background-500);
 		border-radius: 0.5rem;

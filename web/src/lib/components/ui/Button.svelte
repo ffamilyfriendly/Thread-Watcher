@@ -2,6 +2,7 @@
 	import { Hourglass, Loader, Loader2, LoaderPinwheel } from "@lucide/svelte";
 	import type { Result, ResultAsync } from "neverthrow";
 	import type { Snippet } from "svelte";
+	import Modal from "./Modal.svelte";
 
     interface Props {
         on_click?: () => void
@@ -10,13 +11,28 @@
         children: Snippet
         disabled?: boolean
         class?: string
+        href?: string
+        confirmation?: {
+            title: string,
+            body: string,
+            proceed_btn_text: string,
+            cancel_btn_text: string
+        }
     }
 
-    const { on_click, load_with, children, disabled, variant = "primary", class: className = "" }: Props = $props()
+    const { on_click, load_with, children, disabled, variant = "primary", class: className = "", href, confirmation }: Props = $props()
 
     let is_loading = $state(false)
+    let confirmation_given = $state(false)
+    let show_confirmation_modal = $state(false)
 
-    async function handle_on_click() {
+    async function handle_on_click(e: MouseEvent) {
+        
+        if(confirmation && !confirmation_given && !e.shiftKey) {
+            show_confirmation_modal = true
+            return
+        }
+
         if(on_click) return on_click()
         if(!load_with) return
         is_loading = true
@@ -31,7 +47,26 @@
     const is_disabled = $derived(disabled || is_loading)
 </script>
 
-<button class="{variant} {className}" disabled={is_disabled} onclick={handle_on_click}>
+{#if show_confirmation_modal && confirmation}
+    <Modal title={confirmation.title} bind:set_open={show_confirmation_modal}>
+        {confirmation.body}
+        {#snippet buttons()}
+            <button onclick={() => show_confirmation_modal = false} class="tetriary button">
+                {confirmation.cancel_btn_text}
+            </button>
+            <button onclick={(e) => { confirmation_given = true; show_confirmation_modal = false; handle_on_click(e) }} class="error button">
+                {confirmation.proceed_btn_text}
+            </button>
+        {/snippet}
+    </Modal>
+{/if}
+
+{#if href}
+<a aria-disabled={is_disabled} class:disabled={disabled} class="{variant} {className} button" href={href}>
+    {@render children()}
+</a>
+{:else}
+<button class="{variant} {className} button" disabled={is_disabled} onclick={handle_on_click}>
     {#if is_loading}
     <div class="loader">
         <Loader size={16} class="ICON" />
@@ -40,6 +75,7 @@
 
     {@render children()}
 </button>
+{/if}
 
 <style lang="scss">
 
@@ -64,7 +100,7 @@
         --text: white;
     }
 
-    button {
+    .button {
         all: unset; // Reset default styles
         display: inline-flex;
         align-items: center;
@@ -87,7 +123,8 @@
             background-color: color-mix(in srgb, var(--bg) 90%, white);
         }
 
-        &:disabled {
+        &:disabled, &.disabled {
+            pointer-events: none;
             opacity: .6;
             cursor: unset;
         }

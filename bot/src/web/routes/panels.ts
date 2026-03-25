@@ -36,6 +36,24 @@ router.post(
   },
 );
 
+router.delete(
+  '/:guild_id/panels/:panel_id',
+  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  async (req, res) => {
+    const panel_id = req.params.panel_id as string;
+    const could_delete = await ticket_service.delete_panel(panel_id);
+    if (could_delete.isErr()) {
+      return res.status(500).json({
+        code: 500,
+        message: 'could not delete panel',
+        _details: could_delete.error,
+      });
+    }
+
+    return res.json({ panel_id: panel_id });
+  },
+);
+
 router.put(
   '/:guild_id/panels/:panel_id',
   enforce_policy(Policies.Common.bot_master_or_guild_master),

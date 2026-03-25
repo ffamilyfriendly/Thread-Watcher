@@ -20,6 +20,7 @@ import { UserFetcher } from 'fetchers/user_fetcher';
 import { Database, TicketInsertion } from 'interfaces/Database';
 import Redis from 'ioredis';
 import { err, ok, Result } from 'neverthrow';
+import { decrypt, encrypt } from 'utilities/crypto';
 import { map_err, mapped_err } from 'utilities/error';
 import { PanelNotFound, ThreadIdNotFound, TicketNotFound } from 'utilities/error/def';
 import RedisWrapper from 'utilities/redis';
@@ -140,9 +141,11 @@ export default class TicketService {
       this.l.error('could not run summary', should_summarize.error);
     }
 
+    const encrypted_content = await encrypt(message.content);
+
     const insert_res = await this.db.insert_message({
       message_id: message.id,
-      text_content: message.content,
+      text_content: encrypted_content,
       ticket_id,
       author_id: message.author.id,
       created_at: message.createdAt,
@@ -151,6 +154,15 @@ export default class TicketService {
     if (insert_res.isErr()) return err(insert_res.error);
 
     return await attachment_service.add_attachments(message);
+  }
+
+  async decrypt_messages(messages: IntermediaryMessage[]): Promise<IntermediaryMessage[]> {
+    return await Promise.all(
+      messages.map(async (msg) => ({
+        ...msg,
+        text_content: msg.text_content ? await decrypt(msg.text_content) : '',
+      })),
+    );
   }
 
   async hydrate_messages(
@@ -172,8 +184,10 @@ export default class TicketService {
       this.l.warn('No user fetcher set, skipping user hydration.');
     }
 
+    const decrypted_messages = await this.decrypt_messages(messages);
+
     return ok({
-      messages: messages.map((msg) => ({
+      messages: decrypted_messages.map((msg) => ({
         ...msg,
         attachments: attachment_service.into_api_type(msg.attachments),
       })),
@@ -234,8 +248,6 @@ export default class TicketService {
 
     if (messages.length === 0 || !last_message) return ok();
 
-    const delta_time = Date.now() - last_message.created_at.getTime();
-
     const last_message_is_old =
       Date.now() - last_message.created_at.getTime() > TicketService.MSG_CONSIDERED_OLD_MS;
     const enough_messages = messages.length > TicketService.MSGES_REQUIRED_FOR_SUMMARY;
@@ -244,18 +256,12 @@ export default class TicketService {
       enough_messages &&
       (last_message_is_old || messages.length >= TicketService.MAX_MESSAGES_PER_SUMMARY);
 
-    this.l.debug('SHOULD_SUMMARIZE', should_summarize);
-    console.table({
-      enough_messages,
-      last_message_is_old,
-      over_max: messages.length >= TicketService.MAX_MESSAGES_PER_SUMMARY,
-    });
-
     if (!should_summarize) return ok();
 
-    const to_summarize = messages.slice(0, TicketService.MAX_MESSAGES_PER_SUMMARY);
+    const to_summarize = await this.decrypt_messages(
+      messages.slice(0, TicketService.MAX_MESSAGES_PER_SUMMARY),
+    );
 
-    this.l.info('WE ARE DOING SUMMARY');
     return ai_service.do_simple_summary(ticket_id, guild_id, to_summarize);
   }
 }

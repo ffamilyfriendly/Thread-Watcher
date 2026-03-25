@@ -21,7 +21,7 @@
         const new_panel: TicketPanel = { ...default_panel, initial_assigned_roles: roles, initial_channel_id: channel, name }
 
         const res = await fetch_as_json(
-			`/api/panel`,
+			`/api/guild/${gs.guild_id}/panels`,
 			{
 				body: JSON.stringify(new_panel),
 				method: "POST"

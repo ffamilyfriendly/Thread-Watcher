@@ -21,13 +21,11 @@
 	import { use_guild_state } from '$lib/stores/guild.svelte.js';
 	import common from '$lib/style/common.module.scss';
 	import z from 'zod';
-	import { goto } from '$app/navigation';
 	import Subpage from '$lib/components/ui/DashNav/Subpage.svelte';
-	import StringSelect from '$lib/components/ui/tickets/modules/QuestionModule/configurators/StringSelect.svelte';
 	import StringPicker from '$lib/components/ui/settings/StringPicker.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 
-	const { data, params }: PageProps = $props();
+	const { data }: PageProps = $props();
 
 	const guild_state = use_guild_state();
 
@@ -78,7 +76,7 @@
 		}
 
 		const res = await fetch_as_json(
-			`/api/panel`,
+			`/api/guild/${panel_validation_result.data.guild_id}/panels/${panel_validation_result.data.panel_id}`,
 			{
 				body: JSON.stringify(panel_validation_result.data),
 				method: "PUT"
