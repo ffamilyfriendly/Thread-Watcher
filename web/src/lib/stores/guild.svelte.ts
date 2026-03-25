@@ -15,7 +15,7 @@ import z from 'zod';
 
 type UserFetchCallback = (v: Result<DiscordUser, unknown>) => void;
 
-class GuildState {
+export class GuildState {
 	roles = $state<DiscordRole[]>([]);
 	channels = $state<DiscordChannel[]>([]);
 	users = $state<Map<string, DiscordUser>>(new Map());
@@ -61,6 +61,10 @@ class GuildState {
 
 	set_users(new_users: DiscordUser[]) {
 		this.users = new Map(new_users.map((u) => [u.id, u]));
+	}
+
+	append_users(new_users: DiscordUser[]) {
+		new_users.forEach((u) => this.users.set(u.id, u));
 	}
 
 	init(roles: DiscordRole[], channels: DiscordChannel[], guild: GuildOverview) {
@@ -189,6 +193,10 @@ class GuildState {
 				resolve(res);
 			});
 		});
+	}
+
+	get_user_cached(user_id: string): DiscordUser | null {
+		return this.users.get(user_id) ?? null;
 	}
 
 	// Unsure if this is relevant anymore?

@@ -36,8 +36,6 @@ function rich_tag_handler(_options: {}) {
 				// The id of the rich tag such as "870715447136366662" for the example above
 				const discord_id = match[3];
 
-				console.log('MATCH', match);
-
 				let obj: {
 					type: string;
 					data: { hName: string; hProperties: { [index: string]: any } };

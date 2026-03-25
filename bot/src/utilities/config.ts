@@ -72,6 +72,7 @@ const ZAi = z.object({
   agents: z.object({
     regex_agent: z.string(),
     issue_narrower: z.string(),
+    ticket_summarizer: z.string(),
   }),
 });
 

@@ -103,6 +103,8 @@ export default class AttachmentService {
         filename: attachment.name,
         url: attachment.url,
         file_size: attachment.size,
+        file_height: attachment.height,
+        file_width: attachment.width,
         marked_nsfw,
         flag: file_flag,
         cdn_path: this.get_img_location(message.guildId, attachment.id, attachment.name, null),

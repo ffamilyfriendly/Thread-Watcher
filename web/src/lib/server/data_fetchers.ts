@@ -20,6 +20,7 @@ import {
 	ZThreadData,
 	ZTicketPanel,
 	ZTicketPanelMeta,
+	ZTicketView,
 	type HydratedThreadData,
 	type Monitor,
 	type ThreadData,
@@ -180,6 +181,17 @@ export const fetch_ticket_panels = (guild_id: string, user_id: string) =>
 		`ticketservice:panels:${guild_id}`,
 		z.array(ZTicketPanelMeta),
 		() => _fetch_ticket_panels(guild_id, user_id),
+		60
+	);
+
+export const _fetch_ticket = (ticket_id: string, user_id: string) =>
+	json_fetch(`/tickets/${ticket_id}`, { user_id }, ZTicketView);
+
+export const fetch_ticket = (ticket_id: string, user_id: string) =>
+	get_cached_or(
+		`ticketview:ticket:${ticket_id}:${user_id}`,
+		ZTicketView,
+		() => _fetch_ticket(ticket_id, user_id),
 		60
 	);
 

@@ -14,7 +14,7 @@ import z from 'zod';
 const ZNarrowAnswer = z
   .object({
     is_clarified: z.boolean(),
-    clarification_query: z.string().optional(),
+    clarification_query: z.string().nullish(),
     internal_summary: z.string(),
     missing_data_points: z.array(z.string()).default([]),
   })

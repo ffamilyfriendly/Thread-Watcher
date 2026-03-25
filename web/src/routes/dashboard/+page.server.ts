@@ -4,7 +4,8 @@ import { ZDiscordGuild, type DiscordGuild } from '$lib/types/discord.js';
 import z from 'zod';
 import { error } from '@sveltejs/kit';
 import { get_cached, get_cached_or } from '$lib/server/cache';
-import { err, Result, ok } from 'neverthrow';
+import { err, Result, ok, ResultAsync } from 'neverthrow';
+import { map_err } from '$lib/error_helper.js';
 
 function gen_inv(guild_id: string) {
 	const client_id = DISCORD_CLIENT_ID;
@@ -74,13 +75,14 @@ export async function load({ locals }) {
 		return error(500, 'could not query internal API for guilds');
 	}
 
-	const as_json = (await guilds_res.value.json()) as string[];
+	const guilds_list = (await guilds_res.value.json()) as string[];
+
 	const can_add_bot = (guild: DiscordGuild) => guild.owner || Number(guild.permissions) & 0x20;
 
 	const show_guilds = guilds
 		.map((guild) => {
 			const can_add = can_add_bot(guild);
-			const guild_has_bot = as_json.includes(guild.id);
+			const guild_has_bot = guilds_list.includes(guild.id);
 			const should_not_show = !(can_add || guild_has_bot);
 
 			return {

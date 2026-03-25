@@ -4,6 +4,7 @@ export * from "./pipeline";
 export * from "./entities";
 export * from "./discord";
 export * from "./constants";
+export * from "./ticket_view";
 
 export const DEFAULT_TICKET_PANEL: (s: string) => TicketPanel = (
   guild_id: string,

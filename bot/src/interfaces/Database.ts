@@ -19,6 +19,10 @@ import {
   TicketMessage,
   TicketMessageAttachment,
   IntermediaryTicketView,
+  PublicTicketMessage,
+  MessagesSeachFilter,
+  IntermediaryMessage,
+  TicketSummarySegment,
 } from '@watcher/shared';
 import { DatabaseError } from 'utilities/error/def';
 
@@ -124,13 +128,24 @@ interface Tickets {
   get_ticket: (ticket_id: string) => DBResult<Ticket>;
   update_ticket: (ticket_id: string, data: EditTicket) => DBResult;
   get_ticket_id_from_thread: (thread_id: string) => DBResult<string | null>;
-  get_extended_ticket: (ticket_id: string) => DBResult<IntermediaryTicketView>;
+  get_extended_ticket: (
+    ticket_id: string,
+    user_has_elevated_perms: boolean,
+  ) => DBResult<IntermediaryTicketView>;
   // Ticket Notes
   insert_ticket_note: (data: InsertTicketNote) => DBResult<string>;
   get_ticket_notes: (ticket_id: string, limit: number, offset: number) => DBResult<TicketNote[]>;
   delete_ticket_note: (note_id: string) => DBResult;
   // Ticket Messages,
   insert_message: (data: TicketMessage) => DBResult;
+  delete_message: (data: TicketMessage) => DBResult;
+  get_messages: (
+    ticket_id: string,
+    filters: MessagesSeachFilter,
+  ) => DBResult<IntermediaryMessage[]>;
+  get_summary_candidate_messages: (ticket_id: string) => DBResult<IntermediaryMessage[]>;
+  get_summaries: (ticket_id: string) => DBResult<TicketSummarySegment[]>;
+  insert_summary: (data: Omit<TicketSummarySegment, 'summary_id' | 'created_at'>) => DBResult;
   insert_attachment: (data: TicketMessageAttachment) => DBResult;
   insert_attachments: (data: TicketMessageAttachment[]) => DBResult;
   update_attachment: (attachment_id: string, data: Partial<TicketMessageAttachment>) => DBResult;

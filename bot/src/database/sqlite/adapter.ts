@@ -31,6 +31,12 @@ import {
   TicketMessageAttachment,
   IntermediaryTicketView,
   ZIntermediaryTicketView,
+  MessagesSeachFilter,
+  PublicTicketMessage,
+  IntermediaryMessage,
+  ZIntermediaryMessage,
+  TicketSummarySegment,
+  ZTicketSummarySegment,
 } from '@watcher/shared';
 
 import * as schema from './schema';
@@ -46,6 +52,9 @@ import {
   getTableColumns,
   isNotNull,
   lt,
+  desc,
+  gt,
+  asc,
 } from 'drizzle-orm';
 import { DatabaseError, TicketNotFound } from 'utilities/error/def';
 
@@ -65,7 +74,72 @@ export default class Sqlite implements Database {
   }
 
   @with_error_handling
-  async get_extended_ticket(ticket_id: string): DBResult<IntermediaryTicketView> {
+  async insert_summary(data: Omit<TicketSummarySegment, 'summary_id' | 'created_at'>) {
+    await this.drizzle.insert(schema.TicketSummary).values(data);
+    return ok();
+  }
+
+  @with_error_handling
+  async get_summaries(ticket_id: string) {
+    const segments = await this.drizzle.query.TicketSummary.findMany({
+      where: eq(schema.TicketSummary.ticket_id, ticket_id),
+    });
+    return with_schema(segments, z.array(ZTicketSummarySegment));
+  }
+
+  @with_error_handling
+  async delete_message(data: TicketMessage) {
+    await this.drizzle.delete(schema.Message).where(eq(schema.Message.message_id, data.message_id));
+    return ok();
+  }
+
+  @with_error_handling
+  async get_messages(ticket_id: string, filters: MessagesSeachFilter) {
+    const applied_filters = [eq(schema.Message.ticket_id, ticket_id)];
+    const limit = Math.min(filters.limit, 500);
+
+    if (filters?.before_id != null) {
+      applied_filters.push(lt(schema.Message.message_id, filters.before_id));
+    }
+
+    console.log('FILTERS', filters);
+
+    const messages = await this.drizzle.query.Message.findMany({
+      where: and(...applied_filters),
+      with: {
+        attachments: true,
+      },
+      limit,
+      orderBy: desc(schema.Message.created_at),
+    });
+    messages.reverse();
+    return with_schema(messages, z.array(ZIntermediaryMessage));
+  }
+
+  @with_error_handling
+  async get_summary_candidate_messages(ticket_id: string) {
+    const last_summary = await this.drizzle.query.TicketSummary.findFirst({
+      where: eq(schema.TicketSummary.ticket_id, ticket_id),
+      orderBy: desc(schema.TicketSummary.created_at),
+    });
+
+    const messages = await this.drizzle.query.Message.findMany({
+      where: and(
+        eq(schema.Message.ticket_id, ticket_id),
+        last_summary?.end_message_id != null
+          ? gt(schema.Message.message_id, last_summary.end_message_id)
+          : undefined,
+      ),
+    });
+
+    return with_schema(messages, z.array(ZIntermediaryMessage));
+  }
+
+  @with_error_handling
+  async get_extended_ticket(
+    ticket_id: string,
+    user_is_elevated: boolean,
+  ): DBResult<IntermediaryTicketView> {
     const ticket = await this.drizzle.query.Ticket.findFirst({
       where: eq(schema.Ticket.ticket_id, ticket_id),
       with: {
@@ -73,13 +147,17 @@ export default class Sqlite implements Database {
           with: {
             attachments: true,
           },
-          limit: 51,
-          orderBy: schema.Message.created_at,
+          limit: 26,
+          orderBy: desc(schema.Message.created_at),
         },
-        summaries: true,
+        summaries: {
+          orderBy: desc(schema.TicketSummary.created_at),
+        },
+        ...(user_is_elevated ? { notes: true } : {}),
       },
     });
     if (!ticket) return err(new TicketNotFound(ticket_id));
+    ticket.messages.reverse();
     return with_schema(ticket, ZIntermediaryTicketView);
   }
 

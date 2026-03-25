@@ -33,10 +33,12 @@ export const fetch_bot_context: UserFetcher = async (data) => {
 
 export const fetch_index_context: UserFetcher = async (data) => {
   const user_ids = normalise(data);
+  console.log('FETCHING USERS...');
   const user_data = await ipc_client.send_shard(data.guild_id, 'fetch_users', {
     user_ids,
     guild_id: data.guild_id,
   });
+  console.log('FETCHED USERS...');
   if (user_data.isErr()) return err(map_err(user_data.error));
   return ok(user_data.value);
 };

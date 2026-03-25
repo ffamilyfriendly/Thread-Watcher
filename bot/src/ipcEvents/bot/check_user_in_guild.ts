@@ -10,15 +10,13 @@ const event: PrivateEvent<{
 }> = {
   event_name: 'check_user_in_guild',
   async event_callback({ guild_id, user_id }) {
-    return await ResultAsync.fromPromise(client.guilds.fetch(guild_id), map_err).match(
-      async (guild) => {
-        return ResultAsync.fromPromise(guild.members.fetch(user_id), map_err).match(
-          (_member) => ok(true),
-          (_error) => ok(false), // This is not great. We're assuming a fail means the user ain't in the guild but it might fail for other reasons.
-        );
-      },
-      (e) => err(e),
-    );
+    const guild = await ResultAsync.fromPromise(client.guilds.fetch(guild_id), map_err);
+    if (guild.isErr()) return err(guild.error);
+
+    const member = await ResultAsync.fromPromise(guild.value.members.fetch(user_id), map_err);
+    if (member.isErr()) return err(member.error);
+
+    return ok(true);
   },
 };
 

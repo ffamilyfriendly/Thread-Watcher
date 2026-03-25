@@ -1,4 +1,12 @@
-import { computePosition, flip, shift, offset, autoUpdate } from '@floating-ui/dom';
+import {
+	computePosition,
+	flip,
+	shift,
+	offset,
+	autoUpdate,
+	type Placement,
+	type Middleware
+} from '@floating-ui/dom';
 import type { Attachment } from 'svelte/attachments';
 const portal_id = 'TW_DASH_PORTAL_ELEMENT';
 
@@ -26,6 +34,8 @@ export function portal(
 	anchor_element: HTMLElement,
 	options?: {
 		force_anchor_width?: boolean;
+		placement?: Placement;
+		middleware?: Middleware[];
 	}
 ): Attachment {
 	const portal_parent = ensure_portal();
@@ -44,8 +54,8 @@ export function portal(
 
 		const cleanup = autoUpdate(anchor_element, node, async () => {
 			const { x, y } = await computePosition(anchor_element, node, {
-				placement: 'bottom-start',
-				middleware: [offset(8), flip(), shift({ padding: 5 })]
+				placement: options?.placement ?? 'bottom-start',
+				middleware: options?.middleware ?? [offset(8), flip(), shift({ padding: 5 })]
 			});
 
 			Object.assign(node.style, {
@@ -62,5 +72,25 @@ export function portal(
 			cleanup();
 			node.parentNode?.removeChild(node);
 		};
+	};
+}
+
+export function modal_portal(): Attachment {
+	return (node) => {
+		if (!(node instanceof HTMLElement)) throw new Error('portal node must be an HTMLElement');
+		const portal_parent = ensure_portal();
+		Object.assign(portal_parent.style, {
+			position: 'fixed',
+			inset: '0',
+			width: '0',
+			height: '0',
+			overflow: 'visible',
+			pointerEvents: 'none',
+			zIndex: '5000'
+		});
+
+		node.style.pointerEvents = 'auto';
+		portal_parent.appendChild(node);
+		return () => node.parentNode?.removeChild(node);
 	};
 }

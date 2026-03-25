@@ -8,3 +8,8 @@ export function safe_parse<T extends z.ZodTypeAny>(
   const result = schema.safeParse(data);
   return result.success ? ok(result.data) : err(result.error);
 }
+
+export function safe_json(input: string) {
+  const safe_parse = Result.fromThrowable(JSON.parse);
+  return safe_parse(input);
+}

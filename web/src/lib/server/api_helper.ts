@@ -5,6 +5,14 @@ import { APIError } from './api';
 
 type Handler<T> = (data: T, user_id: string) => Promise<Result<any, any>>;
 
+export function return_sveltekit_http_err(error: Error) {
+	if (error instanceof APIError) {
+		return json({ code: error.status_code, message: error.message }, { status: error.status_code });
+	}
+
+	return json({ code: 500, message: error.message }, { status: 500 });
+}
+
 export async function with_api_auth<T>(
 	{ locals, request }: { locals: App.Locals; request: Request },
 	data: T,

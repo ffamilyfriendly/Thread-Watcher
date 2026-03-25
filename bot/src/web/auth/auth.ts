@@ -12,12 +12,7 @@ export function enforce_policy(policy: SecurityPolicy) {
       });
     }
 
-    const is_owner = config.owners.includes(req.user_id);
-    if (is_owner) {
-      return next();
-    }
-
-    const policy_result = await policy(req as RequestWithUser);
+    const policy_result = await policy(req as RequestWithUser, res);
 
     if (policy_result.isErr()) {
       logger.error(`Failed to run policy '${policy.name}'`, policy_result.error);
@@ -25,6 +20,13 @@ export function enforce_policy(policy: SecurityPolicy) {
         code: 500,
         message: policy_result.error.message, // Might leak privvy data. Watch out
       });
+    }
+
+    // We run this check after the policy as some policies have required side-effects
+    // such as fetching ticket information.
+    const is_owner = config.owners.includes(req.user_id);
+    if (is_owner) {
+      return next();
     }
 
     const policy_r = policy_result.value;

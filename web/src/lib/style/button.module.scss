@@ -56,6 +56,11 @@
 	}
 }
 
+.disabled {
+	pointer-events: none;
+	filter: saturate(0.5);
+}
+
 .premium {
 	background-color: color-mix(in srgb, var(--premium-500) 25%, transparent);
 	color: var(--premium-900);
@@ -79,4 +84,13 @@
 	&:active {
 		background-color: var(--topgg-400);
 	}
+}
+
+.naked {
+	background-color: transparent;
+}
+
+.small {
+	font-size: 0.75rem;
+	padding: 0.25rem 0.5rem 0.25rem 0.5rem;
 }

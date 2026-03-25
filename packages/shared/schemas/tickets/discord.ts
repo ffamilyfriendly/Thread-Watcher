@@ -85,6 +85,7 @@ export const ZNativeDiscordEmbed = z.object({
   url: z.string().nullish(),
   video: ZNativeDiscordEmbedMedia.nullish(),
 });
+export type NativeDiscordEmbed = z.output<typeof ZNativeDiscordEmbed>;
 
 export const ZDiscordUser = z.object({
   id: z.string(),

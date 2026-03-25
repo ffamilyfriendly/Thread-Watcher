@@ -20,3 +20,4 @@ export const TW_AI_PERSONA_MAX_LEN = 500;
 export const TW_AI_RULES_MAX_LEN = 2500;
 export const TW_PANEL_NAME_MIN = 3;
 export const TW_PANEL_NAME_MAX = 50;
+export const TW_MAX_MESSAGES_FETCHED = 100;

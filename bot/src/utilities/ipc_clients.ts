@@ -21,9 +21,18 @@ export const FUNCS = {
     return_schema: z.object({ message_id: z.string() }),
   },
   fetch_users: {
-    event_name: 'fetch_guild_users',
+    event_name: 'fetch_users',
     expected_data: z.object({ user_ids: z.array(z.string()), guild_id: z.string() }),
     return_schema: z.array(ZDiscordUser),
+  },
+  user_has_role: {
+    event_name: 'user_has_role',
+    expected_data: z.object({
+      role_ids: z.array(z.string()),
+      guild_id: z.string(),
+      user_id: z.string(),
+    }),
+    return_schema: z.boolean(),
   },
 } satisfies Record<string, EnsuredSchemaCall<z.ZodType, z.ZodType>>;
 
@@ -72,6 +81,7 @@ class BaseClient implements IpcClient {
     data: unknown,
     schema?: z.ZodType<T>,
   ): Promise<Result<T, unknown>> {
+    console.log('sending event', event, data);
     return new Promise(async (resolve) => {
       const request = generate_message(event, data);
 

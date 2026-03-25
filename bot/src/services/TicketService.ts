@@ -1,4 +1,5 @@
 import { logger } from '@providers/logger';
+import { ai_service } from '@providers/services/ai_service';
 import { attachment_service } from '@providers/services/attachment_service';
 import {
   DiscordUser,
@@ -6,6 +7,7 @@ import {
   EditTicketPanel,
   InsertTicketNote,
   IntermediaryMessage,
+  MessagesSeachFilter,
   PublicTicketMessage,
   Ticket,
   TicketPanel,
@@ -77,7 +79,7 @@ export default class TicketService {
   }
 
   async get_ticket_id_from_thread_id(thread_id: string) {
-    const cached = await this.r.get(['assoc', thread_id], z.string());
+    const cached = await this.r.get(['assocTicketIdThread', thread_id], z.string());
     if (cached.isOk() && cached.value) return ok(cached.value);
 
     const db_res = await this.db.get_ticket_id_from_thread(thread_id);
@@ -133,6 +135,11 @@ export default class TicketService {
   }
 
   async append_message(ticket_id: string, message: Message<true>) {
+    const should_summarize = await this.check_should_be_summarized(ticket_id, message.guildId);
+    if (should_summarize.isErr()) {
+      this.l.error('could not run summary', should_summarize.error);
+    }
+
     const insert_res = await this.db.insert_message({
       message_id: message.id,
       text_content: message.content,
@@ -174,26 +181,81 @@ export default class TicketService {
     });
   }
 
-  async get_ticket_view(ticket_id: string): Promise<Result<TicketView, Error>> {
-    console.log('GETTING TICKET');
-    const inter = await this.db.get_extended_ticket(ticket_id);
+  async get_guild_id_from_ticket(ticket_id: string) {
+    const cache_key = ['assocTicketIdGuild', ticket_id];
+    const cached = await this.r.get(cache_key, z.string());
+    if (cached.isOk() && cached.value) return ok(cached.value);
+
+    const ticket = await this.get_ticket(ticket_id);
+    if (ticket.isErr()) return err(ticket.error);
+
+    await this.r.set(cache_key, ticket.value.guild_id, z.string());
+
+    return ok(ticket.value.guild_id);
+  }
+
+  async get_messages(ticket_id: string, filters: MessagesSeachFilter) {
+    const messages = await this.db.get_messages(ticket_id, filters);
+    if (messages.isErr()) return err(messages.error);
+    const guild_id = await this.get_guild_id_from_ticket(ticket_id);
+    this.db.get_ticket;
+    return this.hydrate_messages(messages.value, guild_id.isOk() ? guild_id.value : undefined);
+  }
+
+  async get_ticket_view(
+    ticket_id: string,
+    elevated_view = false,
+  ): Promise<Result<TicketView, Error>> {
+    const inter = await this.db.get_extended_ticket(ticket_id, elevated_view);
     if (inter.isErr()) return mapped_err(inter.error);
-    console.log('GOT TICKET');
 
     const { messages, ...rest } = inter.value;
 
-    console.log('HYDRATING MESSAGES');
     const hydrated_messages = await this.hydrate_messages(messages, rest.guild_id);
     if (hydrated_messages.isErr()) return err(hydrated_messages.error);
-    console.log('HYDRATED MESSAGES');
 
     return ok({
       ...rest,
-      messages: {
-        has_more: hydrated_messages.value.messages.length === 51,
-        items: hydrated_messages.value.messages.slice(0, 50),
-      },
+      messages: hydrated_messages.value.messages,
       users: hydrated_messages.value.users,
     });
+  }
+
+  static MSG_CONSIDERED_OLD_MS = 1000 * 60 * 15;
+  static MSGES_REQUIRED_FOR_SUMMARY = 10;
+  static MAX_MESSAGES_PER_SUMMARY = 50;
+
+  async check_should_be_summarized(ticket_id: string, guild_id: string) {
+    const candidates = await this.db.get_summary_candidate_messages(ticket_id);
+    if (candidates.isErr()) return err(candidates.error);
+
+    const messages = candidates.value;
+    const last_message = messages.at(-1);
+
+    if (messages.length === 0 || !last_message) return ok();
+
+    const delta_time = Date.now() - last_message.created_at.getTime();
+
+    const last_message_is_old =
+      Date.now() - last_message.created_at.getTime() > TicketService.MSG_CONSIDERED_OLD_MS;
+    const enough_messages = messages.length > TicketService.MSGES_REQUIRED_FOR_SUMMARY;
+
+    const should_summarize =
+      enough_messages &&
+      (last_message_is_old || messages.length >= TicketService.MAX_MESSAGES_PER_SUMMARY);
+
+    this.l.debug('SHOULD_SUMMARIZE', should_summarize);
+    console.table({
+      enough_messages,
+      last_message_is_old,
+      over_max: messages.length >= TicketService.MAX_MESSAGES_PER_SUMMARY,
+    });
+
+    if (!should_summarize) return ok();
+
+    const to_summarize = messages.slice(0, TicketService.MAX_MESSAGES_PER_SUMMARY);
+
+    this.l.info('WE ARE DOING SUMMARY');
+    return ai_service.do_simple_summary(ticket_id, guild_id, to_summarize);
   }
 }

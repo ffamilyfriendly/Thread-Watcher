@@ -3,6 +3,7 @@
 	import { fly } from 'svelte/transition';
 	import btn_style from '$lib/style/button.module.scss';
 	import { click_outside } from '$lib/client/attachments/click_outside';
+	import { modal_portal } from '$lib/client/attachments/portal';
 
 	interface Props {
 		children: Snippet;
@@ -13,39 +14,52 @@
 	}
 
 	let { children, title, set_open = $bindable(), buttons, class_name }: Props = $props();
-	const other_class_names = $derived(Array.isArray(class_name) ? class_name : [class_name]);
+
+	$effect(() => {
+		if (!ref) return;
+		if (set_open) ref.showModal();
+		else ref.close();
+	});
+
+	function handle_click(e: MouseEvent) {
+		if (e.target === ref) set_open = false;
+	}
+
+	let ref = $state<HTMLDialogElement>();
 </script>
 
-<div transition:fly class="container">
-	<div {@attach click_outside(() => set_open = false)} class={['modal', ...other_class_names]}>
-		<div class="top_row">
-			<h3>{title}</h3>
+<dialog bind:this={ref} onclick={handle_click} onclose={() => (set_open = false)}>
+	<div class="top_row">
+		<h3>{title}</h3>
 
-			<button onclick={() => (set_open = false)} class={[btn_style.button, 'cancel_btn']}>x</button>
-		</div>
-
-		{@render children()}
-
-		{#if buttons}
-			<div class="btn_row">
-				{@render buttons()}
-			</div>
-		{/if}
+		<button onclick={() => (set_open = false)} class={[btn_style.button, 'cancel_btn']}>x</button>
 	</div>
-</div>
+
+	{@render children()}
+
+	{#if buttons}
+		<div class="btn_row">
+			{@render buttons()}
+		</div>
+	{/if}
+</dialog>
 
 <style lang="scss">
-	.container {
-		position: fixed;
-		z-index: 5000;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100vh;
+	dialog {
 		display: flex;
-		align-items: center;
-		justify-content: center;
-		backdrop-filter: blur(5px);
+		flex-direction: column;
+		background-color: var(--background-500);
+		border-radius: 0.5rem;
+		padding: 1rem 1.5rem;
+		margin: auto;
+		border: none;
+		outline: 1px solid color-mix(in srgb, var(--background-500), white 10%);
+		color: inherit;
+
+		&::backdrop {
+			backdrop-filter: blur(5px);
+			background: rgba(0, 0, 0, 0.5);
+		}
 	}
 
 	.btn_row {
@@ -62,7 +76,8 @@
 	}
 
 	.modal {
-		min-width: max(200px, 25%);
+		width: min(90vw, 500px);
+		max-width: 100%;
 		background-color: var(--background-500);
 		border-radius: 0.5rem;
 		padding: 1rem 1.5rem;

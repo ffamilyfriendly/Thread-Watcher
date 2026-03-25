@@ -148,4 +148,5 @@ export const TicketSummary = sqliteTable('ticket_summary_segments', {
   involved_users: text({ mode: 'json' }),
   created_at: integer({ mode: 'timestamp' }).$defaultFn(date_now).notNull(),
   summary_text: text(),
+  summary_title: text(),
 });

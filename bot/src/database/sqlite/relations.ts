@@ -37,3 +37,10 @@ export const ticketSummaryRelations = relations(schema.TicketSummary, ({ one }) 
     references: [schema.Ticket.ticket_id],
   }),
 }));
+
+export const ticketNoteRelations = relations(schema.TicketNote, ({ one }) => ({
+  ticket: one(schema.Ticket, {
+    fields: [schema.TicketNote.ticket_id],
+    references: [schema.Ticket.ticket_id],
+  }),
+}));
