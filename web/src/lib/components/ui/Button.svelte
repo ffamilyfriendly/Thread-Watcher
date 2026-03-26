@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { Hourglass, Loader, Loader2, LoaderPinwheel } from "@lucide/svelte";
-	import type { Result, ResultAsync } from "neverthrow";
+	import { Loader } from "@lucide/svelte";
 	import type { Snippet } from "svelte";
 	import Modal from "./Modal.svelte";
 
     interface Props {
         on_click?: () => void
-        variant?: "primary" | "error" | "tetriary" | "premium"
+        variant?: "primary" | "error" | "tetriary" | "premium",
+        shape?: "rect" | "circle"
         load_with?: () => Promise<unknown>
         children: Snippet
         disabled?: boolean
@@ -20,7 +20,7 @@
         }
     }
 
-    const { on_click, load_with, children, disabled, variant = "primary", class: className = "", href, confirmation }: Props = $props()
+    const { on_click, load_with, children, disabled, variant = "primary", class: className = "", href, confirmation, shape = "rect" }: Props = $props()
 
     let is_loading = $state(false)
     let confirmation_given = $state(false)
@@ -49,7 +49,7 @@
 
 {#if show_confirmation_modal && confirmation}
     <Modal title={confirmation.title} bind:set_open={show_confirmation_modal}>
-        {confirmation.body}
+        <p class="confirmation_text">{confirmation.body}</p>
         {#snippet buttons()}
             <button onclick={() => show_confirmation_modal = false} class="tetriary button">
                 {confirmation.cancel_btn_text}
@@ -62,11 +62,11 @@
 {/if}
 
 {#if href}
-<a aria-disabled={is_disabled} class:disabled={disabled} class="{variant} {className} button" href={href}>
+<a aria-disabled={is_disabled} class:disabled={disabled} class="{variant} {className} {shape} button" href={href}>
     {@render children()}
 </a>
 {:else}
-<button class="{variant} {className} button" disabled={is_disabled} onclick={handle_on_click}>
+<button class="{variant} {className} {shape} button" disabled={is_disabled} onclick={handle_on_click}>
     {#if is_loading}
     <div class="loader">
         <Loader size={16} class="ICON" />
@@ -78,6 +78,10 @@
 {/if}
 
 <style lang="scss">
+
+    .confirmation_text {
+        max-width: 35ch;
+    }
 
     .primary {
         --bg: var(--primary-500);
@@ -101,7 +105,7 @@
     }
 
     .button {
-        all: unset; // Reset default styles
+        all: unset; 
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -116,7 +120,16 @@
         background-color: var(--bg);
         border: 1px solid color-mix(in srgb, var(--bg) 90%, white);
         color: var(--text);
-        box-sizing: border-box;
+        overflow: hidden;
+
+        &.rect {
+            border-radius: .25rem;
+        }
+
+        &.circle {
+            border-radius: 50%;
+            padding: 0.6rem 0.6rem;
+        }
 
         &:hover:not(:disabled) {
             transform: scale(1.04);

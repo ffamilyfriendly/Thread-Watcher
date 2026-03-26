@@ -10,10 +10,6 @@ export async function load({ locals, params }) {
 		return error(401);
 	}
 
-	if (panel_id === 'new') return {};
-
-	console.log('PANEL_ID', panel_id);
-
 	const ticket_panel = await fetch_ticket_panel(guild, panel_id, auth.user.id);
 
 	if (ticket_panel.isErr()) throw ticket_panel.error;

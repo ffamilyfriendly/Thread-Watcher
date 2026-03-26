@@ -14,6 +14,7 @@ import { err, ok, Result } from 'neverthrow';
 import RedisWrapper from 'utilities/redis';
 import { enforce_policy } from 'web/auth/auth';
 import { Policies } from 'web/auth/policies';
+import { api_error } from 'web/utils/error';
 import z from 'zod';
 
 const router = Router();
@@ -83,11 +84,11 @@ router.get(
     const threads = await thread_service.get_filtered_threads(guild_id, filter_props_res.data);
 
     if (threads.isErr()) {
-      console.log(threads.error);
-      return res.status(500).json({
-        code: 500,
-        message: 'Could not fetch watched threads',
-        _details: threads.error,
+      return api_error({
+        http_status_code: 500,
+        error_message: 'Could not fetch watched threads',
+        response: res,
+        error_object: threads.error,
       });
     }
 

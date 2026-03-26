@@ -13,6 +13,8 @@ import { Result, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import { enforce_policy } from 'web/auth/auth';
 import { Policies, RequestWithUser } from 'web/auth/policies';
+import { api_error, handle_res } from 'web/utils/error';
+import { TWResponse } from 'web/utils/logging';
 import { z } from 'zod';
 
 const router = Router();
@@ -58,6 +60,10 @@ router.get(
   },
 );
 
+/*
+  THIS CODE IS HORRIBLE. FIX IT BEFORE DEPLOYING
+  (I know you wont)
+*/
 router.get(
   '/:guild_id',
   enforce_policy(Policies.Common.bot_master_or_guild_master),
@@ -90,7 +96,6 @@ router.get(
     });
 
     if (p.isErr()) {
-      console.error(p.error);
       return res.status(500).json({
         code: 500,
         message: 'something went wrong',
@@ -149,21 +154,13 @@ router.get(
 router.get(
   '/:guild_id/channels',
   enforce_policy(Policies.Common.user_in_guild),
-  async (req, res) => {
+  async (req, res: TWResponse) => {
     const guild_id = req.params.guild_id as string;
     const channels_res = await ipc_client.send_to_shard_having_guild(guild_id, 'fetch_channels', {
       guild_id,
     });
 
-    if (channels_res.isErr()) {
-      console.log(channels_res.error);
-      return res.status(500).json({
-        code: 500,
-        message: 'something went wrong',
-      });
-    }
-
-    res.json(channels_res.value);
+    handle_res(res, channels_res, 'could not fetch channels');
   },
 );
 
@@ -205,10 +202,11 @@ router.get(
     );
 
     if (channel_res.isErr()) {
-      console.log(channel_res.error);
-      return res.status(500).json({
-        code: 500,
-        message: 'something went wrong',
+      return api_error({
+        http_status_code: 500,
+        response: res,
+        error_object: channel_res.error,
+        error_message: 'could not fetch channel',
       });
     }
 
@@ -246,10 +244,11 @@ router.get(
     );
 
     if (role_res.isErr()) {
-      console.log(role_res.error);
-      return res.status(500).json({
-        code: 500,
-        message: 'something went wrong',
+      return api_error({
+        http_status_code: 500,
+        response: res,
+        error_message: 'could not fetch role',
+        error_object: role_res.error,
       });
     }
 
@@ -284,7 +283,7 @@ const settings_schema = z.record(z.string(), z.unknown());
 router.post(
   '/:guild_id/settings',
   enforce_policy(Policies.Common.bot_master_or_guild_master),
-  async (req, res) => {
+  async (req, res: TWResponse) => {
     const guild_id = req.params.guild_id as string;
     const body = settings_schema.safeParse(req.body);
 
@@ -324,7 +323,7 @@ router.post(
     for (const [key, value] of Object.entries(settings_to_save)) {
       const adapter = setting_service.get_adapter(key);
       if (!adapter) {
-        console.log('CANT GET ADAPTER!');
+        res.locals.logger.warn(`could not get adapter for setting '${key}'`);
         continue;
       }
 

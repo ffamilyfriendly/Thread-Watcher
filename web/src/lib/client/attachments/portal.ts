@@ -40,7 +40,6 @@ export function portal(
 ): Attachment {
 	const portal_parent = ensure_portal();
 	return (node) => {
-		console.log('HELLO PORTAL IS USED');
 		if (!(node instanceof HTMLElement)) throw new Error('shi broken');
 		portal_parent.appendChild(node);
 
@@ -49,7 +48,8 @@ export function portal(
 			top: '0',
 			left: '0',
 			width: 'max-content',
-			zIndex: '10000'
+			zIndex: '10000',
+			pointerEvents: 'auto'
 		});
 
 		const cleanup = autoUpdate(anchor_element, node, async () => {

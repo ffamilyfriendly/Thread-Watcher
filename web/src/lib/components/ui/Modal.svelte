@@ -15,37 +15,49 @@
 
 	let { children, title, set_open = $bindable(), buttons, class_name }: Props = $props();
 
-	$effect(() => {
-		if (!ref) return;
-		if (set_open) ref.showModal();
-		else ref.close();
-	});
-
-	function handle_click(e: MouseEvent) {
-		if (e.target === ref) set_open = false;
+	function handle_on_click(e: MouseEvent) {
+		if(e.target == ref) {
+			set_open = false
+		}
 	}
 
-	let ref = $state<HTMLDialogElement>();
+	let ref = $state<HTMLDivElement>();
 </script>
 
-<dialog bind:this={ref} onclick={handle_click} onclose={() => (set_open = false)}>
-	<div class="top_row">
-		<h3>{title}</h3>
-
-		<button onclick={() => (set_open = false)} class={[btn_style.button, 'cancel_btn']}>x</button>
-	</div>
-
-	{@render children()}
-
-	{#if buttons}
-		<div class="btn_row">
-			{@render buttons()}
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div bind:this={ref} onclick={handle_on_click} {@attach modal_portal()} class="modal_root">
+	<div class="modal">
+		<div class="top_row">
+			<h3>{title}</h3>
+	
+			<button onclick={() => (set_open = false)} class={[btn_style.button, 'cancel_btn']}>x</button>
 		</div>
-	{/if}
-</dialog>
+	
+		{@render children()}
+	
+		{#if buttons}
+			<div class="btn_row">
+				{@render buttons()}
+			</div>
+		{/if}
+	</div>
+</div>
 
 <style lang="scss">
-	dialog {
+
+	.modal_root {
+		position: fixed;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: rgba(0, 0, 0, 0.2);
+		backdrop-filter: blur(2px);
+		z-index: -1;
+	}
+
+	.modal {
 		display: flex;
 		min-width: 300px;
 		flex-direction: column;
@@ -57,10 +69,6 @@
 		outline: 1px solid color-mix(in srgb, var(--background-500), white 10%);
 		color: inherit;
 
-		&::backdrop {
-			backdrop-filter: blur(5px);
-			background: rgba(0, 0, 0, 0.5);
-		}
 	}
 
 	.btn_row {

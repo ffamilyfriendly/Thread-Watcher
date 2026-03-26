@@ -13,29 +13,22 @@ import { config } from '@providers/config';
 import { ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import { ai_service } from '@providers/services/ai_service';
+import { handle_res } from 'web/utils/error';
+import { TWResponse } from 'web/utils/logging';
 
 const router = Router();
 
 router.get(
   '/:guild_id/monitors',
   enforce_policy(Policies.Common.bot_master_or_guild_master),
-  async (req, res) => {
+  async (req, res: TWResponse) => {
     const guild_id = req.params.guild_id;
     if (typeof guild_id !== 'string')
       return res.status(500).json({ message: 'should never happen', code: 500 });
 
     const monitors = await channel_service.get_monitors(guild_id);
 
-    if (monitors.isErr()) {
-      console.log(monitors.error);
-      return res.status(500).json({
-        code: 500,
-        message: 'something went wrong',
-        _details: monitors.error,
-      });
-    }
-
-    res.json(monitors.value);
+    handle_res(res, monitors, 'could not fetch monitors');
   },
 );
 

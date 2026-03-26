@@ -33,6 +33,8 @@ export const ZTicketPanel = ZTicketPanelMeta.extend({
 
 export const ZEditTicketPanel = ZTicketPanel.partial();
 
+const ZTicketStates = z.enum(["OPEN", "CLOSED"]);
+
 export const ZTicket = z.object({
   ticket_id: z.string(),
   guild_id: z.string(),
@@ -41,13 +43,30 @@ export const ZTicket = z.object({
   owner: z.string(),
   panel_id: z.string(),
   variable_dump: z.record(z.string(), z.unknown()),
-  status: z.enum(["OPEN", "CLOSED"]),
+  status: ZTicketStates,
   assigned_to_roles: z.array(z.string()),
   claimed_by_user_id: z.string().nullish(),
   created_at: z.coerce.date(),
   closed_at: z.coerce.date().nullish(),
   start_message_id: z.string(),
 });
+
+export const ZTicketListData = ZTicket.omit({ variable_dump: true }).extend({
+  last_activity: z.coerce.date(),
+});
+export type TicketListData = z.output<typeof ZTicketListData>;
+
+export const ZTicketListSearchData = z.object({
+  panel_id: z.string().nullish(),
+  status: ZTicketStates.nullish(),
+  assigned_to_user_id: z.string().nullish(),
+  limit: z.number().default(50),
+  offset: z.number().default(0),
+  ticket_owner: z.string().nullish(),
+  guild_id: z.string(),
+});
+export type TicketListSearch = z.output<typeof ZTicketListSearchData>;
+
 export const ZEditTicket = ZTicket.omit({
   ticket_id: true,
   guild_id: true,

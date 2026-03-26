@@ -11,7 +11,7 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuInteraction,
 } from 'discord.js';
-import { err, Ok, ok, Result } from 'neverthrow';
+import { err, ok, Result } from 'neverthrow';
 import { z } from 'zod';
 
 export type SettingValue = number | string | boolean | string[];
@@ -78,7 +78,6 @@ class RoleSelectAdapter implements InputAdapter<string, RoleSelectMenuBuilder> {
   }
 
   into(value: unknown): Result<string, Error> {
-    console.log('VALUE', value);
     if (typeof value === 'string') {
       return ok(value);
     } else return err(new Error(`could not turn ${typeof value} into string`));

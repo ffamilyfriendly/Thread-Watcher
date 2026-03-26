@@ -88,7 +88,6 @@ class BaseClient implements IpcClient {
     data: unknown,
     schema?: z.ZodType<T>,
   ): Promise<Result<T, unknown>> {
-    console.log('sending event', event, data);
     return new Promise(async (resolve) => {
       const request = generate_message(event, data);
 

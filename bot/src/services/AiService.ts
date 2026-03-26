@@ -280,7 +280,6 @@ export default class AiService {
     if (typeof answer.message.content !== 'string')
       return err(new Error('AI answer had wrong format'));
 
-    console.log('CONTENT', answer.message.content);
     const json_parsed = safe_json(answer.message.content);
     if (json_parsed.isErr()) return err(json_parsed.error);
     const parsed_res = ZSummaryResult.safeParse(json_parsed.value);

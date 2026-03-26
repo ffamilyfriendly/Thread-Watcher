@@ -1,4 +1,4 @@
-import { Err, err, Ok, ok, Result } from 'neverthrow';
+import { Err, err, Ok, ok, Result, ResultAsync } from 'neverthrow';
 import { Request, Response } from 'express';
 import { PermissionResolvable } from 'discord.js';
 import { redis } from '@providers/redis';
@@ -9,6 +9,9 @@ import z from 'zod';
 import { map_err, mapped_err } from 'utilities/error';
 import { ticket_service } from '@providers/services/ticket_service';
 import { TicketLocals } from 'web/routes/tickets';
+import { TW_MAX_PANELS_FREE } from '@watcher/shared';
+import { TWResponse } from 'web/utils/logging';
+import { logger } from '@providers/logger';
 
 export type RequestWithUser = Request & { user_id: string };
 
@@ -19,7 +22,7 @@ export type PolicyResult = PolicyResultError | PolicyResultValid;
 export type PolicyFunctionReturnType =
   | Promise<Result<PolicyResult, Error>>
   | Result<PolicyResult, Error>;
-export type SecurityPolicy = (req: RequestWithUser, res?: Response) => PolicyFunctionReturnType;
+export type SecurityPolicy = (req: RequestWithUser, res?: TWResponse) => PolicyFunctionReturnType;
 
 function assert_all_ok<T, E>(results: Result<T, E>[]): asserts results is Ok<T, E>[] {
   if (results.some((r) => r.isErr())) {
@@ -33,7 +36,7 @@ function assert_all_ok<T, E>(results: Result<T, E>[]): asserts results is Ok<T, 
  * @returns Result with guild_id or an error
  */
 function get_valid_guild_id(req: RequestWithUser) {
-  const guild_id = req.params.guild_id || req.body.guild_id;
+  const guild_id = req.params?.guild_id ?? req.body?.guild_id ?? req.query?.guild_id;
 
   if (!guild_id) return err(new Error("no 'guild_id' was passed"));
   if (typeof guild_id !== 'string')
@@ -129,7 +132,10 @@ export namespace Policies {
 
   export function has_discord_perm(permissions: PermissionResolvable | PermissionResolvable[]) {
     const perm_arr = Array.isArray(permissions) ? permissions : [permissions];
-    return async function (req: RequestWithUser): Promise<Result<PolicyResult, Error>> {
+    return async function (
+      req: RequestWithUser,
+      res?: TWResponse,
+    ): Promise<Result<PolicyResult, Error>> {
       const guild_id = get_valid_guild_id(req);
       if (guild_id.isErr()) return err(guild_id.error);
 
@@ -144,7 +150,11 @@ export namespace Policies {
       );
 
       if (r.isErr()) {
-        console.log('ISSUE', r.error);
+        if (res) {
+          res.locals.logger.error(`could not check user perm`, r.error);
+        } else {
+          logger.error(`could not check user perm`, r.error);
+        }
         return err(r.error as Error);
       }
 
@@ -248,55 +258,30 @@ export namespace Policies {
     });
   }
 
-  export async function user_can_view_ticket(
+  export async function can_alter_panels(
     req: RequestWithUser,
-    res?: Response,
   ): Promise<Result<PolicyResult, Error>> {
-    if (!res) return err(new Error("'res' was null.")); // should never ever exist
-    const ticket_id = req.params.ticket_id;
-    if (!ticket_id || typeof ticket_id !== 'string')
-      return err(new Error("'ticket_id' parameter did not exist!"));
+    const guild_id = get_valid_guild_id(req);
+    if (guild_id.isErr()) return err(guild_id.error);
 
-    const ticket = await ticket_service.get_ticket(ticket_id);
-    if (ticket.isErr()) return err(ticket.error);
+    const promises = [
+      ticket_service.get_panels_in_guild(guild_id.value),
+      entitlement_service.has_premium(guild_id.value),
+    ];
 
-    const user_has_role = await ipc_client.send_shard(ticket.value.guild_id, 'user_has_role', {
-      role_ids: ticket.value.assigned_to_roles,
-      guild_id: ticket.value.guild_id,
-      user_id: req.user_id,
-    });
-    if (user_has_role.isErr()) return mapped_err(user_has_role.error);
+    const res = await ResultAsync.fromPromise(Promise.all(promises), map_err);
+    if (res.isErr()) return mapped_err(res.error);
+    const res_fr = Result.combineWithAllErrors(res.value);
+    if (res_fr.isErr()) return mapped_err(res_fr.error);
+    const [panels, entitlement] = res_fr.value;
+    if (typeof panels === 'boolean' || typeof entitlement !== 'boolean')
+      return err(new Error('panels or entitlement was of wrong type'));
 
-    const user_created_ticket = ticket.value.owner === req.user_id;
-    const user_has_assigned_role = user_has_role.value;
-    const user_can_view = user_created_ticket || user_has_assigned_role;
-
-    // Attach locals for ezier useage later
-    res.locals.ticket = ticket.value;
-    res.locals.ticket_context = {
-      is_owner: user_created_ticket,
-      is_elevated: user_has_assigned_role,
-    };
+    const exceeds_free = panels.length > TW_MAX_PANELS_FREE;
 
     return ok({
-      passes: user_can_view,
-      message:
-        'you can only access this ticket if you created it or have one of the assigned roles!',
-    });
-  }
-
-  export async function user_has_elevated_ticket_perms(
-    req: RequestWithUser,
-    res?: Response,
-  ): Promise<Result<PolicyResult, Error>> {
-    const can_view = await user_can_view_ticket(req, res);
-    if (can_view.isErr()) return err(can_view.error);
-    if (!can_view.value.passes) return ok(can_view.value);
-
-    const modified_res = res as Response<unknown, TicketLocals>;
-    return ok({
-      passes: modified_res.locals.ticket_context.is_elevated,
-      message: 'You do not have elevated privledges in this ticket',
+      message: 'Exceeds free limit of panels',
+      passes: !exceeds_free || entitlement,
     });
   }
 
@@ -310,6 +295,7 @@ export namespace Policies {
       60,
       'bot_dash_access',
     );
+    export const can_modify_panels = and(bot_master_or_guild_master, can_alter_panels);
     export const user_in_guild = cached(user_is_in_guild, 60, 'user_in_guild');
   }
 }

@@ -10,7 +10,7 @@ const router = Router();
 
 router.post(
   `/:guild_id/panels`,
-  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  enforce_policy(Policies.Common.can_modify_panels),
   async (req, res) => {
     const parsed_panel = ZTicketPanel.safeParse(req.body);
 
@@ -56,7 +56,7 @@ router.delete(
 
 router.put(
   '/:guild_id/panels/:panel_id',
-  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  enforce_policy(Policies.Common.can_modify_panels),
   async (req, res) => {
     const parsed_panel = ZEditTicketPanel.safeParse(req.body);
     const panel_id = req.params.panel_id as string;
@@ -88,7 +88,7 @@ router.put(
 
 router.post(
   '/:guild_id/panels/:panel_id/send_message',
-  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  enforce_policy(Policies.Common.can_modify_panels),
   async (req, res) => {
     const panel_id = req.params.panel_id as string;
     const guild_id = req.params.guild_id as string;
@@ -96,7 +96,6 @@ router.post(
     const msg_id = await ipc_client.send_shard(guild_id, 'send_embed', { panel_id });
 
     if (msg_id.isErr()) {
-      console.log(msg_id.error);
       return res.status(500).json({
         code: 500,
         message: 'could not send embed',

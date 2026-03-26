@@ -4,7 +4,6 @@ import { ResultAsync, ok, err } from 'neverthrow';
 import { map_err } from 'utilities/error';
 
 export default define_secure_event('fetch_users', async (data) => {
-  console.log('I AM BEING CALLED! FRFRFR GANNGGG');
   const guild_res = await ResultAsync.fromPromise(client.guilds.fetch(data.guild_id), map_err);
   if (guild_res.isErr()) return err(guild_res.error);
   const users = await ResultAsync.fromPromise(

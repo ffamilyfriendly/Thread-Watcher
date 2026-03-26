@@ -10,6 +10,7 @@ import {
   MessagesSeachFilter,
   PublicTicketMessage,
   Ticket,
+  TicketListSearch,
   TicketPanel,
   TicketView,
   ZTicket,
@@ -106,6 +107,11 @@ export default class TicketService {
 
     this.r.set(['ticket', ticket_id], db_res.value, ZTicket);
     return ok(db_res.value);
+  }
+
+  get_tickets(search: TicketListSearch) {
+    // Caching?
+    return this.db.get_tickets(search);
   }
 
   async insert_ticket_note(note: InsertTicketNote) {

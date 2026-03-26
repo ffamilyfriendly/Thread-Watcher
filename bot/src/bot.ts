@@ -25,8 +25,7 @@ const redis = Redis.instance;
 
 // set provider strategies
 entitlement_service.set_provider(new LocalClientProvider(client));
-ticket_service.set_user_fetcher(fetch_user_bot_context)
-
+ticket_service.set_user_fetcher(fetch_user_bot_context);
 
 async function bootstrap() {
   initialize_i18n(logger);
@@ -63,6 +62,5 @@ if (client.shard) {
     '"client.shard" not set. Will not attempt to login\n',
     'Somewhere there is a circular ref. Find it, fix it, laugh at it.',
   );
-  console.trace();
   process.exit(1);
 }

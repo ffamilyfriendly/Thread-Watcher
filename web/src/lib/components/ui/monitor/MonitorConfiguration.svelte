@@ -12,6 +12,7 @@
 	import style from './monitorconfig.module.scss';
 	import { fetch_as_json, safe_fetch } from '$lib/client/fetch';
 	import { use_guild_state } from '$lib/stores/guild.svelte';
+	import Button from '../Button.svelte';
 
 	const guild_state = use_guild_state()
 
@@ -104,15 +105,9 @@
 			type="text"
 			bind:value={regex_str}
 		/>
-		<PremiumButton
-			class_name={style.ai_button}
-			require_level="BASIC"
-			on_click={try_generate_regex_from_prompt}
-		>
-			{#snippet icon()}
-				<Sparkles size={16} />
-			{/snippet}
-		</PremiumButton>
+		<Button variant="premium" disabled={regex_str.length < 1} shape="circle" load_with={try_generate_regex_from_prompt}>
+			<Sparkles color="black" size={16} />
+		</Button>
 	</div>
 	{#if !regex_is_safe}
 		<small class="unsafe_regex"

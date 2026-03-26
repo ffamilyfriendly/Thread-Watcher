@@ -1,1 +1,1 @@
-export const TW_MAX_PANELS_FREE = 5;
+export const TW_MAX_PANELS_FREE = 3;

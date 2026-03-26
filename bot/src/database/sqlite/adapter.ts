@@ -38,6 +38,9 @@ import {
   TicketSummarySegment,
   ZTicketSummarySegment,
   ZMessageAttachment,
+  TicketListData,
+  TicketListSearch,
+  ZTicketListData,
 } from '@watcher/shared';
 
 import * as schema from './schema';
@@ -72,6 +75,53 @@ export default class Sqlite implements Database {
     this.drizzle = drizzle(this.raw_db, { schema: full_schema });
     migrate(this.drizzle, { migrationsFolder: './drizzle' });
     this._config = config;
+  }
+
+  @with_error_handling
+  async get_tickets(filters: TicketListSearch) {
+    const applied_filters = [eq(schema.Ticket.guild_id, filters.guild_id)];
+    const limit = Math.min(filters.limit, 500);
+    const offset = filters.offset ?? 0;
+
+    if (filters.assigned_to_user_id) {
+      applied_filters.push(eq(schema.Ticket.claimed_by_user_id, filters.assigned_to_user_id));
+    }
+
+    if (filters.panel_id) {
+      applied_filters.push(eq(schema.Ticket.panel_id, filters.panel_id));
+    }
+
+    if (filters.status) {
+      applied_filters.push(eq(schema.Ticket.status, filters.status));
+    }
+
+    if (filters.ticket_owner) {
+      applied_filters.push(eq(schema.Ticket.owner, filters.ticket_owner));
+    }
+    const results = await this.drizzle.query.Ticket.findMany({
+      with: {
+        messages: {
+          limit: 1,
+          orderBy: desc(schema.Message.created_at),
+        },
+      },
+      where: and(...applied_filters),
+      limit,
+      offset,
+    });
+
+    const tickets = results.map((t) => ({
+      ...t,
+      last_activity: t.messages[0]?.created_at ?? t.created_at,
+    }));
+
+    return with_schema(tickets, z.array(ZTicketListData));
+  }
+
+  @with_error_handling
+  async delete_ticket(ticket_id: string) {
+    await this.drizzle.delete(schema.Ticket).where(eq(schema.Ticket.ticket_id, ticket_id));
+    return ok();
   }
 
   @with_error_handling
@@ -114,8 +164,6 @@ export default class Sqlite implements Database {
     if (filters?.before_id != null) {
       applied_filters.push(lt(schema.Message.message_id, filters.before_id));
     }
-
-    console.log('FILTERS', filters);
 
     const messages = await this.drizzle.query.Message.findMany({
       where: and(...applied_filters),

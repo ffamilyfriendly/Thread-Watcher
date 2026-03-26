@@ -5,6 +5,7 @@
 	import { use_guild_state } from '$lib/stores/guild.svelte';
 	import { safe_fetch } from '$lib/client/fetch';
 	import { add_toast_from_error } from '$lib/state/toasts.svelte';
+	import { TW_MAX_PANELS_FREE } from '@watcher/shared';
 
     const { data }: PageProps = $props();
 
@@ -16,10 +17,10 @@
 
 	const is_premium = $derived(gs.is_subscribed ?? false)
 
-    const PANEL_LIMIT_FREE = 3;
     const current_count = $derived(panels.length);
-    const is_at_limit = $derived(current_count >= PANEL_LIMIT_FREE && !is_premium);
-    const progress_pct = $derived(Math.min((current_count / PANEL_LIMIT_FREE) * 100, 100));
+    const is_at_limit = $derived(current_count >= TW_MAX_PANELS_FREE && !is_premium);
+	const can_edit = $derived(current_count > TW_MAX_PANELS_FREE)
+    const progress_pct = $derived(Math.min((current_count / TW_MAX_PANELS_FREE) * 100, 100));
 
     function str_to_vibrant_clr(str: string): string {
         let hash = 0;
@@ -44,7 +45,7 @@
 
     <div class="usage-card" class:premium={is_premium}>
         <div class="usage-info">
-            <span>{current_count} / {is_premium ? '∞' : PANEL_LIMIT_FREE} Panels</span>
+            <span>{current_count} / {is_premium ? '∞' : TW_MAX_PANELS_FREE} Panels</span>
             {#if !is_premium}
                 <a href="./premium" class="upgrade-link">Upgrade for more</a>
             {/if}
@@ -69,10 +70,10 @@
                     <p>{panel.description || 'No description provided.'}</p>
                 </div>
                 <div class="card-actions">
-					<Button load_with={() => delete_panel(panel.panel_id)} confirmation={{title: "Delete Panel", body: "This cannot be undone", proceed_btn_text: "Delete", cancel_btn_text: "Cancel"}} variant="error">
+					<Button load_with={() => delete_panel(panel.panel_id)} confirmation={{title: "Delete Panel", body: "This cannot be undone. Existing tickets originating from this panel will not be deleted.", proceed_btn_text: "Delete", cancel_btn_text: "Cancel"}} variant="error">
                         <Trash2 size={16} /> Delete
                     </Button>
-                    <Button disabled={is_at_limit} variant="tetriary" href="./ticket-panels/{panel.panel_id}">
+                    <Button disabled={can_edit} variant="tetriary" href="./ticket-panels/{panel.panel_id}">
                         <Settings2 size={16} /> Edit
                     </Button>
                 </div>

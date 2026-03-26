@@ -23,6 +23,8 @@ import {
   MessagesSeachFilter,
   IntermediaryMessage,
   TicketSummarySegment,
+  TicketListData,
+  TicketListSearch,
 } from '@watcher/shared';
 import { DatabaseError } from 'utilities/error/def';
 
@@ -126,6 +128,8 @@ interface Tickets {
   get_ticket_panel: (panel_id: string) => DBResult<TicketPanel | null>;
   insert_ticket: (ticket: TicketInsertion) => DBResult;
   get_ticket: (ticket_id: string) => DBResult<Ticket>;
+  get_tickets: (search: TicketListSearch) => DBResult<TicketListData[]>;
+  delete_ticket: (ticket_id: string) => DBResult;
   update_ticket: (ticket_id: string, data: EditTicket) => DBResult;
   get_ticket_id_from_thread: (thread_id: string) => DBResult<string | null>;
   get_extended_ticket: (

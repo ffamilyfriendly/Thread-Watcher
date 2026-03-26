@@ -25,6 +25,7 @@ import { client } from '@providers/client';
 import { thread_service } from '@providers/services/thread_service';
 import { channel_service } from '@providers/services/channel_service';
 import { CommandError } from 'utilities/error/def';
+import { logger } from '@providers/logger';
 
 async function fetch_all_threads_from_parent(channel: Channel | Guild) {
   let thread_list: ThreadChannel[] = [];
@@ -34,7 +35,9 @@ async function fetch_all_threads_from_parent(channel: Channel | Guild) {
       const children_of_guild_threads = await fetch_all_threads_from_parent(child_channel);
 
       if (children_of_guild_threads.isErr()) {
-        console.log('ERROR', children_of_guild_threads.error);
+        logger.error(
+          `[BATCH] could not get children of ${child_channel.id} (guild: ${child_channel.guildId})`,
+        );
         continue;
       }
 
@@ -49,7 +52,9 @@ async function fetch_all_threads_from_parent(channel: Channel | Guild) {
       const child_of_channel_threads = await fetch_all_threads_from_parent(child_of_channel);
 
       if (child_of_channel_threads.isErr()) {
-        console.log('ERROR', child_of_channel_threads.error);
+        logger.error(
+          `[BATCH] could not get children of ${child_of_channel.id} (guild: ${child_of_channel.guildId})`,
+        );
         continue;
       }
 

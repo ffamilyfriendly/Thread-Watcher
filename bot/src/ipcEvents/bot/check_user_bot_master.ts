@@ -29,21 +29,12 @@ const event: PrivateEvent<{
       map_err,
     );
 
-    if (promises.isErr()) {
-      console.error(promises.error);
-      return err(promises.error);
-    }
+    if (promises.isErr()) return err(promises.error);
 
     const [setting, member] = promises.value;
 
-    if (setting.isErr()) {
-      console.error(setting.error);
-      return err(setting.error);
-    }
-    if (member.isErr()) {
-      console.error(member.error);
-      return err(member.error);
-    }
+    if (setting.isErr()) return err(setting.error);
+    if (member.isErr()) return err(member.error);
 
     if (!setting.value) return ok(false);
     return ok(member.value.roles.cache.has(setting.value));

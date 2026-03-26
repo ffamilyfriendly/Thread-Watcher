@@ -67,6 +67,10 @@ export async function check_should_be_watched(thread: ThreadChannel, l: Logger<u
       new Error(`Could not determine if thread should be watched! ${should_be_watched.error}`),
     );
   }
+  l.debug(
+    `Thread ${thread.name} (${thread.id}) ${should_be_watched.value ? 'fullfills' : 'does not fullfill'} the channel monitor!`,
+    monitor,
+  );
 
   if (should_be_watched.value) {
     const watch_res = await thread_service.watch_thread(thread, monitor.target_id);
@@ -79,7 +83,6 @@ export async function check_should_be_watched(thread: ThreadChannel, l: Logger<u
         `Thread fullfills monitor filters!`,
         monitor.target_id,
       );
-    l.info(`watched ${thread.id}`);
   } else {
     const unwatch_res = await thread_service.unwatch_thread(thread);
     if (unwatch_res.isErr()) return err(map_err(unwatch_res.error));

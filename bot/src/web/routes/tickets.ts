@@ -1,12 +1,15 @@
 import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
 import { attachment_service } from '@providers/services/attachment_service';
 import { ticket_service } from '@providers/services/ticket_service';
-import { Ticket, ZMessagesSearchFilters } from '@watcher/shared';
+import { Ticket, ZMessagesSearchFilters, ZTicketListSearchData } from '@watcher/shared';
 import { Router, Response } from 'express';
 import { RouteFile } from 'interfaces/Web';
 import { enforce_policy } from 'web/auth/auth';
-import { Policies } from 'web/auth/policies';
+import { Policies } from 'web/auth/ticket_policies';
+import { Policies as BasePolicies } from 'web/auth/policies';
 import z from 'zod';
+import { bad_format, handle_res } from 'web/utils/error';
+import { TWResponse } from 'web/utils/logging';
 
 const router = Router();
 
@@ -14,6 +17,19 @@ export type TicketLocals = {
   ticket: Ticket;
   ticket_context: { is_owner: boolean; is_elevated: boolean };
 };
+
+router.get(
+  `/`,
+  enforce_policy(BasePolicies.Common.bot_master_or_guild_master),
+  async (req, res: TWResponse) => {
+    const query = ZTicketListSearchData.safeParse(req.query);
+    if (!query.success) return bad_format(res, query.error);
+
+    const tickets = await ticket_service.get_tickets(query.data);
+
+    handle_res(res, tickets, 'could not fetch tickets!');
+  },
+);
 
 router.get(
   '/:ticket_id',

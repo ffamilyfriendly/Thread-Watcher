@@ -8,7 +8,7 @@
 	import { add_toast_from_error } from "$lib/state/toasts.svelte";
 	import { use_guild_state } from "$lib/stores/guild.svelte";
 	import { CAN_HOLD_THREADS } from "$lib/types/discord";
-	import { DEFAULT_TICKET_PANEL, TW_PANEL_NAME_MAX, TW_PANEL_NAME_MIN, type TicketPanel } from "@watcher/shared";
+	import { DEFAULT_TICKET_PANEL, TW_PANEL_NAME_MAX, type TicketPanel } from "@watcher/shared";
 	import z from "zod";
     const gs = use_guild_state()
 
@@ -45,7 +45,9 @@
 </script>
 
 <Subpage>
-    hi
+    <small>
+        Creating new panel...
+    </small>
 </Subpage>
 
 <div class="container">
