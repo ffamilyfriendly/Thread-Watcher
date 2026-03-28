@@ -13,6 +13,7 @@ import i18next from 'i18next';
 import { err } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import { safe_reply_or_followup } from 'utilities/interaction_helpers';
+import { strip_dangerous_strings } from './escape_sensitive_data';
 
 export type I18nType = (
   key: string,
@@ -81,8 +82,8 @@ export default class EmbeddableError extends Error {
     interaction: RepliableInteraction,
     t: I18nType,
   ): void {
-    // Should rethink this. We do NOT want to just dump the message content in case it contains secret stuff
-    embed.setDescription(this.message.substring(0, 100));
+    const escaped = strip_dangerous_strings(this.message);
+    embed.setDescription(escaped.substring(0, 100));
   }
 
   protected configure_action_row(

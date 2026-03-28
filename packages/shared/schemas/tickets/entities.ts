@@ -1,5 +1,10 @@
 import z from "zod";
-import { TW_PANEL_NAME_MAX, TW_PANEL_NAME_MIN } from "./constants";
+import {
+  TW_PANEL_NAME_MAX,
+  TW_PANEL_NAME_MIN,
+  TW_TICKET_LIMIT_DEFAULT,
+  TW_TICKET_LIMIT_MAX,
+} from "./constants";
 import {
   ZButtonStart,
   ZDiscordUser,
@@ -60,8 +65,11 @@ export const ZTicketListSearchData = z.object({
   panel_id: z.string().nullish(),
   status: ZTicketStates.nullish(),
   assigned_to_user_id: z.string().nullish(),
-  limit: z.number().default(50),
-  offset: z.number().default(0),
+  limit: z.coerce
+    .number()
+    .max(TW_TICKET_LIMIT_MAX)
+    .default(TW_TICKET_LIMIT_DEFAULT),
+  offset: z.coerce.number().default(0),
   ticket_owner: z.string().nullish(),
   guild_id: z.string(),
 });

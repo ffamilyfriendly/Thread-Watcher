@@ -734,6 +734,7 @@ export default class Sqlite implements Database {
     const res = await this.drizzle.query.Ticket.findFirst({
       where: eq(schema.Ticket.ticket_id, ticket_id),
     });
+    if (!res) return err(new TicketNotFound(ticket_id));
     return with_schema(res, ZTicket);
   }
 

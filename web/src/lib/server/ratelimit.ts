@@ -21,7 +21,7 @@ export async function check_ratelimit(
 
 	if (count > limit) {
 		throw error(429, {
-			message: 'chill out'
+			message: 'Ratelimits reached'
 		});
 	}
 }

@@ -1,170 +1,101 @@
 import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
-import { logger } from '@providers/logger';
 import { ticket_service } from '@providers/services/ticket_service';
 import { ZEditTicketPanel, ZTicketPanel } from '@watcher/shared';
 import { Router } from 'express';
 import { RouteFile } from 'interfaces/Web';
+import { err } from 'neverthrow';
 import { enforce_policy } from 'web/auth/auth';
 import { Policies } from 'web/auth/policies';
+import { safe_route } from 'web/neverthrow_wrapper';
+import { api_err, HTTPCodes } from 'web/utils/error';
 const router = Router();
 
 router.post(
   `/:guild_id/panels`,
   enforce_policy(Policies.Common.can_modify_panels),
-  async (req, res) => {
+  safe_route(async (req, res) => {
     const parsed_panel = ZTicketPanel.safeParse(req.body);
 
-    if (!parsed_panel.success) {
-      return res.status(400).json({
-        code: 400,
-        message: 'Malformed request',
-        _details: parsed_panel.error,
-      });
-    }
+    if (!parsed_panel.success) return err(parsed_panel.error);
 
-    const panel_response = await ticket_service.insert_panel(parsed_panel.data);
-
-    if (panel_response.isErr()) {
-      return res.status(500).json({
-        code: 500,
-        message: 'could not create panel',
-        _details: panel_response.error,
-      });
-    }
-
-    return res.json({ panel_id: panel_response.value });
-  },
+    return ticket_service.insert_panel(parsed_panel.data);
+  }),
 );
 
 router.delete(
   '/:guild_id/panels/:panel_id',
   enforce_policy(Policies.Common.bot_master_or_guild_master),
-  async (req, res) => {
+  safe_route(async (req, res) => {
     const panel_id = req.params.panel_id as string;
-    const could_delete = await ticket_service.delete_panel(panel_id);
-    if (could_delete.isErr()) {
-      return res.status(500).json({
-        code: 500,
-        message: 'could not delete panel',
-        _details: could_delete.error,
-      });
-    }
-
-    return res.json({ panel_id: panel_id });
-  },
+    return ticket_service.delete_panel(panel_id);
+  }),
 );
 
 router.put(
   '/:guild_id/panels/:panel_id',
   enforce_policy(Policies.Common.can_modify_panels),
-  async (req, res) => {
+  safe_route(async (req, res) => {
     const parsed_panel = ZEditTicketPanel.safeParse(req.body);
     const panel_id = req.params.panel_id as string;
 
-    if (!parsed_panel.success) {
-      return res.status(400).json({
-        code: 400,
-        message: 'Malformed request',
-        _details: parsed_panel.error,
-      });
-    }
-
-    const panel_edit_res = await ticket_service.update_panel(panel_id, parsed_panel.data);
-
-    if (panel_edit_res.isErr()) {
-      return res.status(500).json({
-        code: 500,
-        message: 'could not update panel',
-        _details: panel_edit_res.error,
-      });
-    }
-
-    return res.json({
-      code: 200,
-      message: 'updated!',
-    });
-  },
+    if (!parsed_panel.success) return err(parsed_panel.error);
+    return ticket_service.update_panel(panel_id, parsed_panel.data);
+  }),
 );
 
 router.post(
   '/:guild_id/panels/:panel_id/send_message',
   enforce_policy(Policies.Common.can_modify_panels),
-  async (req, res) => {
+  safe_route(async (req, res) => {
     const panel_id = req.params.panel_id as string;
     const guild_id = req.params.guild_id as string;
 
     const msg_id = await ipc_client.send_shard(guild_id, 'send_embed', { panel_id });
 
-    if (msg_id.isErr()) {
-      return res.status(500).json({
-        code: 500,
-        message: 'could not send embed',
-        _details: msg_id.error,
-      });
-    }
+    if (msg_id.isErr()) return err(msg_id.error);
 
     ticket_service
       .update_panel(panel_id, { discord_message_id: msg_id.value.message_id })
       .then((r) => {
-        if (msg_id.isErr()) logger.error('Could not update ticket panel message ID', msg_id.error);
+        if (msg_id.isErr())
+          res.locals.logger.error('Could not update ticket panel message ID', msg_id.error);
       });
 
-    res.json(msg_id.value);
-  },
+    return msg_id;
+  }),
 );
 
 router.get(
   `/:guild_id/panels`,
   enforce_policy(Policies.Common.bot_master_or_guild_master),
-  async (req, res) => {
+  safe_route(async (req, _res) => {
     const guild_id = req.params.guild_id as string;
-    const ticket_panels = await ticket_service.get_panels_in_guild(guild_id);
-
-    if (ticket_panels.isErr()) {
-      return res.status(500).json({
-        code: 500,
-        message: 'could not get panels',
-        _details: ticket_panels.error,
-      });
-    }
-
-    return res.json(ticket_panels.value);
-  },
+    return ticket_service.get_panels_in_guild(guild_id);
+  }),
 );
 
 router.get(
   '/:guild_id/panel/:panel_id',
   enforce_policy(Policies.Common.bot_master_or_guild_master),
-  async (req, res) => {
+  safe_route(async (req, _res) => {
     const guild_id = req.params.guild_id as string;
     const panel_id = req.params.panel_id as string;
 
     const ticket_panel = await ticket_service.get_panel(panel_id);
-
-    if (ticket_panel.isErr()) {
-      return res.status(500).json({
-        code: 500,
-        message: 'something went wrong',
-        _details: ticket_panel.error,
-      });
-    }
+    if (ticket_panel.isErr()) return err(ticket_panel.error);
 
     if (!ticket_panel.value) {
-      return res.status(404).json({
-        code: 404,
-        message: `ticket panel '${panel_id}' not found`,
-      });
+      // 404
+      return err(new Error(`ticket panel '${panel_id}' not found`));
     }
 
-    if (ticket_panel.value?.guild_id !== guild_id) {
-      return res.status(401).json({
-        code: 401,
-        message: 'wrong guild_id provided',
-      });
-    }
+    // Why are panels under /:guild_id/ instead of /panels ?
+    // TODO: Rethink & refactor. However, far from urgent.
+    if (ticket_panel.value?.guild_id !== guild_id)
+      return api_err(HTTPCodes.FORBIDDEN, 'guild_id mismatch!');
 
-    res.json(ticket_panel.value);
-  },
+    return ticket_panel;
+  }),
 );
 
 const route: RouteFile = {

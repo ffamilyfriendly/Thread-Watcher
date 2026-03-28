@@ -4,6 +4,7 @@ import { RouteFile } from 'interfaces/Web';
 import body_parser from 'body-parser';
 import { config } from '@providers/config';
 import { logger } from '@providers/logger';
+import { global_error_handler } from './utils/error';
 
 export function create_web_server() {
   const server = express();

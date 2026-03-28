@@ -1,11 +1,13 @@
 import { json_fetch } from '$lib/server/api';
 import { fetch_ticket_panels } from '$lib/server/data_fetchers';
 import ensure_session from '$lib/server/ensure_session.js';
+import { check_ratelimit } from '$lib/server/ratelimit.js';
 import { ZTicketListData } from '@watcher/shared';
 import z from 'zod';
 
 export async function load({ locals, params, url }) {
 	const user = await ensure_session(locals);
+	await check_ratelimit([user.user.id, 'query_tickets'], 5, 5);
 
 	url.searchParams.set('guild_id', params.guild);
 

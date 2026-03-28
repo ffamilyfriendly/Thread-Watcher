@@ -25,6 +25,7 @@ import { ContractLeafValue } from '@watcher/shared/tickets/contracts';
 import { create_ticket_opened } from './components/embed';
 import { interpolate_string } from './helpers/var_string';
 import { client } from '@providers/client';
+import { strip_dangerous_strings } from 'utilities/error/escape_sensitive_data';
 
 const log_obj_schema = z
   .object({
@@ -115,7 +116,9 @@ export class Pipeline implements IPipeline {
 
         const timestamp = _meta.date.toISOString().split('T')[1].split('.')[0];
 
-        buf.push(`[${timestamp}] ${_meta.name}: ${message}`);
+        const safe_str = strip_dangerous_strings(message);
+
+        buf.push(`[${timestamp}] ${_meta.name}: ${safe_str}`);
       }
     });
     buf.push(pipe_end);

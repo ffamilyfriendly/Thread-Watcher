@@ -2,7 +2,9 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { get_pwetty_relative_time } from '$lib/client/time_util';
+	import Button from '$lib/components/ui/Button.svelte';
 	import UserLoader from '$lib/components/ui/discord/user/UserLoader.svelte';
+	import { TW_TICKET_LIMIT_DEFAULT } from '@watcher/shared';
 	import type { PageProps } from './$types';
 
 	const { data }: PageProps = $props();
@@ -16,9 +18,23 @@
 			url.searchParams.delete(key);
 		}
 
-		url.searchParams.delete('offset');
-		goto(url.toString(), { keepFocus: true, noScroll: true });
+		if (key !== 'offset') url.searchParams.delete('offset');
+		return goto(url.toString(), { keepFocus: true, noScroll: true });
 	}
+
+	function get_next_offset() {
+		return (offset + data.tickets.length).toString();
+	}
+
+	function get_prev_offset() {
+		return Math.max(offset - limit, 0).toString();
+	}
+
+	const offset_str = $derived(page.url.searchParams.get('offset'));
+	const offset = $derived(offset_str ? Number(offset_str) : 0);
+
+	const limit_str = $derived(page.url.searchParams.get('limit'));
+	const limit = $derived(limit_str ? Number(limit_str) : TW_TICKET_LIMIT_DEFAULT);
 </script>
 
 <div class="filter_bar">
@@ -98,16 +114,40 @@
 							{ticket.status}
 						</span>
 					</td>
-					<td class="text_right">
+					<td>
 						<a class="view_btn" target="_blank" href="/tickets/{ticket.ticket_id}">View</a>
 					</td>
 				</tr>
 			{/each}
+			{#if data.tickets.length === 0}
+				<tr>
+					<td> No results found with current filters. </td>
+				</tr>
+			{/if}
 		</tbody>
 	</table>
 </div>
 
+<div class="buttons">
+	<Button
+		variant="tetriary"
+		disabled={offset === 0}
+		load_with={() => update_filter('offset', get_prev_offset())}>Previous</Button
+	>
+	<Button
+		disabled={data.tickets.length < limit}
+		load_with={() => update_filter('offset', get_next_offset())}>Next</Button
+	>
+</div>
+
 <style lang="scss">
+	.buttons {
+		display: flex;
+		justify-content: right;
+		margin-top: 1rem;
+		gap: 0.5rem;
+	}
+
 	.table_container {
 		width: 100%;
 		background: var(--background-800);
@@ -205,10 +245,6 @@
 		&:hover {
 			filter: brightness(1.2);
 		}
-	}
-
-	.text-right {
-		text-align: right;
 	}
 
 	.filter_bar {

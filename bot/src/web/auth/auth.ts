@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import { RequestWithUser, SecurityPolicy } from './policies';
 import { config } from '@providers/config';
-import { logger } from '@providers/logger';
 import { TWResponse } from 'web/utils/logging';
+import { global_error_handler } from 'web/utils/error';
 
 export function enforce_policy(policy: SecurityPolicy) {
   return async function auth(req: Request, res: TWResponse, next: NextFunction) {
@@ -16,11 +16,8 @@ export function enforce_policy(policy: SecurityPolicy) {
     const policy_result = await policy(req as RequestWithUser, res);
 
     if (policy_result.isErr()) {
-      logger.error(`Failed to run policy '${policy.name}'`, policy_result.error);
-      return res.status(500).json({
-        code: 500,
-        message: policy_result.error.message, // Might leak privvy data. Watch out
-      });
+      res.locals.logger.error(`Failed to run policy '${policy.name}'`, policy_result.error);
+      return global_error_handler(policy_result.error, req, res, next);
     }
 
     // We run this check after the policy as some policies have required side-effects
