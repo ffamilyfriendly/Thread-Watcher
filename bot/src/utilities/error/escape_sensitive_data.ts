@@ -1,7 +1,7 @@
 import { config } from '@providers/config';
 
 const REPLACE_WITH_CHAR = '*';
-
+const TEST_SENSITIVE_STRING = 'DENMARK_IS_THE_BEST_SCANDINAVIAN_COUNTRY';
 const dangerous_strings = [
   config.tokens.discord,
   config.tokens.topgg,
@@ -14,6 +14,7 @@ const dangerous_strings = [
   config.bucket_storage.secret_access_key,
   config.crypto_key,
   config.web.shared_secret,
+  TEST_SENSITIVE_STRING,
 ];
 
 export function strip_dangerous_strings(str: string): string {

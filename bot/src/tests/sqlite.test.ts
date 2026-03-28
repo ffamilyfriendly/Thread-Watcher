@@ -104,12 +104,14 @@ describe('Sqlite Adapter', () => {
     const panel_create_res = await adapter.insert_ticket_panel(guild_id, {
       name: 'Test',
       description: 'hi',
+      guild_id,
+      resolve_behaviour: 'DELETE_THREAD',
       should_GPT_summarize_ticket: false,
       should_watch_ticket: false,
       pipeline: [],
       initial_assigned_roles: [],
       commencement_embed: test_embed,
-      resolved_embed: test_embed,
+      resolve_embed: test_embed,
       initial_channel_id,
       commencement_method: {
         type: 'BUTTON',
