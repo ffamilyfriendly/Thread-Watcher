@@ -1,6 +1,3 @@
-import { Collection } from 'discord.js';
-import { BaseCommand } from 'interfaces/BaseCommandInterface';
-import { BotIpcClient } from 'utilities/ipc_clients';
 import { ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import { initialize_i18n, setup_shutdown_function } from 'utilities/lifecycle';

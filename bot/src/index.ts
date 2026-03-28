@@ -23,7 +23,7 @@ entitlement_service.set_provider(new IpcProvider(ipc_client));
 ticket_service.set_user_fetcher(fetch_users_index_context);
 
 async function load_events() {
-  return load_module_as_and<PrivateEvent>('./src/ipcEvents/manager', (events_array) => {
+  return load_module_as_and<PrivateEvent>('./src/events/IPC/manager', (events_array) => {
     for (const event of events_array) {
       ipc_client.on(event.event_name, event.event_callback);
     }

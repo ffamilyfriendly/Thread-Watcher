@@ -41,7 +41,7 @@ export async function load_commands(
 }
 
 export async function load_ipc_events(logger: Logger<unknown>, ipc_client: BotIpcClient) {
-  return load_module_as_and<PrivateEvent>('./src/ipcEvents/bot', (modules) => {
+  return load_module_as_and<PrivateEvent>('./src/events/IPC/bot', (modules) => {
     for (const event of modules) {
       logger.silly(`Registering IPC handler for: `, event.event_name);
       ipc_client.on(event.event_name, event.event_callback);
