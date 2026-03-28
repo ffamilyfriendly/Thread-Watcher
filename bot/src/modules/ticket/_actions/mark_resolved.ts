@@ -14,6 +14,7 @@ import { ValueContainer } from '../_pipeline/ValueContainter';
 import { generate_embed } from '../_pipeline/components/embed';
 import { can_close_ticket_or_fail } from './shared';
 import { confirm_resolve_ticket, get_ticket_resolved_buttons } from './components/embeds';
+import { logger } from '@providers/logger';
 
 async function update_buttons(int: RepliableInteraction, start_message_id: string) {
   if (!int.channel) return ok();
@@ -44,13 +45,23 @@ export async function do_resolved_actions(
   } else ticket = ticket_id_or_ticket;
 
   const panel_obj = await ticket_service.get_panel(ticket.panel_id);
-  if (panel_obj.isErr()) return err(panel_obj.error);
+  if (panel_obj.isErr()) {
+    logger.warn(
+      `Could not get panel '${ticket.panel_id}' for ticket '${ticket.name}' (${ticket.ticket_id}).\nProceeding with defaults`,
+    );
+  }
 
   const ticket_close_res = await ticket_service.mark_resolved(ticket.ticket_id);
   if (ticket_close_res.isErr()) return err(ticket_close_res.error);
 
-  if (panel_obj.value.resolve_behaviour === 'DELETE_THREAD')
+  // We'll default to "nothing" if we cant get the panel as its the safest option.
+  // deleting or locking threads "randomly" is not what we want.
+  const resolve_behaviour = panel_obj.isOk() ? panel_obj.value.resolve_behaviour : 'NOTHING';
+
+  if (resolve_behaviour === 'DELETE_THREAD')
     return ResultAsync.fromPromise(thread.delete(), map_err);
+
+  if (panel_obj.isErr()) return ok();
 
   const variables = ValueContainer.from_dump(ticket.variable_dump);
   const embed = generate_embed(panel_obj.value.resolve_embed, variables);
@@ -63,7 +74,7 @@ export async function do_resolved_actions(
     map_err,
   );
 
-  if (panel_obj.value.resolve_behaviour === 'LOCK_THREAD') {
+  if (resolve_behaviour === 'LOCK_THREAD') {
     const m_sent_resolved = await msg_sent;
     if (m_sent_resolved.isErr()) return err(m_sent_resolved.error);
     return ResultAsync.fromPromise(

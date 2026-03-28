@@ -11,6 +11,8 @@
 	import type { DiscordUser } from '@watcher/shared';
 	import { add_toast, add_toast_from_error } from '$lib/state/toasts.svelte';
 	import { map_err } from '$lib/error_helper';
+	import User from '$lib/components/ui/discord/user/User.svelte';
+	import UserLoader from '$lib/components/ui/discord/user/UserLoader.svelte';
 
 	const { data } = $props();
 
@@ -55,21 +57,6 @@
 	const show_overlay = $derived(viewport_width < 1000);
 	let navbar_extended = $state(true);
 
-	let user = $state<DiscordUser>();
-
-	$effect(() => {
-		gs.get_user(data.ticket.owner).then((r) => {
-			if (r.isErr()) return add_toast_from_error(map_err(r.error));
-			user = r.value;
-		});
-	});
-
-	let user_pfp = $derived.by(() => {
-		if (!user) return 'https://cdn.discordapp.com/embed/avatars/3.png';
-		if (user.avatar) return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}?size=80`;
-		return user.defaultAvatarURL;
-	});
-
 	async function mark_resolved() {
 		const res = await ts.mark_resolved();
 		if (res.isErr()) return add_toast_from_error(res.error);
@@ -110,13 +97,7 @@
 		<hr />
 
 		<h3 class="heading">Ticket User</h3>
-		<div class="user">
-			<img height={40} src={user_pfp} alt="user profile" />
-			<div class="meta">
-				<b>{user?.globalName ?? user?.username ?? 'unknown user'}</b>
-				<p>{user?.id ?? 'unknown user'}</p>
-			</div>
-		</div>
+		<UserLoader user_id={data.ticket.owner} />
 
 		<hr />
 
@@ -150,24 +131,6 @@
 	main {
 		display: flex;
 		height: 100vh;
-	}
-
-	.user {
-		display: flex;
-		gap: 0.5rem;
-
-		.meta {
-			display: flex;
-			flex-direction: column;
-			p {
-				font-weight: 100;
-				opacity: 0.7;
-			}
-		}
-
-		img {
-			border-radius: 50%;
-		}
 	}
 
 	.heading {

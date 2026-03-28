@@ -6,7 +6,7 @@ import { channel_service } from '@providers/services/channel_service';
 import { entitlement_service } from '@providers/services/entitlement_service';
 import { setting_service } from '@providers/services/setting_service';
 import { thread_service } from '@providers/services/thread_service';
-import { Entitlement, Guild, GuildChannel, Role } from 'discord.js';
+import { Guild, GuildChannel, Role } from 'discord.js';
 import { Router } from 'express';
 import { RouteFile } from 'interfaces/Web';
 import { Result, ResultAsync } from 'neverthrow';

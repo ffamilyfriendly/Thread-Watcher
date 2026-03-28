@@ -5,8 +5,6 @@ import body_parser from 'body-parser';
 import { config } from '@providers/config';
 import { logger } from '@providers/logger';
 
-const web_logger = logger.getSubLogger({ name: 'web' });
-
 export function create_web_server() {
   const server = express();
 
@@ -28,7 +26,7 @@ export function create_web_server() {
       });
     }
 
-    res.locals['logger'] = web_logger.getSubLogger({ name: req.path });
+    res.locals['logger'] = logger.getSubLogger({ name: `[${req.method}] ${req.url}` });
 
     next();
   });

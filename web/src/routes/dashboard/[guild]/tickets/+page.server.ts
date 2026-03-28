@@ -1,4 +1,5 @@
 import { json_fetch } from '$lib/server/api';
+import { fetch_ticket_panels } from '$lib/server/data_fetchers';
 import ensure_session from '$lib/server/ensure_session.js';
 import { ZTicketListData } from '@watcher/shared';
 import z from 'zod';
@@ -15,7 +16,11 @@ export async function load({ locals, params, url }) {
 	);
 	if (tickets.isErr()) throw tickets.error;
 
+	const ticket_panels = await fetch_ticket_panels(params.guild, locals.user.id);
+	if (ticket_panels.isErr()) throw ticket_panels.error;
+
 	return {
-		tickets: tickets.value
+		tickets: tickets.value,
+		panels: ticket_panels.value
 	};
 }
