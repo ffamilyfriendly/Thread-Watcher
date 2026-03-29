@@ -8,6 +8,7 @@ import { err, ok, ResultAsync } from 'neverthrow';
 import { map_err } from './error';
 import i18next from 'i18next';
 import { logger } from '@providers/logger';
+import { is_setting_key } from 'interfaces/Settings';
 
 type i18n_func = (key: string, obj?: { [key: string]: unknown }) => string;
 type embed_gen = (audit: any, embed: EmbedBuilder, t: i18n_func) => EmbedBuilder;
@@ -28,12 +29,13 @@ async function get_embed(audit: ThingType) {
 }
 
 function embed_config_update(audit: ConfigLog, embed: EmbedBuilder, t: i18n_func) {
+  if (!is_setting_key(audit.data.setting_key)) return embed;
   const adapter = setting_service.get_adapter(audit.data.setting_key);
-  if (!adapter) return new EmbedBuilder();
+  if (!adapter) return embed;
 
   function display_safe(v: unknown) {
-    if (!adapter!.is_type(v)) return String(v);
-    return adapter!.display_value(v);
+    if (!adapter.adapter!.is_type(v)) return String(v);
+    return adapter.adapter!.display_value(v);
   }
 
   embed

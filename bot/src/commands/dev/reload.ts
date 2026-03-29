@@ -1,26 +1,23 @@
 import { ipc_client } from '@providers/ipc/bot_ipc_client';
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { type Command } from 'interfaces/Command';
+import { CommandContext, type Command } from 'interfaces/Command';
 import { Result } from 'neverthrow';
-import { CommandContext } from 'utilities/command_context';
 import { CommandError } from 'utilities/error/def';
+import { safe_reply } from 'utilities/interaction_helpers';
 
 function run(
-  _interaction: ChatInputCommandInteraction,
+  interaction: ChatInputCommandInteraction,
   ctx: CommandContext,
-): Result<void, CommandError> {
+): Promise<Result<unknown, CommandError>> {
   ipc_client.send('reload', null);
 
-  ctx.build_embed({
-    title: 'reloaded commands!',
-    description: 'actually works???',
-    style: 'success',
-    ephermal: true,
-    auto_respond: true,
-  });
+  const embed = ctx.build_embed('success');
+  embed
+    .setTitle('Reloaded Commands!')
+    .setDescription('Succesfully reloaded commands across all shards.');
 
-  return ctx.ok();
+  return safe_reply(interaction, { embeds: [embed], flags: 'Ephemeral' });
 }
 
 const command_data = new SlashCommandBuilder()

@@ -1,15 +1,15 @@
 import { guild_service } from '@providers/services/guild_service';
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { type Command } from 'interfaces/Command';
+import { CommandContext, type Command } from 'interfaces/Command';
 import { err, Result } from 'neverthrow';
-import { CommandContext } from 'utilities/command_context';
 import { CommandError } from 'utilities/error/def';
+import { safe_reply } from 'utilities/interaction_helpers';
 
 async function run(
   interaction: ChatInputCommandInteraction,
   ctx: CommandContext,
-): Promise<Result<void, CommandError>> {
+): Promise<Result<unknown, CommandError>> {
   const guild_id = interaction.options.getString('guild_id', true);
   const eur_amount = interaction.options.getNumber('cost', true);
   const micro_eurocents = Math.round(eur_amount * 100 * 10_000);
@@ -18,15 +18,13 @@ async function run(
 
   if (r.isErr()) return err(r.error);
 
-  ctx.build_embed({
-    title: 'Granted tokens!',
-    description: `Set persistent AI budget to \`€${eur_amount.toFixed(4)}\` (\`${micro_eurocents}\` micro-eurocents) for guild \`${guild_id}\``,
-    style: 'success',
-    ephermal: true,
-    auto_respond: true,
-  });
+  const embed = ctx.build_embed('success');
+  embed.setTitle('Granted Tokens!');
+  embed.setDescription(
+    `Set persistent AI budget to \`€${eur_amount.toFixed(4)}\` (\`${micro_eurocents}\` eurocents) for guild \`${guild_id}\``,
+  );
 
-  return ctx.ok();
+  return safe_reply(interaction, { embeds: [embed], flags: 'Ephemeral' });
 }
 
 const command_data = new SlashCommandBuilder()

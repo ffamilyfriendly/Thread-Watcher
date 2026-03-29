@@ -1,6 +1,5 @@
 import PQueue from 'p-queue';
-import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { SETTINGS_KEYS } from './SettingService';
+import { err, ok, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import { ThreadData } from '@watcher/shared';
 import DClient from 'providers/client';
@@ -102,13 +101,11 @@ export default class ThreadBumper {
 
     if (!thread.isThread()) return err('not a thread');
 
-    const bump_behaviour_res = await setting_service.get_setting<string>(
-      thread.guildId,
-      SETTINGS_KEYS.bump_behaviour,
-    );
+    const bump_behaviour_res = await setting_service.get_setting(thread.guildId, 'BUMP_BEHAVIOUR');
 
     if (bump_behaviour_res.isErr()) return err(bump_behaviour_res.error);
     if (!bump_behaviour_res.value) return err('bump_behaviour was null');
+
     const bump_behaviour = bump_behaviour_res.value;
     if (thread.archived && thread.unarchivable) {
       this.l.silly('un-archiving', thread.id);

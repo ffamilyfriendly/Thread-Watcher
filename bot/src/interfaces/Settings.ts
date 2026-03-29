@@ -132,7 +132,8 @@ class StringSelectAdapter implements InputAdapter<string, StringSelectMenuBuilde
   }
 
   display_value(value: string | null): string {
-    return value ?? '<hello>';
+    const option = this.values.find((v) => v.value === value);
+    return option?.label ?? value ?? '<null>';
   }
 }
 
@@ -206,11 +207,21 @@ const AUDIT_LOG_RETENTION: SettingSchema<string> = {
   description: 'How long to retain audit logs for your server',
 };
 
-const settings_map = new Map([
-  ['LOGGING_CHANNEL', LOGGING_CHANNEL],
-  ['BUMP_BEHAVIOUR', BUMP_BEHAVIOUR],
-  ['BOT_MASTER_ROLE', BOT_MASTER_ROLE],
-  ['AUDIT_LOG_RETENTION', AUDIT_LOG_RETENTION],
-]);
+export const SETTINGS = {
+  LOGGING_CHANNEL,
+  BUMP_BEHAVIOUR,
+  BOT_MASTER_ROLE,
+  AUDIT_LOG_RETENTION,
+} as const;
 
-export default settings_map;
+export type SettingKey = keyof typeof SETTINGS;
+export type SettingConfig<K extends SettingKey> = (typeof SETTINGS)[K];
+
+export type SettingOutput<K extends SettingKey> =
+  (typeof SETTINGS)[K] extends SettingSchema<infer T>
+    ? z.output<SettingConfig<K>['schema']>
+    : never;
+
+export function is_setting_key(key: string): key is SettingKey {
+  return Object.keys(SETTINGS).includes(key);
+}

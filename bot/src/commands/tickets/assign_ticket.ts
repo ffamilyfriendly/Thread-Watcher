@@ -1,10 +1,9 @@
 import { ticket_service } from '@providers/services/ticket_service';
 import { ChatInputCommandInteraction, SlashCommandSubcommandBuilder } from 'discord.js';
 import { RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { SubCommand } from 'interfaces/Command';
+import { CommandContext, SubCommand } from 'interfaces/Command';
 import claim_ticket_action from 'modules/ticket/_actions/claim_ticket';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { CommandContext } from 'utilities/command_context';
 import { map_err } from 'utilities/error';
 import { CommandError, TicketNotFound } from 'utilities/error/def';
 

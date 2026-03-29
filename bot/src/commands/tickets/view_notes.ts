@@ -1,8 +1,5 @@
-import { audit_service } from '@providers/services/audit_service';
-import { channel_service } from '@providers/services/channel_service';
 import { ticket_service } from '@providers/services/ticket_service';
 import {
-  ChannelType,
   ChatInputCommandInteraction,
   ContainerBuilder,
   SectionBuilder,
@@ -10,19 +7,11 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { type SubCommand } from 'interfaces/Command';
-import { delete_note_btn } from 'modules/ticket/_actions/components/embeds';
+import { CommandContext, type SubCommand } from 'interfaces/Command';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { CommandContext } from 'utilities/command_context';
 import { map_err } from 'utilities/error';
 import { CommandError } from 'utilities/error/def';
-import EmbeddableError from 'utilities/error/EmbeddableError';
-import {
-  ensure_deferred,
-  safe_defer,
-  safe_reply_or_followup,
-  safe_update,
-} from 'utilities/interaction_helpers';
+import { ensure_deferred, safe_reply_or_followup } from 'utilities/interaction_helpers';
 
 function create_container(sections: Map<string, SectionBuilder>): ContainerBuilder {
   const c = new ContainerBuilder();

@@ -1,7 +1,13 @@
 import { event_bus } from '@providers/event_bus';
 import { AuditData } from '@watcher/shared';
 import { Database } from 'interfaces/Database';
-import settings_map, { SettingValue } from 'interfaces/Settings';
+import {
+  is_setting_key,
+  SettingKey,
+  SettingOutput,
+  SETTINGS,
+  SettingValue,
+} from 'interfaces/Settings';
 import Redis from 'ioredis';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
@@ -40,27 +46,36 @@ export default class SettingService {
     this.r = new RedisWrapper(redis, SettingService.CACHE_TTL_SECONDS, 'settings');
   }
 
-  get_adapter(settings_key: string) {
-    return settings_map.get(settings_key)?.adapter;
+  get_adapter(settings_key: SettingKey) {
+    return SETTINGS[settings_key];
   }
 
-  async get_setting<T extends SettingValue>(
+  try_get_adapter(settings_key: string) {
+    if (!is_setting_key(settings_key)) return null;
+    return SETTINGS[settings_key];
+  }
+
+  async get_setting<TKey extends SettingKey>(
     guild_id: string,
-    setting_key: string,
-  ): Promise<Result<T | null, unknown>> {
-    const config = settings_map.get(setting_key);
-    if (!config) return err(new Error(`Unknown setting: ${setting_key}`));
+    setting_key: TKey,
+  ): Promise<Result<SettingOutput<TKey>, unknown>> {
+    const config = SETTINGS[setting_key];
 
     const cached = await this.r.get([guild_id, setting_key], config.schema);
-    if (cached.isOk() && cached.value) return ok(cached.value as T);
+    if (cached.isOk() && cached.value !== null) {
+      return ok(cached.value as SettingOutput<TKey>);
+    }
 
     const db_res = await this.db.get_guild_setting_value(guild_id, setting_key);
     if (db_res.isErr()) return err(db_res.error);
-    if (!db_res.value) return ok(config.default as T);
+
+    if (!db_res.value) {
+      return ok(config.default as SettingOutput<TKey>);
+    }
 
     return safe_parse(config.schema, db_res.value).map((parsed) => {
       this.r.set([guild_id, setting_key], parsed, config.schema);
-      return parsed as T;
+      return parsed as SettingOutput<TKey>;
     });
   }
 
@@ -87,25 +102,25 @@ export default class SettingService {
    */
   async set_setting(
     guild_id: string,
-    setting_key: string,
+    setting_key: SettingKey,
     setting_value: unknown,
     audit: AuditMeta,
   ) {
-    const config = settings_map.get(setting_key);
-    if (!config) return err(new Error(`Unknown setting: ${setting_key}`));
+    const adapter = this.get_adapter(setting_key);
+    if (!adapter) return err(new Error(`Unknown setting: ${setting_key}`));
 
-    const parse_res = config.schema.safeParse(setting_value);
+    const parse_res = adapter.schema.safeParse(setting_value);
     if (!parse_res.success)
       return err(
         new Error(`value '${setting_value}' is not the expected type for '${setting_key}'`),
       );
 
-    const value_as_str = config.adapter.to_string(parse_res.data);
+    const value_as_str = adapter.adapter.to_string(parse_res.data);
     if (value_as_str.isErr()) return err(value_as_str.error);
 
     const db_res = await this.db.set_guild_setting_value(guild_id, setting_key, value_as_str.value);
     if (db_res.isOk()) {
-      this.r.set([guild_id, setting_key], setting_value, config.schema);
+      this.r.set([guild_id, setting_key], setting_value, adapter.schema);
 
       event_bus.emit('config:change', {
         ...audit,
@@ -123,6 +138,7 @@ export default class SettingService {
 
   async set_settings(guild_id: string, settings: Record<string, unknown>, audit: AuditMeta) {
     const update_promises = Object.entries(settings).map(([key, value]) => {
+      if (!is_setting_key(key)) return ok(null);
       if (!this.get_adapter(key)) return ok(null);
       return this.set_setting(guild_id, key, value, audit);
     });
@@ -144,9 +160,4 @@ export default class SettingService {
 
     return ResultAsync.fromPromise(promises, map_err);
   }
-}
-
-export enum SETTINGS_KEYS {
-  'logging_channel' = 'LOGGING_CHANNEL',
-  'bump_behaviour' = 'BUMP_BEHAVIOUR',
 }

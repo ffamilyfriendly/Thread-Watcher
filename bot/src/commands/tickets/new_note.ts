@@ -1,16 +1,9 @@
-import { audit_service } from '@providers/services/audit_service';
-import { channel_service } from '@providers/services/channel_service';
 import { ticket_service } from '@providers/services/ticket_service';
-import {
-  ChannelType,
-  ChatInputCommandInteraction,
-  SlashCommandSubcommandBuilder,
-} from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandSubcommandBuilder } from 'discord.js';
 import { RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { type SubCommand } from 'interfaces/Command';
+import { CommandContext, type SubCommand } from 'interfaces/Command';
 import add_note_action from 'modules/ticket/_actions/add_note';
 import { err, ok, Result } from 'neverthrow';
-import { CommandContext } from 'utilities/command_context';
 import { CommandError } from 'utilities/error/def';
 
 async function run(

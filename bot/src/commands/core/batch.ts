@@ -9,7 +9,7 @@ import {
 } from 'discord.js';
 
 import { GuildChatInteraction, RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { type Command } from 'interfaces/Command';
+import { CommandContext, type Command } from 'interfaces/Command';
 
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
@@ -25,6 +25,7 @@ import { thread_service } from '@providers/services/thread_service';
 import { channel_service } from '@providers/services/channel_service';
 import { CommandError } from 'utilities/error/def';
 import { logger } from '@providers/logger';
+import { safe_reply } from 'utilities/interaction_helpers';
 
 async function fetch_all_threads_from_parent(channel: Channel | Guild) {
   let thread_list: ThreadChannel[] = [];
@@ -187,13 +188,13 @@ async function run(
   const channel_link =
     parent.value instanceof Guild ? 'in this guild' : create_channel_link(parent.value);
 
-  const waiting_embed = ctx.build_embed({
-    title: ctx.t('commands.batch.fetching_title', {}),
-    description: ctx.t('commands.batch.fetching_body', {
+  const waiting_embed = ctx.build_embed('info');
+  waiting_embed.setTitle(ctx.t('commands.batch.fetching_title'));
+  waiting_embed.setDescription(
+    ctx.t('commands.batch.fetching_body', {
       channel_link,
     }),
-    style: 'info',
-  });
+  );
 
   const state: State<ExecutionContext> = {
     components: [],
@@ -212,7 +213,7 @@ async function run(
     on_cleanup: handle_cleanup,
   };
 
-  await interaction.reply({ embeds: [waiting_embed], flags: ['Ephemeral'] });
+  await safe_reply(interaction, { embeds: [waiting_embed], flags: 'Ephemeral' });
   const fetch_threads = await fetch_all_threads_from_parent(parent.value);
 
   if (fetch_threads.isErr()) return err(fetch_threads.error);
@@ -224,7 +225,7 @@ async function run(
     handle_execution(state as State<unknown>, interaction, { action, watch_future });
   }
 
-  return ctx.get_execution_promise();
+  return ok();
 }
 
 const command_data = new SlashCommandBuilder()

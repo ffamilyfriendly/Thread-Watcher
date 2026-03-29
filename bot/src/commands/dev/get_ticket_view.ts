@@ -2,16 +2,15 @@ import { ipc_client } from '@providers/ipc/bot_ipc_client';
 import { ticket_service } from '@providers/services/ticket_service';
 import { AttachmentBuilder, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { type Command } from 'interfaces/Command';
+import { CommandContext, type Command } from 'interfaces/Command';
 import { err, ok, Result } from 'neverthrow';
-import { CommandContext } from 'utilities/command_context';
 import { CommandError } from 'utilities/error/def';
 import { ensure_deferred, safe_reply } from 'utilities/interaction_helpers';
 
 async function run(
   interaction: ChatInputCommandInteraction,
   ctx: CommandContext,
-): Promise<Result<void, CommandError>> {
+): Promise<Result<unknown, CommandError>> {
   if (!interaction.channel?.isThread()) {
     interaction.reply('not a thread');
     return ok();
@@ -33,10 +32,7 @@ async function run(
   attachment.setName('ticket_dump.json');
   attachment.setDescription('a dump of this ticket');
 
-  const could_reply = await safe_reply(interaction, { content: 'Dumped!', files: [attachment] });
-  if (could_reply.isErr()) return err(could_reply.error);
-
-  return ctx.ok();
+  return safe_reply(interaction, { content: 'Dumped!', files: [attachment] });
 }
 
 const command_data = new SlashCommandBuilder()

@@ -6,11 +6,10 @@ import {
 } from 'discord.js';
 
 import { GuildChatInteraction, RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { type SubCommand } from 'interfaces/Command';
-import { err, Result } from 'neverthrow';
+import { CommandContext, type SubCommand } from 'interfaces/Command';
+import { err, ok, Result } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
 import { make_advanced_embed, State } from 'commands/core/_shared/advanced_view';
-import { CommandContext } from 'utilities/command_context';
 import { map_err } from 'utilities/error';
 import { get_target } from '../_shared/check_channel_values';
 import { channel_service } from '@providers/services/channel_service';
@@ -21,7 +20,7 @@ async function handle_execution(state: State, interaction: Interaction, context:
   const did_work = await channel_service.add_monitor(
     state.target_channel.id,
     state.guild_id,
-    interaction.user.id,
+    { executor_id: interaction.user.id, guild_id: state.guild_id },
     state.filters,
   );
   if (did_work.isErr()) {
@@ -50,7 +49,6 @@ async function run(
   interaction: GuildChatInteraction,
   ctx: CommandContext,
 ): Promise<Result<void, CommandError>> {
-  console.log('HELLO 1!');
   const parent = await get_target(interaction);
 
   const advanced = !!interaction.options.getBoolean('advanced');
@@ -61,11 +59,8 @@ async function run(
 
   await interaction.deferReply();
 
-  console.log('GETTING MONITOR');
   const existing_monitor = await channel_service.get_monitor(parent.value.id);
-  console.log('GOT MONITOR');
   if (existing_monitor.isErr()) {
-    console.log('MONITOR_FAILED!½');
     return err(existing_monitor.error);
   }
 
@@ -92,7 +87,7 @@ async function run(
     handle_execution(state as State<unknown>, interaction, null);
   }
 
-  return ctx.get_execution_promise();
+  return ok();
 }
 
 export const command_data = new SlashCommandSubcommandBuilder()

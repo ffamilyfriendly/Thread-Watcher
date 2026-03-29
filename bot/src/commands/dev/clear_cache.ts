@@ -1,15 +1,15 @@
 import { redis } from '@providers/redis';
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { type Command } from 'interfaces/Command';
+import { CommandContext, type Command } from 'interfaces/Command';
 import { err, Result, ResultAsync } from 'neverthrow';
-import { CommandContext } from 'utilities/command_context';
 import { CommandError } from 'utilities/error/def';
+import { safe_reply } from 'utilities/interaction_helpers';
 
 async function run(
   interaction: ChatInputCommandInteraction,
   ctx: CommandContext,
-): Promise<Result<void, CommandError>> {
+): Promise<Result<unknown, CommandError>> {
   const key_to_remove = interaction.options.getString('key');
   let action_result;
 
@@ -25,13 +25,11 @@ async function run(
 
   if (action_result.isErr()) return err(action_result.error);
 
-  ctx.build_embed({
-    title: 'Cleared Cache',
-    description: key_to_remove ? `removed \`${key_to_remove}\` from cache` : 'flushed cache',
-    style: 'success',
-    auto_respond: true,
-  });
-  return ctx.ok();
+  const embed = ctx.build_embed('success');
+  embed.setTitle('Cleared Cache');
+  embed.setDescription(key_to_remove ? `removed \`${key_to_remove}\` from cache` : 'flushed cache');
+
+  return safe_reply(interaction, { embeds: [embed], flags: 'Ephemeral' });
 }
 
 const command_data = new SlashCommandBuilder()

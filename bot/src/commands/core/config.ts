@@ -9,7 +9,6 @@ import {
 } from 'discord.js';
 import { GuildChatInteraction, RegistrationScope } from 'interfaces/BaseCommandInterface';
 import { CommandContext, type Command } from 'interfaces/Command';
-import settings_map from 'interfaces/Settings';
 import { err, ok, Result } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
 import {
@@ -25,6 +24,7 @@ import { setting_service } from '@providers/services/setting_service';
 import { component_service } from '@providers/services/component_service';
 import { CommandError } from 'utilities/error/def';
 import { safe_reply } from 'utilities/interaction_helpers';
+import { SettingKey, SETTINGS } from 'interfaces/Settings';
 
 function create_buttons() {
   const apply_button = new ButtonBuilder().setStyle(ButtonStyle.Primary).setLabel('Save');
@@ -49,22 +49,24 @@ async function run(
   const filter = (int: Interaction) => int.user.id === interaction.user.id;
 
   return new Promise(async (resolve) => {
-    const settings_key = interaction.options.getString('setting');
+    let settings_key = interaction.options.getString('setting');
     if (!settings_key) return resolve(err(new Error('setting option not set')));
 
-    const setting = settings_map.get(settings_key);
+    const setting = setting_service.try_get_adapter(settings_key);
 
     if (!setting) return resolve(err(new Error(`\`${settings_key}\` is not a valid setting`)));
+    // try_get_adapter only returns value if key is a valid SettingKey. We can therefore safely cast
+    const s_key = settings_key as SettingKey;
 
-    const current_value = await setting_service.get_setting(interaction.guildId, setting.key);
+    const current_value = await setting_service.get_setting(interaction.guildId, s_key);
 
     if (current_value.isErr()) {
       return resolve(err(map_err(current_value.error)));
     }
 
-    const current_val = (
-      await setting_service.get_setting(interaction.guildId, setting.key)
-    ).unwrapOr(setting.default);
+    const current_val = (await setting_service.get_setting(interaction.guildId, s_key)).unwrapOr(
+      setting.default,
+    );
     const state = create_initial_state(current_val);
 
     const { apply_button, reset_button, cancel_button, action_row } = create_buttons();
@@ -114,7 +116,7 @@ async function run(
 }
 
 async function autocomplete(interaction: AutocompleteInteraction) {
-  const settings_values = Array.from(settings_map.values());
+  const settings_values = Object.values(SETTINGS);
   const query = interaction.options.getFocused();
 
   const filtered = query
