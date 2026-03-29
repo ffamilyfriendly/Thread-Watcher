@@ -23,6 +23,9 @@
       "description": "a",
       "btn_website": "Website",
       "btn_support": "Support Server"
+    },
+    "config": {
+      "saved_title": "Saved!"
     }
   },
   "advanced": {
@@ -63,14 +66,12 @@
     "failed_without_clear_cause": "command failed without a clear cause.",
     "get_help_btn_text": "Get Support",
     "read_docs_btn_text": "Learn More",
+    "channel_type_title": "Wrong Channel Type",
+    "channel_type_body": "{{channel_tag}} has the wrong channel type",
     "permissions_err": {
       "you": "you have",
       "bot": "the bot has",
       "description": "{{command_tag}} requires that {{target}} the {{permission}} permission."
-    },
-    "general": {
-      "channel_type_title": "Wrong Channel Type",
-      "channel_type_body": "{{channel_tag}} has the wrong channel type"
     },
     "entitlement_err": {
       "title": "Premium Feature Required",

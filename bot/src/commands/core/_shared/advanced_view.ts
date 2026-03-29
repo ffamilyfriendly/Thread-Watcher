@@ -19,11 +19,12 @@ import {
 } from 'discord.js';
 import regex_is_safe from 'safe-regex';
 import { Vacuum } from 'services/ComponentService';
-import { CommandContext } from 'utilities/command_context';
 import { FilterData } from '@watcher/shared';
 import { component_service } from '@providers/services/component_service';
 import { GenericCommandError } from 'utilities/error/def';
 import EmbeddableError from 'utilities/error/EmbeddableError';
+import { CommandContext } from 'interfaces/Command';
+import { safe_reply } from 'utilities/interaction_helpers';
 
 export interface State<TContext = unknown> {
   components: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder | RoleSelectMenuBuilder>[];
@@ -121,13 +122,10 @@ function handle_test_regex_button(interaction: ButtonInteraction, state: State) 
     .map((result) => `- \`${result.thread_name}\`: ${result.passes}`)
     .join('\n');
 
-  const result_embed = state._ctx.build_embed({
-    title: 'Regex Test',
-    description: `**regex:** \`${state.filters.regex}\`\n## Results\n${result_string_list}`,
-    style: 'info',
-  });
+  const embed = state._ctx.build_embed('info');
+  embed.setDescription(`**regex:** \`${state.filters.regex}\`\n## Results\n${result_string_list}`);
 
-  interaction.reply({ embeds: [result_embed], flags: ['Ephemeral'] });
+  safe_reply(interaction, { embeds: [embed], flags: 'Ephemeral' });
 }
 
 function create_button(label: string, style: ButtonStyle) {

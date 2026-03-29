@@ -122,50 +122,82 @@ export function get_audit_embed(audit: ThingType, embed: EmbedBuilder, locale?: 
   return ok(embed_func(audit, embed, t));
 }
 
-export async function send_audit<TKey extends AppEventKey>(key: TKey, event: AppEventMap[TKey]) {
-  const guild = client.guilds.cache.get(event.guild_id);
+const auditBuffer = new Map<
+  string,
+  {
+    embeds: EmbedBuilder[];
+    timeout: Timer | null;
+  }
+>();
 
-  const final_embed = await get_embed(event).then((base_embed) =>
+const MAX_EMBEDS_PER_MSG = 10;
+const DEBOUNCE_MS = 1500;
+
+export async function send_audit<TKey extends AppEventKey>(key: TKey, event: AppEventMap[TKey]) {
+  const guildId = event.guild_id;
+  const guild = client.guilds.cache.get(guildId);
+
+  const embedResult = await get_embed(event).then((base_embed) =>
     get_audit_embed(event, base_embed, guild?.preferredLocale),
   );
 
-  if (final_embed.isErr()) {
-    logger.error('could not get final_embed', final_embed.error);
-    return err(final_embed.error);
+  if (embedResult.isErr()) {
+    logger.error('could not generate audit_embed', embedResult.error);
+    return err(embedResult.error);
   }
 
-  const setting_value = await setting_service.get_setting(event.guild_id, 'LOGGING_CHANNEL');
-  if (setting_value.isErr()) {
-    logger.error(`Could not get logging channel from db`, setting_value.error);
-    return err(setting_value.error);
-  }
-  if (typeof setting_value.value !== 'string') {
-    return ok();
+  if (!auditBuffer.has(guildId)) {
+    auditBuffer.set(guildId, { embeds: [], timeout: null });
   }
 
-  const channel = await ResultAsync.fromPromise(
+  const session = auditBuffer.get(guildId)!;
+  session.embeds.push(embedResult.value);
+
+  if (session.timeout) clearTimeout(session.timeout);
+
+  session.timeout = setTimeout(() => flush_audit_buffer(guildId), DEBOUNCE_MS);
+
+  return ok();
+}
+
+async function flush_audit_buffer(guildId: string) {
+  const session = auditBuffer.get(guildId);
+  if (!session || session.embeds.length === 0) return;
+
+  auditBuffer.delete(guildId);
+
+  const { embeds } = session;
+
+  const setting_value = await setting_service.get_setting(guildId, 'LOGGING_CHANNEL');
+  if (setting_value.isErr() || typeof setting_value.value !== 'string') return;
+
+  const channelRes = await ResultAsync.fromPromise(
     client.channels.fetch(setting_value.value),
     map_err,
   );
-  if (channel.isErr()) {
-    logger.error(`Could not get channel from discord`, channel.error);
-    return err(channel.error);
+  if (channelRes.isErr() || !channelRes.value?.isSendable()) return;
+
+  const channel = channelRes.value;
+
+  const chunks: EmbedBuilder[][] = [];
+  for (let i = 0; i < embeds.length; i += MAX_EMBEDS_PER_MSG) {
+    chunks.push(embeds.slice(i, i + MAX_EMBEDS_PER_MSG));
   }
 
-  if (!channel.value?.isSendable()) {
-    logger.error(`Could get channel but it was not sendable`);
-    return err(new Error('channel not sendable'));
+  for (const [index, chunk] of chunks.entries()) {
+    let content = undefined;
+
+    if (chunks.length > 1 && index === 0) {
+      content = `⚠️ **Too many audits:** Collected ${embeds.length} events. Sending in multiple messages...`;
+    }
+
+    const send_res = await ResultAsync.fromPromise(
+      channel.send({ content, embeds: chunk }) as Promise<Message<any>>,
+      map_err,
+    );
+
+    if (send_res.isErr()) {
+      logger.error(`Failed to flush audit chunk for ${guildId}`, send_res.error);
+    }
   }
-
-  const send_res = await ResultAsync.fromPromise(
-    channel.value.send({ embeds: [final_embed.value] }) as Promise<Message<any>>,
-    map_err,
-  );
-
-  if (send_res.isErr()) {
-    logger.error('could not send audit message', send_res.error);
-    return err(send_res.error);
-  }
-
-  return ok();
 }

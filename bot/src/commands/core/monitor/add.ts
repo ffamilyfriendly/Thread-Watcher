@@ -17,16 +17,12 @@ import { audit_service } from '@providers/services/audit_service';
 import { CommandError } from 'utilities/error/def';
 
 async function handle_execution(state: State, interaction: Interaction, context: null) {
-  const did_work = await channel_service.add_monitor(
+  return channel_service.add_monitor(
     state.target_channel.id,
     state.guild_id,
     { executor_id: interaction.user.id, guild_id: state.guild_id },
     state.filters,
   );
-  if (did_work.isErr()) {
-    return state._ctx.err(map_err(did_work.error));
-  }
-  state._ctx.ok();
 }
 
 function handle_cleanup(state: State, interaction: Interaction) {
@@ -119,7 +115,7 @@ const command: SubCommand = {
     channel_option_name: 'parent',
   },
   command_data,
-  parent_command: 'auto',
+  parent_command: 'monitor',
   run,
 };
 

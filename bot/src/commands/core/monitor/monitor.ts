@@ -4,8 +4,8 @@ import { command_data as add } from './add';
 import { command_data as remove } from './remove';
 
 const command_data = new SlashCommandBuilder()
-  .setName('auto')
-  .setDescription('hello im test')
+  .setName('monitor')
+  .setDescription('Manage your channel monitors')
   .addSubcommand(add)
   .addSubcommand(remove);
 

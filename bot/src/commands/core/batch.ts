@@ -100,9 +100,7 @@ async function handle_execution(state: State, interaction: Interaction, context:
     // Name is slightly missleading. This really only checks if the thread complies with our filters
     const should_be_actioned = await ThreadService.should_be_watched(client, thread, state.filters);
     if (should_be_actioned.isOk() && !should_be_actioned.value) continue;
-    if (should_be_actioned.isErr()) {
-      return state._ctx.err(should_be_actioned.error);
-    }
+    if (should_be_actioned.isErr()) return err(should_be_actioned.error);
     actioned_threads.push(thread.id);
 
     let res: ResultAsync<unknown, Error>;
@@ -149,7 +147,7 @@ async function handle_execution(state: State, interaction: Interaction, context:
     if (could_add_monitor.isErr()) return err(could_add_monitor.error);
   }
 
-  state._ctx.ok();
+  return ok();
 }
 
 function handle_cleanup(state: State, interaction: Interaction) {

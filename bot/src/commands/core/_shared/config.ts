@@ -1,7 +1,8 @@
+import { config } from '@providers/config';
 import { setting_service } from '@providers/services/setting_service';
-import { ButtonInteraction } from 'discord.js';
+import { ButtonInteraction, ColorResolvable } from 'discord.js';
 import { CommandContext } from 'interfaces/Command';
-import { SettingSchema, SettingValue } from 'interfaces/Settings';
+import { is_setting_key, SettingSchema, SettingValue } from 'interfaces/Settings';
 import { err, ok } from 'neverthrow';
 import { AuditMeta } from 'services/AuditService';
 import { safe_delete, safe_update } from 'utilities/interaction_helpers';
@@ -53,6 +54,7 @@ export async function handle_apply_callback<T extends SettingValue>(
   // If the new setting value is null we're deleting the row instead of setting the value to null
   const audit_value: AuditMeta = { executor_id: response.user.id, guild_id: response.guildId };
   if (state.value) {
+    if (!is_setting_key(setting.key)) return ok();
     setting_result = await setting_service.set_setting(
       response.guildId,
       setting.key,
@@ -69,7 +71,11 @@ export async function handle_apply_callback<T extends SettingValue>(
 
   if (setting_result.isErr()) return err(setting_result.error);
 
-  return ok();
+  const embed = generate_embed(ctx, setting, state);
+  embed.setColor(config.style.success.colour as ColorResolvable);
+  embed.setTitle(ctx.t('commands.config.saved_title'));
+
+  return safe_update(response, { embeds: [embed], components: [] });
 }
 
 export function handle_cancel_button(response: ButtonInteraction) {

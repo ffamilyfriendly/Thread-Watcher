@@ -6,9 +6,8 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { type SubCommand } from 'interfaces/Command';
-import { err, Result } from 'neverthrow';
-import { CommandContext } from 'utilities/command_context';
+import { CommandContext, type SubCommand } from 'interfaces/Command';
+import { err, ok, Result } from 'neverthrow';
 import { CommandError } from 'utilities/error/def';
 
 async function run(
@@ -26,7 +25,7 @@ async function run(
 
   if (res.isErr()) return err(res.error);
 
-  return ctx.ok();
+  return ok();
 }
 
 export const command_data = new SlashCommandSubcommandBuilder()
@@ -49,7 +48,7 @@ const command: SubCommand = {
   command_scope: RegistrationScope.GLOBAL,
   access_control: {},
   command_data,
-  parent_command: 'auto',
+  parent_command: 'monitor',
   run,
 };
 
