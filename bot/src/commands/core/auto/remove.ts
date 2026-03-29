@@ -19,19 +19,12 @@ async function run(
 
   if (!target || !('guild' in target)) return err(new Error('no channel bruh'));
 
-  const res = await channel_service.remove_monitor(target?.id);
+  const res = await channel_service.remove_monitor(target?.id, {
+    executor_id: interaction.user.id,
+    guild_id: interaction.guildId!,
+  });
 
   if (res.isErr()) return err(res.error);
-
-  const log = await audit_service.log_monitor_removed(
-    target.id,
-    interaction.user.id,
-    interaction.guildId!,
-  );
-
-  if (log.isErr()) return ctx.err(log.error);
-
-  ctx.send_audit(log.value);
 
   return ctx.ok();
 }

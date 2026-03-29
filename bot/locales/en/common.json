@@ -12,6 +12,17 @@
       "result_title": "{{action}} {{action_amount}} threads",
       "will_watch_future": "Future Threads will also be watched if they match the filter",
       "in_channel": "in {{channel_link}}"
+    },
+    "list": {
+      "no_data_title": "Nothing Found!",
+      "no_data_body": "There's nothing to show",
+      "btn_view_online": "View Online"
+    },
+    "info": {
+      "title": "Information",
+      "description": "a",
+      "btn_website": "Website",
+      "btn_support": "Support Server"
     }
   },
   "advanced": {
@@ -56,6 +67,10 @@
       "you": "you have",
       "bot": "the bot has",
       "description": "{{command_tag}} requires that {{target}} the {{permission}} permission."
+    },
+    "general": {
+      "channel_type_title": "Wrong Channel Type",
+      "channel_type_body": "{{channel_tag}} has the wrong channel type"
     },
     "entitlement_err": {
       "title": "Premium Feature Required",

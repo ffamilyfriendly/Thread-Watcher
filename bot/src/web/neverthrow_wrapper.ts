@@ -13,6 +13,9 @@ export function safe_route<TRes extends TWResponse>(
       return global_error_handler(result.error, req, res, next);
     }
 
+    if (typeof result.value !== 'object')
+      return res.json({ no_content: 'sloppy_code', value: result.value });
+
     return res.json(result.value);
   };
 }

@@ -1,26 +1,41 @@
 import {
   AutocompleteInteraction,
   ChatInputCommandInteraction,
+  ColorResolvable,
+  EmbedBuilder,
   Interaction,
   InteractionType,
 } from 'discord.js';
-import { BaseCommand, Command, GuildChatInteraction } from 'interfaces/Command';
-import { map_err } from 'utilities/error';
-import { CommandContext } from 'utilities/command_context';
+import { BaseCommand, Command, CommandContext, GuildChatInteraction } from 'interfaces/Command';
+import { mapped_err } from 'utilities/error';
 import Config from '@providers/config';
 import Commands from '@providers/commands';
-import As from '@providers/services/audit_service';
 import Lgr from '@providers/logger';
 import ComponentService from '@providers/services/component_service';
 import { err, ok } from 'neverthrow';
 import EmbeddableError from 'utilities/error/EmbeddableError';
 import { EntitlementsError, PermissionsError } from 'utilities/error/def';
+import i18next from 'i18next';
 
 const config = Config.instance;
 const commands = Commands.instance;
-const audit_service = As.instance;
 const logger = Lgr.instance;
 const component_service = ComponentService.instance;
+
+function get_command_context(cmd: Interaction): CommandContext {
+  return {
+    t: (t_key: string, data) => i18next.t(t_key, { lng: cmd.locale, ...data }),
+    logger: logger.getSubLogger({
+      name: cmd.isCommand() ? cmd.commandName : `interaction ${cmd.id}`,
+    }),
+    build_embed: (style) => {
+      const use_style = style || 'info';
+      const e = new EmbedBuilder();
+      e.setColor(config.style.info.colour as ColorResolvable);
+      return e;
+    },
+  };
+}
 
 function is_standalone_command(command?: BaseCommand): command is Command {
   return command !== undefined && 'run' in command;
@@ -94,23 +109,17 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
   }
 
   let command = commands.get(interaction.commandName);
-  const audit_builder = audit_service.get_builder_from_command_interaction(interaction);
-  audit_builder.set_cmd_args(interaction);
-
-  const handle_error = (err: Error) => EmbeddableError.handle_error(interaction, err);
-  const handle_err = audit_builder.bind_err_func(handle_error);
 
   if (!command) {
     logger.error(`no such command, ${interaction.commandName}`);
     const error = new Error(`no command with name \`${interaction.commandName}\` could be found`);
-    handle_err(error, interaction);
 
     return err(error);
   }
 
   if (!check_command_gatekeeping(interaction, command)) return ok();
 
-  const command_context = new CommandContext(interaction);
+  const command_context = get_command_context(interaction);
 
   const interaction_as_guild_safe = interaction as GuildChatInteraction;
 
@@ -122,7 +131,6 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
     if (!sub_command) {
       logger.error(`no such command, ${interaction.commandName}`);
       const error = new Error(`no command with name \`${interaction.commandName}\` could be found`);
-      handle_err(error, interaction);
       return err(error);
     }
     if (!check_command_gatekeeping(interaction, sub_command)) return ok();
@@ -135,11 +143,8 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
   }
 
   const result = await command.run(interaction_as_guild_safe, command_context);
-  if (result.isErr()) {
-    const error = map_err(result.error);
-    return err(error);
-  } else {
-    audit_builder.commit();
+  if (result.isErr()) return mapped_err(result.error);
+  else {
     logger.debug(`Command interaction with id ${interaction.id} handled without issues!`);
     return ok();
   }

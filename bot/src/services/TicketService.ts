@@ -59,7 +59,7 @@ export default class TicketService {
     const db_res = await this.db.insert_ticket_panel(panel_data.guild_id, panel_data);
 
     if (db_res.isOk()) {
-      panel_data.panel_id = db_res.value;
+      panel_data.panel_id = db_res.value.panel_id;
       this.r.set(['panel', panel_data.panel_id], panel_data, ZTicketPanel);
     }
 

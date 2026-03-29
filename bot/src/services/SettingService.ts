@@ -1,3 +1,5 @@
+import { event_bus } from '@providers/event_bus';
+import { AuditData } from '@watcher/shared';
 import { Database } from 'interfaces/Database';
 import settings_map, { SettingValue } from 'interfaces/Settings';
 import Redis from 'ioredis';
@@ -5,6 +7,7 @@ import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import { safe_parse } from 'utilities/parsing';
 import RedisWrapper from 'utilities/redis';
+import { AuditMeta } from './AuditService';
 
 /**
  * Service responsible for reading and writing guild-scoped settings with a Redis cache layer.
@@ -82,7 +85,12 @@ export default class SettingService {
    * @param setting_value The value to store.
    * @returns A Promise resolving to a neverthrow Result indicating success or failure of the Database write.
    */
-  async set_setting(guild_id: string, setting_key: string, setting_value: unknown) {
+  async set_setting(
+    guild_id: string,
+    setting_key: string,
+    setting_value: unknown,
+    audit: AuditMeta,
+  ) {
     const config = settings_map.get(setting_key);
     if (!config) return err(new Error(`Unknown setting: ${setting_key}`));
 
@@ -98,19 +106,25 @@ export default class SettingService {
     const db_res = await this.db.set_guild_setting_value(guild_id, setting_key, value_as_str.value);
     if (db_res.isOk()) {
       this.r.set([guild_id, setting_key], setting_value, config.schema);
-    }
 
-    // Invalidate browser cache
-    // We don't mind if this crashes.
-    await ResultAsync.fromPromise(this.redis.del(`${guild_id}:overviewInfo`), map_err);
+      event_bus.emit('config:change', {
+        ...audit,
+        data: {
+          audit_type: 'CONFIG',
+          setting_key,
+          old_value: db_res.value,
+          new_value: String(setting_value),
+        },
+      });
+    }
 
     return db_res;
   }
 
-  async set_settings(guild_id: string, settings: Record<string, unknown>) {
+  async set_settings(guild_id: string, settings: Record<string, unknown>, audit: AuditMeta) {
     const update_promises = Object.entries(settings).map(([key, value]) => {
       if (!this.get_adapter(key)) return ok(null);
-      return this.set_setting(guild_id, key, value);
+      return this.set_setting(guild_id, key, value, audit);
     });
 
     const results = await Promise.all(update_promises);
@@ -122,7 +136,7 @@ export default class SettingService {
     return ok();
   }
 
-  async remove_setting(guild_id: string, setting_key: string) {
+  async remove_setting(guild_id: string, setting_key: string, audit: AuditMeta) {
     const promises = Promise.all([
       this.db.delete_guild_setting_value(guild_id, setting_key),
       this.r.del([guild_id, setting_key]),

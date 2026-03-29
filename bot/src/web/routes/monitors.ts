@@ -11,6 +11,7 @@ import { err, ok } from 'neverthrow';
 import { ai_service } from '@providers/services/ai_service';
 import { safe_route } from 'web/neverthrow_wrapper';
 import { api_err, HTTPCodes } from 'web/utils/error';
+import { AuditMeta } from 'services/AuditService';
 
 const router = Router();
 
@@ -50,15 +51,13 @@ router.post(
         return api_err(HTTPCodes.PAYMENT_REQUIRED, 'global monitors are a premium feature');
     }
 
-    const r = await channel_service.add_monitor(monitor.target_id, monitor.guild_id, monitor);
-    if (r.isOk()) {
-      audit_service
-        .log_monitor_added(monitor.target_id, monitor.guild_id, req.user_id!, monitor)
-        .then((r) => {
-          if (r.isErr()) res.locals.logger.error('could not audit monitor creation', r.error);
-        });
-      return ok({ message: 'created' });
-    }
+    const audit_meta: AuditMeta = { executor_id: req.user_id!, guild_id };
+    const r = await channel_service.add_monitor(
+      monitor.target_id,
+      monitor.guild_id,
+      audit_meta,
+      monitor,
+    );
 
     return r;
   }),
@@ -100,12 +99,9 @@ router.delete(
     const monitor_id = req.params.monitor_id as string;
     const guild_id = req.params.guild_id as string;
 
-    audit_service.log_monitor_removed(monitor_id, req.user_id!, guild_id).then((res) => {
-      if (res.isOk()) ipc_client.send_to_shard_having_guild(guild_id, 'audit_log', res.value);
-      if (res.isErr()) ress.locals.logger.error('could not add audit log thing', res.error);
-    });
+    const audit_meta: AuditMeta = { executor_id: req.user_id!, guild_id };
 
-    return channel_service.remove_monitor(monitor_id);
+    return channel_service.remove_monitor(monitor_id, audit_meta);
   }),
 );
 

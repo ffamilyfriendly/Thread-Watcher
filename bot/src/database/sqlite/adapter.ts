@@ -319,7 +319,7 @@ export default class Sqlite implements Database {
       })
       .returning({ id: schema.TicketPanels.panel_id });
 
-    return ok(val[0]?.id);
+    return ok({ panel_id: val[0]?.id });
   }
 
   @with_error_handling
@@ -495,14 +495,22 @@ export default class Sqlite implements Database {
     guild_id: string,
     setting_id: string,
     setting_value: string,
-  ): Promise<Result<void, DatabaseError>> {
+  ): Promise<Result<string, DatabaseError>> {
     await this.ensure_guild(guild_id);
-    await this.drizzle.insert(schema.Settings).values({
-      guild_id,
-      setting_id,
-      setting_value,
-    });
-    return ok();
+    const res = await this.drizzle
+      .insert(schema.Settings)
+      .values({
+        guild_id,
+        setting_id,
+        setting_value,
+      })
+      .onConflictDoUpdate({
+        target: [schema.Settings.guild_id, schema.Settings.setting_id],
+        set: { setting_value },
+      })
+      .returning({ old_value: schema.Settings.setting_value });
+
+    return ok(res[0].old_value);
   }
 
   @with_error_handling
@@ -566,6 +574,8 @@ export default class Sqlite implements Database {
         and(eq(schema.Monitors.target_id, channel_id), eq(schema.Monitors.is_suspended, false)),
       );
 
+    if (!val[0]) return ok(null);
+
     return with_schema(val[0], ZMonitor);
   }
 
@@ -622,7 +632,7 @@ export default class Sqlite implements Database {
 
     const val = await this.drizzle.query.Audit.findMany({
       where: and(...conditions),
-      orderBy: schema.Audit.id,
+      orderBy: desc(schema.Audit.id),
       limit,
     });
 

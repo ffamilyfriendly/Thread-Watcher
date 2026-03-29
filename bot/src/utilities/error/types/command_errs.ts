@@ -2,6 +2,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ChannelType,
   ColorResolvable,
   CommandInteraction,
   EmbedBuilder,
@@ -69,6 +70,24 @@ export class GenericCommandError extends EmbeddableError {
     this.title = title;
     this.message = message;
     this.docs_slug = docs_slug;
+  }
+}
+
+export class WrongChannelType extends EmbeddableError {
+  constructor(
+    readonly channel_id: string,
+    expected_types: ChannelType[],
+  ) {
+    super(`channel ${channel_id} was not one of ${expected_types.join(', ')}`);
+  }
+
+  protected configure_embed(
+    embed: EmbedBuilder,
+    interaction: RepliableInteraction,
+    t: I18nType,
+  ): void {
+    embed.setTitle(t('errors.channel_type_title'));
+    embed.setDescription(t('errors.channel_type_body', { channel_tag: `<#${this.channel_id}>` }));
   }
 }
 

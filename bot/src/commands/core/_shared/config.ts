@@ -1,8 +1,10 @@
-import { audit_service } from '@providers/services/audit_service';
 import { setting_service } from '@providers/services/setting_service';
 import { ButtonInteraction } from 'discord.js';
+import { CommandContext } from 'interfaces/Command';
 import { SettingSchema, SettingValue } from 'interfaces/Settings';
-import { CommandContext } from 'utilities/command_context';
+import { err, ok } from 'neverthrow';
+import { AuditMeta } from 'services/AuditService';
+import { safe_delete, safe_update } from 'utilities/interaction_helpers';
 
 interface State<T = SettingValue> {
   value: T | null;
@@ -21,23 +23,22 @@ export function generate_embed<T extends SettingValue>(
   setting: SettingSchema<T>,
   state: State<T>,
 ) {
-  return ctx.build_embed({
-    title: setting.name,
-    description: setting.description,
-    style: 'info',
-    fields: [
-      {
-        name: 'Current',
-        value: state.value ? setting.adapter.display_value(state.value) : '`null`',
-        inline: true,
-      },
-      {
-        name: 'Default',
-        value: setting.default ? setting.adapter.display_value(setting.default) : '`null`',
-        inline: true,
-      },
-    ],
-  });
+  const e = ctx.build_embed('info');
+  e.setTitle(setting.name);
+  e.setDescription(setting.description);
+  e.setFields([
+    {
+      name: 'Current',
+      value: state.value ? setting.adapter.display_value(state.value) : '`<null>`',
+      inline: true,
+    },
+    {
+      name: 'Default',
+      value: setting.default ? setting.adapter.display_value(setting.default) : '`<null>`',
+      inline: true,
+    },
+  ]);
+  return e;
 }
 
 export async function handle_apply_callback<T extends SettingValue>(
@@ -50,35 +51,29 @@ export async function handle_apply_callback<T extends SettingValue>(
   let setting_result;
 
   // If the new setting value is null we're deleting the row instead of setting the value to null
+  const audit_value: AuditMeta = { executor_id: response.user.id, guild_id: response.guildId };
   if (state.value) {
-    setting_result = await setting_service.set_setting(response.guildId, setting.key, state.value);
+    setting_result = await setting_service.set_setting(
+      response.guildId,
+      setting.key,
+      state.value,
+      audit_value,
+    );
   } else {
-    setting_result = await setting_service.remove_setting(response.guildId, setting.key);
+    setting_result = await setting_service.remove_setting(
+      response.guildId,
+      setting.key,
+      audit_value,
+    );
   }
 
-  if (setting_result.isErr()) {
-    ctx.logger.error('Could not set config value', setting_result.error);
-    return ctx.err(setting_result.error);
-  }
+  if (setting_result.isErr()) return err(setting_result.error);
 
-  const log = await audit_service.log_config_update(
-    response.user.id,
-    response.guildId,
-    setting.key,
-    state.old_value,
-    state.value,
-  );
-
-  if (log.isErr()) return ctx.err(log.error);
-
-  ctx.send_audit(log.value, response);
+  return ok();
 }
 
 export function handle_cancel_button(response: ButtonInteraction) {
-  response.update({
-    components: [],
-    content: '-# cancelled',
-  });
+  safe_delete(response);
 }
 
 export function handle_default_button<T extends SettingValue>(
@@ -90,7 +85,5 @@ export function handle_default_button<T extends SettingValue>(
   state.value = setting.default;
   const embed = generate_embed(ctx, setting, state);
 
-  response.update({
-    embeds: [embed],
-  });
+  safe_update(response, { embeds: [embed] });
 }

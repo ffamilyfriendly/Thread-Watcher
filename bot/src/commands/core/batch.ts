@@ -17,8 +17,7 @@ import { make_advanced_embed, State } from 'commands/core/_shared/advanced_view'
 import { create_channel_link } from './list';
 import ThreadService from 'services/ThreadService';
 import { map_err } from 'utilities/error';
-import { CommandContext } from 'utilities/command_context';
-import { PartialAuditObject } from 'services/AuditService';
+import { AuditMeta, PartialAuditObject } from 'services/AuditService';
 import { get_target } from './_shared/check_channel_values';
 import { audit_service } from '@providers/services/audit_service';
 import { client } from '@providers/client';
@@ -107,15 +106,24 @@ async function handle_execution(state: State, interaction: Interaction, context:
 
     let res: ResultAsync<unknown, Error>;
 
+    const audit: AuditMeta = {
+      executor_id: interaction.user.id,
+      guild_id: state.guild_id,
+      reason: '/batch invoked',
+    };
+
     switch (context.action) {
       case 'WATCH':
-        res = ResultAsync.fromPromise(thread_service.watch_thread(thread), map_err);
+        res = ResultAsync.fromPromise(thread_service.watch_thread(thread, audit), map_err);
         break;
       case 'UNWATCH':
-        res = ResultAsync.fromPromise(thread_service.unwatch_thread(thread), map_err);
+        res = ResultAsync.fromPromise(thread_service.unwatch_thread(thread, audit), map_err);
         break;
       case 'TOGGLE':
-        res = ResultAsync.fromPromise(thread_service.toggle_thread_watch_status(thread), map_err);
+        res = ResultAsync.fromPromise(
+          thread_service.toggle_thread_watch_status(thread, audit),
+          map_err,
+        );
         break;
     }
 
@@ -123,38 +131,23 @@ async function handle_execution(state: State, interaction: Interaction, context:
   }
 
   const result_thing = await ResultAsync.combineWithAllErrors(results);
-  if (result_thing.isErr()) {
-    return state._ctx.err(result_thing.error[0]);
-  }
-
-  const log = await audit_service.log_batch_action(
-    interaction.guildId!,
-    interaction.user.id,
-    actioned_threads,
-    context.action,
-  );
-
-  if (log.isErr()) return state._ctx.err(log.error);
-  const logged_events: PartialAuditObject[] = [log.value];
+  if (result_thing.isErr()) return err(result_thing.error);
 
   if (context.watch_future) {
-    ResultAsync.fromPromise(
-      channel_service.add_monitor(state.target_channel.id, state.guild_id, state.filters),
-      map_err,
-    );
-
-    const channel_monitor_log = await audit_service.log_monitor_added(
+    const could_add_monitor = await channel_service.add_monitor(
       state.target_channel.id,
-      interaction.guildId!,
-      interaction.user.id,
+      state.guild_id,
+      {
+        executor_id: interaction.user.id,
+        guild_id: state.guild_id,
+        reason: "'watch-new' option on /batch",
+      },
       state.filters,
     );
 
-    if (channel_monitor_log.isErr()) return state._ctx.err(channel_monitor_log.error);
-    logged_events.push(channel_monitor_log.value);
+    if (could_add_monitor.isErr()) return err(could_add_monitor.error);
   }
 
-  state._ctx.send_audit(logged_events, interaction);
   state._ctx.ok();
 }
 

@@ -56,10 +56,10 @@ export interface Command<TCommandCTX> extends BaseCommand {
   run: (
     interaction: GuildChatInteraction,
     ctx: TCommandCTX,
-  ) => Promise<Result<void, CommandError>> | Result<void, CommandError>;
+  ) => Promise<Result<unknown, CommandError>> | Result<unknown, CommandError>;
   autocomplete?: (
     interaction: AutocompleteInteraction,
-  ) => Result<void, CommandError> | Promise<Result<void, CommandError>>;
+  ) => Result<unknown, CommandError> | Promise<Result<unknown, CommandError>>;
   access_control: AccessControl;
   command_scope: RegistrationScope;
 }

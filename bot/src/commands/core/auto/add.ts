@@ -21,22 +21,12 @@ async function handle_execution(state: State, interaction: Interaction, context:
   const did_work = await channel_service.add_monitor(
     state.target_channel.id,
     state.guild_id,
+    interaction.user.id,
     state.filters,
   );
   if (did_work.isErr()) {
     return state._ctx.err(map_err(did_work.error));
   }
-
-  const audit_res = await audit_service.log_monitor_added(
-    state.target_channel.id,
-    interaction.guildId!,
-    interaction.user.id,
-    state.filters,
-  );
-
-  if (audit_res.isErr()) return state._ctx.err(audit_res.error);
-
-  state._ctx.send_audit(audit_res.value, interaction);
   state._ctx.ok();
 }
 
@@ -60,6 +50,7 @@ async function run(
   interaction: GuildChatInteraction,
   ctx: CommandContext,
 ): Promise<Result<void, CommandError>> {
+  console.log('HELLO 1!');
   const parent = await get_target(interaction);
 
   const advanced = !!interaction.options.getBoolean('advanced');
@@ -70,8 +61,11 @@ async function run(
 
   await interaction.deferReply();
 
+  console.log('GETTING MONITOR');
   const existing_monitor = await channel_service.get_monitor(parent.value.id);
+  console.log('GOT MONITOR');
   if (existing_monitor.isErr()) {
+    console.log('MONITOR_FAILED!½');
     return err(existing_monitor.error);
   }
 

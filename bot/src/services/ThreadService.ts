@@ -1,3 +1,4 @@
+import { event_bus } from '@providers/event_bus';
 import { logger } from '@providers/logger';
 import { FilterData, ThreadSearchData, ZThreadData } from '@watcher/shared';
 import { Client, ThreadChannel } from 'discord.js';
@@ -6,6 +7,7 @@ import Redis from 'ioredis';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import RedisWrapper from 'utilities/redis';
+import { AuditMeta } from './AuditService';
 
 export type GenericThread = ThreadChannel;
 
@@ -47,7 +49,7 @@ export default class ThreadService {
     this.r = new RedisWrapper(redis, ThreadService.CACHE_TTL_SECONDS, 'thread');
   }
 
-  async insert_thread(thread: GenericThread, managed_by?: string) {
+  async insert_thread(thread: GenericThread, audit: AuditMeta, managed_by?: string) {
     const last_activity = thread.lastMessageId
       ? convert_snowflake_to_date(thread.lastMessageId)
       : thread.createdAt;
@@ -67,7 +69,17 @@ export default class ThreadService {
 
     const res = await this.db.insert_thread(thread_data);
 
-    if (res.isOk()) this.r.set(thread.id, thread_data, ZThreadData);
+    if (res.isOk()) {
+      event_bus.emit('thread:watched', {
+        ...audit,
+        data: {
+          audit_type: 'THREAD_WATCHED',
+          thread_id: thread.id,
+          due_to_monitor: managed_by ?? null,
+        },
+      });
+      this.r.set(thread.id, thread_data, ZThreadData);
+    }
 
     return res;
   }
@@ -116,10 +128,30 @@ export default class ThreadService {
     return this.db.get_stale_threads_for_guilds(guild_ids);
   }
 
-  async set_thread_watch_status(thread_id: string, is_watched: boolean) {
+  async set_thread_watch_status(thread_id: string, audit: AuditMeta, is_watched: boolean) {
     const result = await this.db.set_thread_watched(thread_id, is_watched);
     if (result.isOk()) {
       await this.r.del(thread_id);
+    }
+
+    if (is_watched) {
+      event_bus.emit('thread:watched', {
+        ...audit,
+        data: {
+          audit_type: 'THREAD_WATCHED',
+          thread_id,
+          due_to_monitor: null,
+        },
+      });
+    } else {
+      event_bus.emit('thread:unwatched', {
+        ...audit,
+        data: {
+          audit_type: 'THREAD_UNWATCHED',
+          thread_id,
+          due_to_monitor: null,
+        },
+      });
     }
 
     return result;
@@ -156,11 +188,12 @@ export default class ThreadService {
    * @param is_managed_by_parent if the thread was watched as a result of a channel monitor
    * @returns
    */
-  async watch_thread(thread: GenericThread, managed_by?: string) {
+  async watch_thread(thread: GenericThread, audit: AuditMeta, managed_by?: string) {
     const db_entry = await this.get_thread(thread.id, false);
     if (db_entry.isErr()) return err(db_entry.error);
 
-    if (!db_entry.value) return (await this.insert_thread(thread, managed_by)).map(() => true);
+    if (!db_entry.value)
+      return (await this.insert_thread(thread, audit, managed_by)).map(() => true);
 
     // Here we're setting managed_by to null if "managed_by" is undefined as we want a manual watch to override any monitors
     if (!managed_by && db_entry.value.managed_by) {
@@ -173,10 +206,10 @@ export default class ThreadService {
 
     if (db_entry.value.is_watched) return ok(false);
 
-    return (await this.set_thread_watch_status(thread.id, true)).map(() => true);
+    return (await this.set_thread_watch_status(thread.id, audit, true)).map(() => true);
   }
 
-  async unwatch_thread(thread: GenericThread, remove_manager = false) {
+  async unwatch_thread(thread: GenericThread, audit: AuditMeta, remove_manager = false) {
     const db_entry = await this.get_thread(thread.id, false);
     if (db_entry.isErr()) return err(db_entry.error);
 
@@ -190,10 +223,10 @@ export default class ThreadService {
 
     if (db_entry.value === null || !db_entry.value.is_watched) return ok(false);
 
-    return (await this.set_thread_watch_status(thread.id, false)).map(() => true);
+    return (await this.set_thread_watch_status(thread.id, audit, false)).map(() => true);
   }
 
-  async toggle_thread_watch_status(thread: GenericThread) {
+  async toggle_thread_watch_status(thread: GenericThread, audit: AuditMeta) {
     const db_thread_entry = await this.get_thread(thread.id, false);
 
     if (db_thread_entry.isErr()) return err(db_thread_entry.error);
@@ -201,10 +234,10 @@ export default class ThreadService {
     const is_watched = db_thread_entry.value && db_thread_entry.value.is_watched;
 
     if (db_thread_entry.value && db_thread_entry.value.is_watched) {
-      const unwatch_result = await this.unwatch_thread(thread, true);
+      const unwatch_result = await this.unwatch_thread(thread, audit, true);
       if (unwatch_result.isErr()) return err(unwatch_result.error);
     } else {
-      const watch_result = await this.watch_thread(thread);
+      const watch_result = await this.watch_thread(thread, audit);
       if (watch_result.isErr()) return err(watch_result.error);
     }
 
@@ -213,6 +246,7 @@ export default class ThreadService {
 
   async delete_thread(thread_id: string) {
     this.r.del(thread_id);
+
     return this.db.delete_thread(thread_id);
   }
 

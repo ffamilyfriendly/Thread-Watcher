@@ -9,6 +9,7 @@ import { Guild, GuildChannel, Role } from 'discord.js';
 import { Router } from 'express';
 import { RouteFile } from 'interfaces/Web';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
+import { AuditMeta } from 'services/AuditService';
 import { map_err } from 'utilities/error';
 import { enforce_policy } from 'web/auth/auth';
 import { Policies, RequestWithUser } from 'web/auth/policies';
@@ -212,13 +213,17 @@ router.post(
     const guild_id = req.params.guild_id as string;
     const body = settings_schema.safeParse(req.body);
 
+    console.log('POSTED /SETTINGS', body);
+
     if (!body.success) return err(body.error);
 
     const { guild_id: _, ...settings_to_save } = body.data;
     const old_settings = await setting_service.get_guild_settings(guild_id);
     if (old_settings.isErr()) return err(old_settings.error);
 
-    const update_result = await setting_service.set_settings(guild_id, settings_to_save);
+    const meta_obj: AuditMeta = { executor_id: req.user_id!, guild_id };
+
+    const update_result = await setting_service.set_settings(guild_id, settings_to_save, meta_obj);
     if (update_result.isErr()) return err(update_result.error);
 
     const old_values: Record<string, string> = {};
@@ -235,18 +240,6 @@ router.post(
 
       const old_value = old_values[key];
       if (typeof old_value != 'string') continue;
-
-      const audit_res = await audit_service.log_config_update(
-        req.user_id!,
-        guild_id,
-        key,
-        old_value,
-        value as string,
-      );
-
-      if (audit_res.isOk()) {
-        ipc_client.send_to_shard_having_guild(guild_id, 'audit_log', audit_res.value);
-      }
     }
 
     return ok({ message: 'updated' });

@@ -27,6 +27,7 @@ router.delete(
   enforce_policy(Policies.Common.bot_master_or_guild_master),
   safe_route(async (req, res) => {
     const panel_id = req.params.panel_id as string;
+    console.log(`panel_id:`, panel_id);
     return ticket_service.delete_panel(panel_id);
   }),
 );

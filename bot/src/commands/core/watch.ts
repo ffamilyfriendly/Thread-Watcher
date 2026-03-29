@@ -8,11 +8,10 @@ import {
   ThreadChannel,
 } from 'discord.js';
 import { RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { type Command } from 'interfaces/Command';
-import { err, Result } from 'neverthrow';
-import { PartialAuditObject } from 'services/AuditService';
-import { CommandContext } from 'utilities/command_context';
-import { CommandError, DatabaseError } from 'utilities/error/def';
+import { CommandContext, type Command } from 'interfaces/Command';
+import { err, ok, Result } from 'neverthrow';
+import { AuditMeta, PartialAuditObject } from 'services/AuditService';
+import { CommandError, DatabaseError, WrongChannelType } from 'utilities/error/def';
 
 async function run(
   interaction: ChatInputCommandInteraction,
@@ -21,37 +20,25 @@ async function run(
   const thread = interaction.options.getChannel('thread') || interaction.channel;
 
   if (!(thread instanceof ThreadChannel)) {
-    return err(new Error('thread not instanceof threadchannel'));
+    return err(
+      new WrongChannelType(thread?.id ?? 'thread_id', [
+        ChannelType.PublicThread,
+        ChannelType.PrivateThread,
+        ChannelType.AnnouncementThread,
+      ]),
+    );
   }
 
-  const result = await thread_service.toggle_thread_watch_status(thread);
+  const audit_meta: AuditMeta = {
+    executor_id: interaction.user.id,
+    guild_id: interaction.guildId!,
+  };
 
-  if (result.isErr()) {
-    return err(result.error);
-  } else {
-    let log: Result<PartialAuditObject, DatabaseError>;
-    if (result.value) {
-      log = await audit_service.log_thread_watch(
-        thread.id,
-        thread.guildId,
-        interaction.user.id,
-        '',
-      );
-    } else {
-      log = await audit_service.log_thread_unwatch(
-        thread.id,
-        thread.guildId,
-        interaction.user.id,
-        '',
-      );
-    }
+  const result = await thread_service.toggle_thread_watch_status(thread, audit_meta);
 
-    if (log.isErr()) return ctx.err(log.error);
+  if (result.isErr()) return err(result.error);
 
-    ctx.send_audit(log.value);
-  }
-
-  return ctx.ok();
+  return ok();
 }
 
 const command_data = new SlashCommandBuilder()

@@ -75,6 +75,5 @@ export function clean_keys<T extends Object>(obj: obj): Partial<obj> {
 export function with_schema<T>(data: unknown, schema: z.ZodType<T>): Result<T, z.ZodError<T>> {
   const parsed = schema.safeParse(data);
   if (parsed.success) return ok(parsed.data);
-
   return err(parsed.error);
 }

@@ -15,16 +15,16 @@ import {
 } from 'discord.js';
 
 import { GuildChatInteraction, RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { type Command } from 'interfaces/Command';
+import { CommandContext, type Command } from 'interfaces/Command';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
-import { CommandContext } from 'utilities/command_context';
 import { map_err } from 'utilities/error';
 import { CommandError } from 'utilities/error/def';
+import { safe_reply_or_followup } from 'utilities/interaction_helpers';
 
 type DisplayType = 'THREADS' | 'CHANNELS';
 
-function create_buttons(guild_id: string, display_as: DisplayType) {
+function create_buttons(guild_id: string, display_as: DisplayType, ctx: CommandContext) {
   const url =
     `${config.web.hostname}/dashboard/${guild_id}/` +
     (display_as === 'CHANNELS' ? 'monitors' : 'threads');
@@ -34,7 +34,7 @@ function create_buttons(guild_id: string, display_as: DisplayType) {
   const btn_website_cta = new ButtonBuilder()
     .setStyle(ButtonStyle.Link)
     .setURL(url)
-    .setLabel('View Online');
+    .setLabel(ctx.t('commands.list.btn_view_online'));
 
   return { btn_back, btn_next, btn_website_cta };
 }
@@ -231,7 +231,7 @@ class PageGenerator {
 async function run(
   interaction: GuildChatInteraction,
   ctx: CommandContext,
-): Promise<Result<void, CommandError>> {
+): Promise<Result<unknown, CommandError>> {
   function filter_function(btn_interaction: Interaction) {
     return interaction.user.id === btn_interaction.user.id;
   }
@@ -246,17 +246,19 @@ async function run(
   if (data_to_display.isErr()) return err(data_to_display.error);
 
   if (data_to_display.value.length === 0) {
-    ctx.build_embed({
-      title: 'No data returned',
-      description: `There's nothing to show`,
-      style: 'warning',
-      auto_respond: true,
-    });
-    return ok();
+    const e = ctx.build_embed('info');
+    e.setTitle(ctx.t('commands.list.no_data_title'));
+    e.setDescription(ctx.t('commands.list.no_data_body'));
+
+    return safe_reply_or_followup(interaction, { embeds: [e] });
   }
 
   await interaction.deferReply(show_private ? { flags: 'Ephemeral' } : {});
-  const { btn_back, btn_next, btn_website_cta } = create_buttons(interaction.guildId, display_type);
+  const { btn_back, btn_next, btn_website_cta } = create_buttons(
+    interaction.guildId,
+    display_type,
+    ctx,
+  );
   const button_row = new ActionRowBuilder<ButtonBuilder>();
   const dashboard_row = new ActionRowBuilder<ButtonBuilder>();
   button_row.addComponents(btn_back, btn_next);

@@ -1,10 +1,10 @@
-import { entitlement_service } from '@providers/services/entitlement_service';
+import { event_bus } from '@providers/event_bus';
 import { EditMonitor, FilterData, ZMonitor } from '@watcher/shared';
-import { Channel } from 'discord.js';
 import { Database } from 'interfaces/Database';
 import Redis from 'ioredis';
 import { err, ok } from 'neverthrow';
 import RedisWrapper from 'utilities/redis';
+import { AuditMeta } from './AuditService';
 
 export default class ChannelService {
   static readonly CACHE_TTL_SECONDS = 900;
@@ -40,7 +40,7 @@ export default class ChannelService {
     return await this.db.get_monitors_count(guild_id);
   }
 
-  async add_monitor(monitor_id: string, guild_id: string, filters?: FilterData) {
+  async add_monitor(monitor_id: string, guild_id: string, audit: AuditMeta, filters?: FilterData) {
     const channel_data = {
       target_id: monitor_id,
       guild_id: guild_id,
@@ -59,6 +59,11 @@ export default class ChannelService {
 
     if (res.isOk()) {
       this.r.set(monitor_id, combined_object, ZMonitor);
+
+      event_bus.emit('monitor:created', {
+        ...audit,
+        data: { audit_type: 'MONITOR_ADD', target_channel: monitor_id, filters },
+      });
     }
 
     return res;
@@ -69,8 +74,18 @@ export default class ChannelService {
     return await this.db.edit_monitor(channel_id, edit_obj);
   }
 
-  async remove_monitor(channel_id: string) {
+  async remove_monitor(channel_id: string, audit: AuditMeta) {
     await this.r.del(channel_id);
-    return await this.db.delete_monitor(channel_id);
+
+    const delete_res = await this.db.delete_monitor(channel_id);
+
+    if (delete_res.isOk()) {
+      event_bus.emit('monitor:deleted', {
+        ...audit,
+        data: { audit_type: 'MONITOR_REMOVE', target_channel: channel_id },
+      });
+    }
+
+    return delete_res;
   }
 }

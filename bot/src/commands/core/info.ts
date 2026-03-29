@@ -6,26 +6,18 @@ import {
   SlashCommandBuilder,
 } from 'discord.js';
 import { RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { type Command } from 'interfaces/Command';
+import { CommandContext, type Command } from 'interfaces/Command';
 import { ok, Result } from 'neverthrow';
-import { CommandContext } from 'utilities/command_context';
 import { CommandError } from 'utilities/error/def';
+import { safe_reply_or_followup } from 'utilities/interaction_helpers';
 
 function run(
   interaction: ChatInputCommandInteraction,
   ctx: CommandContext,
-): Result<void, CommandError> {
-  const embed = ctx.build_embed({
-    title: 'Information',
-    description: `Thread-Watcher is an [Open Source](https://github.com/ffamilyfriendly/thread-watcher) thread focused bot created to take your threads to the **next level**!
-
-With Thread-Watcher, you can effortlessly organise and enhance your threads with powerful features and intuitive controls. 
-
-We hope that you'll find Thread-Watcher to be a great companion in your server and welcome you to our support server if there's anything we can do to help.
-`,
-    style: 'info',
-    auto_respond: false,
-  });
+): Promise<Result<unknown, CommandError>> {
+  const embed = ctx.build_embed('info');
+  embed.setTitle(ctx.t('commands.info.title'));
+  embed.setDescription(ctx.t('commands.info.description'));
 
   const button_row = new ActionRowBuilder<ButtonBuilder>();
   const support_server_button = new ButtonBuilder();
@@ -33,22 +25,17 @@ We hope that you'll find Thread-Watcher to be a great companion in your server a
 
   website_link_button.setStyle(ButtonStyle.Link);
   website_link_button.setURL('https://threadwatcher.xyz');
-  website_link_button.setLabel('Website');
+  website_link_button.setLabel(ctx.t('commands.info.btn_website'));
   website_link_button.setEmoji('🌐');
 
   support_server_button.setStyle(ButtonStyle.Link);
   support_server_button.setURL('https://botsuite.co/join');
-  support_server_button.setLabel('Support Server');
+  support_server_button.setLabel(ctx.t('commands.info.btn_support'));
   support_server_button.setEmoji('🆘');
 
   button_row.addComponents(website_link_button, support_server_button);
 
-  interaction.reply({
-    embeds: [embed],
-    components: [button_row],
-  });
-
-  return ok();
+  return safe_reply_or_followup(interaction, { embeds: [embed], components: [button_row] });
 }
 
 const command_data = new SlashCommandBuilder()

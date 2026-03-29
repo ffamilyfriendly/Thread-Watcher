@@ -6,7 +6,7 @@ import Redis from 'ioredis';
 import { map_err } from './error';
 import z from 'zod';
 import { with_schema } from 'database';
-import { ZDiscordUser, ZPublicTicketMessage } from '@watcher/shared';
+import { ZAuditData, ZDiscordUser, ZPublicTicketMessage } from '@watcher/shared';
 
 interface EnsuredSchemaCall<E extends z.ZodType, R extends z.ZodType> {
   event_name: string;
@@ -39,6 +39,11 @@ export const FUNCS = {
     expected_data: z.object({
       ticket_id: z.string(),
     }),
+    return_schema: z.void(),
+  },
+  bus_event: {
+    event_name: 'bus_event',
+    expected_data: ZAuditData.omit({ id: true, timestamp: true }).extend({ event_key: z.string() }),
     return_schema: z.void(),
   },
 } satisfies Record<string, EnsuredSchemaCall<z.ZodType, z.ZodType>>;

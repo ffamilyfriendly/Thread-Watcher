@@ -9,7 +9,7 @@ import { logger } from '@providers/logger';
 
 export async function load_events(client: Client, refresh_events = false) {
   return load_module_as_and<Event>(
-    './src/events',
+    './src/events/discord',
     (modules) => {
       for (const event of modules) {
         if (refresh_events) client.removeAllListeners(event.event_name);

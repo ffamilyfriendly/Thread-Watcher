@@ -1,5 +1,4 @@
 import { client } from '@providers/client';
-import { audit_service } from '@providers/services/audit_service';
 import { channel_service } from '@providers/services/channel_service';
 import { entitlement_service } from '@providers/services/entitlement_service';
 import { guild_service } from '@providers/services/guild_service';
@@ -10,8 +9,9 @@ import { err, ok, ResultAsync } from 'neverthrow';
 import ThreadService from 'services/ThreadService';
 import { Logger } from 'tslog';
 import { map_err } from 'utilities/error';
-import { try_log } from 'utilities/log_channel_stuff';
 import on_interaction from './_cmd_handler';
+import { AuditMeta } from 'services/AuditService';
+import { config } from '@providers/config';
 
 async function fetch_responsible_manager(thread: ThreadChannel) {
   const res_thread = await thread_service.get_thread(thread.id);
@@ -72,28 +72,18 @@ export async function check_should_be_watched(thread: ThreadChannel, l: Logger<u
     monitor,
   );
 
+  const audit_meta: AuditMeta = {
+    executor_id: config.clientID,
+    guild_id: thread.guildId,
+    reason: 'channel monitor',
+  };
+
   if (should_be_watched.value) {
-    const watch_res = await thread_service.watch_thread(thread, monitor.target_id);
+    const watch_res = await thread_service.watch_thread(thread, audit_meta, monitor.target_id);
     if (watch_res.isErr()) return err(map_err(watch_res.error));
-    if (watch_res.value)
-      audit_service.log_thread_watch(
-        thread.id,
-        thread.guildId,
-        client.user?.id!,
-        `Thread fullfills monitor filters!`,
-        monitor.target_id,
-      );
   } else {
-    const unwatch_res = await thread_service.unwatch_thread(thread);
+    const unwatch_res = await thread_service.unwatch_thread(thread, audit_meta);
     if (unwatch_res.isErr()) return err(map_err(unwatch_res.error));
-    if (unwatch_res.value)
-      audit_service.log_thread_unwatch(
-        thread.id,
-        thread.guildId,
-        client.user?.id!,
-        `Thread no longer fullfills monitor filters!`,
-        monitor.target_id,
-      );
   }
 
   return ok();
@@ -141,23 +131,21 @@ async function on_thread_update(old: ThreadChannel, thread: ThreadChannel, l: Lo
   const audit_entry = audit?.entries.find((audit_entry) => audit_entry.targetId == thread.id);
   const change = audit_entry?.changes.find((change) => change.key == 'archived');
 
+  const audit_meta: AuditMeta = {
+    executor_id: config.clientID,
+    guild_id: thread.guildId,
+    reason: 'channel monitor',
+  };
+
   if (change?.new) {
     l.info(
       `Thread ${thread.id} was unwatched due to manual archival by ${audit_entry?.executorId}`,
     );
-    const unwatch_res = await thread_service.unwatch_thread(thread);
+    const unwatch_res = await thread_service.unwatch_thread(thread, audit_meta);
     if (unwatch_res.isErr()) {
       l.error('could not unwatch thread');
       return err(map_err(unwatch_res.error));
     }
-    const unwatch_event = audit_service.log_thread_unwatch(
-      thread.id,
-      thread.guildId,
-      audit_entry?.executorId ?? 'unknown',
-      'manual archival',
-    );
-
-    try_log(unwatch_event, l);
 
     return ok();
   }
@@ -165,7 +153,7 @@ async function on_thread_update(old: ThreadChannel, thread: ThreadChannel, l: Lo
   const thread_is_watched = await thread_service.get_thread(thread.id, true);
   if (thread_is_watched.isErr()) return err(map_err(thread_is_watched.error));
 
-  const is_watched = thread_is_watched !== null;
+  const is_watched = thread_is_watched.value !== null;
   const is_fixable = thread.archived && thread.unarchivable && !thread.locked;
   const should_be_edited = is_watched && is_fixable;
 

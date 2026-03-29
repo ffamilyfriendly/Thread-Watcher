@@ -13,6 +13,8 @@ import { entitlement_service } from '@providers/services/entitlement_service';
 import { LocalClientProvider } from 'services/EntitlementService';
 import { ticket_service } from '@providers/services/ticket_service';
 import { fetch_bot_context as fetch_user_bot_context } from 'fetchers/user_fetcher';
+import { event_bus } from '@providers/event_bus';
+import { send_audit } from 'utilities/send_audit_log';
 
 const logger = Logger.with_name('bot');
 const config = Config.instance;
@@ -23,6 +25,7 @@ const redis = Redis.instance;
 // set provider strategies
 entitlement_service.set_provider(new LocalClientProvider(client));
 ticket_service.set_user_fetcher(fetch_user_bot_context);
+event_bus.set_on_emit(send_audit);
 
 async function bootstrap() {
   initialize_i18n(logger);

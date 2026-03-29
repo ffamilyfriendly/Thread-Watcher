@@ -93,7 +93,7 @@ interface GuildSettings {
     guild_id: string,
     setting_id: string,
     setting_value: string,
-  ) => DBResult;
+  ) => DBResult<string>;
 
   delete_guild_setting_value: (guild_id: string, setting_id: string) => DBResult;
 }
@@ -121,7 +121,10 @@ interface Guilds {
 export type TicketInsertion = Omit<Ticket, 'closed_at' | 'status' | 'created_at'>;
 
 interface Tickets {
-  insert_ticket_panel: (guild_id: string, panel: Omit<TicketPanel, 'panel_id'>) => DBResult<string>;
+  insert_ticket_panel: (
+    guild_id: string,
+    panel: Omit<TicketPanel, 'panel_id'>,
+  ) => DBResult<{ panel_id: string }>;
   update_ticket_panel: (panel_id: string, data: Omit<EditTicketPanel, 'id'>) => DBResult;
   delete_ticket_panel: (panel_id: string) => DBResult;
   get_ticket_panels: (guild_id: string) => DBResult<TicketPanelMetaObj[]>;

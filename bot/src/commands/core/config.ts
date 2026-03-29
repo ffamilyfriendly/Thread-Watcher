@@ -8,11 +8,10 @@ import {
   SlashCommandBuilder,
 } from 'discord.js';
 import { GuildChatInteraction, RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { type Command } from 'interfaces/Command';
+import { CommandContext, type Command } from 'interfaces/Command';
 import settings_map from 'interfaces/Settings';
 import { err, ok, Result } from 'neverthrow';
 import { Vacuum } from 'services/ComponentService';
-import { CommandContext } from 'utilities/command_context';
 import {
   create_initial_state,
   generate_embed,
@@ -25,6 +24,7 @@ import { safe_parse } from 'utilities/parsing';
 import { setting_service } from '@providers/services/setting_service';
 import { component_service } from '@providers/services/component_service';
 import { CommandError } from 'utilities/error/def';
+import { safe_reply } from 'utilities/interaction_helpers';
 
 function create_buttons() {
   const apply_button = new ButtonBuilder().setStyle(ButtonStyle.Primary).setLabel('Save');
@@ -75,9 +75,8 @@ async function run(
     cleaner.add(
       component_service.wait_for_interaction_callback(apply_button, filter, (response) => {
         handle_apply_callback(response, ctx, setting, state);
-        ctx.ok();
         cleaner.clean();
-        resolve(ok());
+        return resolve(ok());
       }),
       component_service.wait_for_interaction_callback(reset_button, filter, (response) =>
         handle_default_button(response, setting, state, ctx),
@@ -85,7 +84,7 @@ async function run(
       component_service.wait_for_interaction_callback(cancel_button, filter, (response) => {
         handle_cancel_button(response);
         cleaner.clean();
-        resolve(ok());
+        return resolve(ok());
       }),
 
       component_service.wait_for_interaction_callback(component, filter, (response) => {
@@ -98,7 +97,7 @@ async function run(
               response.update({ embeds: [generate_embed(ctx, setting, state)] });
             },
             (error) => {
-              ctx.err(error);
+              resolve(err(error));
             },
           );
       }),
@@ -106,13 +105,11 @@ async function run(
 
     let embed = generate_embed(ctx, setting, state);
 
-    interaction.reply({
+    safe_reply(interaction, {
       embeds: [embed],
       components: [action_row, input_row],
       flags: 'Ephemeral',
     });
-
-    return ctx.get_execution_promise();
   });
 }
 
