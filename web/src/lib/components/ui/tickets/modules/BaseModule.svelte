@@ -7,6 +7,7 @@
 	import { use_pipeline } from '$lib/stores/pipeline.svelte';
 	import common from '$lib/style/common.module.scss';
 	import IDSelector from './components/IDSelector.svelte';
+	import { str_to_vibrant_clr } from '$lib/client/colour';
 
 	interface Props {
 		module: PipelineModule;
@@ -17,8 +18,9 @@
 
 	let { module = $bindable(), children, title, description }: Props = $props();
 
-	const accent = $derived(MODULE_OUTPUTS[module.type].accent_clr);
 	const pipeline = use_pipeline();
+
+	const accent = $derived(str_to_vibrant_clr(module.type))
 
 	function handle_drag_start(e: DragEvent) {
 		e.dataTransfer?.setData('optype', 'move');

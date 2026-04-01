@@ -11,7 +11,7 @@
 
 <BaseModule title="Assign Name" bind:module>
 	{#snippet description()}
-		Sets the name of the ticket
+		Customizes the ticket's name. By default tickets are named after the user ID of the user who opened them. Use this to give tickets a more descriptive name.
 	{/snippet}
 
 	<EditableAttribute

@@ -1,17 +1,11 @@
 <script lang="ts">
-	import { s_tooltip, tooltip } from '$lib/client/attachments/tooltip';
+	import { portal } from '$lib/client/attachments/portal';
+	import { tooltip } from '$lib/client/attachments/tooltip';
+	import { get_contrast_colour, str_to_vibrant_clr } from '$lib/client/colour';
 	import {
 		ArrowDown,
 		ArrowUp,
-		CircleMinus,
-		CirclePlus,
-		Grab,
 		Grip,
-		Hamburger,
-		HandGrab,
-		LineSquiggle,
-		Move,
-		Move3D
 	} from '@lucide/svelte';
 	import {
 		CATEGORY_NAMES,
@@ -41,10 +35,12 @@
 		mapped.set(mod_with_type.category, arr);
 	});
 
+
 	function create_ghost_pill(mod: ModuleWithType): HTMLDivElement {
 		const elem = document.createElement('div');
+		const accent_colour = str_to_vibrant_clr(mod.type)
 		elem.innerText = mod.name;
-		elem.style.backgroundColor = mod.accent_clr;
+		elem.style.backgroundColor = accent_colour;
 		elem.style.height = '25px';
 		elem.style.width = 'fit-content';
 		elem.style.padding = '.1rem .25rem';
@@ -76,9 +72,11 @@
 	}
 
 	let show_module_drawer = $state(false);
+	let ref_container = $state<HTMLElement>()
 </script>
 
 {#snippet module(mod: ModuleWithType)}
+{@const accent_colour = str_to_vibrant_clr(mod.type)}
 	<button
 		class="stop_a11y_complaints"
 		onclick={() => {
@@ -94,9 +92,9 @@
 			draggable="true"
 			ondragstart={(e) => handle_drag_start(e, mod)}
 			class="module"
-			style="--accent: {mod.accent_clr}"
+			style="--accent: {accent_colour}"
 		>
-			<p>{mod.name}</p>
+			<p class="module_name" style:color={get_contrast_colour(accent_colour)}>{mod.name}</p>
 
 			<div class="grip">
 				<Grip />
@@ -105,39 +103,40 @@
 	</button>
 {/snippet}
 
-<div class="drawer_container">
+<div bind:this={ref_container} class="drawer_container">
 	<div class="btn_container">
 		<button
-			{@attach tooltip({
-				content: show_module_drawer ? 'Hide Modules' : 'Show Modules',
-				placement: 'right'
-			})}
-			class:active={show_module_drawer}
-			onclick={() => (show_module_drawer = !show_module_drawer)}
-			class="drawer_btn"
-		>
-			{#if show_module_drawer}
-				<ArrowDown size={24} />
-			{:else}
-				<ArrowUp size={24} />
-			{/if}
-		</button>
-	</div>
+	{@attach tooltip({
+		content: show_module_drawer ? 'Hide Modules' : 'Show Modules',
+		placement: 'right'
+	})}
+	class:active={show_module_drawer}
+	onclick={() => (show_module_drawer = !show_module_drawer)}
+	class="drawer_btn"
+>
 	{#if show_module_drawer}
-		<div class="drawer" transition:slide={{ duration: 300 }}>
-			{#each mapped.entries() as [cat_type, modules], idx}
-				{@const cat_name = CATEGORY_NAMES[cat_type]}
-				<div class="section">
-					<b>{cat_name}</b>
-					<div class="list">
-						{#each modules as mod}
-							{@render module(mod)}
-						{/each}
-					</div>
-				</div>
-			{/each}
-		</div>
+		<ArrowDown size={24} />
+	{:else}
+		<ArrowUp size={24} />
 	{/if}
+</button>
+	</div>
+
+	{#if show_module_drawer}
+	<div class="drawer" transition:slide={{ duration: 300 }}>
+		{#each mapped.entries() as [cat_type, modules], idx}
+			{@const cat_name = CATEGORY_NAMES[cat_type]}
+			<div class="section">
+				<b>{cat_name}</b>
+				<div class="list">
+					{#each modules as mod}
+						{@render module(mod)}
+					{/each}
+				</div>
+			</div>
+		{/each}
+	</div>
+{/if}
 </div>
 
 <style lang="scss">
@@ -163,11 +162,14 @@
 		}
 	}
 
+	.module_name {
+		color: black;
+	}
+
 	.drawer_container {
-		position: sticky;
-		bottom: 0rem;
+		position: absolute;
+		bottom: 0;
 		left: 0;
-		right: 0;
 	}
 
 	.stop_a11y_complaints {

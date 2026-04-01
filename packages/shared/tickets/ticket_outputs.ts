@@ -11,7 +11,7 @@ import {
   ZQuestionModal,
   type QuestionModal,
 } from "../schemas/tickets/ticket";
-import { AllowedTypes, CONTRACTS, type ContractType } from "./contracts";
+import { type AllowedTypes, CONTRACTS, type ContractType } from "./contracts";
 
 export interface ModuleProperty {
   name: string;
@@ -54,7 +54,6 @@ export enum ModuleCategory {
 export interface ModuleObject<T extends PipelineModule = PipelineModule> {
   properties: (mod: T, panel: TicketPanelMeta) => ModuleProperty[];
   name: string;
-  accent_clr: `#${string}`;
   is_meta_module?: boolean;
   category?: ModuleCategory;
   schema?: z.ZodType<T>;
@@ -80,14 +79,12 @@ const generate_string_select = (name = "selection", is_array_of = false) =>
 const ASSIGN_ROLE: ModuleObject = {
   properties: () => [generate_role("selected")],
   name: "Assign Role",
-  accent_clr: "#5865F2",
   category: ModuleCategory.ASSIGNMENT,
   schema: ZAssignRole,
 };
 
 const NARROW_ISSUE: ModuleObject = {
   name: "Define Issue",
-  accent_clr: "#10A37F",
   properties: () => [
     { name: "issue", value: "string", description: "The narrowed down issue" },
   ],
@@ -97,7 +94,6 @@ const NARROW_ISSUE: ModuleObject = {
 
 const ROOT_ENV_MODULE: ModuleObject = {
   name: "ROOT ENVIROMENT MODULE (THIS SHOULD NOT BE SHOWN)",
-  accent_clr: "#676767",
   properties: (_self, panel) => {
     const props: ModuleProperty[] = [
       generate_user("user"),
@@ -125,7 +121,6 @@ const ROOT_ENV_MODULE: ModuleObject = {
 
 const ASSIGN_CHANNEL: ModuleObject = {
   name: "Assign Channel",
-  accent_clr: "#121212",
   category: ModuleCategory.ASSIGNMENT,
   properties: (_self) => [from_contract("channel", "CHANNEL")],
   schema: ZAssignChannel,
@@ -133,7 +128,6 @@ const ASSIGN_CHANNEL: ModuleObject = {
 
 const ASSIGN_NAME: ModuleObject = {
   name: "Assign Name",
-  accent_clr: "#121212",
   category: ModuleCategory.ASSIGNMENT,
   properties: (_self) => {
     return [];
@@ -143,7 +137,6 @@ const ASSIGN_NAME: ModuleObject = {
 
 const OPEN_TICKET: ModuleObject = {
   name: "Open Ticket",
-  accent_clr: "#24a411",
   category: ModuleCategory.RESOLVERS,
   properties: () => [],
   schema: ZOpenTicket,
@@ -151,7 +144,6 @@ const OPEN_TICKET: ModuleObject = {
 
 const SILENT_RESOLVE: ModuleObject = {
   name: "Silently Resolve",
-  accent_clr: "#a43d11",
   category: ModuleCategory.RESOLVERS,
   properties: () => [],
   schema: ZSilentlyResolve,
@@ -159,7 +151,6 @@ const SILENT_RESOLVE: ModuleObject = {
 
 const MODAL_QUESTION: ModuleObject<QuestionModal> = {
   name: "Modal Question",
-  accent_clr: "#143123",
   category: ModuleCategory.INPUTS,
   schema: ZQuestionModal,
   properties: (self) => {

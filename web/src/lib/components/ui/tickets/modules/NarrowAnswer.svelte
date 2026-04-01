@@ -23,9 +23,10 @@ Define the agent's <b>personality and tone.</b></br><small>(ex: 'a witty tech ex
 
 </script>
 
-<BaseModule title="Narrow Answer" bind:module>
+<BaseModule title="AI Narrowing" bind:module>
 	{#snippet description()}
-		Narrows down the user issue by asking questions
+		<p>Uses AI to have a short conversation with the user before the ticket is created. Define a persona and rules to guide the conversation.</p> 
+		<small>For example: gathering details about a ban appeal or triaging a bug report</small>
 	{/snippet}
 
 	<div class="grid">

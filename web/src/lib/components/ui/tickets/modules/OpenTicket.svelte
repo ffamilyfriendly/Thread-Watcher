@@ -13,7 +13,7 @@
 
 <BaseModule {module} title="Open Ticket">
     {#snippet description()}
-        Opens the ticket in the <code>Assigned Channel</code> and pings all the <code>Assigned Roles</code>
+        Creates the ticket thread and posts a customizable starting message. This is the final step of the pipeline flow, place this at the end once all questions have been asked.
         <br />
         <small class="resolves">This module will end the pipeline execution</small>
     {/snippet}

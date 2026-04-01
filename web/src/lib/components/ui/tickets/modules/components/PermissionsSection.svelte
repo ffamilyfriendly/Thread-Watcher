@@ -65,6 +65,11 @@
 			{#each module.conditionals as op, idx}
 				{@render conditional(op, idx)}
 			{/each}
+			{#if module.conditionals.length === 0}
+				<tr>
+					<td>No condtionals set.</td>
+				</tr>
+			{/if}
 		</tbody>
 	</table>
 

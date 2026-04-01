@@ -112,6 +112,10 @@ export class GuildState {
 		return result;
 	}
 
+	get_channel_sync(channel_id: string) {
+		return this.channels.find((ch) => ch.id === channel_id);
+	}
+
 	async fetch_monitor(monitor_id: string) {
 		const cached_monitor = this.monitors.get(monitor_id);
 		if (cached_monitor) return ok(cached_monitor);

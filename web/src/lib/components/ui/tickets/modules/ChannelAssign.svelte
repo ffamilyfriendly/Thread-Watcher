@@ -17,13 +17,9 @@
 	let { module = $bindable() }: Props = $props();
 </script>
 
-<BaseModule title="Assign Role" bind:module>
+<BaseModule title="Assign Channel" bind:module>
 	{#snippet description()}
-		Set which role is responsible for this ticket. The <a
-			href="https://docs.threadwatcher.xyz/features/tickets/ticket-panels#assigned-role"
-			>assigned role</a
-		> will be pinged when the ticket is created or updated, and its members will gain access to manage
-		the ticket in the dashboard.
+		Sets which channel the ticket thread will be created in. Use this to route different types of tickets to the appropriate channel
 	{/snippet}
 
 	{#if guild_state.guild_id}

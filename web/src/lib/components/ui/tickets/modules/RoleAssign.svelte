@@ -17,11 +17,7 @@
 
 <BaseModule title="Assign Role" bind:module>
 	{#snippet description()}
-		Set which role is responsible for this ticket. The <a
-			href="https://docs.threadwatcher.xyz/features/tickets/ticket-panels#assigned-role"
-			>assigned role</a
-		> will be pinged when the ticket is created or updated, and its members will gain access to manage
-		the ticket in the dashboard.
+		Defines which role(s) are responsible for handing this ticket. <a href="https://docs.threadwatcher.xyz/features/tickets/ticket-panels#assigned-role">Assigned Roles</a> will be pinged when the ticket is created and their members will be able to view, manage, and resolve the ticket.
 	{/snippet}
 	<RolePicker bind:value={module.role_id} roles={guild_state.roles} />
 

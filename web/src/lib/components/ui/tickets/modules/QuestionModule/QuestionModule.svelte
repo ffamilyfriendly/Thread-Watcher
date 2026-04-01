@@ -84,7 +84,7 @@
 
 <BaseModule title="Question" bind:module>
 	{#snippet description()}
-		Ask the user questions
+		Asks the user one or more questions before the ticket is created. Supports free text, dropdowns, channel/user/role pickets, and file uploads. Answers are stored as variables and can be referenced in later modules
 	{/snippet}
 
 	<div class="labels-grid">

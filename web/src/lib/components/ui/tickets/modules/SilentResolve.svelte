@@ -13,7 +13,7 @@
 
 <BaseModule {module} title="Silent Resolve">
     {#snippet description()}
-        Shows the user the provided embed but does not open a ticket channel
+        Responds to the user with a custom message without creating a ticket. Use this to handle common questions or issues that don't need staff attention.
         <br />
         <small class="resolves">This module will end the pipeline execution</small>
     {/snippet}

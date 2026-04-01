@@ -4,7 +4,6 @@ import { SupportedInteractionType, SupportedInteractionTypeWithGuild } from './D
 import { err, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import { Logger } from 'tslog';
-import { TicketPipelineModuleError } from 'utilities/error/def';
 
 export async function start_pipeline(
   panel: TicketPanel,

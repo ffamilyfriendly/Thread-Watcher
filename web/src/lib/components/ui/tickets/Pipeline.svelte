@@ -3,9 +3,9 @@
 	import { MODULE_COMPONENTS, type RenderableModuleTypes } from './modules/module_registry';
 	import type { Component } from 'svelte';
 	import { use_pipeline } from '$lib/stores/pipeline.svelte';
-	import { CircleMinus, CirclePlus } from '@lucide/svelte';
 	import ModuleDrawer from './ModuleDrawer.svelte';
 	import DropArea from './DropArea.svelte';
+	import DefaultPipelines from './DefaultPipelines.svelte';
 
 	const pipe_state = use_pipeline();
 
@@ -22,12 +22,14 @@
 		console.log('CREATED', module_type_unchecked);
 	}
 
-	let show_module_drawer = $state(false);
-
 	const safe_modules = $derived(pipe_state.safe_modules());
 </script>
 
 <div class="pipeline">
+	{#if safe_modules.length === 0}
+		<DefaultPipelines />
+	{/if}
+
 	<div class="items">
 		{#each safe_modules as mod, index (mod.uid)}
 			{@const Component = get_module_component(mod.type)}
@@ -51,9 +53,6 @@
 
 <style lang="scss">
 	.pipeline {
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
 		background-color: #121212;
 
 		--grid_clr: rgba(255, 255, 255, 0.05);
@@ -61,15 +60,15 @@
 			linear-gradient(var(--grid_clr) 0.1em, transparent 0.1em),
 			linear-gradient(90deg, var(--grid_clr) 0.1em, transparent 0.1em);
 		background-size: 3em 3em;
-		min-height: 35vh;
-		height: 85vh;
-		overflow-y: auto;
+		min-height: 350px;
 		position: relative;
+		display: flex;
 	}
 
 	.items {
 		padding: 1rem;
 		gap: 1rem;
+		flex: 1;
 		display: flex;
 		flex-direction: column;
 	}

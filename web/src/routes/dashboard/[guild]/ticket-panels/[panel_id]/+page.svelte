@@ -5,7 +5,7 @@
 	import { init_pipeline_state } from '$lib/stores/pipeline.svelte.js';
 	import RolePicker from '$lib/components/ui/settings/RolePicker.svelte';
 	import ChannelPicker from '$lib/components/ui/settings/ChannelPicker.svelte';
-	import { CAN_HOLD_THREADS } from '$lib/types/discord.js';
+	import { CAN_HOLD_MESSAGES, CAN_HOLD_THREADS } from '$lib/types/discord.js';
 	import { ResultAsync } from 'neverthrow';
 	import { map_err } from '$lib/error_helper.js';
 	import { add_toast, add_toast_from_error } from '$lib/state/toasts.svelte.js';
@@ -107,6 +107,32 @@
 
 		if (res.isErr()) return add_toast_from_error(res.error);
 	}
+
+	const [ can_update, reason_cant_update ] = $derived.by(() => {
+		const mods = pipeline_state.safe_modules()
+		if(mods.length === 0) {
+			return [false, "Your pipeline has no actions. Add at least one module to save changes!"]
+		}
+
+		if(!mods.find(m => ["OPEN_TICKET", "SILENT_RESOLVE"].includes(m.type))) {
+			return [false, "Your pipeline is missing a resolution step. Add an 'Open Ticket' or 'Silent Resolve' module to complete the workflow."]
+		}
+
+		return [true, ""]
+	})
+
+	const [ can_deploy, reason_cant_deploy ] = $derived.by(() => {
+
+		const channel = guild_state.get_channel_sync(pipeline_state.panel.initial_channel_id)
+		if(channel && !CAN_HOLD_MESSAGES.includes(channel.type)) {
+			return [false, "The 'Assigned Channel' cannot hold messages. To deploy the panel, set 'Assigned Channel' to a channel that can hold messages."]
+		}
+		
+
+		return [true, ""]
+	})
+
+	const reason = $derived(reason_cant_update || reason_cant_deploy)
 </script>
 
 <Subpage>
@@ -218,15 +244,17 @@
 		</div>
 
 		<div class={[common.row, common.gap_medium]}>
-			<Button variant="tetriary" load_with={update_message}>
+			<Button disabled={!can_deploy} variant="tetriary" load_with={update_message}>
 				Deploy Panel
 			</Button>
 
-			<Button variant="primary" load_with={create_ticket}>
+			<Button disabled={!can_update} variant="primary" load_with={create_ticket}>
 				Update
 			</Button>
 		</div>
-		<small>* clicking "Deploy Panel" will send the embed in the <i>Assigned Channel</i>. If this channel cannot hold messages (such as a forum channel), you will get an error.</small>
+		{#if !can_update || !can_deploy}
+			<small style:color="var(--error-500)">{reason}</small>
+		{/if}
 	</div>
 </main>
 
