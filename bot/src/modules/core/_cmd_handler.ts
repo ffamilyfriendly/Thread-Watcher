@@ -16,6 +16,7 @@ import { err, ok } from 'neverthrow';
 import EmbeddableError from 'utilities/error/EmbeddableError';
 import { EntitlementsError, PermissionsError } from 'utilities/error/def';
 import i18next from 'i18next';
+import { from_interaction } from 'utilities/i18def';
 
 const config = Config.instance;
 const commands = Commands.instance;
@@ -24,7 +25,7 @@ const component_service = ComponentService.instance;
 
 function get_command_context(cmd: Interaction): CommandContext {
   return {
-    t: (t_key: string, data) => i18next.t(t_key, { lng: cmd.locale, ...data }),
+    t: from_interaction(cmd),
     logger: logger.getSubLogger({
       name: cmd.isCommand() ? cmd.commandName : `interaction ${cmd.id}`,
     }),

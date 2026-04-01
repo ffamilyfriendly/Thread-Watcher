@@ -5,10 +5,11 @@ import {
 } from './BaseCommandInterface';
 import { EmbedBuilder } from 'discord.js';
 import { Logger } from 'tslog';
+import { TypedI18Func } from 'utilities/i18def';
 export * from './BaseCommandInterface';
 
 export interface CommandContext {
-  t: (t_key: string, data?: Record<string, unknown>) => string;
+  t: TypedI18Func;
   build_embed: (style?: keyof ConfigType['style']) => EmbedBuilder;
   logger: Logger<unknown>;
 }

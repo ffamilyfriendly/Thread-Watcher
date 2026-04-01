@@ -4,3 +4,4 @@
 *.db
 *.tgz
 /bot/drizzle
+/bot/src/.generated

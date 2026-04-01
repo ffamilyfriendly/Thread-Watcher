@@ -1,6 +1,7 @@
 import { Logger } from 'tslog';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import generate_types from './utils/gen_type_file';
 
 const logger = new Logger({ name: 'DOC GEN' });
 
@@ -34,6 +35,10 @@ for (const lang of languages) {
 
   writeFileSync(translations_file_path, JSON.stringify(translations_file, null, 2));
 }
+
+const english_file_path = join('./locales', 'en', 'common.json');
+const english_file = JSON.parse(readFileSync(english_file_path, 'utf-8'));
+generate_types(english_file);
 
 function set_nested_prop(obj: any, path: string[], value: string) {
   let current = obj;
