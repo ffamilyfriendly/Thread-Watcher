@@ -11,6 +11,10 @@ import {
   TextInputBuilder,
   TextInputStyle,
   UserSelectMenuBuilder,
+  FileUploadBuilder,
+  StringSelectMenuBuilder,
+  RoleSelectMenuBuilder,
+  SelectMenuComponentOptionData,
 } from 'discord.js';
 import { component_service } from '@providers/services/component_service';
 import { map_err } from 'utilities/error';
@@ -25,14 +29,17 @@ export default class ModalQuestion extends DefaultModule<TypedPipelineModule<'MO
   }
 
   set_default_select_values(
-    v: TypedComponent<'CHANNEL_SELECT' | 'USER_SELECT' | 'STRING_SELECT'>,
-    builder: BaseSelectMenuBuilder<any>,
+    v: TypedComponent<
+      'CHANNEL_SELECT' | 'USER_SELECT' | 'STRING_SELECT' | 'FILE_UPLOAD' | 'ROLE_SELECT'
+    >,
+    builder: BaseSelectMenuBuilder<any> | FileUploadBuilder,
   ) {
     builder.setRequired(v.required);
     builder.setCustomId(v.custom_id);
     builder.setMaxValues(v.max_values);
     builder.setMinValues(v.min_values);
-    builder.setPlaceholder(v.placeholder);
+    if ('placeholder' in v && !(builder instanceof FileUploadBuilder))
+      builder.setPlaceholder(v.placeholder);
   }
 
   create_channel_sel(v: TypedComponent<'CHANNEL_SELECT'>): ChannelSelectMenuBuilder {
@@ -51,6 +58,8 @@ export default class ModalQuestion extends DefaultModule<TypedPipelineModule<'MO
     ti.setStyle(TextInputStyle.Paragraph);
     if (v.placeholder) ti.setPlaceholder(v.placeholder);
     if (v.value) ti.setValue(v.value);
+    else ti.setValue('_customid_missing');
+
     return ti;
   }
 
@@ -60,9 +69,39 @@ export default class ModalQuestion extends DefaultModule<TypedPipelineModule<'MO
     return us;
   }
 
+  create_file_select(v: TypedComponent<'FILE_UPLOAD'>): FileUploadBuilder {
+    const fu = new FileUploadBuilder();
+    this.set_default_select_values(v, fu);
+    return fu;
+  }
+
+  create_string_select(v: TypedComponent<'STRING_SELECT'>): StringSelectMenuBuilder {
+    const ss = new StringSelectMenuBuilder();
+    this.set_default_select_values(v, ss);
+
+    for (const option of v.options) {
+      const opt: SelectMenuComponentOptionData = {
+        value: option.option_id,
+        label: option.title,
+        description: option.description ?? undefined,
+      };
+
+      ss.addOptions(opt);
+    }
+
+    return ss;
+  }
+
+  create_role_select(v: TypedComponent<'ROLE_SELECT'>): RoleSelectMenuBuilder {
+    const rs = new RoleSelectMenuBuilder();
+    this.set_default_select_values(v, rs);
+    return rs;
+  }
+
   create_modal(): ModalBuilder {
     const m = new ModalBuilder();
     m.setTitle('Questions');
+    m.setCustomId('asdasdasd');
 
     for (const label of this.self.labels) {
       const l = new LabelBuilder();
@@ -80,6 +119,15 @@ export default class ModalQuestion extends DefaultModule<TypedPipelineModule<'MO
           break;
         case 'USER_SELECT':
           l.setUserSelectMenuComponent(this.create_user_select(comp));
+          break;
+        case 'FILE_UPLOAD':
+          l.setFileUploadComponent(this.create_file_select(comp));
+          break;
+        case 'STRING_SELECT':
+          l.setStringSelectMenuComponent(this.create_string_select(comp));
+          break;
+        case 'ROLE_SELECT':
+          l.setRoleSelectMenuComponent(this.create_role_select(comp));
           break;
       }
 
@@ -135,10 +183,10 @@ export default class ModalQuestion extends DefaultModule<TypedPipelineModule<'MO
     const modal = this.create_modal();
 
     const modal_res = await super.ensure_modal_shown(interaction, modal, { skip_button: false });
-    if (modal_res.isErr()) {
-      this.l.error('Could not show question modal', modal_res.error);
-      return err(modal_res.error);
-    }
+    if (modal_res.isErr()) return err(modal_res.error);
+
+    // This is here due to the return type of modal_res.
+    // It will never returns a ButtonInteraction with 'skip_button' set to true but the type checker does not know that
     if (modal_res.value instanceof ButtonInteraction) {
       this.l.error('Question Modal was skipped (not supported)');
       return err(new Error('was skipped'));

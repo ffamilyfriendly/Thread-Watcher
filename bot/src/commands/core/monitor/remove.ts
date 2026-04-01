@@ -1,4 +1,3 @@
-import { audit_service } from '@providers/services/audit_service';
 import { channel_service } from '@providers/services/channel_service';
 import {
   ChannelType,
@@ -7,25 +6,31 @@ import {
 } from 'discord.js';
 import { RegistrationScope } from 'interfaces/BaseCommandInterface';
 import { CommandContext, type SubCommand } from 'interfaces/Command';
-import { err, ok, Result } from 'neverthrow';
+import { err, Result } from 'neverthrow';
 import { CommandError } from 'utilities/error/def';
+import { safe_reply } from 'utilities/interaction_helpers';
 
 async function run(
   interaction: ChatInputCommandInteraction,
   ctx: CommandContext,
-): Promise<Result<void, CommandError>> {
+): Promise<Result<unknown, CommandError>> {
   const target = interaction.options.getChannel('parent') ?? interaction.channel;
 
-  if (!target || !('guild' in target)) return err(new Error('no channel bruh'));
+  // We should never see this as Thread-Watcher only works in guilds where an interaction should always have a channel
+  if (!target) return err(new Error('target channel was undefined'));
 
-  const res = await channel_service.remove_monitor(target?.id, {
+  const res = await channel_service.remove_monitor(target.id, {
     executor_id: interaction.user.id,
     guild_id: interaction.guildId!,
   });
 
   if (res.isErr()) return err(res.error);
 
-  return ok();
+  const e = ctx.build_embed('success');
+  e.setTitle(ctx.t('commands.monitors.monitor_removed_title'));
+  e.setDescription(ctx.t('commands.monitors.monitor_removed_body', { monitor_id: target.id }));
+
+  return safe_reply(interaction, { embeds: [e], flags: 'Ephemeral' });
 }
 
 export const command_data = new SlashCommandSubcommandBuilder()

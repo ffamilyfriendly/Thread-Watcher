@@ -53,7 +53,7 @@ export default class ChannelService {
       regex: filters?.regex,
     };
 
-    const res = await this.db.insert_monitor(channel_data, filter_data);
+    const res = await this.db.upsert_monitor(channel_data, filter_data);
 
     const combined_object = Object.assign(channel_data, filter_data);
 

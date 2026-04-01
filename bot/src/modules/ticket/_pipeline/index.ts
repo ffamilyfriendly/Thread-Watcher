@@ -31,8 +31,7 @@ export async function start_pipeline(
     const res = await module.run_module(active_interaction as SupportedInteractionTypeWithGuild);
 
     if (res.isErr()) {
-      await pipeline.before_exit();
-      return err(new TicketPipelineModuleError(module, res.error, pipeline.ticket_id));
+      return pipeline.handle_error(active_interaction, module.id, res.error);
     }
 
     // Switch out the active interaction (if applicable).
@@ -44,15 +43,11 @@ export async function start_pipeline(
     }
   }
 
-  await pipeline.before_exit();
-
   if (!pipeline.resolved) {
-    return err(
-      new TicketPipelineModuleError(
-        { id: 'PIPELINE' },
-        new Error('Pipeline exited without resolving'),
-        pipeline.ticket_id,
-      ),
+    return pipeline.handle_error(
+      active_interaction,
+      'PIPELINE',
+      new Error('Pipeline exited without resolving.'),
     );
   }
 }

@@ -26,6 +26,8 @@ import { create_ticket_opened } from './components/embed';
 import { interpolate_string } from './helpers/var_string';
 import { client } from '@providers/client';
 import { strip_dangerous_strings } from 'utilities/error/escape_sensitive_data';
+import EmbeddableError from 'utilities/error/EmbeddableError';
+import { TicketPipelineModuleError } from 'utilities/error/def';
 
 const log_obj_schema = z
   .object({
@@ -88,7 +90,7 @@ export class Pipeline implements IPipeline {
     const [info_start, info_end] = this.create_header('INFORMATION ABOUT THIS FILE');
     let buf: string[] = [
       info_start,
-      `This file describes the events that happened during the ticket '${this.ticket_id}'.\nUnsure what you're looking for? You're welcome to join our support discord and ask! I promise we dont bite (hard) :)\ndiscord: https://botsuite.co/join\ndocs: https://docs.threadwatcher.xyz`,
+      `This file describes the events that happened during the ticket '${this.ticket_id}'.\nUnsure what you're looking for? You're welcome to join our support discord and ask! I promise we dont bite (hard) :)\ndiscord: https://botsuite.co/join\ndocs: https://docs.threadwatcher.xyz\ndate: ${new Date().toISOString()}`,
       info_end,
     ];
 
@@ -134,7 +136,11 @@ export class Pipeline implements IPipeline {
   constructor(readonly data: TicketPanel) {
     this.assigned_channel = data.initial_channel_id;
     this.assigned_roles = data.initial_assigned_roles;
-    this.logger = new Logger({ hideLogPositionForProduction: true, name: 'PIPELINE' });
+    this.logger = new Logger({
+      hideLogPositionForProduction: true,
+      type: 'hidden',
+      name: 'PIPELINE',
+    });
     this.logger.attachTransport((log_obj) => this.append_log(log_obj));
     this.exports = new ValueContainer({}, 'ENV_ROOT');
   }
@@ -181,6 +187,22 @@ export class Pipeline implements IPipeline {
     return;
   }
 
+  async handle_error(int: SupportedInteractionType, module_id: string, err: unknown) {
+    await this.before_exit();
+    const e = new TicketPipelineModuleError({ id: module_id }, map_err(err), this.ticket_id);
+    this.logger.settings.type = 'pretty';
+    this.logger.error(e);
+    return e.send_error(int);
+  }
+
+  async start_ticket_silently() {
+    if (this.is_resolved) return err(new Error('pipeline is already resolved!'));
+    this.is_resolved = true;
+    await this.before_exit();
+
+    return ok();
+  }
+
   async start_ticket_with_thread(
     int: SupportedInteractionType,
     ticket_thread: ThreadChannel,
@@ -188,6 +210,8 @@ export class Pipeline implements IPipeline {
   ): Promise<Result<unknown, Error>> {
     if (this.is_resolved) return err(new Error('pipeline is already resolved!'));
     this.is_resolved = true;
+    await this.before_exit();
+
     const ticket_name = this.ticket_name;
     const insert_ticket_res = await ticket_service.insert_ticket({
       ticket_id: this.ticket_id,

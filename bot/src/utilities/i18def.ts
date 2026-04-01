@@ -1,4 +1,4 @@
-import { TArgs, type TKey } from '.generated/locales';
+import { TArgs, type TKey } from '@generated/locales';
 import { Interaction } from 'discord.js';
 import i18next, { TOptionsBase } from 'i18next';
 

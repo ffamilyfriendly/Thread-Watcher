@@ -12,11 +12,12 @@ import { CommandContext, type Command } from 'interfaces/Command';
 import { err, ok, Result } from 'neverthrow';
 import { AuditMeta, PartialAuditObject } from 'services/AuditService';
 import { CommandError, DatabaseError, WrongChannelType } from 'utilities/error/def';
+import { safe_reply } from 'utilities/interaction_helpers';
 
 async function run(
   interaction: ChatInputCommandInteraction,
   ctx: CommandContext,
-): Promise<Result<void, CommandError>> {
+): Promise<Result<unknown, CommandError>> {
   const thread = interaction.options.getChannel('thread') || interaction.channel;
 
   if (!(thread instanceof ThreadChannel)) {
@@ -38,7 +39,12 @@ async function run(
 
   if (result.isErr()) return err(result.error);
 
-  return ok();
+  const e = ctx.build_embed('success');
+  e.setTitle(ctx.t('commands.watch.embed_title'));
+  const thread_action = ctx.t(result.value ? 'commands.watch.watch' : 'commands.watch.unwatch');
+  e.setDescription(ctx.t('commands.watch.embed_body', { thread_id: thread.id, thread_action }));
+
+  return safe_reply(interaction, { embeds: [e], flags: 'Ephemeral' });
 }
 
 const command_data = new SlashCommandBuilder()

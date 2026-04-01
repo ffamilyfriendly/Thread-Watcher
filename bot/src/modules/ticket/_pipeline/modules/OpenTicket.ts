@@ -126,18 +126,15 @@ export default class OpenTicket extends DefaultModule<TypedPipelineModule<'OPEN_
     const [thread_channel, starter_message] = thread_channel_promise.value;
 
     if (this.pipeline.data.should_watch_ticket) {
-      const could_watch_thread = await thread_service.watch_thread(thread_channel);
+      const could_watch_thread = await thread_service.watch_thread(thread_channel, {
+        executor_id: interaction.user.id,
+        guild_id: interaction.guildId,
+        reason: `Ticket ${this.pipeline.ticket_id}`,
+      });
 
       if (could_watch_thread.isErr()) {
         this.l.warn('could NOT watch ticket');
       } else this.l.info('watched ticket thread');
-
-      audit_service.log_thread_watch(
-        thread_channel.id,
-        interaction.guildId,
-        interaction.client.user.id,
-        `Ticket panel set to watch tickets`,
-      );
     }
 
     const could_start_ticket = await this.pipeline.start_ticket_with_thread(

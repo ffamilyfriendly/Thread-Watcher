@@ -100,7 +100,7 @@ export class TicketPipelineModuleError extends EmbeddableError {
     readonly inner_error: Error,
     readonly ticket_id: string,
   ) {
-    super(`Module ${mod.id} failed: ${inner_error.message}`);
+    super(`(ticket: ${ticket_id}) Module ${mod.id} failed: ${inner_error.message}`);
     this.original_error = EmbeddableError.from(inner_error);
   }
 
@@ -128,9 +128,5 @@ export class TicketPipelineModuleError extends EmbeddableError {
   ): void {
     embed.setTitle(t('errors.ticket.pipeline_failed_title'));
     embed.setDescription(t('errors.ticket.pipeline_failed_desc', { module_id: this.mod.id }));
-  }
-
-  protected after_sent(interaction: RepliableInteraction, t: I18nType): Promise<unknown> | unknown {
-    return EmbeddableError.handle_error(interaction, this.inner_error);
   }
 }

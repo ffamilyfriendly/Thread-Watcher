@@ -25,6 +25,7 @@ import { GenericCommandError } from 'utilities/error/def';
 import EmbeddableError from 'utilities/error/EmbeddableError';
 import { CommandContext } from 'interfaces/Command';
 import { safe_reply } from 'utilities/interaction_helpers';
+import { Result } from 'neverthrow';
 
 export interface State<TContext = unknown> {
   components: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder | RoleSelectMenuBuilder>[];
@@ -35,7 +36,14 @@ export interface State<TContext = unknown> {
   target_channel: Channel | Guild;
   guild_id: string;
   _ctx: CommandContext;
-  on_save: [(state: State, interaction: Interaction, context: TContext) => void, TContext];
+  on_save: [
+    (
+      state: State,
+      interaction: Interaction,
+      context: TContext,
+    ) => void | Promise<Result<any, any> | void> | Result<any, any>,
+    TContext,
+  ];
   on_cleanup: (state: State, interaction: ButtonInteraction) => void;
 }
 
@@ -146,10 +154,14 @@ function create_advanced_buttons(state: State, user_id: string) {
   const filter = (int: ButtonInteraction) => int.user.id === user_id;
 
   state.cleaner.add(
-    component_service.wait_for_interaction_callback(save_button, filter, (button_interaction) => {
-      const [func, context] = state.on_save;
-      func(state, button_interaction, context);
-    }),
+    component_service.wait_for_interaction_callback(
+      save_button,
+      filter,
+      async (button_interaction) => {
+        const [func, context] = state.on_save;
+        const func_res = await func(state, button_interaction, context);
+      },
+    ),
     component_service.wait_for_interaction_callback(cancel_button, filter, (button_interaction) =>
       state.on_cleanup(state, button_interaction),
     ),

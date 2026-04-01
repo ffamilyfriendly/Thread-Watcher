@@ -83,7 +83,7 @@ async function fetch_data_from_id(data_list: { id: string }[]): Promise<FetchDat
   const promise_list = data_list.map((data) =>
     ResultAsync.fromPromise(client.channels.fetch(data.id), (err) => {
       return {
-        error_obj: err instanceof Error ? err : new Error('something wrong big time'),
+        error_obj: map_err(err),
         channel_id: data.id,
       };
     }),

@@ -545,15 +545,27 @@ export default class Sqlite implements Database {
   }
 
   @with_error_handling
-  async insert_monitor(channel: Omit<BaseMonitor, 'manages_threads_count'>, filters?: FilterData) {
+  async upsert_monitor(channel: Omit<BaseMonitor, 'manages_threads_count'>, filters?: FilterData) {
     await this.ensure_guild(channel.guild_id);
-    await this.drizzle.insert(schema.Monitors).values({
-      ...channel,
-      ...filters,
-      role_whitelist: filters?.role_whitelist,
-      tags: filters?.tags,
-      regex: filters?.regex?.source,
-    });
+    await this.drizzle
+      .insert(schema.Monitors)
+      .values({
+        ...channel,
+        ...filters,
+        role_whitelist: filters?.role_whitelist,
+        tags: filters?.tags,
+        regex: filters?.regex?.source,
+      })
+      .onConflictDoUpdate({
+        target: [schema.Monitors.target_id],
+        set: {
+          ...channel,
+          ...filters,
+          role_whitelist: filters?.role_whitelist,
+          tags: filters?.tags,
+          regex: filters?.regex?.source,
+        },
+      });
     return ok();
   }
 

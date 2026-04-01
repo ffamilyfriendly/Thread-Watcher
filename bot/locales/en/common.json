@@ -1,6 +1,8 @@
 {
   "commands": {
     "watch": {
+      "embed_title": "Success!",
+      "embed_body": "<#{{thread_id}}> was {{thread_action}}",
       "thread": "thread",
       "watch": "watched",
       "unwatch": "unwatched"
@@ -11,7 +13,19 @@
       "cancelled": "cancelled",
       "result_title": "{{action}} {{action_amount}} threads",
       "will_watch_future": "Future Threads will also be watched if they match the filter",
-      "in_channel": "in {{channel_link}}"
+      "in_channel": "in {{channel_link}}",
+      "success_embed_title": "Success!",
+      "success_embed_body": "**{{actioned_number}}** threads were {{action_name}}",
+      "success_embed_footer_monitor_enabled": "Any new threads created in <#{{target_id}}> will be watched!",
+      "action_toggled": "toggled",
+      "action_watched": "watched",
+      "action_unwatched": "unwatched"
+    },
+    "monitors": {
+      "monitor_added_title": "Monitor Added!",
+      "monitor_added_body": "Any new threads created in <#{{monitor_id}}> will be watched!",
+      "monitor_removed_title": "Monitor Removed!",
+      "monitor_removed_body": "The monitor for <#{{monitor_id}}> was removed. Any threads watched by this monitor will continue being watched"
     },
     "list": {
       "no_data_title": "Nothing Found!",
@@ -90,7 +104,7 @@
       "required_assigned_roles_body": "This action requires one of the roles assigned to this ticket\n{{assigned_roles}}",
       "required_assigned_roles_body_or_ownership": "This action requires one of the roles assigned to this ticket or that you created the ticket\n{{assigned_roles}}",
       "pipeline_failed_title": "Pipeline failed!",
-      "pipeline_failed_desc": "Panel ran into an error on module `{{module_id}} and cannot continue.\n-# Original error below`"
+      "pipeline_failed_desc": "Panel ran into an error on module `{{module_id}}` and cannot continue.\n-# Original error below`"
     }
   }
 }

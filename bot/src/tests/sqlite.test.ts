@@ -22,7 +22,7 @@ describe('Sqlite Adapter', () => {
   test('Should insert & retrieve a monitor with thread count', async () => {
     const channel_id = '676767';
 
-    await adapter.insert_monitor({
+    await adapter.upsert_monitor({
       target_id: channel_id,
       guild_id: 'guild_1',
       is_suspended: false,
@@ -38,7 +38,7 @@ describe('Sqlite Adapter', () => {
     const result = await adapter.get_monitor(channel_id);
 
     expect(result.isOk()).toBe(true);
-    if (result.isOk()) {
+    if (result.isOk() && result.value) {
       expect(result.value.target_id).toBe(channel_id);
       expect(result.value.manages_threads_count).toBe(1);
     }
@@ -120,19 +120,19 @@ describe('Sqlite Adapter', () => {
     });
 
     expect(panel_create_res.isOk(), e(panel_create_res)).toBe(true);
-    const panel_id = panel_create_res.isOk() ? panel_create_res.value : 'FAILED';
+    const panel_id = panel_create_res.isOk() ? panel_create_res.value : { panel_id: 'FAILED' };
 
-    const fetched_panel = await adapter.get_ticket_panel(panel_id);
+    const fetched_panel = await adapter.get_ticket_panel(panel_id.panel_id);
     expect(fetched_panel.isOk(), e(fetched_panel)).toBe(true);
     expect(fetched_panel._unsafeUnwrap()).toBeObject();
 
     const updated_button_text = 'TEST_EDIT';
 
-    await adapter.update_ticket_panel(panel_id, {
+    await adapter.update_ticket_panel(panel_id.panel_id, {
       commencement_method: { type: 'BUTTON', button_text: updated_button_text },
     });
 
-    const updated_panel = await adapter.get_ticket_panel(panel_id);
+    const updated_panel = await adapter.get_ticket_panel(panel_id.panel_id);
     expect(updated_panel.isOk(), e(updated_panel)).toBe(true);
 
     const u_p = updated_panel._unsafeUnwrap();
@@ -142,9 +142,9 @@ describe('Sqlite Adapter', () => {
       expect(u_p.commencement_method.button_text).toBe(updated_button_text);
     }
 
-    await adapter.delete_ticket_panel(panel_id);
+    await adapter.delete_ticket_panel(panel_id.panel_id);
 
-    const should_be_null = await adapter.get_ticket_panel(panel_id);
+    const should_be_null = await adapter.get_ticket_panel(panel_id.panel_id);
     expect(should_be_null.isOk()).toBe(true);
     expect(should_be_null._unsafeUnwrap()).toBeNull();
   });

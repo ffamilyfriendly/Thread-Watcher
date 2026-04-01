@@ -14,7 +14,11 @@ const event: Event<Interaction> = {
     for (const mod of await modules) {
       mod.on_interaction?.(interaction, l).then((r) => {
         if (r.isErr()) {
-          if (interaction.isRepliable()) EmbeddableError.handle_error(interaction, r.error);
+          if (interaction.isRepliable()) {
+            EmbeddableError.handle_error(interaction, r.error);
+          } else {
+            l.error('NOT REPLIABLE');
+          }
           l.error(`Failed to run module '${mod.name}'`, r.error);
         }
       });

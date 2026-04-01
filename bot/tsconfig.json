@@ -19,7 +19,8 @@
     "baseUrl": "./src",
     "paths": {
       "@watcher/shared": ["../packages/shared/index.ts"],
-      "@providers/*": ["./providers/*"]
+      "@providers/*": ["./providers/*"],
+      "@generated/*": ["./.generated/*"]
     }
   },
   "files": ["src/index.ts", "src/bot.ts", "src/scripts/deploy.ts", "src/scripts/gen_docs.ts"],

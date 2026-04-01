@@ -25,7 +25,8 @@ import { thread_service } from '@providers/services/thread_service';
 import { channel_service } from '@providers/services/channel_service';
 import { CommandError } from 'utilities/error/def';
 import { logger } from '@providers/logger';
-import { safe_reply } from 'utilities/interaction_helpers';
+import { safe_defer, safe_delete, safe_reply } from 'utilities/interaction_helpers';
+import { TKey } from '@generated/locales';
 
 async function fetch_all_threads_from_parent(channel: Channel | Guild) {
   let thread_list: ThreadChannel[] = [];
@@ -147,25 +148,37 @@ async function handle_execution(state: State, interaction: Interaction, context:
     if (could_add_monitor.isErr()) return err(could_add_monitor.error);
   }
 
-  return ok();
+  const ctx = state._ctx;
+  const e = ctx.build_embed('success');
+  e.setTitle(ctx.t('commands.batch.success_embed_title'));
+
+  const lookup: Record<BATCH_OPTIONS, TKey> = {
+    WATCH: 'commands.batch.action_watched',
+    UNWATCH: 'commands.batch.action_unwatched',
+    TOGGLE: 'commands.batch.action_toggled',
+  };
+
+  const action_name = ctx.t(lookup[context.action]);
+  let desc = ctx.t('commands.batch.success_embed_body', {
+    actioned_number: result_thing.value.length,
+    action_name,
+  });
+
+  if (context.watch_future)
+    desc += `\n\n-# ${ctx.t('commands.batch.success_embed_footer_monitor_enabled', {
+      target_id: state.target_channel.id,
+    })}`;
+
+  e.setDescription(desc);
+
+  if (!interaction.isRepliable()) return;
+  return safe_reply(interaction, { embeds: [e], flags: 'Ephemeral' });
 }
 
 function handle_cleanup(state: State, interaction: Interaction) {
   state.cleaner.clean();
-
-  const cancelled_str = state._ctx.t('commands.batch.cancelled', {});
-  if ('update' in interaction) {
-    interaction.update({ components: [], content: cancelled_str });
-    return;
-  }
-
-  if (interaction.isRepliable()) {
-    if (interaction.replied) {
-      interaction.editReply({ components: [], content: cancelled_str });
-    } else {
-      interaction.reply({ components: [], content: cancelled_str, ephemeral: true });
-    }
-  }
+  if (!interaction.isRepliable()) return;
+  return safe_delete(interaction);
 }
 
 async function run(

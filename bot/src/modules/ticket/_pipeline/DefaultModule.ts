@@ -1,13 +1,9 @@
-import { MODULE_OUTPUTS, PipelineModule, SelectionStart, TicketPanel } from '@watcher/shared';
+import { MODULE_OUTPUTS, PipelineModule, TicketPanel } from '@watcher/shared';
 import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonInteraction,
-  ButtonStyle,
-  ColorResolvable,
-  ComponentEmojiResolvable,
   EmbedBuilder,
-  EmojiResolvable,
   Guild,
   Interaction,
   Message,
@@ -15,14 +11,12 @@ import {
   ModalSubmitInteraction,
   StringSelectMenuInteraction,
   ThreadChannel,
-  User,
 } from 'discord.js';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Logger } from 'tslog';
 import { component_service } from '@providers/services/component_service';
 import { map_err } from 'utilities/error';
 import { safe_reply_or_followup, safe_update } from 'utilities/interaction_helpers';
-import { config } from '@providers/config';
 import { ValueContainer } from './ValueContainter';
 import { ContractLeafValue } from '@watcher/shared/tickets/contracts';
 import { get_default_embed, get_default_proceed, get_default_skip } from './components/modal_cta';
@@ -263,12 +257,15 @@ export abstract class DefaultModule<TModType extends PipelineModule> {
 export interface IPipeline {
   assigned_roles: string[];
   assigned_channel: string;
-  ticket_name: string;
+  readonly ticket_name: string;
+  name: string;
   logger: Logger<unknown>;
+  ticket_id: string;
   exports: ValueContainer;
   readonly data: TicketPanel;
 
   get_property(id: string): ContractLeafValue;
+  start_ticket_silently(): void;
   start_ticket_with_thread(
     int: SupportedInteractionType,
     ticket_thread: ThreadChannel,

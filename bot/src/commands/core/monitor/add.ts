@@ -15,30 +15,35 @@ import { get_target } from '../_shared/check_channel_values';
 import { channel_service } from '@providers/services/channel_service';
 import { audit_service } from '@providers/services/audit_service';
 import { CommandError } from 'utilities/error/def';
+import { safe_defer, safe_delete, safe_reply } from 'utilities/interaction_helpers';
+import EmbeddableError from 'utilities/error/EmbeddableError';
 
 async function handle_execution(state: State, interaction: Interaction, context: null) {
-  return channel_service.add_monitor(
+  const result = await channel_service.add_monitor(
     state.target_channel.id,
     state.guild_id,
     { executor_id: interaction.user.id, guild_id: state.guild_id },
     state.filters,
   );
+  if (result.isErr()) {
+    if (interaction.isRepliable()) EmbeddableError.handle_error(interaction, map_err(result.error));
+    return err(result.error);
+  }
+
+  const ctx = state._ctx;
+  const e = ctx.build_embed('success');
+  e.setTitle(ctx.t('commands.monitors.monitor_added_title'));
+  e.setDescription(
+    ctx.t('commands.monitors.monitor_added_body', { monitor_id: state.target_channel.id }),
+  );
+  if (!interaction.isRepliable()) return;
+  return safe_reply(interaction, { embeds: [e], flags: 'Ephemeral' });
 }
 
 function handle_cleanup(state: State, interaction: Interaction) {
   state.cleaner.clean();
-  if ('update' in interaction) {
-    interaction.update({ components: [], content: 'cancelled' });
-    return;
-  }
-
-  if (interaction.isRepliable()) {
-    if (interaction.replied) {
-      interaction.editReply({ components: [], content: 'Cancelled' });
-    } else {
-      interaction.reply({ components: [], content: 'Cancelled', ephemeral: true });
-    }
-  }
+  if (!interaction.isRepliable()) return;
+  return safe_delete(interaction);
 }
 
 async function run(
@@ -53,7 +58,7 @@ async function run(
     return err(parent.error);
   }
 
-  await interaction.deferReply();
+  await safe_defer(interaction);
 
   const existing_monitor = await channel_service.get_monitor(parent.value.id);
   if (existing_monitor.isErr()) {

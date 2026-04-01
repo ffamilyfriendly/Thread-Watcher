@@ -59,7 +59,7 @@ interface CoreThread {
 }
 
 interface CoreChannel {
-  insert_monitor: (
+  upsert_monitor: (
     channel: Omit<BaseMonitor, 'manages_threads_count'>,
     filters?: FilterData,
   ) => DBResult;
