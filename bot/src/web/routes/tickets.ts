@@ -43,6 +43,15 @@ router.get(
   }),
 );
 
+router.delete(
+  `/:ticket_id`,
+  enforce_policy(Policies.user_can_view_ticket),
+  safe_route(async (req, res: TWResponse<TicketLocals>) => {
+    const ticket_id = req.params.ticket_id as string;
+    return ticket_service.delete_ticket(ticket_id);
+  }),
+);
+
 router.post(
   '/:ticket_id/resolve',
   enforce_policy(Policies.user_can_view_ticket),

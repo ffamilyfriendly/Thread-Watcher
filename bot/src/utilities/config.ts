@@ -63,6 +63,8 @@ const BucketStorage = z.object({
 const ZPaywall = z.object({
   enabled: z.boolean(),
   basic_sku: z.string(),
+  retain_tickets_days_free: z.number(),
+  retain_tickets_days_premium: z.number(),
 });
 
 const ZAi = z.object({

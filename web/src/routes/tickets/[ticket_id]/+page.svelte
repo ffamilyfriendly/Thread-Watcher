@@ -5,7 +5,7 @@
 	import { init_guild_state } from '$lib/stores/guild.svelte';
 	import { init_ticket_state } from '$lib/stores/ticket.svelte.js';
 	import btn_style from '$lib/style/button.module.scss';
-	import { File, Menu } from '@lucide/svelte';
+	import { File, Info, Menu } from '@lucide/svelte';
 	import common from '$lib/style/common.module.scss';
 	import ModNotes from '$lib/components/transcript/mod_notes/ModNotes.svelte';
 	import type { DiscordUser } from '@watcher/shared';
@@ -13,6 +13,7 @@
 	import { map_err } from '$lib/error_helper';
 	import User from '$lib/components/ui/discord/user/User.svelte';
 	import UserLoader from '$lib/components/ui/discord/user/UserLoader.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 
 	const { data } = $props();
 
@@ -60,11 +61,30 @@
 	async function mark_resolved() {
 		const res = await ts.mark_resolved();
 		if (res.isErr()) return add_toast_from_error(res.error);
-		add_toast({ type: 'success', label: 'Resolved Ticket!' });
+		data.ticket.status === "CLOSED"
+		ts.ticket?.status === "CLOSED"
+		add_toast({ type: 'success', message: `Ticket '${data.ticket.name}' was resolved!` });
 	}
+
+	let is_deleted = $state(false)
+
+	async function delete_ticket() {
+		const res = await ts.delete()
+		if(res.isErr()) return add_toast_from_error(res.error)
+		is_deleted = true
+	}
+
+	const master_summary = $derived(data.ticket.summaries.find(s => s.is_master_summary))
 </script>
 
 <svelte:window bind:innerWidth={viewport_width} />
+
+{#if is_deleted}
+	<div class="is_deleted">
+		<Info />
+		This ticket is <b>DELETED.</b>
+	</div>
+{/if}
 
 {#if show_overlay && !navbar_extended}
 	<button class="expand_button floating" onclick={() => (navbar_extended = true)}>
@@ -91,7 +111,19 @@
 				</div>
 			</div>
 
-			<button onclick={mark_resolved} class={[btn_style.button, btn_style.primary]}>Resolve</button>
+			{#if master_summary}
+				<div class="master_summary">
+					<b>{master_summary.summary_title}</b>
+					<p>{ master_summary.summary_text }</p>
+					<small>Master Summary</small>
+				</div>
+			{/if}
+		</div>
+
+		<h3 class="heading">Actions</h3>
+		<div>
+			<Button load_with={delete_ticket} confirmation={{ title: "Delete Ticket", body: "This will permanently close the ticket and cannot be undone. All associated data will be removed from our records.", proceed_btn_text: `Delete '${data.ticket.name}'`, cancel_btn_text: "Cancel" }} variant="error">Delete Ticket</Button>
+			<Button load_with={mark_resolved} disabled={ts.ticket?.status === "CLOSED"}>Resolve Ticket</Button>
 		</div>
 
 		<hr />
@@ -127,6 +159,38 @@
 </main>
 
 <style lang="scss">
+
+	.is_deleted {
+		position: absolute;
+		top: 0;
+		display: flex;
+		align-items: center;
+		gap: .5rem;
+		margin: 1rem;
+		padding: .5rem .25rem;
+		background-color: var(--error-500);
+		border: 1px solid var(--error-700);
+		border-radius: .5rem;
+		z-index: 99999999999999;
+	}
+
+	.master_summary {
+		padding: 1rem;
+		background-color: var(--secondary-500);
+		border: 1px solid var(--secondary-700);
+		border-radius: .25rem;
+		margin-bottom: .5rem;
+		margin-top: .5rem;
+
+		b {
+			opacity: .7;
+		}
+
+		small {
+			opacity: .4;
+		}
+	}
+
 	hr {
 		margin-top: 1rem;
 		margin-bottom: 1rem;

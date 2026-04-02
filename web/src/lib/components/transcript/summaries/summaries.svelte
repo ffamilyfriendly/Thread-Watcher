@@ -3,18 +3,9 @@
 	import Summary from './summary.svelte';
 
 	const ts = use_ticket_state();
-
-	const master_summary = $derived(ts.ticket?.summaries.find(s => s.is_master_summary))
 </script>
 
 {#if ts.ticket?.summaries}
-	{#if master_summary}
-	<div class="master_summary">
-		<b>{master_summary.summary_title}</b>
-		<p>{ master_summary.summary_text }</p>
-		<small>Master Summary</small>
-	</div>
-	{/if}
 	<div class="summaries">
 		{#each ts.ticket.summaries as summary, idx}
 			<Summary {summary} />
@@ -40,21 +31,5 @@
 		background-color: color-mix(in srgb, var(--primary-500) 40%, transparent);
 		margin-top: 0.5rem;
 		margin-bottom: 0.5rem;
-	}
-
-	.master_summary {
-		padding: 1rem;
-		background-color: var(--secondary-500);
-		border: 1px solid var(--secondary-700);
-		border-radius: .25rem;
-		margin-bottom: .5rem;
-
-		b {
-			opacity: .7;
-		}
-
-		small {
-			opacity: .4;
-		}
 	}
 </style>

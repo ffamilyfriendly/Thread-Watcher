@@ -96,6 +96,14 @@ export class TicketState {
 		this.ticket?.status === 'CLOSED';
 		return ok();
 	}
+
+	async delete() {
+		const could_delete = await fetch_as_json(`/api/ticket/${this.ticket?.ticket_id}`, {
+			method: 'DELETE'
+		});
+		if (could_delete.isErr()) return err(could_delete.error);
+		return ok();
+	}
 }
 
 const TICKET_KEY = Symbol('ticket');

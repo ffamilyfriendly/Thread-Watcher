@@ -8,6 +8,7 @@ import PQueue from 'p-queue';
 import { PublicTicketMessageAttachment, TicketMessageAttachment } from '@watcher/shared';
 import { s3 } from '@providers/s3_client';
 import { map_err } from 'utilities/error';
+import { ticket_service } from '@providers/services/ticket_service';
 
 export default class AttachmentService {
   l = logger.getSubLogger({ name: 'Attachments' });
@@ -36,9 +37,14 @@ export default class AttachmentService {
     return await ResultAsync.combineWithAllErrors(promises);
   }
 
-  get_img_location(guild_id: string, attachment_id: string, file_name: string) {
-    const location = `${guild_id}/${attachment_id}_${file_name}`;
-    return location;
+  get_img_location(
+    guild_id: string,
+    attachment_id: string,
+    file_name: string,
+    has_premium: boolean,
+  ) {
+    const prefix = has_premium ? 'exp-90' : 'exp-14';
+    return `${prefix}/${guild_id}/${attachment_id}_${file_name}`;
   }
 
   async perform_r2_upload(
@@ -64,8 +70,8 @@ export default class AttachmentService {
       return;
     }
 
+    this.l.debug(`uploaded '${attachment.id}' -> ${file_location}`);
     this.set_flag(attachment_id, null);
-    this.l.info(`Uploaded ${attachment_id}`);
   }
 
   into_api_type(
@@ -100,10 +106,16 @@ export default class AttachmentService {
     if (has_premium.isErr()) return err(has_premium.error);
 
     const to_insert: TicketMessageAttachment[] = [];
-    const to_upload: Attachment[] = [];
+    const to_upload: { attachment: Attachment; path: string }[] = [];
 
     for (const [attachment_id, attachment] of message.attachments) {
       const file_flag = flag_attachment(attachment, has_premium.value);
+      const cdn_path = this.get_img_location(
+        message.guildId,
+        attachment.id,
+        attachment.name,
+        has_premium.value,
+      );
 
       to_insert.push({
         attachment_id,
@@ -115,10 +127,10 @@ export default class AttachmentService {
         file_width: attachment.width,
         marked_nsfw,
         flag: file_flag,
-        cdn_path: this.get_img_location(message.guildId, attachment.id, attachment.name),
+        cdn_path,
       });
 
-      if (file_flag === 'IS_UPLOADING') to_upload.push(attachment);
+      if (file_flag === 'IS_UPLOADING') to_upload.push({ attachment, path: cdn_path });
     }
 
     if (to_insert.length === 0) return ok();
@@ -126,13 +138,8 @@ export default class AttachmentService {
     const db_res = await this.db.insert_attachments(to_insert);
     if (db_res.isErr()) return err(db_res.error);
 
-    for (const attachment of to_upload) {
-      this.queue.add(() =>
-        this.process_upload(
-          attachment,
-          this.get_img_location(message.guildId, attachment.id, attachment.name),
-        ),
-      );
+    for (const { attachment, path } of to_upload) {
+      this.queue.add(() => this.process_upload(attachment, path));
     }
     this.queue.start();
 

@@ -43,6 +43,7 @@ const ZTicketStates = z.enum(["OPEN", "CLOSED"]);
 export const ZTicket = z.object({
   ticket_id: z.string(),
   guild_id: z.string(),
+  expires_at: z.coerce.date(),
   discord_channel_id: z.string(),
   name: z.string(),
   owner: z.string(),
@@ -72,8 +73,15 @@ export const ZTicketListSearchData = z.object({
   offset: z.coerce.number().default(0),
   ticket_owner: z.string().nullish(),
   guild_id: z.string(),
+  expired: z.boolean().nullish(),
 });
-export type TicketListSearch = z.output<typeof ZTicketListSearchData>;
+
+export const ZPrivateTicketListSearchData = ZTicketListSearchData.partial({
+  guild_id: true,
+  limit: true,
+});
+
+export type TicketListSearch = z.output<typeof ZPrivateTicketListSearchData>;
 
 export const ZEditTicket = ZTicket.omit({
   ticket_id: true,

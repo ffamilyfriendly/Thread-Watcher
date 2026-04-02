@@ -132,6 +132,7 @@ interface Tickets {
   insert_ticket: (ticket: TicketInsertion) => DBResult;
   get_ticket: (ticket_id: string) => DBResult<Ticket>;
   get_tickets: (search: TicketListSearch) => DBResult<TicketListData[]>;
+  delete_old_tickets: () => DBResult<Ticket[]>;
   delete_ticket: (ticket_id: string) => DBResult;
   update_ticket: (ticket_id: string, data: EditTicket) => DBResult;
   get_ticket_id_from_thread: (thread_id: string) => DBResult<string | null>;

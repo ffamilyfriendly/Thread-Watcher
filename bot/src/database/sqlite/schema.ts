@@ -84,6 +84,7 @@ export const Ticket = sqliteTable('tickets', {
   guild_id: text('guild_id')
     .notNull()
     .references(() => Guilds.guild_id, { onDelete: 'cascade' }),
+  expires_at: integer({ mode: 'timestamp' }),
   discord_channel_id: text('discord_channel_id').notNull().unique(),
   start_message_id: text('start_message_id').notNull().unique(),
   name: text('name').notNull(),
@@ -92,7 +93,7 @@ export const Ticket = sqliteTable('tickets', {
   status: text('status').notNull().default('OPEN'),
   panel_id: text('panel_id')
     .notNull()
-    .references(() => TicketPanels.panel_id, { onDelete: 'cascade' }),
+    .references(() => TicketPanels.panel_id, { onDelete: 'no action' }),
   assigned_to_roles: text('assigned_to_roles', { mode: 'json' }).notNull(),
   claimed_by_user_id: text('claimed_by_user_id'),
   created_at: integer('created_at', { mode: 'timestamp' }).$defaultFn(date_now),
@@ -114,7 +115,7 @@ export const MessageAttachment = sqliteTable('ticket_message_attachments', {
   attachment_id: text().$defaultFn(random_id).primaryKey(),
   message_id: text()
     .notNull()
-    .references(() => Message.message_id, { onDelete: 'cascade' }), // Unsure about this cascade? If a attachment is orphaned we want to delete it
+    .references(() => Message.message_id, { onDelete: 'cascade' }),
   filename: text().notNull(),
   url: text().notNull(),
   file_size: integer(),

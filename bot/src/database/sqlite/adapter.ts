@@ -72,16 +72,29 @@ export default class Sqlite implements Database {
 
   constructor(config: ConfigType) {
     this.raw_db = new sql(config.database.database_path);
+    this.raw_db.run(`PRAGMA foreign_keys = ON;`);
     this.drizzle = drizzle(this.raw_db, { schema: full_schema });
     migrate(this.drizzle, { migrationsFolder: './drizzle' });
     this._config = config;
   }
 
   @with_error_handling
+  async delete_old_tickets() {
+    const deleted_count = await this.drizzle
+      .delete(schema.Ticket)
+      .where(lt(schema.Ticket.expires_at, new Date()))
+      .returning();
+    return with_schema(deleted_count, z.array(ZTicket));
+  }
+
+  @with_error_handling
   async get_tickets(filters: TicketListSearch) {
-    const applied_filters = [eq(schema.Ticket.guild_id, filters.guild_id)];
-    const limit = Math.min(filters.limit, 500);
+    const applied_filters = [];
     const offset = filters.offset ?? 0;
+
+    if (filters.guild_id) {
+      applied_filters.push(eq(schema.Ticket.guild_id, filters.guild_id));
+    }
 
     if (filters.assigned_to_user_id) {
       applied_filters.push(eq(schema.Ticket.claimed_by_user_id, filters.assigned_to_user_id));
@@ -98,6 +111,11 @@ export default class Sqlite implements Database {
     if (filters.ticket_owner) {
       applied_filters.push(eq(schema.Ticket.owner, filters.ticket_owner));
     }
+
+    if (filters.expired) {
+      applied_filters.push(gt(schema.Ticket.expires_at, new Date()));
+    }
+
     const results = await this.drizzle.query.Ticket.findMany({
       with: {
         messages: {
@@ -106,7 +124,7 @@ export default class Sqlite implements Database {
         },
       },
       where: and(...applied_filters),
-      limit,
+      limit: filters.limit,
       offset,
     });
 

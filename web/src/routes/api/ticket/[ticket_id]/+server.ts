@@ -10,10 +10,23 @@ import z from 'zod';
 // note: calling this endpoint will resolve a ticket. This cannot be undone
 export async function POST({ params, locals, url }) {
 	const session = await ensure_session(locals);
-	await check_ratelimit([session.user.id, 'get_messages'], 5, 10);
+	await check_ratelimit([session.user.id, 'delete_or_resolve_ticket'], 5, 10);
 
 	const res = await json_fetch(
 		`/tickets/${params.ticket_id}/resolve`,
+		{ user_id: session.user.id, method: 'POST' },
+		z.any()
+	);
+	if (res.isErr()) return return_sveltekit_http_err(res.error);
+	return json(res.value, { status: 200 });
+}
+
+export async function DELETE({ params, locals }) {
+	const session = await ensure_session(locals);
+	await check_ratelimit([session.user.id, 'delete_or_resolve_ticket'], 5, 10);
+
+	const res = await json_fetch(
+		`/tickets/${params.ticket_id}/delete`,
 		{ user_id: session.user.id, method: 'POST' },
 		z.any()
 	);

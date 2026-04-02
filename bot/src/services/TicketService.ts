@@ -142,11 +142,6 @@ export default class TicketService {
   }
 
   async append_message(ticket_id: string, message: Message<true>) {
-    const should_summarize = await this.check_should_be_summarized(ticket_id, message.guildId);
-    if (should_summarize.isErr()) {
-      this.l.error('could not run summary', should_summarize.error);
-    }
-
     const encrypted_content = await encrypt(message.content);
 
     const insert_res = await this.db.insert_message({
@@ -279,5 +274,15 @@ export default class TicketService {
 
     const to_summarize = await this.decrypt_messages(candidates.value);
     return ai_service.do_final_summary(ticket_id, guild_id, to_summarize);
+  }
+
+  async delete_ticket(ticket_id: string) {
+    const delete_attachments = await attachment_service.delete_attachments(ticket_id);
+    if (delete_attachments.isErr()) return err(delete_attachments.error);
+    const could_delete = await this.db.delete_ticket(ticket_id);
+    if (could_delete.isOk()) {
+      this.r.del(['ticket', ticket_id]);
+    }
+    return could_delete;
   }
 }

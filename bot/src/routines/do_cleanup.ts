@@ -25,9 +25,23 @@ async function clean_abandoned_servers() {
   }
 }
 
+async function clean_expired_tickets() {
+  const res = await database.delete_old_tickets();
+  if (res.isErr()) {
+    l.error(`Could not delete expired tickets!`, res.error);
+    return;
+  }
+
+  l.info(
+    `Removed ${res.value.length} tickets!`,
+    res.value.map((t) => `- ${t.name} (${t.ticket_id}) in ${t.guild_id}`).join('\n'),
+  );
+}
+
 function run_cleaners() {
   clean_logs();
   clean_abandoned_servers();
+  clean_expired_tickets();
 }
 
 export function start_cleanup_interval() {

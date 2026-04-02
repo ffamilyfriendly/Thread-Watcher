@@ -28,6 +28,7 @@ import { client } from '@providers/client';
 import { strip_dangerous_strings } from 'utilities/error/escape_sensitive_data';
 import EmbeddableError from 'utilities/error/EmbeddableError';
 import { TicketPipelineModuleError } from 'utilities/error/def';
+import { entitlement_service } from '@providers/services/entitlement_service';
 
 const log_obj_schema = z
   .object({
@@ -212,10 +213,25 @@ export class Pipeline implements IPipeline {
     this.is_resolved = true;
     await this.before_exit();
 
+    const guild_has_premium = (await entitlement_service.has_premium(int.guildId!, int)).match(
+      (t) => t,
+      (ent_err) => {
+        this.logger.error(`could not get premium status of '${int.guildId!}'`, ent_err);
+        return false;
+      },
+    );
+
+    const days_to_retain = guild_has_premium
+      ? config.paywall.retain_tickets_days_premium
+      : config.paywall.retain_tickets_days_free;
+    const days_to_retain_as_ms = days_to_retain * 24 * 60 * 60 * 1000;
+    const ticket_expires_at = new Date(Date.now() + days_to_retain_as_ms);
+
     const ticket_name = this.ticket_name;
     const insert_ticket_res = await ticket_service.insert_ticket({
       ticket_id: this.ticket_id,
       name: ticket_name,
+      expires_at: ticket_expires_at,
       panel_id: this.data.panel_id,
       guild_id: this.data.guild_id,
       owner: int.user.id,
