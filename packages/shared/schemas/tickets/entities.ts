@@ -153,6 +153,7 @@ export type TicketMessage = z.output<typeof ZTicketMessage>;
 
 export const ZTicketSummarySegment = z.object({
   summary_id: z.string(),
+  is_master_summary: z.boolean().default(false),
   ticket_id: z.string(),
   start_message_id: z.string(),
   end_message_id: z.string(),

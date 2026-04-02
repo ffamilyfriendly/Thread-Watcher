@@ -1,11 +1,7 @@
 import { ticket_service } from '@providers/services/ticket_service';
-import { APIGuildMember, GuildMember, RepliableInteraction, ThreadChannel } from 'discord.js';
+import { RepliableInteraction, ThreadChannel } from 'discord.js';
 import { err, ok, ResultAsync } from 'neverthrow';
-import {
-  ensure_deferred,
-  safe_delete,
-  safe_reply_or_followup,
-} from 'utilities/interaction_helpers';
+import { ensure_deferred, safe_delete } from 'utilities/interaction_helpers';
 import { ActionReturnType } from '../_on_interaction';
 import { map_err } from 'utilities/error';
 import { Ticket } from '@watcher/shared';
@@ -44,6 +40,9 @@ export async function do_resolved_actions(
     ticket = ticket_obj.value;
   } else ticket = ticket_id_or_ticket;
 
+  if (ticket.status === 'CLOSED')
+    return err(new Error(`Ticket '${ticket.ticket_id}' is already resolved!`));
+
   const panel_obj = await ticket_service.get_panel(ticket.panel_id);
   if (panel_obj.isErr()) {
     logger.warn(
@@ -53,6 +52,14 @@ export async function do_resolved_actions(
 
   const ticket_close_res = await ticket_service.mark_resolved(ticket.ticket_id);
   if (ticket_close_res.isErr()) return err(ticket_close_res.error);
+
+  ticket_service.do_final_summary(ticket.ticket_id, ticket.guild_id).then((r) => {
+    if (r.isErr())
+      logger.warn(
+        `could not summarize remaining messages on resolve for ${ticket.ticket_id}`,
+        r.error,
+      );
+  });
 
   // We'll default to "nothing" if we cant get the panel as its the safest option.
   // deleting or locking threads "randomly" is not what we want.

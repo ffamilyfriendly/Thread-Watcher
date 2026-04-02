@@ -99,6 +99,11 @@
 		<h3 class="heading">Ticket User</h3>
 		<UserLoader user_id={data.ticket.owner} />
 
+		{#if data.ticket.claimed_by_user_id}
+			<h3 class="heading">Claimed By</h3>
+			<UserLoader user_id={data.ticket.claimed_by_user_id} />
+		{/if}
+
 		<hr />
 
 		{#if data.ticket.summaries.length > 0}

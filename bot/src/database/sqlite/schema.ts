@@ -149,4 +149,5 @@ export const TicketSummary = sqliteTable('ticket_summary_segments', {
   created_at: integer({ mode: 'timestamp' }).$defaultFn(date_now).notNull(),
   summary_text: text(),
   summary_title: text(),
+  is_master_summary: integer({ mode: 'boolean' }),
 });

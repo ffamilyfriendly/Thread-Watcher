@@ -197,6 +197,11 @@ export default class ModalQuestion extends DefaultModule<TypedPipelineModule<'MO
     if (modal_res.value.int instanceof ModalSubmitInteraction)
       this.populate_variables(modal_res.value.int);
 
+    /* Hello future me, I know you're asking WHY we are editing instead of updating.
+     * If the interaction is "fresh", we show the modal straight away without having to click CTA button.
+     * If we were to use update() here with the case of the modal opening on the initial interaction, that would edit the Panel embed itself which we don't want.
+     * Using safe_edit_reply will ensure that we specifically target the CTA message itself. This leads to an extra request but I don't think ratelimits will be an issue
+     */
     const fetch_and_edit_msg = await safe_edit_reply(interaction, {
       message: modal_res.value.msg.id,
       components: [],

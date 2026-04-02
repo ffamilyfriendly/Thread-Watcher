@@ -245,29 +245,39 @@ export default class TicketService {
   static MSGES_REQUIRED_FOR_SUMMARY = 10;
   static MAX_MESSAGES_PER_SUMMARY = 50;
 
-  async check_should_be_summarized(ticket_id: string, guild_id: string) {
+  should_summarize(messages: IntermediaryMessage[]) {
+    if (messages.length === 0) return false;
+    const last_message_is_old =
+      Date.now() - messages.at(-1)!.created_at.getTime() > TicketService.MSG_CONSIDERED_OLD_MS;
+    const enough_messages = messages.length > TicketService.MSGES_REQUIRED_FOR_SUMMARY;
+
+    return (
+      enough_messages &&
+      (last_message_is_old || messages.length >= TicketService.MAX_MESSAGES_PER_SUMMARY)
+    );
+  }
+
+  // TODO: figure out a better name. This method sounds like its checking if it SHOULD summarize, not that it will.
+  async check_should_be_summarized(ticket_id: string, guild_id: string, force = false) {
     const candidates = await this.db.get_summary_candidate_messages(ticket_id);
     if (candidates.isErr()) return err(candidates.error);
 
     const messages = candidates.value;
-    const last_message = messages.at(-1);
-
-    if (messages.length === 0 || !last_message) return ok();
-
-    const last_message_is_old =
-      Date.now() - last_message.created_at.getTime() > TicketService.MSG_CONSIDERED_OLD_MS;
-    const enough_messages = messages.length > TicketService.MSGES_REQUIRED_FOR_SUMMARY;
-
-    const should_summarize =
-      enough_messages &&
-      (last_message_is_old || messages.length >= TicketService.MAX_MESSAGES_PER_SUMMARY);
-
-    if (!should_summarize) return ok();
+    if (messages.length === 0) return ok();
+    if (!this.should_summarize(messages) && !force) return ok();
 
     const to_summarize = await this.decrypt_messages(
       messages.slice(0, TicketService.MAX_MESSAGES_PER_SUMMARY),
     );
 
     return ai_service.do_simple_summary(ticket_id, guild_id, to_summarize);
+  }
+
+  async do_final_summary(ticket_id: string, guild_id: string) {
+    const candidates = await this.db.get_summary_candidate_messages(ticket_id);
+    if (candidates.isErr()) return err(candidates.error);
+
+    const to_summarize = await this.decrypt_messages(candidates.value);
+    return ai_service.do_final_summary(ticket_id, guild_id, to_summarize);
   }
 }

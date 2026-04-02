@@ -294,6 +294,88 @@ export default class AiService {
       summary_title: parsed_res.data.title,
       start_message_id: messages[0].message_id,
       end_message_id: messages[messages.length - 1].message_id,
+      is_master_summary: false,
+    });
+  }
+
+  async do_final_summary(ticket_id: string, guild_id: string, messages: IntermediaryMessage[]) {
+    const allowed_run_function = (
+      await this.preflight(guild_id, 'mistral-small-latest', 300, 200)
+    ).match(
+      (v) => v,
+      (error) => {
+        this.logger.error(`Could not run preflight checks for 'do_simple_summary'`, error);
+        return false;
+      },
+    );
+    if (!allowed_run_function) return err(new Error('Preflight checks failed'));
+
+    const previous_summaries = await this.get_summaries(ticket_id);
+    if (previous_summaries.isErr()) return err(previous_summaries.error);
+
+    const prev_summaries_str = previous_summaries.value.map(
+      (s) =>
+        `<summary start_message_id="${s.start_message_id}" end_message_id="${s.end_message_id}" involved_users="${s.involved_users.join(',')}" created_at="${s.created_at.toISOString()}" >${s.summary_text}</summary>`,
+    );
+
+    const prev_messages_str = messages.map(
+      (msg) => `
+      <message
+        author_id="${msg.author_id}"
+        created_at="${msg.created_at}"
+        message_id="${msg.message_id}"
+        ${msg.reply_to_message_id ? `reply_to="${msg.reply_to_message_id}"` : ''}
+      >
+
+      ${msg.text_content} 
+      ${msg.embeds.map((embed) => `<embed>${JSON.stringify(embed)}</embed>`)}
+      </message>`,
+    );
+
+    const req: AgentsCompletionRequest = {
+      agentId: config.ai.agents.ticket_summarizer,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are a summarization agent. You ONLY respond with valid JSON. Never use XML or markdown.\nTHIS IS THE FINAL SUMMARY OF THIS THREAD. SUMMARIZE THE ENTIRE THREAD',
+        },
+        {
+          role: 'user',
+          content: `<PREVIOUS_SUMMARIES>${prev_summaries_str.join('\n')}</PREVIOUS_SUMMARIES>\n<MESSAGES>${prev_messages_str.join('\n')}</MESSAGES>`,
+        },
+      ],
+    };
+
+    const got_response = await this.wrap_promise(
+      this.client.agents.complete(req),
+      'mistral-small-latest',
+      guild_id,
+    );
+    if (got_response.isErr()) return err(got_response.error);
+
+    const answer = got_response.value.choices.shift();
+    if (!answer) {
+      return err(new Error('AI agent returned no response'));
+    }
+    if (typeof answer.message.content !== 'string')
+      return err(new Error('AI answer had wrong format'));
+
+    const json_parsed = safe_json(answer.message.content);
+    if (json_parsed.isErr()) return err(json_parsed.error);
+    const parsed_res = ZSummaryResult.safeParse(json_parsed.value);
+    if (!parsed_res.success) return err(parsed_res.error);
+
+    const involved_users = new Set(messages.map((msg) => msg.author_id)).values().toArray();
+
+    return database.insert_summary({
+      ticket_id,
+      involved_users,
+      summary_text: parsed_res.data.summary,
+      summary_title: parsed_res.data.title,
+      start_message_id: messages[0].message_id,
+      end_message_id: messages[messages.length - 1].message_id,
+      is_master_summary: true,
     });
   }
 

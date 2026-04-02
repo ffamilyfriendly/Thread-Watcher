@@ -91,7 +91,7 @@ router.post(
       created_by: req.user_id!,
       text: body.data.text,
     });
-    return could_create;
+    return could_create.map((note_id) => ({ note_id }));
   }),
 );
 
