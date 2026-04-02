@@ -3,12 +3,15 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonInteraction,
+  ColorResolvable,
   EmbedBuilder,
   Guild,
   Interaction,
+  InteractionResponse,
   Message,
   ModalBuilder,
   ModalSubmitInteraction,
+  RepliableInteraction,
   StringSelectMenuInteraction,
   ThreadChannel,
 } from 'discord.js';
@@ -16,11 +19,16 @@ import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Logger } from 'tslog';
 import { component_service } from '@providers/services/component_service';
 import { map_err } from 'utilities/error';
-import { safe_reply_or_followup, safe_update } from 'utilities/interaction_helpers';
+import {
+  interaction_is_clean,
+  safe_reply_or_followup,
+  safe_update,
+} from 'utilities/interaction_helpers';
 import { ValueContainer } from './ValueContainter';
 import { ContractLeafValue } from '@watcher/shared/tickets/contracts';
 import { get_default_embed, get_default_proceed, get_default_skip } from './components/modal_cta';
 import { Vacuum } from 'services/ComponentService';
+import { config } from '@providers/config';
 
 namespace Op {
   export function and(v: boolean[]): boolean {
@@ -71,11 +79,38 @@ namespace Op {
   }
 }
 
-export type SupportedInteractionType = ButtonInteraction | StringSelectMenuInteraction;
+export type SupportedInteractionType =
+  | ButtonInteraction
+  | StringSelectMenuInteraction
+  | ModalSubmitInteraction;
 export type SupportedInteractionTypeWithGuild = SupportedInteractionType & {
   guildId: string;
   guild: Guild;
 };
+
+async function send_CTA_message({
+  interaction,
+  btn_row,
+  embed,
+  use_update_instead,
+}: {
+  interaction: RepliableInteraction;
+  btn_row: ActionRowBuilder<ButtonBuilder>;
+  embed: EmbedBuilder;
+  use_update_instead?: boolean;
+}) {
+  let promise;
+  if (use_update_instead) {
+    promise = await safe_update(interaction, { components: [btn_row], embeds: [embed] });
+  } else {
+    promise = await safe_reply_or_followup(interaction, {
+      components: [btn_row],
+      embeds: [embed],
+      flags: 'Ephemeral',
+    });
+  }
+  return promise;
+}
 
 export abstract class DefaultModule<TModType extends PipelineModule> {
   protected l: Logger<unknown>;
@@ -139,7 +174,15 @@ export abstract class DefaultModule<TModType extends PipelineModule> {
       embed?: EmbedBuilder;
       use_update_instead?: boolean;
     },
-  ): Promise<Result<ModalSubmitInteraction | ButtonInteraction, Error>> {
+  ): Promise<
+    Result<
+      {
+        int: ModalSubmitInteraction | ButtonInteraction;
+        msg: Message<boolean> | InteractionResponse<boolean>;
+      },
+      Error
+    >
+  > {
     if (interaction.isAutocomplete())
       return err(
         new Error(
@@ -185,7 +228,8 @@ export abstract class DefaultModule<TModType extends PipelineModule> {
           filter,
           (modal_int) => {
             component_vacuum.clean();
-            return resolve(ok(modal_int));
+            if (cta_msg.isErr()) return resolve(err(cta_msg.error));
+            return resolve(ok({ int: modal_int, msg: cta_msg.value }));
           },
           undefined,
           on_timeout,
@@ -199,35 +243,32 @@ export abstract class DefaultModule<TModType extends PipelineModule> {
             filter,
             (btn_int) => {
               component_vacuum.clean();
-              return resolve(ok(btn_int));
+              if (cta_msg.isErr()) return resolve(err(cta_msg.error));
+              return resolve(ok({ int: btn_int, msg: cta_msg.value }));
             },
             undefined,
             on_timeout,
           ),
         );
 
-      let promise: Result<unknown, Error>;
+      if (interaction_is_clean(interaction) && 'showModal' in interaction) {
+        const show_modal = await ResultAsync.fromPromise(interaction.showModal(modal), map_err);
+        if (show_modal.isErr()) return resolve(err(show_modal.error));
+      }
 
-      if (options?.use_update_instead) {
-        promise = await safe_update(interaction, { components: [btn_row], embeds: [embed] });
-      } else {
-        promise = await safe_reply_or_followup(interaction, {
-          components: [btn_row],
-          embeds: [embed],
-          flags: 'Ephemeral',
-        });
-      }
-      if (promise.isErr()) {
-        component_vacuum.clean();
-        return resolve(err(promise.error));
-      }
+      const cta_msg = await send_CTA_message({
+        interaction,
+        btn_row,
+        embed,
+        use_update_instead: options?.use_update_instead,
+      });
+      if (cta_msg.isErr()) return resolve(err(cta_msg.error));
     });
   }
 
   public get_themed_embed(configure_embed?: (e: EmbedBuilder) => void): EmbedBuilder {
-    const module_meta = MODULE_OUTPUTS[this.self.type];
     const e = new EmbedBuilder();
-    e.setColor(module_meta.accent_clr);
+    e.setColor(config.style.info.colour as ColorResolvable);
     configure_embed?.(e);
     return e;
   }

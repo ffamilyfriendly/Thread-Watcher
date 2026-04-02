@@ -15,11 +15,13 @@ import {
   StringSelectMenuBuilder,
   RoleSelectMenuBuilder,
   SelectMenuComponentOptionData,
+  EmbedBuilder,
+  ColorResolvable,
 } from 'discord.js';
-import { component_service } from '@providers/services/component_service';
-import { map_err } from 'utilities/error';
-import { safe_update } from '../helpers/safe_reply';
+import { safe_edit_reply, safe_update } from '../helpers/safe_reply';
 import { ValueContainer } from '../ValueContainter';
+import { config } from '@providers/config';
+import { map_err } from 'utilities/error';
 
 export default class ModalQuestion extends DefaultModule<TypedPipelineModule<'MODAL_QUESTION'>> {
   constructor(self: TypedPipelineModule<'MODAL_QUESTION'>, pipeline: IPipeline) {
@@ -58,7 +60,6 @@ export default class ModalQuestion extends DefaultModule<TypedPipelineModule<'MO
     ti.setStyle(TextInputStyle.Paragraph);
     if (v.placeholder) ti.setPlaceholder(v.placeholder);
     if (v.value) ti.setValue(v.value);
-    else ti.setValue('_customid_missing');
 
     return ti;
   }
@@ -101,7 +102,6 @@ export default class ModalQuestion extends DefaultModule<TypedPipelineModule<'MO
   create_modal(): ModalBuilder {
     const m = new ModalBuilder();
     m.setTitle('Questions');
-    m.setCustomId('asdasdasd');
 
     for (const label of this.self.labels) {
       const l = new LabelBuilder();
@@ -192,14 +192,21 @@ export default class ModalQuestion extends DefaultModule<TypedPipelineModule<'MO
       return err(new Error('was skipped'));
     }
 
-    this.populate_variables(modal_res.value);
+    // As we're using 'skip_button: false' we're assured that ensure_modal_shown will only return a ModalInteraction.
+    // Never hurts to double check tho
+    if (modal_res.value.int instanceof ModalSubmitInteraction)
+      this.populate_variables(modal_res.value.int);
 
-    const upd_repl = await safe_update(modal_res.value, { components: [] });
-    if (upd_repl.isErr()) {
-      this.l.error('could not update embed');
-      return err(upd_repl.error);
+    const fetch_and_edit_msg = await safe_edit_reply(interaction, {
+      message: modal_res.value.msg.id,
+      components: [],
+    });
+    if (fetch_and_edit_msg.isErr()) {
+      this.l.warn('could not edit CTA message', fetch_and_edit_msg.error);
     }
 
-    return ok();
+    // This casting is done as typechecker is unsure **.value.int has a guildID defined.
+    // We know it does, so we can safely cast it.
+    return ok(modal_res.value.int as SupportedInteractionTypeWithGuild);
   }
 }

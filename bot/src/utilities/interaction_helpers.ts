@@ -1,5 +1,6 @@
 import {
   InteractionDeferReplyOptions,
+  InteractionEditReplyOptions,
   InteractionReplyOptions,
   InteractionResponse,
   InteractionUpdateOptions,
@@ -47,6 +48,13 @@ export async function safe_reply(
   else promise = interaction.reply(content);
 
   return ResultAsync.fromPromise(promise, map_err);
+}
+
+export async function safe_edit_reply(
+  interaction: RepliableInteraction,
+  content: InteractionEditReplyOptions,
+) {
+  return ResultAsync.fromPromise(interaction.editReply(content), map_err);
 }
 
 export async function safe_reply_or_followup(

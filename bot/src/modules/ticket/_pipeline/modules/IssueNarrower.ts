@@ -16,8 +16,7 @@ import {
   RepliableInteraction,
   TextInputStyle,
 } from 'discord.js';
-import { NarrowAnswer, IssueNarrower as Narrower } from 'services/AIWrappers/IssueNarrower';
-import { ensure_deferred, safe_reply_or_followup, safe_update } from '../helpers/safe_reply';
+import { safe_reply_or_followup, safe_update } from '../helpers/safe_reply';
 import { config } from '@providers/config';
 import { ValueContainer } from '../ValueContainter';
 import { mistral_thinking_embed } from '../components/embed';
@@ -130,18 +129,20 @@ export default class IssueNarrower extends DefaultModule<TypedPipelineModule<'NA
       );
 
       if (modal_res.isErr()) return err(modal_res.error);
-      if (modal_res.value instanceof ButtonInteraction) {
-        last_interaction = modal_res.value;
+      const int = modal_res.value.int;
+      if (int instanceof ButtonInteraction) {
+        last_interaction = int;
         this.l.silly(`User skipped AI narrowing on round ${round}/${this.self.max_responses}`);
         break;
       }
-      last_interaction = modal_res.value;
+
+      last_interaction = int;
       await safe_update(last_interaction, {
         embeds: [this.get_themed_embed(mistral_thinking_embed)],
         components: [],
       });
 
-      const followup_clarification = modal_res.value.fields.getTextInputValue(this.self.uid);
+      const followup_clarification = int.fields.getTextInputValue(this.self.uid);
 
       this.l.info(`user answered: ${followup_clarification}`);
 

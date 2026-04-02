@@ -4,6 +4,7 @@ import { SupportedInteractionType, SupportedInteractionTypeWithGuild } from './D
 import { err, ResultAsync } from 'neverthrow';
 import { map_err } from 'utilities/error';
 import { Logger } from 'tslog';
+import { ModalSubmitInteraction } from 'discord.js';
 
 export async function start_pipeline(
   panel: TicketPanel,
@@ -11,6 +12,12 @@ export async function start_pipeline(
   l: Logger<unknown>,
 ) {
   const pipeline = Pipeline.from(panel);
+
+  // This will never happen as the only way to trigger a pipeline is thru either a StringSelect or Button
+  if (interaction instanceof ModalSubmitInteraction)
+    return err(
+      new Error('Pipeline was triggered thru a modal submit interaction and cannot be processed'),
+    );
 
   ResultAsync.fromPromise(
     interaction.message.edit({ components: interaction.message.components }),
