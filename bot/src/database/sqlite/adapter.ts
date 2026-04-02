@@ -148,7 +148,18 @@ export default class Sqlite implements Database {
       with: {
         message: true,
       },
-      where: eq(schema.Message.ticket_id, ticket_id),
+      where: (attachments, { exists }) =>
+        exists(
+          this.drizzle
+            .select()
+            .from(schema.Message)
+            .where(
+              and(
+                eq(schema.Message.message_id, attachments.message_id),
+                eq(schema.Message.ticket_id, ticket_id),
+              ),
+            ),
+        ),
     });
 
     return with_schema(attachments, z.array(ZMessageAttachment));

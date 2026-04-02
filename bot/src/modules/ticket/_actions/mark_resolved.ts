@@ -12,7 +12,11 @@ import { can_close_ticket_or_fail } from './shared';
 import { confirm_resolve_ticket, get_ticket_resolved_buttons } from './components/embeds';
 import { logger } from '@providers/logger';
 
-async function update_buttons(int: RepliableInteraction, start_message_id: string) {
+async function update_buttons(
+  int: RepliableInteraction,
+  start_message_id: string,
+  ticket_id: string,
+) {
   if (!int.channel) return ok();
   const message_promise = await ResultAsync.fromPromise(
     int.channel.messages.fetch(start_message_id),
@@ -20,7 +24,7 @@ async function update_buttons(int: RepliableInteraction, start_message_id: strin
   );
   if (message_promise.isErr()) return err(message_promise.error);
 
-  const action_row = get_action_row();
+  const action_row = get_action_row(ticket_id);
   const [resolve_button, assign_button, note_button] = action_row.components;
   resolve_button.setDisabled(true);
   assign_button.setDisabled(true);
@@ -111,7 +115,11 @@ export default async function mark_ticket_as_resolved(
   if (!ensure_intended.value.should_continue)
     return safe_delete(ensure_intended.value.btn_interaction);
 
-  await update_buttons(ensure_intended.value.btn_interaction, ticket.start_message_id);
+  await update_buttons(
+    ensure_intended.value.btn_interaction,
+    ticket.start_message_id,
+    ticket.ticket_id,
+  );
   const close_res = await do_resolved_actions(int.channel, ticket);
   if (close_res.isErr()) return err(map_err(close_res.error));
 

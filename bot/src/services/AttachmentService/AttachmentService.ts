@@ -30,7 +30,10 @@ export default class AttachmentService {
 
     let promises: ResultAsync<void, Error>[] = [];
     for (const attachment of attachments.value) {
-      const deletion_promise = ResultAsync.fromPromise(s3.delete(attachment.cdn_path), map_err);
+      const deletion_promise = ResultAsync.fromPromise(
+        s3.delete(attachment.cdn_path, { bucket: 'images' }),
+        map_err,
+      );
       promises.push(deletion_promise);
     }
 

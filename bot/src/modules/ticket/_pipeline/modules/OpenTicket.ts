@@ -111,7 +111,7 @@ export default class OpenTicket extends DefaultModule<TypedPipelineModule<'OPEN_
 
     const message: MessageCreateOptions = {
       embeds: [embed],
-      components: [get_action_row()],
+      components: [get_action_row(this.pipeline.ticket_id)],
       content: `<@${user_id}>\n${this.pipeline.assigned_roles.map((r) => `<@&${r}>`).join(', ')}\n-# [(pipeline logs)](${log_link})`,
     };
     const ticket_name = this.pipeline.ticket_name;

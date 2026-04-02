@@ -278,7 +278,10 @@ export default class TicketService {
 
   async delete_ticket(ticket_id: string) {
     const delete_attachments = await attachment_service.delete_attachments(ticket_id);
-    if (delete_attachments.isErr()) return err(delete_attachments.error);
+    if (delete_attachments.isErr()) {
+      this.l.error(`Could not delete attachments of ticket '${ticket_id}'`);
+      return err(delete_attachments.error);
+    }
     const could_delete = await this.db.delete_ticket(ticket_id);
     if (could_delete.isOk()) {
       this.r.del(['ticket', ticket_id]);

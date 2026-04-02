@@ -26,8 +26,8 @@ export async function DELETE({ params, locals }) {
 	await check_ratelimit([session.user.id, 'delete_or_resolve_ticket'], 5, 10);
 
 	const res = await json_fetch(
-		`/tickets/${params.ticket_id}/delete`,
-		{ user_id: session.user.id, method: 'POST' },
+		`/tickets/${params.ticket_id}`,
+		{ user_id: session.user.id, method: 'DELETE' },
 		z.any()
 	);
 	if (res.isErr()) return return_sveltekit_http_err(res.error);

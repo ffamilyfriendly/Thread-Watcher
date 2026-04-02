@@ -1,7 +1,7 @@
 import { config } from '@providers/config';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
-export function get_action_row(): ActionRowBuilder<ButtonBuilder> {
+export function get_action_row(ticket_id: string): ActionRowBuilder<ButtonBuilder> {
   const row = new ActionRowBuilder<ButtonBuilder>();
 
   const resolve_button = new ButtonBuilder();
@@ -22,7 +22,13 @@ export function get_action_row(): ActionRowBuilder<ButtonBuilder> {
   note_button.setLabel('Add Note');
   note_button.setEmoji('📌');
 
-  row.addComponents(resolve_button, assign_button, note_button);
+  const open_online_button = new ButtonBuilder();
+  open_online_button.setLabel('View Transcript');
+  open_online_button.setEmoji('🌐');
+  open_online_button.setURL(config.web.hostname + `/tickets/${ticket_id}`);
+  open_online_button.setStyle(ButtonStyle.Link);
+
+  row.addComponents(resolve_button, assign_button, note_button, open_online_button);
 
   return row;
 }
