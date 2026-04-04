@@ -121,10 +121,12 @@ export default class EntitlementService {
       return ok(v);
     };
 
-    const topgg_res = await this.get_topgg_vote_perk(guild_id);
-    if (topgg_res.isOk() && topgg_res.value && sku_id === config.paywall.basic_sku) {
-      alright(true);
-    }
+    // TODO: implement top.gg vote perks
+    // a lot of the infra we need is alr implemented
+    //const topgg_res = await this.get_topgg_vote_perk(guild_id);
+    //if (topgg_res.isOk() && topgg_res.value && sku_id === config.paywall.basic_sku) {
+    //  alright(true);
+    //}
 
     const cache = await this.r.get([guild_id, sku_id], z.boolean());
     if (cache.isErr()) {
