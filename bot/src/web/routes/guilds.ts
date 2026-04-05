@@ -232,7 +232,7 @@ router.post(
     }
 
     for (const [key, value] of Object.entries(settings_to_save)) {
-      const adapter = setting_service.get_adapter(key);
+      const adapter = setting_service.try_get_adapter(key as string);
       if (!adapter) {
         res.locals.logger.warn(`could not get adapter for setting '${key}'`);
         continue;

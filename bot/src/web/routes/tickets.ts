@@ -61,7 +61,7 @@ router.post(
     const could_mark_resolved = await ipc_client.send_shard(
       res.locals.ticket.guild_id,
       'mark_ticket_resolved',
-      { ticket_id },
+      { ticket_id, user_id: req.user_id! },
     );
     return could_mark_resolved;
   }),

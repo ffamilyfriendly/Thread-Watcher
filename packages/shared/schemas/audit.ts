@@ -50,6 +50,23 @@ const ZAuditTypes = z.discriminatedUnion("audit_type", [
     audit_type: z.literal("MONITOR_REMOVE"),
     target_channel: z.string(),
   }),
+  z.object({
+    audit_type: z.literal("PANEL_CREATED"),
+    panel_id: z.string(),
+  }),
+  z.object({
+    audit_type: z.literal("PANEL_REMOVED"),
+    panel_id: z.string(),
+  }),
+  z.object({
+    audit_type: z.literal("TICKET_OPENED"),
+    ticket_id: z.string(),
+    panel_id: z.string(),
+  }),
+  z.object({
+    audit_type: z.literal("TICKET_RESOLVED"),
+    ticket_id: z.string(),
+  }),
 ]);
 
 export const ZAuditData = z.object({

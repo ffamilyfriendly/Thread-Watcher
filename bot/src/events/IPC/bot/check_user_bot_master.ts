@@ -10,7 +10,7 @@ const event: PrivateEvent<{
 }> = {
   event_name: 'check_user_bot_master',
   async event_callback({ guild_id, user_id }) {
-    const bot_master_setting = setting_service.get_setting<string>(guild_id, 'BOT_MASTER_ROLE');
+    const bot_master_setting = setting_service.get_setting(guild_id, 'BOT_MASTER_ROLE');
     const member_promise = ResultAsync.fromPromise(client.guilds.fetch(guild_id), map_err).match(
       async (guild) => {
         return await ResultAsync.fromPromise(

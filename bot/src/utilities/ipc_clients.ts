@@ -38,6 +38,7 @@ export const FUNCS = {
     event_name: 'mark_ticket_resolved',
     expected_data: z.object({
       ticket_id: z.string(),
+      user_id: z.string(),
     }),
     return_schema: z.void(),
   },

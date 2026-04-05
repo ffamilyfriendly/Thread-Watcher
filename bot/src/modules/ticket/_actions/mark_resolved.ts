@@ -36,6 +36,7 @@ async function update_buttons(
 export async function do_resolved_actions(
   thread: ThreadChannel,
   ticket_id_or_ticket: string | Ticket,
+  user_id: string,
 ) {
   let ticket: Ticket;
   if (typeof ticket_id_or_ticket === 'string') {
@@ -54,7 +55,10 @@ export async function do_resolved_actions(
     );
   }
 
-  const ticket_close_res = await ticket_service.mark_resolved(ticket.ticket_id);
+  const ticket_close_res = await ticket_service.mark_resolved(ticket.ticket_id, {
+    executor_id: user_id,
+    guild_id: ticket.guild_id,
+  });
   if (ticket_close_res.isErr()) return err(ticket_close_res.error);
 
   ticket_service.do_final_summary(ticket.ticket_id, ticket.guild_id).then((r) => {
@@ -120,7 +124,7 @@ export default async function mark_ticket_as_resolved(
     ticket.start_message_id,
     ticket.ticket_id,
   );
-  const close_res = await do_resolved_actions(int.channel, ticket);
+  const close_res = await do_resolved_actions(int.channel, ticket, int.user.id);
   if (close_res.isErr()) return err(map_err(close_res.error));
 
   return safe_delete(ensure_intended.value.btn_interaction);

@@ -1,128 +1,176 @@
 import { client } from '@providers/client';
 import { config } from '@providers/config';
 import { setting_service } from '@providers/services/setting_service';
-import { AuditData } from '@watcher/shared';
+import { AuditData, NarrowedLog } from '@watcher/shared';
 import { ColorResolvable, EmbedBuilder, Message } from 'discord.js';
 import { AppEventKey, AppEventMap } from 'events/bus';
-import { err, ok, ResultAsync } from 'neverthrow';
+import { ok, ResultAsync } from 'neverthrow';
 import { map_err } from './error';
-import i18next from 'i18next';
 import { logger } from '@providers/logger';
 import { is_setting_key } from 'interfaces/Settings';
+import { from_locale_str, TypedI18Func } from './i18def';
 
-type i18n_func = (key: string, obj?: { [key: string]: unknown }) => string;
-type embed_gen = (audit: any, embed: EmbedBuilder, t: i18n_func) => EmbedBuilder;
-
-type ConfigLog = AuditData & { data: Extract<AuditData['data'], { audit_type: 'CONFIG' }> };
-
-type ThingType = AppEventMap[AppEventKey];
-
-async function get_embed(audit: ThingType) {
-  const user_r = await ResultAsync.fromPromise(client.users.fetch(audit.executor_id), map_err);
-  const user = user_r.isOk() ? user_r.value : null;
-
-  const e = new EmbedBuilder();
-  e.setColor(config.style.info.colour as ColorResolvable);
-  e.setTimestamp(new Date());
-  e.setAuthor({ name: user?.username ?? audit.executor_id, iconURL: user?.displayAvatarURL() });
-  return e;
-}
-
-function embed_config_update(audit: ConfigLog, embed: EmbedBuilder, t: i18n_func) {
-  if (!is_setting_key(audit.data.setting_key)) return embed;
-  const adapter = setting_service.get_adapter(audit.data.setting_key);
-  if (!adapter) return embed;
-
-  function display_safe(v: unknown) {
-    if (!adapter.adapter!.is_type(v)) return String(v);
-    return adapter.adapter!.display_value(v);
+abstract class AuditLoggable<Tkey extends AuditData['data']['audit_type']> {
+  embed: EmbedBuilder = new EmbedBuilder();
+  t: TypedI18Func;
+  constructor(
+    readonly event: Omit<NarrowedLog<Tkey>, 'id' | 'timestamp'>,
+    locale?: string,
+  ) {
+    this.embed.setColor(config.style.info.colour as ColorResolvable);
+    if (event.reason) this.embed.setFooter({ text: event.reason });
+    this.t = from_locale_str(locale);
+    this.configure_embed(this.embed);
   }
 
-  embed
-    .setTitle(t('audit.config_embed_title'))
-    .setDescription(t('audit.config_desc', { setting_key: audit.data.setting_key }))
-    .setFields([
-      {
-        name: t('audit.config_embed_from'),
-        value: display_safe(audit.data.old_value) ?? 'N/A',
-        inline: true,
-      },
-      {
-        name: t('audit.config_embed_to'),
-        value: display_safe(audit.data.new_value) ?? 'N/A',
-        inline: true,
-      },
-    ]);
-  return embed;
+  async init_embed() {
+    const user_res = await ResultAsync.fromPromise(
+      client.users.fetch(this.event.executor_id),
+      map_err,
+    );
+    if (user_res.isErr()) {
+      logger.warn(`could not get user object for audit log '${this.event.data.audit_type}'`);
+    }
+
+    const user_is_bot_staff = config.owners.includes(this.event.executor_id);
+
+    const baseName = user_res.isOk()
+      ? (user_res.value.globalName ?? user_res.value.username)
+      : this.event.executor_id;
+
+    const username = baseName + (user_is_bot_staff ? ' ' + this.t('audit.is_bot_staff') : '');
+
+    this.embed.setAuthor({
+      name: username,
+      iconURL: user_res.isOk() ? user_res.value.displayAvatarURL() : undefined,
+    });
+  }
+
+  abstract configure_embed(e: EmbedBuilder): void;
 }
 
-type BatchLog = AuditData & { data: Extract<AuditData['data'], { audit_type: 'BATCH_ACTION' }> };
-function embed_batch_action(audit: BatchLog, embed: EmbedBuilder, t: i18n_func) {
-  embed.setTitle(
-    t('audit.batch_title', {
-      action_amount: audit.data.target_channels.length,
-      action: audit.data.action,
-    }),
-  );
-  return embed;
+class ConfigChange extends AuditLoggable<'CONFIG'> {
+  configure_embed(e: EmbedBuilder): void {
+    if (!is_setting_key(this.event.data.setting_key)) return;
+    const adapter = setting_service.get_adapter(this.event.data.setting_key);
+    if (!adapter) return;
+
+    function display_safe(v: unknown) {
+      if (!adapter.adapter!.is_type(v)) return String(v);
+      return adapter.adapter!.display_value(v);
+    }
+
+    e.setTitle(this.t('audit.config_embed_title'))
+      .setDescription(this.t('audit.config_desc', { setting_key: this.event.data.setting_key }))
+      .setFields([
+        {
+          name: this.t('audit.config_embed_from'),
+          value: display_safe(this.event.data.old_value),
+          inline: true,
+        },
+        {
+          name: this.t('audit.config_embed_to'),
+          value: display_safe(this.event.data.new_value),
+          inline: true,
+        },
+      ]);
+  }
 }
 
-type MonitorLog = AuditData & {
-  data: Extract<AuditData['data'], { audit_type: 'MONITOR_ADD' | 'MONITOR_REMOVE' }>;
+class BatchAction extends AuditLoggable<'BATCH_ACTION'> {
+  configure_embed(e: EmbedBuilder): void {
+    e.setTitle(
+      this.t('audit.batch_title', {
+        action_amount: this.event.data.target_channels.length,
+        action: this.event.data.action.toLowerCase(),
+      }),
+    );
+  }
+}
+
+class MonitorAddedOrRemoved extends AuditLoggable<'MONITOR_ADD' | 'MONITOR_REMOVE'> {
+  configure_embed(e: EmbedBuilder): void {
+    const action_name =
+      this.event.data.audit_type === 'MONITOR_ADD'
+        ? this.t('audit.monitor_start')
+        : this.t('audit.monitor_end');
+
+    e.setTitle(this.t('audit.monitor_title')).setDescription(
+      this.t('audit.monitor_desc', {
+        action: action_name,
+        channel_link: `<#${this.event.data.target_channel}>`,
+      }),
+    );
+  }
+}
+
+class ThreadWatchedOrUnwatched extends AuditLoggable<'THREAD_WATCHED' | 'THREAD_UNWATCHED'> {
+  configure_embed(embed: EmbedBuilder): void {
+    const action_name =
+      this.event.data.audit_type === 'THREAD_WATCHED'
+        ? this.t('commands.watch.watch')
+        : this.t('commands.watch.unwatch');
+    embed.setTitle(this.t('audit.thread_watch_title')).setDescription(
+      this.t('audit.thread_watch_desc', {
+        action: action_name,
+        channel_link: `<#${this.event.data.thread_id}>`,
+      }),
+    );
+  }
+}
+
+class PanelCreatedOrRemoved extends AuditLoggable<'PANEL_CREATED' | 'PANEL_REMOVED'> {
+  configure_embed(e: EmbedBuilder): void {
+    const title =
+      this.event.data.audit_type === 'PANEL_CREATED'
+        ? this.t('ticket.panel_created')
+        : this.t('ticket.panel_removed');
+
+    const body =
+      this.event.data.audit_type === 'PANEL_CREATED'
+        ? this.t('ticket.panel_created_text')
+        : this.t('ticket.panel_removed_text');
+
+    e.setTitle(title).setDescription(body);
+  }
+}
+
+class TicketOpened extends AuditLoggable<'TICKET_OPENED'> {
+  configure_embed(e: EmbedBuilder): void {
+    e.setColor(config.style.success.colour as ColorResolvable);
+    e.setTitle(this.t('ticket.ticket_opened_title'));
+    e.setDescription(this.t('ticket.ticket_opened_body', { ticket_id: this.event.data.ticket_id }));
+  }
+}
+
+class TicketClosed extends AuditLoggable<'TICKET_RESOLVED'> {
+  configure_embed(e: EmbedBuilder): void {
+    e.setTitle(this.t('ticket.ticket_closed_title'));
+    e.setDescription(this.t('ticket.ticket_closed_body', { ticket_id: this.event.data.ticket_id }));
+  }
+}
+
+type AuditLoggableClass<T extends AuditKey> = new (
+  event: Omit<NarrowedLog<T>, 'id' | 'timestamp'>,
+  locale?: string,
+) => AuditLoggable<T>;
+type AuditKey = AuditData['data']['audit_type'];
+const AUDIT_EMBED_BUILDERS: {
+  [K in Exclude<AuditKey, 'COMMAND'>]: AuditLoggableClass<K>;
+} = {
+  THREAD_WATCHED: ThreadWatchedOrUnwatched as any,
+  THREAD_UNWATCHED: ThreadWatchedOrUnwatched as any,
+  MONITOR_REMOVE: MonitorAddedOrRemoved as any,
+  MONITOR_ADD: MonitorAddedOrRemoved as any,
+  CONFIG: ConfigChange,
+  BATCH_ACTION: BatchAction,
+  PANEL_CREATED: PanelCreatedOrRemoved as any,
+  PANEL_REMOVED: PanelCreatedOrRemoved as any,
+  TICKET_OPENED: TicketOpened,
+  TICKET_RESOLVED: TicketClosed,
 };
-function embed_channel_monitor(audit: MonitorLog, embed: EmbedBuilder, t: i18n_func) {
-  const action_name =
-    audit.data.audit_type === 'MONITOR_ADD' ? t('audit.monitor_start') : t('audit.monitor_end');
 
-  embed.setTitle(t('audit.monitor_title')).setDescription(
-    t('audit.monitor_desc', {
-      action: action_name,
-      channel_link: `<#${audit.data.target_channel}>`,
-    }),
-  );
-
-  return embed;
-}
-
-type ThreadLog = AuditData & {
-  data: Extract<AuditData['data'], { audit_type: 'THREAD_WATCHED' | 'THREAD_UNWATCHED' }>;
-};
-function embed_thread(audit: ThreadLog, embed: EmbedBuilder, t: i18n_func) {
-  const action_name =
-    audit.data.audit_type === 'THREAD_WATCHED'
-      ? t('commands.watch.watch')
-      : t('commands.watch.unwatch');
-  embed.setTitle(t('audit.thread_watch_title')).setDescription(
-    t('audit.thread_watch_desc', {
-      action: action_name,
-      channel_link: `<#${audit.data.thread_id}>`,
-    }),
-  );
-  if (audit.reason) embed.setFooter({ text: audit.reason });
-  return embed;
-}
-
-const AUDIT_EMBED_BUILDERS: Record<string, embed_gen> = {
-  THREAD_WATCHED: embed_thread,
-  THREAD_UNWATCHED: embed_thread,
-  MONITOR_REMOVE: embed_channel_monitor,
-  MONITOR_ADD: embed_channel_monitor,
-  CONFIG: embed_config_update,
-  BATCH_ACTION: embed_batch_action,
-};
-
-export function get_audit_embed(audit: ThingType, embed: EmbedBuilder, locale?: string) {
-  const t = (key: string, obj?: { [key: string]: unknown }) =>
-    i18next.t(key, { lng: locale, ...obj });
-  const embed_func = AUDIT_EMBED_BUILDERS[audit.data.audit_type];
-
-  if (!embed_func)
-    return err(new Error(`No embed builder for audit type '${audit.data.audit_type}'`));
-
-  return ok(embed_func(audit, embed, t));
-}
-
-const auditBuffer = new Map<
+const audit_buffer = new Map<
   string,
   {
     embeds: EmbedBuilder[];
@@ -137,21 +185,22 @@ export async function send_audit<TKey extends AppEventKey>(key: TKey, event: App
   const guildId = event.guild_id;
   const guild = client.guilds.cache.get(guildId);
 
-  const embedResult = await get_embed(event).then((base_embed) =>
-    get_audit_embed(event, base_embed, guild?.preferredLocale),
+  if (event.data.audit_type === 'COMMAND') return ok();
+
+  const Builder = AUDIT_EMBED_BUILDERS[event.data.audit_type as Exclude<AuditKey, 'COMMAND'>];
+  const audit_instance = new Builder(
+    event as any /* TODO: stop using any here */,
+    guild?.preferredLocale,
   );
 
-  if (embedResult.isErr()) {
-    logger.error('could not generate audit_embed', embedResult.error);
-    return err(embedResult.error);
+  await audit_instance.init_embed();
+
+  if (!audit_buffer.has(guildId)) {
+    audit_buffer.set(guildId, { embeds: [], timeout: null });
   }
 
-  if (!auditBuffer.has(guildId)) {
-    auditBuffer.set(guildId, { embeds: [], timeout: null });
-  }
-
-  const session = auditBuffer.get(guildId)!;
-  session.embeds.push(embedResult.value);
+  const session = audit_buffer.get(guildId)!;
+  session.embeds.push(audit_instance.embed);
 
   if (session.timeout) clearTimeout(session.timeout);
 
@@ -161,10 +210,10 @@ export async function send_audit<TKey extends AppEventKey>(key: TKey, event: App
 }
 
 async function flush_audit_buffer(guildId: string) {
-  const session = auditBuffer.get(guildId);
+  const session = audit_buffer.get(guildId);
   if (!session || session.embeds.length === 0) return;
 
-  auditBuffer.delete(guildId);
+  audit_buffer.delete(guildId);
 
   const { embeds } = session;
 

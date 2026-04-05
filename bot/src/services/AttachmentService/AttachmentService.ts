@@ -142,7 +142,10 @@ export default class AttachmentService {
     if (db_res.isErr()) return err(db_res.error);
 
     for (const { attachment, path } of to_upload) {
-      this.queue.add(() => this.process_upload(attachment, path));
+      const prom = this.queue.add(() => this.process_upload(attachment, path));
+      ResultAsync.fromPromise(prom, map_err).then((r) => {
+        if (r.isErr()) logger.error(`PQueue failed on attachment '${attachment.id}'`, r.error);
+      });
     }
     this.queue.start();
 

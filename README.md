@@ -42,7 +42,7 @@
 2. Run `bun install` to install required deps for bot and dashboard code
 3. configure the bot:
    - Edit `bot/_config.json5` and rename it to `config.json5`
-   - Set up your database (SQLite by default, more adapters coming... Maybe even [MongoDB](https://github.com/ffamilyfriendly/Thread-Watcher/issues/37))
+   - Set up your database (SQLite by default)
 4. Deploy commands:
    - `npm run deploy:dev -w bot` (for local commands only)
    - `npm run deploy:prod -w bot` (for global commands)
@@ -55,17 +55,15 @@
 
 ## 🌐 Dashboard
 
-The dashboard code exists in [the web directory](./web) along with more information on how it works (soon). For now, enjoy this sleep deprived TL;DR:
+The dashboard is a "proxy" for the actual API which is ran on the bot shard manager. This is as our API frequently needs to fetch data from a shard instance in which case an IPC call is required. Sveltekit handles authentication (thru Auth.js), ratelimits, and limited caching.
 
-the web dashboard runs with sveltekit and handles user authentication and authorization. The API exposed by the shard manager does not provide direct user authorization or authentication and can therefore **NEVER** be exposed to the wider internet. Sveltekit serves as the gatekeeper and makes authenticated requests to the API using the `SHARED_API_SECRET` variable in it's `.env` file.
+To facilitate safe trafic between the shard manager and sveltekit server should they need to communicate over "the world wide web" we define a shared secret key for both locations.
+Every request contains this secret key in an `X-Internal-Auth` header wherein all requests lacking this header or containing the wrong value are rejected. Ideally we'd not need to communicate
+across servers for the sake of safety and speed but this meassure has been taken to future proof Thread-Watcher.
 
-I think(?) this should be safe enough. But idk. Im just a guy :D
+Authorization is handled by the express api running on the shard manager and is better detailed [in the API documentation](/docs/api_policies.md)
 
 ## 🤓 Development
 
 > [!NOTE]
 > Currently, Thread-Watcher is **not accepting contributions**. Once V3 is stable and deployed this might change.
-
-The codebase is very WIP and a _lot_ is subject to change. I am aiming for a Q4 (2025) or Q1 (2026) release. However, as I'm studying at uni full time things might change. Join the [support server](https://botsuite.co) to stay in the loop!
-
-AI is not used to produce **any** code in this repo. However, I use copilot to generate code docs (because its boring)

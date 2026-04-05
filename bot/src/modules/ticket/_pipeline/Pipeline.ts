@@ -1,34 +1,23 @@
 import { TicketPanel } from '@watcher/shared';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  ColorResolvable,
-  EmbedBuilder,
-  Interaction,
-  Message,
-  ThreadChannel,
-} from 'discord.js';
+import { Interaction, Message, ThreadChannel } from 'discord.js';
 import { create_module } from './helpers/module_factory';
 import { logger } from '@providers/logger';
 import { DefaultModule, IPipeline, SupportedInteractionType } from './DefaultModule';
 import { ILogObj, Logger } from 'tslog';
 import { s3 } from '@providers/s3_client';
-import z, { string } from 'zod';
+import z from 'zod';
 import { map_err } from 'utilities/error';
 import { config } from '@providers/config';
 import { safe_reply_or_followup } from 'utilities/interaction_helpers';
 import { ValueContainer } from './ValueContainter';
 import { ticket_service } from '@providers/services/ticket_service';
-import { ContractLeafValue } from '@watcher/shared/tickets/contracts';
 import { create_ticket_opened } from './components/embed';
 import { interpolate_string } from './helpers/var_string';
-import { client } from '@providers/client';
 import { strip_dangerous_strings } from 'utilities/error/escape_sensitive_data';
-import EmbeddableError from 'utilities/error/EmbeddableError';
 import { TicketPipelineModuleError } from 'utilities/error/def';
 import { entitlement_service } from '@providers/services/entitlement_service';
+import { ContractLeafValue } from '../../../../../packages/shared/tickets/contracts';
 
 const log_obj_schema = z
   .object({
@@ -228,18 +217,21 @@ export class Pipeline implements IPipeline {
     const ticket_expires_at = new Date(Date.now() + days_to_retain_as_ms);
 
     const ticket_name = this.ticket_name;
-    const insert_ticket_res = await ticket_service.insert_ticket({
-      ticket_id: this.ticket_id,
-      name: ticket_name,
-      expires_at: ticket_expires_at,
-      panel_id: this.data.panel_id,
-      guild_id: this.data.guild_id,
-      owner: int.user.id,
-      assigned_to_roles: this.assigned_roles,
-      variable_dump: this.get_all_properties(),
-      discord_channel_id: ticket_thread.id,
-      start_message_id: start_message.id,
-    });
+    const insert_ticket_res = await ticket_service.insert_ticket(
+      {
+        ticket_id: this.ticket_id,
+        name: ticket_name,
+        expires_at: ticket_expires_at,
+        panel_id: this.data.panel_id,
+        guild_id: this.data.guild_id,
+        owner: int.user.id,
+        assigned_to_roles: this.assigned_roles,
+        variable_dump: this.get_all_properties(),
+        discord_channel_id: ticket_thread.id,
+        start_message_id: start_message.id,
+      },
+      { executor_id: int.user.id, guild_id: int.guildId! },
+    );
 
     if (insert_ticket_res.isErr()) {
       this.logger.error(`Could not commit ticket to database!`);

@@ -207,12 +207,16 @@ export default class ThreadBumper {
 
     threads_to_bump.forEach((thread) => {
       this.queued_threads.add(thread.thread_id);
-      this.queue.add(async () => {
+      const prom = this.queue.add(async () => {
         const res = await this.bump_thread(thread);
         if (res.isErr()) {
           this.l.error(`Could not bump ${thread.thread_id}: `, res.error);
         }
         this.queued_threads.delete(thread.thread_id);
+      });
+
+      ResultAsync.fromPromise(prom, map_err).then((r) => {
+        if (r.isErr()) logger.error(`PQueue err on bumping thread '${thread.thread_id}'`, r.error);
       });
     });
   }

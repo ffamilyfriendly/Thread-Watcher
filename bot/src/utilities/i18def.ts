@@ -17,3 +17,9 @@ export function from_interaction(i: Interaction): TypedI18Func {
     });
   };
 }
+
+export function from_locale_str(locale?: string): TypedI18Func {
+  return (key, ...options) => {
+    return i18next.t(key as string, { lng: locale, ...options[0] });
+  };
+}

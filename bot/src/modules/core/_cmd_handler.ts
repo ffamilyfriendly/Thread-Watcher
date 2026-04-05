@@ -15,7 +15,6 @@ import ComponentService from '@providers/services/component_service';
 import { err, ok } from 'neverthrow';
 import EmbeddableError from 'utilities/error/EmbeddableError';
 import { EntitlementsError, PermissionsError } from 'utilities/error/def';
-import i18next from 'i18next';
 import { from_interaction } from 'utilities/i18def';
 
 const config = Config.instance;
@@ -30,9 +29,9 @@ function get_command_context(cmd: Interaction): CommandContext {
       name: cmd.isCommand() ? cmd.commandName : `interaction ${cmd.id}`,
     }),
     build_embed: (style) => {
-      const use_style = style || 'info';
       const e = new EmbedBuilder();
-      e.setColor(config.style.info.colour as ColorResolvable);
+      const use_style = style ? config.style[style] : config.style.info;
+      e.setColor(use_style.colour as ColorResolvable);
       return e;
     },
   };

@@ -44,6 +44,10 @@ async function run(
   const thread_action = ctx.t(result.value ? 'commands.watch.watch' : 'commands.watch.unwatch');
   e.setDescription(ctx.t('commands.watch.embed_body', { thread_id: thread.id, thread_action }));
 
+  e.setFooter({
+    text: ctx.t(result.value ? 'commands.watch.footer_watch' : 'commands.watch.footer_unwatch'),
+  });
+
   return safe_reply(interaction, { embeds: [e], flags: 'Ephemeral' });
 }
 

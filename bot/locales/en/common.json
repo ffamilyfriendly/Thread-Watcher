@@ -5,7 +5,9 @@
       "embed_body": "<#{{thread_id}}> was {{thread_action}}",
       "thread": "thread",
       "watch": "watched",
-      "unwatch": "unwatched"
+      "unwatch": "unwatched",
+      "footer_watch": "Thread-Watcher will make sure it never archives",
+      "footer_unwatch": "Thread-Watcher will no longer keep it un-archived"
     },
     "batch": {
       "fetching_title": "🔍 Fetching Threads...",
@@ -61,6 +63,7 @@
     }
   },
   "audit": {
+    "is_bot_staff": "(Bot Admin)",
     "view_log": "View Log",
     "config_embed_title": "Configuration Changed",
     "config_desc": "for setting `{{setting_key}}`",
@@ -74,6 +77,16 @@
     "monitor_desc": "{{action}} monitoring threads in {{channel_link}}",
     "thread_watch_title": "Thread Watch Status Changed",
     "thread_watch_desc": "Thread {{channel_link}} was {{action}}"
+  },
+  "ticket": {
+    "panel_created": "Panel Created!",
+    "panel_created_text": "hi",
+    "panel_removed": "Panel Removed!",
+    "panel_removed_text": "it can not longer be used to create new tickets. Any existing tickets created from this panel will continue to work",
+    "ticket_opened_title": "Ticket Opened!",
+    "ticket_opened_body": "ticket with ID **[{{ticket_id}}](https://threadwatcher.xyz/tickets/{{ticket_id}})** opened. Assigned roles have been pinged.",
+    "ticket_closed_title": "Ticket Closed!",
+    "ticket_closed_body": "ticket with ID **{{ticket_id}}** has been marked resolved."
   },
   "errors": {
     "fatal": "Fatal Error",

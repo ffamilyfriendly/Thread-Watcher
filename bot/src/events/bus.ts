@@ -14,6 +14,10 @@ export interface AppEventMap {
   'thread:unwatched': LogEventType<'THREAD_UNWATCHED'>;
   'thread:batch_action': LogEventType<'BATCH_ACTION'>;
   'config:change': LogEventType<'CONFIG'>;
+  'tickets:panel_add': LogEventType<'PANEL_CREATED'>;
+  'tickets:panel_remove': LogEventType<'PANEL_REMOVED'>;
+  'tickets:ticket_open': LogEventType<'TICKET_OPENED'>;
+  'tickets:ticket_resolved': LogEventType<'TICKET_RESOLVED'>;
   command: LogEventType<'COMMAND'>;
 }
 
@@ -40,6 +44,21 @@ export class InternalBus {
     this.guild_buckets.delete(guild_id);
 
     const { events } = bucket;
+
+    if (events.length === 1) {
+      const event = events[0];
+      switch (event.data.audit_type) {
+        case 'THREAD_WATCHED':
+          this.emitter.emit('thread:watched', event as any);
+          this.on_emit_hook?.('thread:watched', event as any);
+          break;
+        case 'THREAD_UNWATCHED':
+          this.emitter.emit('thread:unwatched', event as any);
+          this.on_emit_hook?.('thread:unwatched', event as any);
+          break;
+      }
+      return;
+    }
 
     const is_mixed = !!events.find(
       (item, idx) => item.data.audit_type !== events[Math.max(idx - 1, 0)].data.audit_type,

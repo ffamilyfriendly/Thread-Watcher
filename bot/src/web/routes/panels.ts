@@ -18,7 +18,10 @@ router.post(
 
     if (!parsed_panel.success) return err(parsed_panel.error);
 
-    return ticket_service.insert_panel(parsed_panel.data);
+    return ticket_service.insert_panel(parsed_panel.data, {
+      executor_id: req.user_id!,
+      guild_id: req.params.guild_id as string,
+    });
   }),
 );
 

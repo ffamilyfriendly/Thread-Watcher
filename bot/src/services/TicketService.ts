@@ -26,6 +26,8 @@ import { map_err, mapped_err } from 'utilities/error';
 import { PanelNotFound, ThreadIdNotFound, TicketNotFound } from 'utilities/error/def';
 import RedisWrapper from 'utilities/redis';
 import z from 'zod';
+import { AuditMeta } from './AuditService';
+import { event_bus } from '@providers/event_bus';
 
 export default class TicketService {
   static readonly CACHE_TTL_SECONDS = 900;
@@ -55,19 +57,37 @@ export default class TicketService {
     return ok(db_res.value);
   }
 
-  async insert_panel(panel_data: TicketPanel) {
+  async insert_panel(panel_data: TicketPanel, meta: AuditMeta) {
     const db_res = await this.db.insert_ticket_panel(panel_data.guild_id, panel_data);
 
     if (db_res.isOk()) {
       panel_data.panel_id = db_res.value.panel_id;
       this.r.set(['panel', panel_data.panel_id], panel_data, ZTicketPanel);
+
+      event_bus.emit('tickets:panel_add', {
+        ...meta,
+        data: { audit_type: 'PANEL_CREATED', panel_id: db_res.value.panel_id },
+      });
     }
 
     return db_res;
   }
 
-  async insert_ticket(ticket_data: TicketInsertion) {
-    return this.db.insert_ticket(ticket_data);
+  async insert_ticket(ticket_data: TicketInsertion, meta: AuditMeta) {
+    const db_res = await this.db.insert_ticket(ticket_data);
+
+    if (db_res.isOk()) {
+      event_bus.emit('tickets:ticket_open', {
+        ...meta,
+        data: {
+          audit_type: 'TICKET_OPENED',
+          panel_id: ticket_data.panel_id,
+          ticket_id: ticket_data.ticket_id,
+        },
+      });
+    }
+
+    return db_res;
   }
 
   async update_ticket(ticket_id: string, data: EditTicket) {
@@ -75,9 +95,22 @@ export default class TicketService {
     return this.db.update_ticket(ticket_id, data);
   }
 
-  async mark_resolved(ticket_id: string) {
+  async mark_resolved(ticket_id: string, meta: AuditMeta) {
     this.r.del(['ticket', ticket_id]);
-    return this.db.update_ticket(ticket_id, { status: 'CLOSED', closed_at: new Date() });
+
+    const db_res = await this.db.update_ticket(ticket_id, {
+      status: 'CLOSED',
+      closed_at: new Date(),
+    });
+
+    if (db_res.isOk()) {
+      event_bus.emit('tickets:ticket_resolved', {
+        ...meta,
+        data: { audit_type: 'TICKET_RESOLVED', ticket_id },
+      });
+    }
+
+    return db_res;
   }
 
   async get_ticket_id_from_thread_id(thread_id: string) {
