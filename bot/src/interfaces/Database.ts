@@ -36,6 +36,7 @@ export type DBResult<T = void> = Promise<Result<T, DatabaseError>>;
 
 interface CoreUtils {
   create_backup_file: (base_dir?: string) => DBResult<{ full_path: string; file_name: string }>;
+  run_migration: () => DBResult;
   close: () => DBResult<void>;
 }
 
@@ -132,7 +133,7 @@ interface Tickets {
   insert_ticket: (ticket: TicketInsertion) => DBResult;
   get_ticket: (ticket_id: string) => DBResult<Ticket>;
   get_tickets: (search: TicketListSearch) => DBResult<TicketListData[]>;
-  delete_old_tickets: () => DBResult<Ticket[]>;
+  delete_old_tickets: () => DBResult<Ticket[] | void>;
   delete_ticket: (ticket_id: string) => DBResult;
   update_ticket: (ticket_id: string, data: EditTicket) => DBResult;
   get_ticket_id_from_thread: (thread_id: string) => DBResult<string | null>;

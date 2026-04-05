@@ -1,10 +1,12 @@
 import { Database } from 'interfaces/Database';
 import { ConfigType } from 'utilities/config';
 import SqliteHandler from './sqlite/adapter';
+import MysqlHandler from './mysql/adapter';
 import { err, ok, Result } from 'neverthrow';
 import { SQLiteError } from 'bun:sqlite';
 import z from 'zod';
 import { DatabaseError } from 'utilities/error/def';
+import { logger } from '@providers/logger';
 
 export default function get_database_instance(config: ConfigType): Database {
   let handler_type;
@@ -12,11 +14,16 @@ export default function get_database_instance(config: ConfigType): Database {
     case 'sqlite':
       handler_type = SqliteHandler;
       break;
+    case 'mysql':
+      handler_type = MysqlHandler;
+      break;
     default:
-      throw new Error('oopsie poopsie');
+      throw new Error(`No database adapter set for '${(config.database as any).flavour}'`);
   }
 
-  return new handler_type(config);
+  const instance = new handler_type(config);
+
+  return instance;
 }
 
 function handle_error(err_data: unknown) {
@@ -26,6 +33,7 @@ function handle_error(err_data: unknown) {
     // Tenary operators get VERY beutiful with ts type checking
     // You, the reader, is most welcome. I wrote this shit at 21:00 2025-07-17 btw fun fact!!! :D :D :D
     // > Thank you, past me, for this nice message. I wrote this reply at 01:58 2025-11-22
+    // > > Thank you, past me's, for those nice messages. I wrote this reply at 01:11 2026-04-05
     const message =
       err_data &&
       typeof err_data === 'object' &&

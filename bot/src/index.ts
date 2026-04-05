@@ -26,6 +26,16 @@ event_bus.set_on_emit((key, payload) => {
   ipc_client.send_shard(payload.guild_id, 'bus_event', { event_key: key, ...payload });
 });
 
+let should_do_migration = true;
+if (should_do_migration) {
+  database.run_migration().then((r) => {
+    logger.info(`Running database migration for database instance '${typeof database}'...`);
+    if (r.isErr()) {
+      logger.error(`Could not run migration for database instance '${typeof database}'!`, r.error);
+    }
+  });
+}
+
 async function load_events() {
   return load_module_as_and<PrivateEvent>('./src/events/IPC/manager', (events_array) => {
     for (const event of events_array) {

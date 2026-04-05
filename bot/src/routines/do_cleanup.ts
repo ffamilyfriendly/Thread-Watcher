@@ -32,10 +32,14 @@ async function clean_expired_tickets() {
     return;
   }
 
-  l.info(
-    `Removed ${res.value.length} tickets!`,
-    res.value.map((t) => `- ${t.name} (${t.ticket_id}) in ${t.guild_id}`).join('\n'),
-  );
+  if (res.value && res.value.length > 0) {
+    l.info(
+      `Removed ${res.value.length} tickets!`,
+      res.value.map((t) => `- ${t.name} (${t.ticket_id}) in ${t.guild_id}`).join('\n'),
+    );
+  } else {
+    l.debug(`Removed old tickets!`);
+  }
 }
 
 function run_cleaners() {

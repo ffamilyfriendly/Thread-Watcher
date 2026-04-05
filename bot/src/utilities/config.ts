@@ -40,9 +40,7 @@ const ZCronTab = z
     /^((((\d+,)+\d+|(\d+(\/|-|#)\d+)|\d+L?|\*(\/\d+)?|L(-\d+)?|\?|[A-Z]{3}(-[A-Z]{3})?) ?){5,7})|(@(annually|yearly|monthly|weekly|daily|hourly|reboot))|(@every (\d+(ns|us|µs|ms|s|m|h))+)$/gm,
   );
 
-const Database = z.object({
-  flavour: z.enum(['sqlite', 'mysql']).default('sqlite'),
-  database_path: z.string().default('./data.db'),
+const BaseDb = z.object({
   backup_path: z.string().default('./backups'),
   backup_interval: ZCronTab,
   upload_backup_to_bucket: z.boolean(),
@@ -51,6 +49,23 @@ const Database = z.object({
   keep_dead_servers_in_db_seconds: z.number(),
   redis: Redis,
 });
+
+const SqliteConnection = BaseDb.extend({
+  flavour: z.literal('sqlite').default('sqlite'),
+  database_path: z.string().default('./data.db'),
+});
+
+const MySqlConnection = BaseDb.extend({
+  flavour: z.literal('mysql').default('mysql'),
+  host: z.string(),
+  user: z.string(),
+  password: z.string(),
+  name: z.string(),
+  connection_limit: z.number().default(5),
+});
+export type MySqlConf = z.output<typeof MySqlConnection>;
+
+const Database = z.discriminatedUnion('flavour', [SqliteConnection, MySqlConnection]);
 
 const BucketStorage = z.object({
   url: z.url(),

@@ -1,60 +1,89 @@
 {
   tokens: {
-    // Keep this very very secret
-    discord: 'SECRET',
-    // This is only required if you have a top.gg bot page you want to keep updated with bot statistics
+    // Your discord bot secret. Keep this secret (duh)
+    discord: 'XXXX',
     topgg: 'secret',
   },
-  // You would probably want to disable this
-  paywall_enabled: true,
-  // This is required for the dashboard to work.
-  // The bot will work without it but some features may be missing
+  paywall: {
+    // You probably want to keep this false.
+    enabled: false,
+    basic_sku: '1326343068533653635',
+    // how long to retain any tickets past their creation data in the database
+    // !! Ensure you also set appropriate auto-deletion lifecycles on your S3 bucket to avoid filling it with attachments
+    retain_tickets_days_free: 14,
+    retain_tickets_days_premium: 90,
+  },
   web: {
     enabled: true,
     port: 2003,
     hostname: 'https://threadwatcher.xyz',
-    // This is a secret you need to set in both this config file and the .env for sveltekit.
-    // If it does not match the API will refuse any requests.
-    shared_secret: 'xX_1tz_4_5hared_5crit_Xx',
+    // The shared secret is used to verify requests coming from the dashboard/web are legitimate.
+    // Pick a safe secret and ensure you define the same secret in the web config
+    shared_secret: 'XXXX',
   },
-  // These users will have absolute privledges. You want to insert your discord ID here
+  // an array of discord IDs of user with owner privledges. I suggest removing my ID (286224826170081290)
   owners: ['286224826170081290'],
-  // Client ID of the bot user
   clientID: '1202623821010436147',
-  // ID of the development server. You want to put in your own server ID here
+  // The discord server ID of your development (or private) server where the developer only commands will be registered
   devServer: '1063430373394100335',
-  database: {
-    // Options:
-    // - Sqlite
-    // - MySql (soon)
-    // I'd suggest Sqlite for an easier experience
-    flavour: 'sqlite',
-    // Credentials for your redis instance
-    // (Currently not used)
+  /*
+    flavour: 'mysql',
     redis: {
-      user: 'stigman',
-      password: 'hunter1',
+      user: 'xxxx',
+      password: 'xxx',
     },
-    // The folder that local database dumps will be saved to. Relative to the directory this file is in
     backup_path: './backups',
-    // cron expression for how often you want the bot to create backups
-    // use https://crontab.cronhub.io/ if unsure on syntax
     backup_interval: '0 0 * * *',
-    // Wheter or not you want the backups to be uploaded to the S3 bucket (configured below)
     upload_backup_to_bucket: false,
-    // cron expression for how often you want to run the cleanup task
-    // - Clears audit logs older than the guild set max limit
-    // - Deletes data from stale guilds
-    run_cleanup_tasks: '0 * * * *',
-    // How many local database dumbs to keep. Will delete the oldest first
+    run_cleanup_tasks: '* * * * *',
     keep_local_files_amount: 5,
-    // How long the bot has to have been abscent from a guild before we delete its data
+    keep_dead_servers_in_db_seconds: 2592000,
+  */
+  database: {
+    flavour: 'sqlite',
+    /* Redis is currently implemented without 'user' or 'password'. You can therefore set these to whatever you'd like */
+    redis: {
+      user: 'stigman_gaming',
+      password: 'fortnite_idk',
+    },
+    // The path (relative or absolute) to the folder where Thread-Watcher will leave it's database dumps
+    // Check /bot/src/routines/do_database_backup.ts for exact implementation
+    backup_path: './backups',
+    // How often Thread-Watcher should take database backups.
+    // '0 0 * * *' will generate a backup daily @ midnight. tip: https://crontab.cronhub.io/
+    backup_interval: '0 0 * * *',
+    // Wheter or not to upload database dumps to the S3 bucket provided below
+    upload_backup_to_bucket: false,
+    // How often cleanup tasks should run. Cleanup tasks include removing data from servers the bot has left, removing expired tickets, and so forth.
+    // Check /bot/src/routines/do_cleanup.ts for exact implementation
+    run_cleanup_tasks: '*/30 * * * *', // every half hour
+    // How many database dumps to keep locally. Files will be deleted in a FIFO order
+    keep_local_files_amount: 5,
+    // A server is considered 'dead' from the moment the bot is kicked from the server. When the bot re-joins a server this field is nullified (the countdown stops)
     keep_dead_servers_in_db_seconds: 2592000,
   },
+  ai: {
+    monthly_tokens_premium: 999999999999,
+    initial_free_tokens: 999999999999,
+    /* AI (can) be used in ticket modules & for creating regexes on the fly. You can get your agent key on https://console.mistral.ai/home?profile_dialog=api-keys */
+    mistral_key: 'XXXX',
+    agents: {
+      /*
+        Define your agents on https://console.mistral.ai/build/agents
+        The agent prompts & configuration we use is available in the /docs folder
+      */
+      regex_agent: 'ag_XXXX',
+      issue_narrower: 'ag_XXXX',
+      ticket_summarizer: 'ag_XXXX',
+    },
+  },
+  /* The bucket storage is used to store images, database backups, and ticket pipeline log-files. You may use any S3 compatible provider */
   bucket_storage: {
-    url: 'https://xdxdxdxd.r2.cloudflarestorage.com',
-    secret_access_key: 'REPLACE_ME',
-    access_key_id: 'REPLACE_ME',
+    url: 'https://XXXX.r2.cloudflarestorage.com',
+    secret_access_key: 'XXXX',
+    access_key_id: 'XXXX',
+    free_file_limit: 20970000, //20 megabytes
+    global_file_limit: 525300000, //500 megabytes (discord max)
   },
   style: {
     error: {
@@ -74,4 +103,6 @@
       emoji: '⚠️',
     },
   },
+  /* This crypto key is used to encrypt message content provided by users of the ticket and can be generated in the same way as the 'shared_secret' above */
+  crypto_key: 'CRYPTO_KEY',
 }

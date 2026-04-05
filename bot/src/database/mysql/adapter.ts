@@ -1,14 +1,12 @@
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import sql, { Database as SqliteDb } from 'bun:sqlite';
-import { ConfigType } from 'utilities/config';
+import { ConfigType, MySqlConf } from 'utilities/config';
 import { with_error_handling, with_schema } from 'database';
 import { join, resolve as resolve_path } from 'path';
-import { create as create_tar } from 'tar';
-import { map_err } from 'utilities/error';
 import { z } from 'zod';
+import { create as create_tar } from 'tar';
 import { Database, DBResult, TicketInsertion } from 'interfaces/Database';
-import { drizzle, BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
-import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
+import { migrate } from 'drizzle-orm/mysql2/migrator';
+import { MySql2Database, drizzle } from 'drizzle-orm/mysql2';
 import {
   AuditData,
   BaseMonitor,
@@ -32,13 +30,10 @@ import {
   IntermediaryTicketView,
   ZIntermediaryTicketView,
   MessagesSeachFilter,
-  PublicTicketMessage,
-  IntermediaryMessage,
   ZIntermediaryMessage,
   TicketSummarySegment,
   ZTicketSummarySegment,
   ZMessageAttachment,
-  TicketListData,
   TicketListSearch,
   ZTicketListData,
 } from '@watcher/shared';
@@ -58,45 +53,66 @@ import {
   lt,
   desc,
   gt,
-  asc,
+  sql,
 } from 'drizzle-orm';
 import { DatabaseError, TicketNotFound } from 'utilities/error/def';
+import mysql from 'mysql2/promise';
 import { logger } from '@providers/logger';
+import { map_err } from 'utilities/error';
 
 const full_schema = { ...schema, ...relations };
 type FullSchema = typeof full_schema;
 
-export default class Sqlite implements Database {
-  private raw_db: SqliteDb;
-  private drizzle: BunSQLiteDatabase<FullSchema>;
+export default class MySql implements Database {
+  private connection_pool: mysql.Pool;
+  private drizzle: MySql2Database<FullSchema>;
   private _config: ConfigType;
 
   constructor(config: ConfigType) {
     // This should never happen as the database loader acts based on the database flavour.
-    // the config zod schema uses a discriminated union so if we've the flavour set as "sqlite" we WILL get the correct type and stuff
-    if (config.database.flavour !== 'sqlite') {
-      logger.error("Attempted to initiate 'Sqlite' database with wrong database config flavour");
+    // the config zod schema uses a discriminated union so if we've the flavour set as "mysql" we WILL get the correct type and stuff
+    if (config.database.flavour !== 'mysql') {
+      logger.error("Attempted to initiate 'MySql' database with wrong database config flavour");
       process.exit(1);
     }
-    this.raw_db = new sql(config.database.database_path);
-    this.raw_db.run(`PRAGMA foreign_keys = ON;`);
-    this.drizzle = drizzle(this.raw_db, { schema: full_schema });
+
+    this.connection_pool = mysql.createPool({
+      host: config.database.host,
+      user: config.database.user,
+      password: config.database.password,
+      database: config.database.name,
+      connectionLimit: config.database.connection_limit,
+    });
+
+    this.drizzle = drizzle(this.connection_pool, {
+      schema: full_schema,
+      mode: 'default',
+    });
+
     this._config = config;
   }
 
   @with_error_handling
   async run_migration() {
-    await migrate(this.drizzle, { migrationsFolder: './drizzle/sqlite' });
+    if (this._config.database.flavour !== 'mysql') throw new Error('wrong db flavour');
+    const migration_connection = await mysql.createConnection({
+      host: this._config.database.host,
+      user: this._config.database.user,
+      password: this._config.database.password,
+      database: this._config.database.name,
+      multipleStatements: true,
+    });
+    const migration_db = drizzle(migration_connection);
+    migration_db.execute(sql`SET FOREIGN_KEY_CHECKS = 0;`);
+    await migrate(migration_db, { migrationsFolder: './drizzle/mysql' });
+    migration_db.execute(sql`SET FOREIGN_KEY_CHECKS = 1;`);
     return ok();
   }
 
   @with_error_handling
   async delete_old_tickets() {
-    const deleted_count = await this.drizzle
-      .delete(schema.Ticket)
-      .where(lt(schema.Ticket.expires_at, new Date()))
-      .returning();
-    return with_schema(deleted_count, z.array(ZTicket));
+    await this.drizzle.delete(schema.Ticket).where(lt(schema.Ticket.expires_at, new Date()));
+    return ok();
   }
 
   @with_error_handling
@@ -300,11 +316,9 @@ export default class Sqlite implements Database {
 
   @with_error_handling
   async insert_ticket_note(data: InsertTicketNote) {
-    const rows = await this.drizzle
-      .insert(schema.TicketNote)
-      .values(data)
-      .returning({ note_id: schema.TicketNote.note_id });
-    return ok(rows[0].note_id);
+    const uuid_id = crypto.randomUUID();
+    await this.drizzle.insert(schema.TicketNote).values({ ...data, note_id: uuid_id });
+    return ok(uuid_id);
   }
 
   @with_error_handling
@@ -327,7 +341,7 @@ export default class Sqlite implements Database {
 
   @with_error_handling
   async close() {
-    this.raw_db.close();
+    this.connection_pool.destroy();
     return ok();
   }
 
@@ -345,22 +359,23 @@ export default class Sqlite implements Database {
 
   @with_error_handling
   async ensure_guild(guild_id: string) {
-    await this.drizzle.insert(schema.Guilds).values({ guild_id }).onConflictDoNothing();
+    await this.drizzle
+      .insert(schema.Guilds)
+      .values({ guild_id })
+      .onDuplicateKeyUpdate({ set: { guild_id } });
     return ok();
   }
 
   @with_error_handling
   async insert_ticket_panel(guild_id: string, panel: Omit<TicketPanel, 'panel_id'>) {
     await this.ensure_guild(guild_id);
-    const val = await this.drizzle
-      .insert(schema.TicketPanels)
-      .values({
-        ...panel,
-        panel_id: undefined, // Force undefined to get generation
-      })
-      .returning({ id: schema.TicketPanels.panel_id });
+    const panel_id = crypto.randomUUID();
+    await this.drizzle.insert(schema.TicketPanels).values({
+      ...panel,
+      panel_id: panel_id,
+    });
 
-    return ok({ panel_id: val[0]?.id });
+    return ok({ panel_id });
   }
 
   @with_error_handling
@@ -501,7 +516,7 @@ export default class Sqlite implements Database {
   static STALE_BUFFER_MINUTES = 5;
   static STALE_BUFFER_MS = this.STALE_BUFFER_MINUTES * 60 * 1000;
   @with_error_handling
-  async get_stale_threads(buffer_in_ms = Sqlite.STALE_BUFFER_MS) {
+  async get_stale_threads(buffer_in_ms = MySql.STALE_BUFFER_MS) {
     const now = Date.now();
     const stale_thresh = new Date(now + buffer_in_ms);
 
@@ -516,7 +531,7 @@ export default class Sqlite implements Database {
   }
 
   @with_error_handling
-  async get_stale_threads_for_guilds(guild_ids: string[], buffer_in_ms = Sqlite.STALE_BUFFER_MS) {
+  async get_stale_threads_for_guilds(guild_ids: string[], buffer_in_ms = MySql.STALE_BUFFER_MS) {
     const now = Date.now();
     const stale_thresh = new Date(now + buffer_in_ms);
 
@@ -538,20 +553,22 @@ export default class Sqlite implements Database {
     setting_value: string,
   ): Promise<Result<string, DatabaseError>> {
     await this.ensure_guild(guild_id);
-    const res = await this.drizzle
-      .insert(schema.Settings)
-      .values({
-        guild_id,
-        setting_id,
-        setting_value,
-      })
-      .onConflictDoUpdate({
-        target: [schema.Settings.guild_id, schema.Settings.setting_id],
-        set: { setting_value },
-      })
-      .returning({ old_value: schema.Settings.setting_value });
 
-    return ok(res[0].old_value);
+    const existing = await this.drizzle.query.Settings.findFirst({
+      where: and(
+        eq(schema.Settings.guild_id, guild_id),
+        eq(schema.Settings.setting_id, setting_id),
+      ),
+    });
+
+    const old_value = existing?.setting_value ?? setting_value;
+
+    await this.drizzle
+      .insert(schema.Settings)
+      .values({ guild_id, setting_id, setting_value })
+      .onDuplicateKeyUpdate({ set: { setting_value } });
+
+    return ok(old_value);
   }
 
   @with_error_handling
@@ -588,25 +605,14 @@ export default class Sqlite implements Database {
   @with_error_handling
   async upsert_monitor(channel: Omit<BaseMonitor, 'manages_threads_count'>, filters?: FilterData) {
     await this.ensure_guild(channel.guild_id);
-    await this.drizzle
-      .insert(schema.Monitors)
-      .values({
-        ...channel,
-        ...filters,
-        role_whitelist: filters?.role_whitelist,
-        tags: filters?.tags,
-        regex: filters?.regex?.source,
-      })
-      .onConflictDoUpdate({
-        target: [schema.Monitors.target_id],
-        set: {
-          ...channel,
-          ...filters,
-          role_whitelist: filters?.role_whitelist,
-          tags: filters?.tags,
-          regex: filters?.regex?.source,
-        },
-      });
+    const values = {
+      ...channel,
+      ...filters,
+      role_whitelist: filters?.role_whitelist,
+      tags: filters?.tags,
+      regex: filters?.regex?.source,
+    };
+    await this.drizzle.insert(schema.Monitors).values(values).onDuplicateKeyUpdate({ set: values });
     return ok();
   }
 
@@ -709,15 +715,18 @@ export default class Sqlite implements Database {
 
   @with_error_handling
   async clean_expired_logs() {
-    await this.drizzle.delete(schema.Audit).where(
-      sqlstmt`unixepoch(${schema.Audit.timestamp}) < unixepoch('now') - COALESCE(
-        (SELECT ${schema.Settings.setting_value} FROM ${schema.Settings}
-         WHERE ${schema.Settings.guild_id} = ${schema.Audit.guild_id}
-         AND ${schema.Settings.setting_id} = 'AUDIT_LOG_RETENTION'),
-        86400
-      )`,
-    );
-
+    await this.drizzle.execute(sqlstmt`
+        DELETE FROM ${schema.Audit}
+        WHERE UNIX_TIMESTAMP(${schema.Audit.timestamp}) < UNIX_TIMESTAMP() - COALESCE(
+            (
+                SELECT CAST(${schema.Settings.setting_value} AS UNSIGNED)
+                FROM ${schema.Settings}
+                WHERE ${schema.Settings.guild_id} = ${schema.Audit.guild_id}
+                AND ${schema.Settings.setting_id} = 'AUDIT_LOG_RETENTION'
+            ),
+            86400
+        )
+    `);
     return ok();
   }
 
@@ -737,9 +746,8 @@ export default class Sqlite implements Database {
     await this.drizzle
       .insert(schema.Guilds)
       .values({ guild_id, ...data })
-      .onConflictDoUpdate({
+      .onDuplicateKeyUpdate({
         set: data,
-        target: schema.Guilds.guild_id,
       });
     return ok();
   }
@@ -822,21 +830,44 @@ export default class Sqlite implements Database {
 
   @with_error_handling
   async create_backup_file(backup_dir: string = this._config.database.backup_path) {
-    const backup_file_name = new Date().toISOString() + '.tgz';
+    const backup_file_name = new Date().toISOString().replace(/:/g, '-') + '.sql';
     const backup_file_full_path = join(backup_dir, backup_file_name);
 
+    const db_config = this._config.database as MySqlConf;
+
+    const proc = Bun.spawnSync([
+      'mysqldump',
+      '-h',
+      db_config.host,
+      '-u',
+      db_config.user,
+      `--password=${db_config.password}`,
+      '--single-transaction',
+      '--routines',
+      '--triggers',
+      db_config.name,
+      '--result-file',
+      backup_file_full_path,
+    ]);
+
+    if (proc.exitCode !== 0) return err(new Error(`mysqldump failed: ${proc.stderr.toString()}`));
+
+    const compressed_backup_file_full_path = backup_file_full_path + '.tgz';
     const tar_promise = create_tar(
       {
         gzip: true,
-        file: backup_file_full_path,
+        file: compressed_backup_file_full_path,
       },
-      [this.raw_db.filename],
+      [backup_file_full_path],
     );
 
     const tar_result = await ResultAsync.fromPromise(tar_promise, map_err);
 
     if (tar_result.isErr()) return err(tar_result.error);
 
-    return ok({ full_path: resolve_path(backup_file_full_path), file_name: backup_file_name });
+    return ok({
+      full_path: resolve_path(compressed_backup_file_full_path),
+      file_name: backup_file_name + '.tgz',
+    });
   }
 }

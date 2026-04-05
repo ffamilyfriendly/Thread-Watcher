@@ -25,3 +25,6 @@ export const TW_MAX_MESSAGES_FETCHED = 100;
 // Ticket search
 export const TW_TICKET_LIMIT_DEFAULT = 50;
 export const TW_TICKET_LIMIT_MAX = 100;
+
+// GENERIC
+export const UUID_LEN = 36;
