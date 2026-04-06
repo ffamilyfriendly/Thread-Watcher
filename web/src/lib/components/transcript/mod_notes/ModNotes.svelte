@@ -26,6 +26,9 @@
 				<div class="divider"></div>
 			{/if}
 		{/each}
+		{#if ts.ticket.notes.length === 0}
+			<i>No mod notes found</i>
+		{/if}
 	</div>
 	<div style="margin-top: 0.5rem;" class="summaries">
 		<div class="new_note">

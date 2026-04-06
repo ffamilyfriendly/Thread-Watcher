@@ -1,50 +1,133 @@
 <script lang="ts">
-	import { use_guild_state } from '$lib/stores/guild.svelte';
-	import btn_style from '$lib/style/button.module.scss';
-	const guild_state = use_guild_state()
-
+	import { PUBLIC_PREMIUM_SKU_STORE_LINK } from '$env/static/public';
+    import btn_style from '$lib/style/button.module.scss';
+	import { Crown, ExternalLink, Rocket, ShieldCheck } from '@lucide/svelte';
+    
+    // Update this with your actual Discord App Directory / Store link
+    const DISCORD_STORE_URL = PUBLIC_PREMIUM_SKU_STORE_LINK;
 </script>
 
+<div class="upsell_container">
+    <div class="info_box">
+        <p class="text">
+            This server is currently on the <strong>Free Tier</strong>. 
+            Upgrade to <strong>Thread-Watcher Premium</strong> to unlock:
+        </p>
+        
+        <ul class="benefits">
+			<li><ShieldCheck size={16} /> Server-Wide monitors & batch watching</li>
+            <li><ShieldCheck size={16} /> Extended ticket message archival</li>
+            <li><ShieldCheck size={16} /> AI-powered thread summaries</li>
+			<li><ShieldCheck size={16} /> ...and more!</li>
+        </ul>
+    </div>
 
-<div class="topgg_vote_cta">
-	<h5>Power up this server!</h5>
-	<p class="text">
-		Every vote on Top.gg extends this server's Basic Premium access by <b>12 hours.</b>
-	</p>
-	<a
-		class={[btn_style.button, btn_style.topgg]}
-		href="https://top.gg/bot/870715447136366662/vote?guild_id={guild_state.guild_id}"
-	>
-		Vote
-	</a>
-	<small class="share_cta"
-		>This vote link is tied to this server. Share this exact link if others are voting.</small
-	>
+    <div class="actions">
+        <a 
+            href={DISCORD_STORE_URL} 
+            target="_blank" 
+            class="{btn_style.primary} premium_btn"
+        >
+            <Rocket size={18} />
+            Upgrade on Discord
+            <ExternalLink size={14} />
+        </a>
+    </div>
+
+    <p class="footer_note">
+        Subscriptions are managed securely via Discord.
+    </p>
 </div>
-basic
-
-
-<div>Generic bullshit about how you help me out or whateves</div>
 
 <style lang="scss">
-	.topgg_vote_cta {
-		border-radius: 0.5rem;
-		padding: 1rem 1rem;
-		background-color: color-mix(in srgb, var(--topgg-500) 10%, transparent);
-		outline: 1px solid color-mix(in srgb, var(--topgg-500) 25%, transparent);
+    .upsell_container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 2rem 1.5rem;
+		padding-top: 0;
+        background: var(--bg-100);
+        border-radius: 1rem;
+    }
 
-		h5 {
-			color: var(--topgg-200);
-		}
+    .head {
+        color: var(--premium-500);
+        font-size: 1.5rem;
+        font-weight: 900;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.1rem;
+    }
 
-		.share_cta {
-			opacity: 0.5;
-		}
-	}
+    .info_box {
+        margin: 1.5rem 0;
+        
+        .text {
+			text-align: left;
+            max-width: 40ch;
+            line-height: 1.5;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+            
+            strong {
+                color: var(--premium-300);
+            }
+        }
+    }
 
-	.text {
-		max-width: 45ch;
-		margin-top: 0.5rem;
-		margin-bottom: 0.7rem;
-	}
+    .benefits {
+        list-style: none;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: center;
+        font-size: 0.95rem;
+        opacity: 0.8;
+
+        li {
+			width: 100%;
+			flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-100);
+            
+            :global(svg) {
+                color: var(--premium-400);
+            }
+        }
+    }
+
+    .actions {
+        width: 100%;
+        margin-top: 1rem;
+
+        .premium_btn {
+            background-color: var(--premium-500);
+			color: black;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            border-radius: 0.5rem;
+
+            &:hover {
+                transform: translateY(-2px);
+                background-color: var(--premium-400);
+                box-shadow: 0 4px 15px color-mix(in srgb, var(--premium-500) 40%, transparent);
+            }
+        }
+    }
+
+    .footer_note {
+        margin-top: 1.5rem;
+        font-size: 0.8rem;
+        opacity: 0.4;
+    }
 </style>

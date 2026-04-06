@@ -7,6 +7,8 @@
 	import MonitorAdded from './MonitorAdded.svelte';
 	import MonitorRemoved from './MonitorRemoved.svelte';
 	import BatchAction from './BatchAction.svelte';
+	import PanelStatus from './PanelStatus.svelte';
+	import TicketStatus from './TicketStatus.svelte';
 	interface Props {
 		log: ExpandedAuditLog;
 	}
@@ -47,6 +49,12 @@
 		{:else if log_data.data.audit_type == 'BATCH_ACTION'}
 			<h4 class="type_name">Threads Actioned</h4>
 			<BatchAction action={log_data as NarrowedLog<"BATCH_ACTION", ExpandedAuditLog>} />
+		{:else if ["PANEL_CREATED", "PANEL_REMOVED"].includes(log_data.data.audit_type)}
+			<h4 class="type_name">{log_data.data.audit_type}</h4>
+			<PanelStatus action={log_data as NarrowedLog<"PANEL_CREATED" | "PANEL_REMOVED", ExpandedAuditLog>} />
+		{:else if ["TICKET_OPENED", "TICKET_RESOLVED"].includes(log_data.data.audit_type)}
+			<h4 class="type_name">{log_data.data.audit_type}</h4>
+			<TicketStatus ticket={log_data as NarrowedLog<"TICKET_OPENED" | "TICKET_RESOLVED", ExpandedAuditLog>} />
 		{/if}
 
 		{#if log_data.reason}

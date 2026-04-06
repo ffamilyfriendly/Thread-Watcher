@@ -81,13 +81,17 @@ export default class TicketService {
         ...meta,
         data: {
           audit_type: 'TICKET_OPENED',
-          panel_id: ticket_data.panel_id,
+          panel_id: ticket_data.panel_id ?? '',
           ticket_id: ticket_data.ticket_id,
         },
       });
     }
 
     return db_res;
+  }
+
+  async get_panel_count(guild_id: string) {
+    return this.db.get_panel_count(guild_id);
   }
 
   async update_ticket(ticket_id: string, data: EditTicket) {
@@ -140,6 +144,10 @@ export default class TicketService {
 
     this.r.set(['ticket', ticket_id], db_res.value, ZTicket);
     return ok(db_res.value);
+  }
+
+  async get_relevant_tickets(guild_id: string, user_id: string) {
+    return this.db.get_relevant_tickets(guild_id, user_id);
   }
 
   get_tickets(search: TicketListSearch) {

@@ -116,6 +116,9 @@
 	{#each monitors as monitor (monitor.target_id)}
 		<Monitor bind:monitors {monitor} />
 	{/each}
+	{#if monitors.length === 0}
+		<p>No monitors found!</p>
+	{/if}
 </div>
 
 <style lang="scss">

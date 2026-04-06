@@ -14,6 +14,7 @@
 	import User from '$lib/components/ui/discord/user/User.svelte';
 	import UserLoader from '$lib/components/ui/discord/user/UserLoader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import TWMarkdown from '$lib/components/ui/Markdown/TWMarkdown.svelte';
 
 	const { data } = $props();
 
@@ -114,7 +115,7 @@
 			{#if master_summary}
 				<div class="master_summary">
 					<b>{master_summary.summary_title}</b>
-					<p>{ master_summary.summary_text }</p>
+					<TWMarkdown md={master_summary.summary_text} />
 					<small>Master Summary</small>
 				</div>
 			{/if}
@@ -144,7 +145,7 @@
 		{/if}
 
 		<h3 class="heading">Mod Notes</h3>
-		<small>Mod notes cannot be viewed by the ticket creator.</small>
+		<small>Mod notes can only be viewed by the moderation team and are never shared with the ticket creator or AI summarizer.</small>
 		<ModNotes />
 
 		<hr />

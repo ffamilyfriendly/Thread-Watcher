@@ -47,7 +47,7 @@ export const ZTicket = z.object({
   discord_channel_id: z.string(),
   name: z.string(),
   owner: z.string(),
-  panel_id: z.string(),
+  panel_id: z.string().nullish(),
   variable_dump: z.record(z.string(), z.unknown()),
   status: ZTicketStates,
   assigned_to_roles: z.array(z.string()),
@@ -70,10 +70,11 @@ export const ZTicketListSearchData = z.object({
     .number()
     .max(TW_TICKET_LIMIT_MAX)
     .default(TW_TICKET_LIMIT_DEFAULT),
-  offset: z.coerce.number().default(0),
+  offset: z.coerce.number().min(0).default(0),
   ticket_owner: z.string().nullish(),
   guild_id: z.string(),
   expired: z.boolean().nullish(),
+  ticket_owner_is_last_message: z.boolean().nullish(),
 });
 
 export const ZPrivateTicketListSearchData = ZTicketListSearchData.partial({

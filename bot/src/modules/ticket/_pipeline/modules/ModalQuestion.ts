@@ -57,7 +57,8 @@ export default class ModalQuestion extends DefaultModule<TypedPipelineModule<'MO
     ti.setMinLength(Math.max(v.min_values, 1));
     ti.setMaxLength(v.max_values);
     ti.setRequired(v.required);
-    ti.setStyle(TextInputStyle.Paragraph);
+    if (v.max_values < 50) ti.setStyle(TextInputStyle.Short);
+    else ti.setStyle(TextInputStyle.Paragraph);
     if (v.placeholder) ti.setPlaceholder(v.placeholder);
     if (v.value) ti.setValue(v.value);
 

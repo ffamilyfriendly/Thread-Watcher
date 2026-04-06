@@ -16,6 +16,9 @@ import { Policies, RequestWithUser } from 'web/auth/policies';
 import { safe_route } from 'web/neverthrow_wrapper';
 import { api_err, HTTPCodes } from 'web/utils/error';
 import { z } from 'zod';
+import { DashboardData } from '../../../../packages/shared/schemas/api_routes';
+import { ticket_service } from '@providers/services/ticket_service';
+import { guild_service } from '@providers/services/guild_service';
 
 const router = Router();
 
@@ -41,6 +44,41 @@ router.get(
 
     return ok({
       is_subscribed: entitlement.value,
+    });
+  }),
+);
+
+router.get(
+  '/:guild_id/dashboard',
+  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  safe_route<DashboardData>(async (req, res) => {
+    const guild_id = req.params.guild_id as string;
+
+    const relevant_tickets = ticket_service.get_tickets({
+      guild_id,
+      offset: 0,
+    });
+
+    const recent_audits = audit_service.get_audit_logs(guild_id, 10);
+
+    const monitor_count = channel_service.get_monitor_count(guild_id);
+    const panel_count = ticket_service.get_panel_count(guild_id);
+
+    const guild_info = guild_service.get_guild_info(guild_id);
+
+    const combined = Result.combine(
+      await Promise.all([relevant_tickets, recent_audits, monitor_count, panel_count, guild_info]),
+    );
+    if (combined.isErr()) return err(combined.error);
+
+    const [rel_tickets, rec_audits, mon_count, pan_count, guild_inf] = combined.value;
+
+    return ok({
+      ticket_panels_count: pan_count,
+      recent_audits: rec_audits.logs,
+      monitors_count: mon_count,
+      relevant_tickets: rel_tickets,
+      guild: guild_inf,
     });
   }),
 );
@@ -212,8 +250,6 @@ router.post(
   safe_route(async (req, res) => {
     const guild_id = req.params.guild_id as string;
     const body = settings_schema.safeParse(req.body);
-
-    console.log('POSTED /SETTINGS', body);
 
     if (!body.success) return err(body.error);
 

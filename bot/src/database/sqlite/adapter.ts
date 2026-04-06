@@ -59,6 +59,8 @@ import {
   desc,
   gt,
   asc,
+  isNull,
+  or,
 } from 'drizzle-orm';
 import { DatabaseError, TicketNotFound } from 'utilities/error/def';
 import { logger } from '@providers/logger';
@@ -82,6 +84,43 @@ export default class Sqlite implements Database {
     this.raw_db.run(`PRAGMA foreign_keys = ON;`);
     this.drizzle = drizzle(this.raw_db, { schema: full_schema });
     this._config = config;
+  }
+
+  @with_error_handling
+  async get_relevant_tickets(user_id: string, guild_id: string) {
+    const rows = await this.drizzle.query.Ticket.findMany({
+      where: and(
+        eq(schema.Ticket.guild_id, guild_id),
+        eq(schema.Ticket.status, 'OPEN'),
+        or(isNull(schema.Ticket.claimed_by_user_id), eq(schema.Ticket.claimed_by_user_id, user_id)),
+      ),
+      with: {
+        messages: {
+          orderBy: [desc(schema.Message.created_at)],
+          limit: 1,
+        },
+      },
+
+      orderBy: [desc(schema.Ticket.created_at)],
+      limit: 15,
+    });
+
+    const sorted = rows.sort((a, b) => {
+      const a_last_msg = a.messages[0];
+      const b_last_msg = b.messages[0];
+
+      const a_waiting = a_last_msg?.author_id === a.owner ? 1 : 0;
+      const b_waiting = b_last_msg?.author_id === b.owner ? 1 : 0;
+
+      if (a_waiting !== b_waiting) return b_waiting - a_waiting;
+
+      const b_created_at = b.created_at ?? new Date();
+      const a_created_at = a.created_at ?? new Date();
+
+      return b_created_at.getTime() - a_created_at.getTime();
+    });
+
+    return with_schema(sorted, z.array(ZTicketListData));
   }
 
   @with_error_handling

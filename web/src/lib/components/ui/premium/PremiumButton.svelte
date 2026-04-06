@@ -4,7 +4,7 @@
 	import type { Snippet } from 'svelte';
 	import Modal from '../Modal.svelte';
 	import PremiumInformation from './PremiumInformation.svelte';
-	import { PUBLIC_SKU_BASIC, PUBLIC_SKU_EXTENDED, PUBLIC_SKU_STORE } from '$env/static/public';
+	import { PUBLIC_PREMIUM_SKU_STORE_LINK } from '$env/static/public';
 	import { use_guild_state } from '$lib/stores/guild.svelte';
 	import { add_toast_from_error } from '$lib/state/toasts.svelte';
 
@@ -35,18 +35,10 @@
 
 		on_click();
 	}
-
-	const store_page_url = "https://hello.com"
 </script>
 
 {#if show_premium_modal}
 	<Modal title="Premium Feature" bind:set_open={show_premium_modal}>
-		{#snippet buttons()}
-			<button class={[btn_styles.button, btn_styles.tetriary]} onclick={() => show_premium_modal = false}>maybe later</button>
-			<a href={store_page_url} target="_blank" class={[btn_styles.button, btn_styles.premium]}
-				>Subscribe</a
-			>
-		{/snippet}
 		<PremiumInformation />
 	</Modal>
 {/if}

@@ -105,9 +105,9 @@ export const Ticket = mysqlTable('tickets', {
   owner: text('owner').notNull(),
   variable_dump: json('variable_dump').notNull(),
   status: text('status').notNull().default('OPEN'),
-  panel_id: varchar('panel_id', { length: UUID_LEN })
-    .notNull()
-    .references(() => TicketPanels.panel_id, { onDelete: 'no action' }),
+  panel_id: varchar('panel_id', { length: UUID_LEN }).references(() => TicketPanels.panel_id, {
+    onDelete: 'set null',
+  }),
   assigned_to_roles: json('assigned_to_roles').notNull(),
   claimed_by_user_id: text('claimed_by_user_id'),
   created_at: datetime('created_at').$defaultFn(date_now),

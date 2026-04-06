@@ -29,19 +29,7 @@ export interface AuditMeta {
 export default class AuditService {
   constructor(private db: Database) {}
 
-  init() {
-    this.log_event = this.log_event.bind(this);
-    event_bus.on('monitor:created', this.log_event);
-    event_bus.on('monitor:deleted', this.log_event);
-    event_bus.on('thread:watched', this.log_event);
-    event_bus.on('thread:unwatched', this.log_event);
-    event_bus.on('thread:batch_action', this.log_event);
-    event_bus.on('config:change', this.log_event);
-    event_bus.on('command', this.log_event);
-  }
-
   async log_event(meta: PartialAuditObject): Promise<Result<PartialAuditObject, DatabaseError>> {
-    console.log('tryna insert audit', meta);
     const insert_res = await this.db.insert_audit_log(meta);
     if (insert_res.isErr()) {
       logger.error('failed to insert audit log', insert_res.error);

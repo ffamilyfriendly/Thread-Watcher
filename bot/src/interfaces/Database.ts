@@ -141,6 +141,9 @@ interface Tickets {
     ticket_id: string,
     user_has_elevated_perms: boolean,
   ) => DBResult<IntermediaryTicketView>;
+  get_relevant_tickets: (guild_id: string, user_id: string) => DBResult<TicketListData[]>;
+  get_panel_count: (guild_id: string) => DBResult<number>;
+
   // Ticket Notes
   insert_ticket_note: (data: InsertTicketNote) => DBResult<string>;
   get_ticket_notes: (ticket_id: string, limit: number, offset: number) => DBResult<TicketNote[]>;

@@ -8,6 +8,7 @@ export * from "./schemas/ai";
 export * from "./schemas/tickets/ticket";
 export * from "./tickets/ticket_outputs";
 export * from "./constraints";
+export * from "./schemas/api_routes";
 
 /*
 code: 400,

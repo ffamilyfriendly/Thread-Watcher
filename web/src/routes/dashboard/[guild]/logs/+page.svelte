@@ -18,6 +18,10 @@
 			<AuditLog {log} />
 		{/each}
 
+		{#if logs.logs.length === 0}
+			<p class="no_logs">No audit logs were found!</p>
+		{/if}
+
 		<div class="buttons">
 			{#if has_before_id}
 				<button

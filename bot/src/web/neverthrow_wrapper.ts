@@ -3,8 +3,8 @@ import { TWResponse } from './utils/logging';
 import { NextFunction, Request } from 'express';
 import { global_error_handler } from './utils/error';
 
-export function safe_route<TRes extends TWResponse>(
-  fn: (req: Request, res: TRes) => Promise<Result<unknown, unknown>>,
+export function safe_route<TOut = unknown, TRes extends TWResponse = TWResponse>(
+  fn: (req: Request, res: TRes) => Promise<Result<TOut, unknown>>,
 ) {
   return async function (req: Request, res: TRes, next: NextFunction) {
     const result = await fn(req, res);

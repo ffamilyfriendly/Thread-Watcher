@@ -7,7 +7,7 @@ import {
   InteractionType,
 } from 'discord.js';
 import { BaseCommand, Command, CommandContext, GuildChatInteraction } from 'interfaces/Command';
-import { mapped_err } from 'utilities/error';
+import { map_err, mapped_err } from 'utilities/error';
 import Config from '@providers/config';
 import Commands from '@providers/commands';
 import Lgr from '@providers/logger';
@@ -16,6 +16,8 @@ import { err, ok } from 'neverthrow';
 import EmbeddableError from 'utilities/error/EmbeddableError';
 import { EntitlementsError, PermissionsError } from 'utilities/error/def';
 import { from_interaction } from 'utilities/i18def';
+import { event_bus } from '@providers/event_bus';
+import { get_safe_error } from 'utilities/error/escape_sensitive_data';
 
 const config = Config.instance;
 const commands = Commands.instance;
@@ -143,6 +145,20 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
   }
 
   const result = await command.run(interaction_as_guild_safe, command_context);
+
+  event_bus.emit('command', {
+    executor_id: interaction.user.id,
+    guild_id: interaction.guildId!,
+    data: {
+      audit_type: 'COMMAND',
+      command_name: interaction.commandName,
+      command_args: Object.fromEntries(
+        interaction.options.data.map((opt) => [opt.name, opt.value]),
+      ),
+      error: result.isErr() ? get_safe_error(map_err(result.error)).message : undefined,
+    },
+  });
+
   if (result.isErr()) return mapped_err(result.error);
   else {
     logger.debug(`Command interaction with id ${interaction.id} handled without issues!`);
@@ -172,6 +188,7 @@ async function handle_autocomplete_interaction(interaction: AutocompleteInteract
       return interaction.respond([{ value: 'ERROR', name: 'ERROR WHEN RUNNING AUTOCOMPLETE' }]);
     },
   );
+
   return ok();
 }
 
