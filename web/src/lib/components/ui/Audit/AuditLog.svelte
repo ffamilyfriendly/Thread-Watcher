@@ -9,6 +9,8 @@
 	import BatchAction from './BatchAction.svelte';
 	import PanelStatus from './PanelStatus.svelte';
 	import TicketStatus from './TicketStatus.svelte';
+	import User from '../discord/user/User.svelte';
+	import UserLoader from '../discord/user/UserLoader.svelte';
 	interface Props {
 		log: ExpandedAuditLog;
 	}
@@ -18,11 +20,6 @@
 	let executing_user = $derived(log_data.executing_user);
 	let timestamp = $derived(log_data.timestamp);
 
-	let user_pfp = $derived(
-		executing_user.avatar
-			? `https://cdn.discordapp.com/avatars/${executing_user.id}/${executing_user.avatar}?size=24`
-			: executing_user.defaultAvatarURL
-	);
 	const time_as_date = $derived(new Date(timestamp));
 </script>
 
@@ -30,45 +27,51 @@
 	<div class="content">
 		{#if log_data.data.audit_type == 'CONFIG'}
 			<h4 id="type_name">Configuration Changed</h4>
-			<ConfigChange log={log_data as NarrowedLog<"CONFIG", ExpandedAuditLog>} />
+			<ConfigChange log={log_data as NarrowedLog<'CONFIG', ExpandedAuditLog>} />
 		{:else if log_data.data.audit_type == 'MONITOR_ADD'}
 			<h4 id="type_name">Monitor Added</h4>
-			<MonitorAdded monitor={log_data as NarrowedLog<"MONITOR_ADD", ExpandedAuditLog>} />
+			<MonitorAdded monitor={log_data as NarrowedLog<'MONITOR_ADD', ExpandedAuditLog>} />
 		{:else if log_data.data.audit_type == 'MONITOR_REMOVE'}
 			<h4 id="type_name">Monitor Removed</h4>
-			<MonitorRemoved monitor={log_data as NarrowedLog<"MONITOR_REMOVE", ExpandedAuditLog>} />
+			<MonitorRemoved monitor={log_data as NarrowedLog<'MONITOR_REMOVE', ExpandedAuditLog>} />
 		{:else if log_data.data.audit_type == 'COMMAND'}
 			<h4 class="type_name">Command Ran</h4>
-			<CommandInvokation log={log_data as NarrowedLog<"COMMAND", ExpandedAuditLog>} />
+			<CommandInvokation log={log_data as NarrowedLog<'COMMAND', ExpandedAuditLog>} />
 		{:else if log_data.data.audit_type == 'THREAD_UNWATCHED'}
 			<h4 class="type_name">Thread Unwatched</h4>
-			<ThreadWatchStatus thread={log_data as NarrowedLog<"THREAD_UNWATCHED", ExpandedAuditLog>} />
+			<ThreadWatchStatus thread={log_data as NarrowedLog<'THREAD_UNWATCHED', ExpandedAuditLog>} />
 		{:else if log_data.data.audit_type == 'THREAD_WATCHED'}
 			<h4 class="type_name">Thread Watched</h4>
-			<ThreadWatchStatus thread={log_data as NarrowedLog<"THREAD_WATCHED", ExpandedAuditLog>} />
+			<ThreadWatchStatus thread={log_data as NarrowedLog<'THREAD_WATCHED', ExpandedAuditLog>} />
 		{:else if log_data.data.audit_type == 'BATCH_ACTION'}
 			<h4 class="type_name">Threads Actioned</h4>
-			<BatchAction action={log_data as NarrowedLog<"BATCH_ACTION", ExpandedAuditLog>} />
-		{:else if ["PANEL_CREATED", "PANEL_REMOVED"].includes(log_data.data.audit_type)}
+			<BatchAction action={log_data as NarrowedLog<'BATCH_ACTION', ExpandedAuditLog>} />
+		{:else if ['PANEL_CREATED', 'PANEL_REMOVED'].includes(log_data.data.audit_type)}
 			<h4 class="type_name">{log_data.data.audit_type}</h4>
-			<PanelStatus action={log_data as NarrowedLog<"PANEL_CREATED" | "PANEL_REMOVED", ExpandedAuditLog>} />
-		{:else if ["TICKET_OPENED", "TICKET_RESOLVED"].includes(log_data.data.audit_type)}
+			<PanelStatus
+				action={log_data as NarrowedLog<'PANEL_CREATED' | 'PANEL_REMOVED', ExpandedAuditLog>}
+			/>
+		{:else if ['TICKET_OPENED', 'TICKET_RESOLVED'].includes(log_data.data.audit_type)}
 			<h4 class="type_name">{log_data.data.audit_type}</h4>
-			<TicketStatus ticket={log_data as NarrowedLog<"TICKET_OPENED" | "TICKET_RESOLVED", ExpandedAuditLog>} />
+			<TicketStatus
+				ticket={log_data as NarrowedLog<'TICKET_OPENED' | 'TICKET_RESOLVED', ExpandedAuditLog>}
+			/>
 		{/if}
 
 		{#if log_data.reason}
-		<div class="reason">
-			<b>Reason:</b> <i>{log_data.reason}</i>
-		</div>
+			<div class="reason">
+				<b>Reason:</b> <i>{log_data.reason}</i>
+			</div>
 		{/if}
 	</div>
 
 	<div class="meta">
-		<div class="user" title={executing_user.id} data-user-id={executing_user.id}>
-			<img src={user_pfp} alt="{executing_user.username}'s icon" />
-			<p>{executing_user.username}</p>
-		</div>
+		{#if executing_user}
+			<User user={executing_user} />
+		{:else}
+			<UserLoader user_id={log_data.executor_id} />
+		{/if}
+		<div class="user"></div>
 		<time datetime={time_as_date.toISOString()}>
 			{time_as_date.toLocaleString()}
 		</time>
@@ -81,12 +84,12 @@
 	@use '../../../../lib/style/colours.scss';
 
 	.type_name {
-		opacity: .85;
-		margin-bottom: .5rem;
+		opacity: 0.85;
+		margin-bottom: 0.5rem;
 	}
 
 	.audit {
-		--padding: .5rem;
+		--padding: 0.5rem;
 		outline: 1px solid rgba(128, 128, 128, 0.3);
 		border-radius: 0.5rem;
 		overflow: hidden;
@@ -108,7 +111,7 @@
 	}
 
 	.reason {
-		opacity: .6;
+		opacity: 0.6;
 	}
 
 	.meta {

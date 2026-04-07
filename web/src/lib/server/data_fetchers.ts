@@ -14,6 +14,7 @@ import {
 } from '$lib/types/internal_api';
 import {
 	ZAuditData,
+	ZDashboardData,
 	ZGuildSubscription,
 	ZHydratedThreadData,
 	ZMonitor,
@@ -194,6 +195,9 @@ export const fetch_ticket = (ticket_id: string, user_id: string) =>
 		() => _fetch_ticket(ticket_id, user_id),
 		60
 	);
+
+export const fetch_dash_info = (guild_id: string, user_id: string) =>
+	json_fetch(`/guilds/${guild_id}/dashboard`, { user_id }, ZDashboardData);
 
 export async function get_guild_info(
 	guild_id: string,

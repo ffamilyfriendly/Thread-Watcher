@@ -62,6 +62,7 @@ import { DatabaseError, TicketNotFound } from 'utilities/error/def';
 import mysql from 'mysql2/promise';
 import { logger } from '@providers/logger';
 import { map_err } from 'utilities/error';
+import { rm, rmSync } from 'fs';
 
 const full_schema = { ...schema, ...relations };
 type FullSchema = typeof full_schema;
@@ -913,6 +914,15 @@ export default class MySql implements Database {
     const tar_result = await ResultAsync.fromPromise(tar_promise, map_err);
 
     if (tar_result.isErr()) return err(tar_result.error);
+    else {
+      const could_delete_file = Result.fromThrowable(rmSync)(backup_file_full_path);
+      if (could_delete_file.isErr()) {
+        logger.warn(
+          `could not delete uncompressed backup file @ '${backup_file_full_path}'`,
+          could_delete_file.error,
+        );
+      }
+    }
 
     return ok({
       full_path: resolve_path(compressed_backup_file_full_path),

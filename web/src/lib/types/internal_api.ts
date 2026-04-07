@@ -137,7 +137,7 @@ export const ZDiscordUser = z.object({
 export type DiscordUser = z.output<typeof ZDiscordUser>;
 
 export const ZExpandedAuditLog = ZAuditData.extend({
-	executing_user: ZDiscordUser
+	executing_user: ZDiscordUser.nullish()
 });
 export type ExpandedAuditLog = z.output<typeof ZExpandedAuditLog>;
 

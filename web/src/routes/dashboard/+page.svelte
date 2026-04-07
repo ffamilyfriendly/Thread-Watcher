@@ -1,10 +1,16 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import Button from '$lib/components/ui/Button.svelte';
 	import bstyle from '$lib/style/button.module.scss';
 	import type { PageData } from './$types';
 
 	type ObjWithHasBot = { guild_has_bot: boolean };
 	function sort_by_boolean_prop(g1: ObjWithHasBot, g2: ObjWithHasBot) {
 		return g1.guild_has_bot === g2.guild_has_bot ? 0 : g1.guild_has_bot ? -1 : 1;
+	}
+
+	async function load_server(page: string) {
+		return await goto(page);
 	}
 
 	let { data }: { data: PageData } = $props();
@@ -30,13 +36,9 @@
 						<p>{guild.name}</p>
 					</div>
 					{#if guild.guild_has_bot}
-						<a class={[bstyle.button, bstyle.primary, 'cta_button']} href={guild.action_link}>
-							Go
-						</a>
+						<Button load_with={() => load_server(guild.action_link)}>Manage</Button>
 					{:else}
-						<a class={[bstyle.button, bstyle.tetriary, 'cta_button']} href={guild.action_link}>
-							Invite
-						</a>
+						<Button variant="tetriary" href={guild.action_link}>Invite</Button>
 					{/if}
 				</div>
 			</div>

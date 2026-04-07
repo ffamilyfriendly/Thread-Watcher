@@ -5,7 +5,7 @@
 	import { ZDiscordChannel, type DiscordChannel } from '$lib/types/internal_api';
 	import Channel from './Channel.svelte';
 
-	const guild_state = use_guild_state()
+	const guild_state = use_guild_state();
 
 	interface Props {
 		channel?: DiscordChannel;
@@ -29,7 +29,6 @@
 				ZDiscordChannel
 			).then((res) => {
 				if (res.isErr()) {
-					add_toast_from_error(res.error);
 					console.error('could not fetch channel', res.error);
 					return;
 				}
@@ -43,5 +42,5 @@
 {#if use_channel}
 	<Channel {icon_size} {class_name} {clickable} channel={use_channel} />
 {:else}
-	could not fetch channel
+	<p>Unknown Channel</p>
 {/if}
