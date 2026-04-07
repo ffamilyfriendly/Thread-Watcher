@@ -1,4 +1,4 @@
-import { FancyAPIError, json_fetch, safe_fetch } from '$lib/server/api';
+import { json_fetch } from '$lib/server/api';
 import { get_cached_or } from '$lib/server/cache.js';
 import { map_err } from '$lib/error_helper.js';
 import {} from '$lib/types/discord';
@@ -7,13 +7,13 @@ import {
 	ZDiscordRole,
 	ZGuildOverview,
 	type DiscordChannel,
-	type DiscordRole,
-	type GuildOverview
+	type DiscordRole
 } from '$lib/types/internal_api';
 import { error } from '@sveltejs/kit';
 import { err, ok, ResultAsync, type Result } from 'neverthrow';
 import z from 'zod';
 import { get_guild_info } from '$lib/server/data_fetchers';
+import ensure_session from '$lib/server/ensure_session.js';
 
 async function get_channels(
 	guild_id: string,
@@ -47,29 +47,25 @@ async function get_roles(
 
 export async function load({ locals, params }) {
 	const guild_id = params.guild;
-	const auth = await locals.auth();
-
-	if (!auth?.user.id) {
-		return error(401, 'not authorized');
-	}
+	const user = await ensure_session(locals);
 
 	const channels_promise = get_cached_or(
 		`${guild_id}:channels`,
 		z.array(ZDiscordChannel),
-		() => get_channels(guild_id, auth.user.id),
+		() => get_channels(guild_id, user.user.id),
 		500
 	);
 	const roles_promise = get_cached_or(
 		`${guild_id}:roles`,
 		z.array(ZDiscordRole),
-		() => get_roles(guild_id, auth.user.id),
+		() => get_roles(guild_id, user.user.id),
 		500
 	);
 
 	const guild_info_promise = get_cached_or(
 		`${guild_id}:overviewInfo`,
 		ZGuildOverview,
-		() => get_guild_info(guild_id, auth.user.id),
+		() => get_guild_info(guild_id, user.user.id),
 		500
 	);
 
@@ -78,23 +74,13 @@ export async function load({ locals, params }) {
 		map_err
 	);
 
-	if (promises.isErr()) {
-		throw promises.error;
-	}
+	if (promises.isErr()) throw promises.error;
 
 	const [channels, roles, guild] = promises.value;
 
-	if (channels.isErr()) {
-		throw channels.error;
-	}
-
-	if (roles.isErr()) {
-		throw roles.error;
-	}
-
-	if (guild.isErr()) {
-		throw guild.error;
-	}
+	if (channels.isErr()) throw channels.error;
+	if (roles.isErr()) throw roles.error;
+	if (guild.isErr()) throw guild.error;
 
 	return {
 		channels: channels.value,

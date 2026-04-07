@@ -1,19 +1,13 @@
 import { get_monitors } from '$lib/server/data_fetchers.js';
+import ensure_session from '$lib/server/ensure_session.js';
 import { error } from '@sveltejs/kit';
 
 export async function load({ locals, params }) {
-	const auth = await locals.auth();
+	const user = await ensure_session(locals);
 
-	if (!auth?.user) {
-		return error(401, 'not authenticated');
-	}
+	const monitors = await get_monitors(params.guild, user.user.id);
 
-	const monitors = await get_monitors(params.guild, auth.user.id);
-
-	if (monitors.isErr()) {
-		console.error('ERROR', monitors.error);
-		return error(500, 'Something went wrooong');
-	}
+	if (monitors.isErr()) throw monitors.error;
 
 	return {
 		monitors: monitors.value
