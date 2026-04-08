@@ -28,7 +28,9 @@
 		in:fly={{ duration: 200, x: x_fly_anim, opacity: 0 }}
 		out:fly={{ duration: 200, x: x_fly_anim, opacity: 0 }}
 	>
-		{@render children()}
+		<div class="nav_items">
+			{@render children()}
+		</div>
 	</aside>
 {/if}
 
@@ -40,10 +42,9 @@
 	aside {
 		background-color: var(--background-600);
 		border-right: 1px solid color-mix(in srgb, var(--background-600) 90%, white);
-		padding: 1rem;
-		height: 100%;
-		overflow-y: auto;
+		align-self: stretch;
 		width: 100%;
+		position: relative;
 
 		&.overlay {
 			position: fixed;
@@ -59,6 +60,12 @@
 			right: 0 !important;
 			border-right: unset;
 			border-left: 1px solid color-mix(in srgb, #121212 90%, white);
+		}
+
+		.nav_items {
+			top: 0;
+			padding: 1rem;
+			position: sticky;
 		}
 	}
 

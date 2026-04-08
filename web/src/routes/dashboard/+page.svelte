@@ -47,9 +47,6 @@
 </main>
 
 <style lang="scss">
-	@use 'sass:color';
-	@use '../../lib/style/colours.scss';
-
 	main {
 		max-width: clamp(2%, 1000px, 60%);
 		margin-inline: auto;
@@ -77,10 +74,10 @@
 				opacity: 0.33;
 			}
 
-			$size: 80px;
+			--size: 80px;
 
 			.icon {
-				width: $size;
+				width: var(--size);
 				height: auto;
 				border-radius: 50%;
 				outline: 2px solid rgba(128, 128, 128, 0.2);
@@ -90,7 +87,7 @@
 			p.icon {
 				background-color: var(--secondary-700);
 				text-align: center;
-				line-height: $size;
+				line-height: var(--size);
 			}
 		}
 

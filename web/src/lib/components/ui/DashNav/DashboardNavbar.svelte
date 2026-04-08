@@ -3,13 +3,6 @@
 	import type { Snippet } from 'svelte';
 	import { nav_state, type MenuItem, type MenuSection } from '$lib/stores/navbar.svelte';
 	import { page as svelte_page } from '$app/state';
-	import {
-		ArrowDownRight,
-		GitBranch,
-		Indent,
-		IndentIncrease,
-		LucideBowArrow
-	} from '@lucide/svelte';
 
 	interface Props {
 		overlay: boolean;
@@ -19,9 +12,6 @@
 
 	function is_active_link(section: MenuSection, page: MenuItem) {
 		const pathname = svelte_page.url.pathname.replace(section.base, '');
-
-		console.log('PATHNAME', pathname);
-		console.log('href', page.href);
 
 		if (page.href === '') return pathname === page.href;
 

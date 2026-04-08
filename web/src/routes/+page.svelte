@@ -5,6 +5,7 @@
 	import Banner from '$lib/assets/tw_banner.png';
 	import { Github, LayoutPanelLeft, Spool } from '@lucide/svelte';
 	import type { PageProps } from './$types';
+	import TwLogoBranding from '$lib/components/ui/TwLogoBranding.svelte';
 
 	const { data }: PageProps = $props();
 
@@ -23,8 +24,43 @@
 	const panel_count = $derived(data.stats.ticket_panels_count);
 </script>
 
+<svelte:head>
+	<title>Thread-Watcher | The Toolbox for Discord Threads</title>
+	<meta name="title" content="Thread-Watcher | The Toolbox for Discord Threads" />
+	<meta
+		name="description"
+		content="Stop fighting Discord's auto-archive. Keep threads alive forever, manage support tickets with AI, and organize your community with the most powerful open-source thread bot."
+	/>
+	<meta
+		name="keywords"
+		content="discord bot, discord threads, keep threads open, thread watcher, discord auto-archive fix, discord ticket bot, open source discord bot"
+	/>
+
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content="https://threadwatcher.xyz/" />
+	<meta property="og:title" content="Thread-Watcher | The Toolbox for Discord Threads" />
+	<meta
+		property="og:description"
+		content="Trusted by {format_number(
+			guild_count
+		)} servers to keep conversations alive and support organized."
+	/>
+	<meta property="og:image" content={Banner} />
+
+	<meta property="twitter:card" content="summary_large_image" />
+	<meta property="twitter:url" content="https://threadwatcher.xyz/" />
+	<meta property="twitter:title" content="Thread-Watcher | The Toolbox for Discord Threads" />
+	<meta
+		property="twitter:description"
+		content="The industry standard for Discord thread management. AI summaries, ticket flows, and persistent threads."
+	/>
+	<meta property="twitter:image" content={Banner} />
+
+	<meta name="theme-color" content="#7289da" />
+</svelte:head>
+
 <div class="nav">
-	Thread-Watcher
+	<TwLogoBranding />
 
 	<div>
 		<Button size="large" load_with={load_dash}>Dashboard</Button>
@@ -67,7 +103,7 @@
 <section id="features" class="features">
 	<div class="feature">
 		<div>
-			<h2>Never Lose a Thread Again</h2>
+			<h2>Never Lose a Discord Thread Again</h2>
 			<p>
 				Discord archives inactive threads whether you like it or not. Thread-Watcher fights back —
 				watch individual threads or entire channels at once with /batch, and keep conversations
@@ -113,7 +149,7 @@
 
 <div class="cta_wrapper">
 	<section class="cta">
-		<h2>Let's get your threads organized!</h2>
+		<h2>Let's get your Discord threads organized!</h2>
 		<Button size="larger" load_with={load_dash}>
 			<img class="discord_logo" src={Discord} alt="discord logo" />
 			Add Bot
@@ -132,6 +168,11 @@
 		gap: 1rem;
 		transform: translateY(-25%);
 
+		@media (max-width: 500px) {
+			transform: unset;
+			margin-top: 1rem;
+		}
+
 		--accent: var(--primary-500);
 
 		div {
@@ -142,6 +183,11 @@
 			display: flex;
 			align-items: center;
 			gap: 0.5rem;
+
+			@media (max-width: 500px) {
+				flex-direction: column;
+				align-items: start;
+			}
 		}
 	}
 
@@ -186,7 +232,7 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
-		height: 40vh;
+		min-height: 40vh;
 
 		h1 {
 			font-size: 4rem;
@@ -197,10 +243,18 @@
 			max-width: 40ch;
 			opacity: 0.8;
 		}
+
+		@media (max-width: 500px) {
+			min-height: 30vh;
+			h1 {
+				font-size: 2rem;
+			}
+		}
 	}
 
 	.features {
 		margin-top: 2rem;
+		margin-bottom: 100px;
 		display: flex;
 		flex-direction: column;
 		gap: 4rem;
@@ -214,8 +268,13 @@
 			flex-direction: row-reverse;
 		}
 
+		@media (max-width: 1000px) {
+			flex-direction: column-reverse !important;
+			gap: 0.75rem;
+		}
+
 		img {
-			height: 200px;
+			width: 45ch;
 			border-radius: 1rem;
 			box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 		}

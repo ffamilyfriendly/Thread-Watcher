@@ -1,14 +1,14 @@
 <script lang="ts">
-	import logo from '$lib/assets/thread_watcher_icon.png';
 	import { page } from '$app/state';
 	import DropDown from '$lib/components/ui/DropDown.svelte';
 	import { signOut } from '@auth/sveltekit/client';
 	import list_style from '$lib/style/list.module.scss';
 	import { Menu } from '@lucide/svelte';
 	import NavBar from '$lib/components/ui/DashNav/DashboardNavbar.svelte';
+	import TwLogoBranding from '$lib/components/ui/TwLogoBranding.svelte';
 
 	let inner_width = $state(0);
-	const should_show_overlay = $derived(inner_width < 600)
+	const should_show_overlay = $derived(inner_width < 600);
 	let sidebar_open = $state(true);
 	let should_be_open = $derived(sidebar_open || !should_show_overlay);
 	let { children } = $props();
@@ -18,18 +18,15 @@
 
 {#snippet hamburger()}
 	{#if should_show_overlay}
-	<button class="hamburger" onclick={() => sidebar_open = !sidebar_open}>
-		<Menu />
-	</button>
+		<button class="hamburger" onclick={() => (sidebar_open = !sidebar_open)}>
+			<Menu />
+		</button>
 	{/if}
 {/snippet}
 
 <nav class="top_nav">
 	{@render hamburger()}
-	<div class="branding">
-		<img alt="Logo" src={logo} />
-		<span>Thread-Watcher</span>
-	</div>
+	<TwLogoBranding link_to_homepage={true} />
 
 	<DropDown>
 		{#snippet parent_item()}
@@ -47,15 +44,15 @@
 
 				<h3 class={list_style.heading}>Links</h3>
 				<a href="https://botsuite.co/join">Support Server</a>
-				<a href="/policies/privacy_policy">Privacy Policy</a>
-				<a href="/policies/terms_of_service">Terms of Service</a>
+				<a href="/policies/privacy-policy">Privacy Policy</a>
+				<a href="/policies/terms-of-service">Terms of Service</a>
 			</div>
 		{/snippet}
 	</DropDown>
 </nav>
 
 <div class="container">
-	<NavBar overlay={should_show_overlay} should_be_open={should_be_open} hamburger={hamburger} />
+	<NavBar overlay={should_show_overlay} {should_be_open} {hamburger} />
 
 	<main>
 		{@render children()}
@@ -69,7 +66,7 @@
 		cursor: pointer;
 		background-color: transparent;
 		color: white;
-		padding: .5rem;
+		padding: 0.5rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -85,13 +82,6 @@
 		width: 100%;
 		padding: 1rem;
 		justify-content: space-between;
-	}
-
-	@mixin font {
-		font-family: 'Changa One', sans-serif;
-		font-weight: 400;
-		font-style: normal;
-		font-size: large;
 	}
 
 	.account {
@@ -111,32 +101,14 @@
 		}
 	}
 
-	.branding {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-
-		img {
-			height: 30px;
-			width: 30px;
-		}
-
-		span {
-			@include font;
-			font-size: large;
-		}
-	}
-
 	.container {
 		display: flex;
 		gap: 1rem;
-		align-items: stretch;
-		height: calc(100vh - 62px);
+		min-height: calc(100vh - var(--navbar_height));
 	}
 
 	main {
 		flex-grow: 1;
 		padding: var(--main_padding);
-		overflow-y: scroll;
 	}
 </style>
