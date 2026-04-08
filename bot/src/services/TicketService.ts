@@ -90,7 +90,7 @@ export default class TicketService {
     return db_res;
   }
 
-  async get_panel_count(guild_id: string) {
+  async get_panel_count(guild_id?: string) {
     return this.db.get_panel_count(guild_id);
   }
 

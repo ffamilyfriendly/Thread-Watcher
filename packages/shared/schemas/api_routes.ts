@@ -11,3 +11,10 @@ export const ZDashboardData = z.object({
   recent_audits: z.array(ZAuditData),
 });
 export type DashboardData = z.output<typeof ZDashboardData>;
+
+export const ZLandingPageData = z.object({
+  guild_count: z.number(),
+  watched_threads_count: z.number(),
+  ticket_panels_count: z.number(),
+});
+export type LandingPageData = z.output<typeof ZLandingPageData>;

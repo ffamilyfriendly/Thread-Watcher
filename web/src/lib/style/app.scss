@@ -57,6 +57,10 @@ body {
 	min-height: 100vh;
 }
 
+html {
+	scroll-behavior: smooth;
+}
+
 a {
 	color: #818cf8;
 }

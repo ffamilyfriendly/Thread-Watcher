@@ -53,7 +53,7 @@ interface CoreThread {
     limit: number,
     filters: ThreadSearchData,
   ) => DBResult<ThreadData[]>;
-  get_watched_threads_count: (guild_id: string) => DBResult<number>;
+  get_watched_threads_count: (guild_id?: string) => DBResult<number>;
   get_stale_threads: () => DBResult<ThreadData[]>;
   get_stale_threads_for_guilds: (guild_ids: string[]) => DBResult<ThreadData[]>;
   count_watched_threads: () => DBResult<number>;
@@ -142,7 +142,7 @@ interface Tickets {
     user_has_elevated_perms: boolean,
   ) => DBResult<IntermediaryTicketView>;
   get_relevant_tickets: (guild_id: string, user_id: string) => DBResult<TicketListData[]>;
-  get_panel_count: (guild_id: string) => DBResult<number>;
+  get_panel_count: (guild_id?: string) => DBResult<number>;
 
   // Ticket Notes
   insert_ticket_note: (data: InsertTicketNote) => DBResult<string>;

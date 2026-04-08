@@ -57,6 +57,7 @@ import {
   not,
   isNull,
   or,
+  SQL,
 } from 'drizzle-orm';
 import { DatabaseError, TicketNotFound } from 'utilities/error/def';
 import mysql from 'mysql2/promise';
@@ -97,11 +98,15 @@ export default class MySql implements Database {
   }
 
   @with_error_handling
-  async get_panel_count(guild_id: string) {
+  async get_panel_count(guild_id?: string) {
+    const filters: SQL[] = [];
+
+    if (guild_id) filters.push(eq(schema.TicketPanels.guild_id, guild_id));
+
     const res = await this.drizzle
       .select({ count: count() })
       .from(schema.TicketPanels)
-      .where(eq(schema.TicketPanels.guild_id, guild_id));
+      .where(and(...filters));
     return ok(res[0].count);
   }
 
@@ -554,13 +559,19 @@ export default class MySql implements Database {
   }
 
   @with_error_handling
-  async get_watched_threads_count(guild_id: string) {
+  async get_watched_threads_count(guild_id?: string) {
+    const filters = [eq(schema.Threads.is_watched, true)];
+
+    if (guild_id) {
+      filters.push(eq(schema.Threads.guild_id, guild_id));
+    }
+
     const val = await this.drizzle
       .select({ count: count() })
       .from(schema.Threads)
-      .where(and(eq(schema.Threads.guild_id, guild_id), eq(schema.Threads.is_watched, true)));
+      .where(and(...filters));
 
-    return ok(val[0]?.count);
+    return ok(val[0]?.count ?? 0);
   }
 
   static STALE_BUFFER_MINUTES = 5;

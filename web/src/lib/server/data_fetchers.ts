@@ -17,6 +17,7 @@ import {
 	ZDashboardData,
 	ZGuildSubscription,
 	ZHydratedThreadData,
+	ZLandingPageData,
 	ZMonitor,
 	ZThreadData,
 	ZTicketPanel,
@@ -206,6 +207,10 @@ export async function get_guild_info(
 	return json_fetch<GuildOverview>(`/guilds/${guild_id}`, { user_id }, ZGuildOverview);
 }
 
+export const _fetch_landing_info = () => json_fetch(`/landing`, {}, ZLandingPageData);
+export const fetch_landing_info = () =>
+	get_cached_or(`landing:stats`, ZLandingPageData, () => _fetch_landing_info(), 60 * 60);
+
 // Explore caching on both below
 export async function get_monitors(
 	guild_id: string,
@@ -219,18 +224,14 @@ export async function get_threads(
 	user_id: string,
 	filters: ThreadSearchData
 ): Promise<Result<HydratedThreadData[], Error | Response>> {
-	const query = [`page=${filters.page}`];
-
-	if (filters.monitor_id) {
-		query.push(`monitor_id=${filters.monitor_id}`);
-	}
-
-	if (filters.parent_channel_id) {
-		query.push(`parent_channel_id=${filters.parent_channel_id}`);
-	}
+	const params = new URLSearchParams({
+		page: filters.page.toString(),
+		...(filters.monitor_id && { monitor_id: filters.monitor_id }),
+		...(filters.parent_channel_id && { parent_channel_id: filters.parent_channel_id })
+	});
 
 	return await json_fetch<HydratedThreadData[]>(
-		`/guild/${guild_id}/watched_threads?${query.join('&')}`,
+		`/guild/${guild_id}/watched_threads?${params.toString()}`,
 		{ user_id },
 		z.array(ZHydratedThreadData)
 	);

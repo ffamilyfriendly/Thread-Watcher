@@ -116,7 +116,7 @@ export default class ThreadService {
     return this.db.get_paginated_threads_in_guild(guild_id, 20, filters);
   }
 
-  async get_count_threads(guild_id: string) {
+  async get_count_threads(guild_id?: string) {
     return await this.db.get_watched_threads_count(guild_id);
   }
 

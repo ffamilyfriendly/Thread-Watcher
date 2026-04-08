@@ -61,6 +61,7 @@ import {
   asc,
   isNull,
   or,
+  SQL,
 } from 'drizzle-orm';
 import { DatabaseError, TicketNotFound } from 'utilities/error/def';
 import { logger } from '@providers/logger';
@@ -84,6 +85,19 @@ export default class Sqlite implements Database {
     this.raw_db.run(`PRAGMA foreign_keys = ON;`);
     this.drizzle = drizzle(this.raw_db, { schema: full_schema });
     this._config = config;
+  }
+
+  @with_error_handling
+  async get_panel_count(guild_id?: string) {
+    const filters: SQL[] = [];
+
+    if (guild_id) filters.push(eq(schema.TicketPanels.guild_id, guild_id));
+
+    const res = await this.drizzle
+      .select({ count: count() })
+      .from(schema.TicketPanels)
+      .where(and(...filters));
+    return ok(res[0].count);
   }
 
   @with_error_handling
@@ -528,11 +542,15 @@ export default class Sqlite implements Database {
   }
 
   @with_error_handling
-  async get_watched_threads_count(guild_id: string) {
+  async get_watched_threads_count(guild_id?: string) {
+    const filters = [eq(schema.Threads.is_watched, true)];
+
+    if (guild_id) filters.push(eq(schema.Threads.guild_id, guild_id));
+
     const val = await this.drizzle
       .select({ count: count() })
       .from(schema.Threads)
-      .where(and(eq(schema.Threads.guild_id, guild_id), eq(schema.Threads.is_watched, true)));
+      .where(and(...filters));
 
     return ok(val[0]?.count);
   }
