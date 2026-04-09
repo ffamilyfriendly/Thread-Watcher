@@ -7,6 +7,11 @@
 	import type { PageProps } from './$types';
 	import TwLogoBranding from '$lib/components/ui/TwLogoBranding.svelte';
 
+	import Feature1 from '$lib/assets/feat_1.webp';
+	import Feature2 from '$lib/assets/feat_2.webp';
+	import Feature3 from '$lib/assets/feat_3.webp';
+	import Feature4 from '$lib/assets/feat_4.webp';
+
 	const { data }: PageProps = $props();
 
 	function load_dash() {
@@ -79,8 +84,8 @@
 			support tickets organised, and your community running smoothly — all in one bot.
 		</p>
 		<div class="btns">
-			<Button size="large" load_with={load_dash}>Add Bot</Button>
-			<Button size="large" href="#features" variant="tetriary">View Features</Button>
+			<Button size="large" load_with={load_dash}>Add To Discord</Button>
+			<Button size="large" href="#features" variant="tetriary">See How It Works</Button>
 		</div>
 	</section>
 </div>
@@ -110,6 +115,10 @@
 				alive indefinitely with no limits on how many you can monitor.
 			</p>
 		</div>
+		<enhanced:img
+			src={Feature1}
+			alt="Thread-Watcher mascot illuminating threads thru beams eminating from his eyes, the center thread elevated and bathing in light indicating it being watched"
+		/>
 	</div>
 
 	<div class="feature">
@@ -121,6 +130,10 @@
 				More customizable than any other ticket bot — without the complexity.
 			</p>
 		</div>
+		<enhanced:img
+			src={Feature2}
+			alt="Thread-Watcher mascot illuminating peaking out behind 3 floating images. 2 images showcase ticket panels with the names 'User Reports' and 'Suggestions' with the third image, taking the most space at the front, being a screenshot of a ticket pipeline being configured."
+		/>
 	</div>
 
 	<div class="feature">
@@ -132,7 +145,10 @@
 				community gets more without lifting a finger.
 			</p>
 		</div>
-		<img src={Banner} alt="img" />
+		<enhanced:img
+			src={Feature3}
+			alt="Thread-Watcher mascot carrying a hammer and wearing a yellow hard hat striking a blue box with the text 'new stuff' written on it. The hammer hitting the box is causing sparks to fly about"
+		/>
 	</div>
 
 	<div class="feature">
@@ -144,6 +160,10 @@
 			</p>
 			<Button href="https://github.com/ffamilyfriendly/Thread-Watcher"><Github /> Github</Button>
 		</div>
+		<enhanced:img
+			src={Feature4}
+			alt="Thread-Watcher mascot wearing 'nerdy' glasses peaking out from 3 floating segments of code"
+		/>
 	</div>
 </section>
 
@@ -276,7 +296,6 @@
 		img {
 			width: 45ch;
 			border-radius: 1rem;
-			box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 		}
 
 		div {
