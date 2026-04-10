@@ -17,7 +17,7 @@
 		<div>
 			<div class="dev_shoutout">
 				Built with <span class="heart">💖</span> by
-				<a href="https://github.com/ffamilyfriendly">John</a> in Uppsala
+				<a href="https://github.com/ffamilyfriendly">John</a> in Uppsala 🇸🇪
 			</div>
 			<p class="copyright_notice">
 				© 2026 Thread-Watcher - A <a href="https://botsuite.co">BotSuite</a> Project. Not affiliated with
@@ -32,6 +32,7 @@
 			<ul>
 				<li><a href="https://threadwatcher.xyz/invite">Invite</a></li>
 				<li><a href="https://botsuite.co/join">Support Server</a></li>
+				<li><a href="https://docs.threadwatcher.xyz">Documentation</a></li>
 				<li><a href="https://github.com/ffamilyfriendly/Thread-Watcher">Github</a></li>
 			</ul>
 		</div>
@@ -40,6 +41,7 @@
 			<ul>
 				<li><a href="/policies/privacy-policy">Privacy Policy</a></li>
 				<li><a href="/policies/terms-of-service">Terms of Service</a></li>
+				<li><a href="/policies/attribution">Attribution</a></li>
 				<li><a href="mailto:hello@botsuite.co">Contact</a></li>
 			</ul>
 		</div>

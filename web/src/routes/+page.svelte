@@ -11,6 +11,7 @@
 	import Feature2 from '$lib/assets/feat_2.webp';
 	import Feature3 from '$lib/assets/feat_3.webp';
 	import Feature4 from '$lib/assets/feat_4.webp';
+	import NavbarUnauthed from '$lib/components/ui/NavbarUnauthed.svelte';
 
 	const { data }: PageProps = $props();
 
@@ -64,14 +65,7 @@
 	<meta name="theme-color" content="#7289da" />
 </svelte:head>
 
-<div class="nav">
-	<TwLogoBranding />
-
-	<div>
-		<Button size="large" load_with={load_dash}>Dashboard</Button>
-		<Button size="large" variant="tetriary" href="https://botsuite.co/join">Support</Button>
-	</div>
-</div>
+<NavbarUnauthed />
 
 <div
 	class="hero_wrapper"
@@ -80,8 +74,8 @@
 	<section class="hero">
 		<h1>The Toolbox for Discord Threads.</h1>
 		<p>
-			Stop fighting Discord's auto-archive. Thread-Watcher keeps your conversations alive, your
-			support tickets organised, and your community running smoothly — all in one bot.
+			Stop fighting Discord's auto-archive. Thread-Watcher keeps your threads alive, your support
+			tickets organised, and your community running smoothly. All in one bot.
 		</p>
 		<div class="btns">
 			<Button size="large" load_with={load_dash}>Add To Discord</Button>
@@ -97,11 +91,11 @@
 	</div>
 	<div>
 		<Spool />
-		<p><span>{format_number(thread_count)}</span> watched threads</p>
+		<p><span>{format_number(thread_count)}</span> Watched Threads</p>
 	</div>
 	<div>
 		<LayoutPanelLeft />
-		<p><span>{format_number(panel_count)}</span> ticket panels</p>
+		<p><span>{format_number(panel_count)}</span> Ticket Panels</p>
 	</div>
 </section>
 
@@ -110,9 +104,15 @@
 		<div>
 			<h2>Never Lose a Discord Thread Again</h2>
 			<p>
-				Discord archives inactive threads whether you like it or not. Thread-Watcher fights back —
-				watch individual threads or entire channels at once with /batch, and keep conversations
-				alive indefinitely with no limits on how many you can monitor.
+				Discord quietly hides inactive threads, making conversations dissappear when you least
+				expect it. Thread-Watcher makes sure that never happens.
+			</p>
+
+			<p>
+				Watch individual threads, channels, or the whole server at once with <span class="command"
+					>/batch</span
+				> to keep threads alive indefinentely. No limits and no maintenence. Just threads that stay alive
+				for as long as you need them.
 			</p>
 		</div>
 		<enhanced:img
@@ -125,10 +125,20 @@
 		<div>
 			<h2>Support Tickets, Your Way</h2>
 			<p>
-				Build custom ticket flows with a visual pipeline editor. Ask questions, assign roles, route
-				tickets to the right channel, and let AI narrow down issues before staff ever get involved.
-				More customizable than any other ticket bot — without the complexity.
+				Build fully custom ticket flows with an intuative visual editor. Ask questions, assign
+				roles, and route the ticket to exactly where it needs to go without writing a single line of
+				code. You're in control!
 			</p>
+			<p>
+				All tickets are transcribed for you so you can look back, even if the ticket thread was
+				deleted. Get the gist of a ticket at a glance with the <small class="muted"
+					>(optional)</small
+				> AI ticket summarizer, no back-reading required!
+			</p>
+			<Button load_with={load_dash}>
+				<img class="discord_logo" src={Discord} alt="discord logo" />
+				Add Bot
+			</Button>
 		</div>
 		<enhanced:img
 			src={Feature2}
@@ -140,10 +150,18 @@
 		<div>
 			<h2>Always Getting Better</h2>
 			<p>
-				Thread-Watcher is actively developed and continuously expanding. New thread management
-				tools, deeper integrations, and quality-of-life improvements ship regularly — so your
-				community gets more without lifting a finger.
+				Thread-Watcher is activly developed and constantly expanding. New thread management tools,
+				nifty new ticket modules, and quality-of-life improvements might be worked on at this very
+				moment!
 			</p>
+			<p>
+				Want to take a peak behind the curtain to see what's being worked on currently?
+				Thread-Watcher has a public roadmap to keep you informed on what's going on.
+			</p>
+
+			<Button variant="tetriary" href="https://github.com/users/ffamilyfriendly/projects/4/views/2"
+				>Public Roadmap</Button
+			>
 		</div>
 		<enhanced:img
 			src={Feature3}
@@ -155,8 +173,14 @@
 		<div>
 			<h2>Fully Open Source</h2>
 			<p>
-				Thread-Watcher is built in the open under the permissive MIT license. Audit the code,
-				self-host it, or contribute — the community is welcome to shape its future.
+				Thread-Watcher has always been built in the open under the permissive MIT license. This
+				means you can take a look under the hood, directly at the code the bot runs on, and modify
+				it if you wish.
+			</p>
+			<p>
+				It's our hope that you'll thoroughly enjoy using what we build, but we wholeheartedly
+				support you in taking it further. Host it yourself, modify it, or shape it into exactly what
+				your community needs.
 			</p>
 			<Button href="https://github.com/ffamilyfriendly/Thread-Watcher"><Github /> Github</Button>
 		</div>
@@ -181,6 +205,14 @@
 	:root {
 		--content-width: 1200px;
 		--side-padding: clamp(1.5rem, 5vw, 4rem);
+	}
+
+	.command {
+		color: color-mix(in srgb, var(--premium-900) 80%, white);
+	}
+
+	.muted {
+		opacity: 0.5;
 	}
 
 	.stats {
@@ -221,15 +253,6 @@
 	.discord_logo {
 		height: 24px;
 		filter: brightness(0) invert(1);
-	}
-
-	.nav {
-		background-color: var(--background-500);
-		border-bottom: 1px solid var(--background-800);
-		padding: 1rem;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
 	}
 
 	section {
@@ -293,7 +316,7 @@
 			gap: 0.75rem;
 		}
 
-		img {
+		& > img {
 			width: 45ch;
 			border-radius: 1rem;
 		}
