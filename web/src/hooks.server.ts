@@ -1,7 +1,7 @@
 import { dev } from '$app/environment';
 import { FancyAPIError } from '$lib/server/api';
-import { handle as auth_handle, signIn } from '$lib/server/auth';
-import { redirect, type Handle, type HandleServerError, type ResolveOptions } from '@sveltejs/kit';
+import { handle as auth_handle } from '$lib/server/auth';
+import { redirect, type Handle, type HandleServerError } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 
 const authorization_handle: Handle = async ({ event, resolve }) => {

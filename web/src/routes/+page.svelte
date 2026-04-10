@@ -5,7 +5,6 @@
 	import Banner from '$lib/assets/tw_banner.png';
 	import { Github, LayoutPanelLeft, Spool } from '@lucide/svelte';
 	import type { PageProps } from './$types';
-	import TwLogoBranding from '$lib/components/ui/TwLogoBranding.svelte';
 
 	import Feature1 from '$lib/assets/feat_1.webp';
 	import Feature2 from '$lib/assets/feat_2.webp';
@@ -75,7 +74,7 @@
 		<h1>The Toolbox for Discord Threads.</h1>
 		<p>
 			Stop fighting Discord's auto-archive. Thread-Watcher keeps your threads alive, your support
-			tickets organised, and your community running smoothly. All in one bot.
+			tickets organized, and your community running smoothly. All in one bot.
 		</p>
 		<div class="btns">
 			<Button size="large" load_with={load_dash}>Add To Discord</Button>
@@ -104,14 +103,14 @@
 		<div>
 			<h2>Never Lose a Discord Thread Again</h2>
 			<p>
-				Discord quietly hides inactive threads, making conversations dissappear when you least
-				expect it. Thread-Watcher makes sure that never happens.
+				Discord quietly hides inactive threads, making conversations disappear when you least expect
+				it. Thread-Watcher makes sure that never happens.
 			</p>
 
 			<p>
 				Watch individual threads, channels, or the whole server at once with <span class="command"
 					>/batch</span
-				> to keep threads alive indefinentely. No limits and no maintenence. Just threads that stay alive
+				> to keep threads alive indefinitely. No limits and no maintenance. Just threads that stay alive
 				for as long as you need them.
 			</p>
 		</div>
@@ -125,7 +124,7 @@
 		<div>
 			<h2>Support Tickets, Your Way</h2>
 			<p>
-				Build fully custom ticket flows with an intuative visual editor. Ask questions, assign
+				Build fully custom ticket flows with an intuitive visual editor. Ask questions, assign
 				roles, and route the ticket to exactly where it needs to go without writing a single line of
 				code. You're in control!
 			</p>
@@ -150,7 +149,7 @@
 		<div>
 			<h2>Always Getting Better</h2>
 			<p>
-				Thread-Watcher is activly developed and constantly expanding. New thread management tools,
+				Thread-Watcher is actively developed and constantly expanding. New thread management tools,
 				nifty new ticket modules, and quality-of-life improvements might be worked on at this very
 				moment!
 			</p>
@@ -301,6 +300,10 @@
 		display: flex;
 		flex-direction: column;
 		gap: 4rem;
+
+		@media (max-width: 1000px) {
+			align-items: center;
+		}
 	}
 
 	.feature {
@@ -319,6 +322,10 @@
 		& > img {
 			width: 45ch;
 			border-radius: 1rem;
+
+			@media (max-width: 500px) {
+				width: 100%;
+			}
 		}
 
 		div {
