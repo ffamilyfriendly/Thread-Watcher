@@ -2,10 +2,10 @@ import { client } from '@providers/client';
 import { logger } from '@providers/logger';
 import { ThreadMetadata } from '@watcher/shared';
 import { ChannelType, GuildMember, PrivateThreadChannel, PublicThreadChannel } from 'discord.js';
-import { PrivateEvent } from 'interfaces/PrivateEvents';
+import { PrivateEvent } from '#/interfaces/PrivateEvents';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { convert_snowflake_to_date } from 'services/ThreadService';
-import { map_err } from 'utilities/error';
+import { convert_snowflake_to_date } from '#/services/ThreadService';
+import { map_err } from '#/utilities/error';
 
 function get_bump_mode(
   thread: PublicThreadChannel | PrivateThreadChannel,

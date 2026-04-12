@@ -1,5 +1,5 @@
 import { client } from '@providers/client';
-import { PrivateEvent } from 'interfaces/PrivateEvents';
+import { PrivateEvent } from '#/interfaces/PrivateEvents';
 import { err, ok } from 'neverthrow';
 
 const event: PrivateEvent<string[]> = {

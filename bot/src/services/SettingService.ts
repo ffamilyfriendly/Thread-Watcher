@@ -1,18 +1,11 @@
 import { event_bus } from '@providers/event_bus';
-import { AuditData } from '@watcher/shared';
-import { Database } from 'interfaces/Database';
-import {
-  is_setting_key,
-  SettingKey,
-  SettingOutput,
-  SETTINGS,
-  SettingValue,
-} from 'interfaces/Settings';
+import { Database } from '#/interfaces/Database';
+import { is_setting_key, SettingKey, SettingOutput, SETTINGS } from '#/interfaces/Settings';
 import Redis from 'ioredis';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { map_err } from 'utilities/error';
-import { safe_parse } from 'utilities/parsing';
-import RedisWrapper from 'utilities/redis';
+import { map_err } from '#/utilities/error';
+import { safe_parse } from '#/utilities/parsing';
+import RedisWrapper from '#/utilities/redis';
 import { AuditMeta } from './AuditService';
 
 /**

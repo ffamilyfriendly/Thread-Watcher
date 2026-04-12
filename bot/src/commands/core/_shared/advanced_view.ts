@@ -18,13 +18,13 @@ import {
   ThreadChannel,
 } from 'discord.js';
 import regex_is_safe from 'safe-regex';
-import { Vacuum } from 'services/ComponentService';
+import { Vacuum } from '#/services/ComponentService';
 import { FilterData } from '@watcher/shared';
 import { component_service } from '@providers/services/component_service';
-import { GenericCommandError } from 'utilities/error/def';
-import EmbeddableError from 'utilities/error/EmbeddableError';
-import { CommandContext } from 'interfaces/Command';
-import { safe_reply } from 'utilities/interaction_helpers';
+import { GenericCommandError } from '#/utilities/error/def';
+import EmbeddableError from '#/utilities/error/EmbeddableError';
+import { CommandContext } from '#/interfaces/Command';
+import { safe_reply } from '#/utilities/interaction_helpers';
 import { Result } from 'neverthrow';
 
 export interface State<TContext = unknown> {

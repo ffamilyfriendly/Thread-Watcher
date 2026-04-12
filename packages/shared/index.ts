@@ -9,6 +9,7 @@ export * from "./schemas/tickets/ticket";
 export * from "./tickets/ticket_outputs";
 export * from "./constraints";
 export * from "./schemas/api_routes";
+export * from "./tickets/contracts";
 
 /*
 code: 400,

@@ -1,5 +1,5 @@
 import { create_singleton } from '@providers/singleton';
-import AiService from 'services/AiService';
+import AiService from '#/services/AiService';
 import { guild_service } from './guild_service';
 import { ai_client } from '@providers/ai';
 import { entitlement_service } from './entitlement_service';

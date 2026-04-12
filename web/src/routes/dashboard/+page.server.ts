@@ -9,9 +9,9 @@ import { map_err } from '$lib/error_helper.js';
 
 function gen_inv(guild_id: string) {
 	const client_id = DISCORD_CLIENT_ID;
-	const permissions = '0';
+	const permissions = '292057842688';
 	const redirect_uri = encodeURIComponent(BOT_ADDED_URL);
-	return `https://discord.com/api/oauth2/authorize?client_id=${client_id}&permissions=${permissions}&scope=bot&guild_id=${guild_id}&response_type=code&redirect_uri=${redirect_uri}`;
+	return `https://discord.com/api/oauth2/authorize?client_id=${client_id}&permissions=${permissions}&scope=bot+applications.commands&guild_id=${guild_id}&response_type=code&redirect_uri=${redirect_uri}`;
 }
 
 async function get_guilds(access_token: string): Promise<Result<DiscordGuild[], Error | Response>> {

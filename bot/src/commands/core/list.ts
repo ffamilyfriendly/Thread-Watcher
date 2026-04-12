@@ -14,13 +14,13 @@ import {
   SlashCommandBuilder,
 } from 'discord.js';
 
-import { GuildChatInteraction, RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { CommandContext, type Command } from 'interfaces/Command';
+import { GuildChatInteraction, RegistrationScope } from '#/interfaces/BaseCommandInterface';
+import { CommandContext, type Command } from '#/interfaces/Command';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { Vacuum } from 'services/ComponentService';
-import { map_err } from 'utilities/error';
-import { CommandError } from 'utilities/error/def';
-import { safe_reply_or_followup } from 'utilities/interaction_helpers';
+import { Vacuum } from '#/services/ComponentService';
+import { map_err } from '#/utilities/error';
+import { CommandError } from '#/utilities/error/def';
+import { safe_reply_or_followup } from '#/utilities/interaction_helpers';
 
 type DisplayType = 'THREADS' | 'CHANNELS';
 

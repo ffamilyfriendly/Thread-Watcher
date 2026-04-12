@@ -1,10 +1,10 @@
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { ConfigType, MySqlConf } from 'utilities/config';
-import { with_error_handling, with_schema } from 'database';
+import { ConfigType, MySqlConf } from '#/utilities/config';
+import { with_error_handling, with_schema } from '#/database';
 import { join, resolve as resolve_path } from 'path';
 import { z } from 'zod';
 import { create as create_tar } from 'tar';
-import { Database, DBResult, TicketInsertion } from 'interfaces/Database';
+import { Database, DBResult, TicketInsertion } from '#/interfaces/Database';
 import { migrate } from 'drizzle-orm/mysql2/migrator';
 import { MySql2Database, drizzle } from 'drizzle-orm/mysql2';
 import {
@@ -59,10 +59,10 @@ import {
   or,
   SQL,
 } from 'drizzle-orm';
-import { DatabaseError, TicketNotFound } from 'utilities/error/def';
+import { DatabaseError, TicketNotFound } from '#/utilities/error/def';
 import mysql from 'mysql2/promise';
 import { logger } from '@providers/logger';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 import { rm, rmSync } from 'fs';
 
 const full_schema = { ...schema, ...relations };

@@ -1,6 +1,6 @@
 import { client } from '@providers/client';
 import { entitlement_service } from '@providers/services/entitlement_service';
-import { PrivateEvent } from 'interfaces/PrivateEvents';
+import { PrivateEvent } from '#/interfaces/PrivateEvents';
 import { err, ok } from 'neverthrow';
 
 const event: PrivateEvent<{

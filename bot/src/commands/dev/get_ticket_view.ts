@@ -1,11 +1,10 @@
-import { ipc_client } from '@providers/ipc/bot_ipc_client';
 import { ticket_service } from '@providers/services/ticket_service';
 import { AttachmentBuilder, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { CommandContext, type Command } from 'interfaces/Command';
+import { RegistrationScope } from '#/interfaces/BaseCommandInterface';
+import { CommandContext, type Command } from '#/interfaces/Command';
 import { err, ok, Result } from 'neverthrow';
-import { CommandError } from 'utilities/error/def';
-import { ensure_deferred, safe_reply } from 'utilities/interaction_helpers';
+import { CommandError } from '#/utilities/error/def';
+import { ensure_deferred, safe_reply } from '#/utilities/interaction_helpers';
 
 async function run(
   interaction: ChatInputCommandInteraction,

@@ -5,18 +5,17 @@ import {
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 
-import { GuildChatInteraction, RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { CommandContext, type SubCommand } from 'interfaces/Command';
+import { GuildChatInteraction, RegistrationScope } from '#/interfaces/BaseCommandInterface';
+import { CommandContext, type SubCommand } from '#/interfaces/Command';
 import { err, ok, Result } from 'neverthrow';
-import { Vacuum } from 'services/ComponentService';
-import { make_advanced_embed, State } from 'commands/core/_shared/advanced_view';
-import { map_err } from 'utilities/error';
+import { Vacuum } from '#/services/ComponentService';
+import { make_advanced_embed, State } from '#/commands/core/_shared/advanced_view';
+import { map_err } from '#/utilities/error';
 import { get_target } from '../_shared/check_channel_values';
 import { channel_service } from '@providers/services/channel_service';
-import { audit_service } from '@providers/services/audit_service';
-import { CommandError } from 'utilities/error/def';
-import { safe_defer, safe_delete, safe_reply } from 'utilities/interaction_helpers';
-import EmbeddableError from 'utilities/error/EmbeddableError';
+import { CommandError } from '#/utilities/error/def';
+import { safe_defer, safe_delete, safe_reply } from '#/utilities/interaction_helpers';
+import EmbeddableError from '#/utilities/error/EmbeddableError';
 
 async function handle_execution(state: State, interaction: Interaction, context: null) {
   const result = await channel_service.add_monitor(
@@ -93,11 +92,11 @@ async function run(
 
 export const command_data = new SlashCommandSubcommandBuilder()
   .setName('add')
-  .setDescription('automatically watch threads in channel')
+  .setDescription('Start automatically watching threads in a channel or across the whole server')
   .addChannelOption((o) =>
     o
       .setName('parent')
-      .setDescription('The thread to start or stop monitoring')
+      .setDescription('The channel, category, or forum to monitor for new threads')
       .addChannelTypes([
         ChannelType.GuildCategory,
         ChannelType.GuildForum,
@@ -107,10 +106,14 @@ export const command_data = new SlashCommandSubcommandBuilder()
       ]),
   )
   .addBooleanOption((opt) =>
-    opt.setName('advanced').setDescription('if u wanna use advanced options idk'),
+    opt
+      .setName('advanced')
+      .setDescription('Configure filters such as required roles, tags, or a regex pattern'),
   )
   .addBooleanOption((opt) =>
-    opt.setName('global').setDescription('if you want this monitor to be server wide'),
+    opt
+      .setName('global')
+      .setDescription('Apply this monitor to the entire server rather than a specific channel'),
   );
 
 const command: SubCommand = {

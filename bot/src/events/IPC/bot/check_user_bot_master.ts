@@ -1,8 +1,8 @@
 import { client } from '@providers/client';
 import { setting_service } from '@providers/services/setting_service';
-import { PrivateEvent } from 'interfaces/PrivateEvents';
+import { PrivateEvent } from '#/interfaces/PrivateEvents';
 import { err, ok, ResultAsync } from 'neverthrow';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 
 const event: PrivateEvent<{
   guild_id: string;

@@ -91,9 +91,7 @@ export const Ticket = sqliteTable('tickets', {
   owner: text('owner').notNull(),
   variable_dump: text('variable_dump', { mode: 'json' }).notNull(),
   status: text('status').notNull().default('OPEN'),
-  panel_id: text('panel_id')
-    .notNull()
-    .references(() => TicketPanels.panel_id, { onDelete: 'no action' }),
+  panel_id: text('panel_id').references(() => TicketPanels.panel_id, { onDelete: 'set null' }),
   assigned_to_roles: text('assigned_to_roles', { mode: 'json' }).notNull(),
   claimed_by_user_id: text('claimed_by_user_id'),
   created_at: integer('created_at', { mode: 'timestamp' }).$defaultFn(date_now),

@@ -3,7 +3,7 @@ import { DefaultModule, IPipeline, SupportedInteractionTypeWithGuild } from '../
 import { ValueContainer } from '../ValueContainter';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { generate_embed } from '../components/embed';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 import {
   ChannelType,
   ForumChannel,

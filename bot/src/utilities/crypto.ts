@@ -1,7 +1,5 @@
 import { config } from '@providers/config';
 
-const ENCRYPTION_KEY = config.crypto_key;
-
 async function get_key() {
   const key_bytes = new TextEncoder().encode(config.crypto_key);
   const hash = await crypto.subtle.digest('SHA-256', key_bytes);

@@ -1,7 +1,7 @@
 import { Ticket } from '@watcher/shared';
 import { APIGuildMember, GuildMember, RepliableInteraction } from 'discord.js';
 import { err, ok, Result } from 'neverthrow';
-import { RequiresAssignedRole, RequiresAssignedRoleOrOwnership } from 'utilities/error/def';
+import { RequiresAssignedRole, RequiresAssignedRoleOrOwnership } from '#/utilities/error/def';
 
 export function member_has_role_overlap(
   member: GuildMember | APIGuildMember,

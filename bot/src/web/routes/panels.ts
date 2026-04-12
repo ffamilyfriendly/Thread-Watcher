@@ -2,12 +2,12 @@ import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
 import { ticket_service } from '@providers/services/ticket_service';
 import { ZEditTicketPanel, ZTicketPanel } from '@watcher/shared';
 import { Router } from 'express';
-import { RouteFile } from 'interfaces/Web';
+import { RouteFile } from '#/interfaces/Web';
 import { err } from 'neverthrow';
-import { enforce_policy } from 'web/auth/auth';
-import { Policies } from 'web/auth/policies';
-import { safe_route } from 'web/neverthrow_wrapper';
-import { api_err, HTTPCodes } from 'web/utils/error';
+import { enforce_policy } from '#/web/auth/auth';
+import { Policies } from '#/web/auth/policies';
+import { safe_route } from '#/web/neverthrow_wrapper';
+import { api_err, HTTPCodes } from '#/web/utils/error';
 const router = Router();
 
 router.post(

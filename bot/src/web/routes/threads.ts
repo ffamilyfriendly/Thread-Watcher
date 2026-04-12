@@ -9,12 +9,12 @@ import {
   ZThreadSearchData,
 } from '@watcher/shared';
 import { Router } from 'express';
-import { RouteFile } from 'interfaces/Web';
+import { RouteFile } from '#/interfaces/Web';
 import { err, ok, Result } from 'neverthrow';
-import RedisWrapper from 'utilities/redis';
-import { enforce_policy } from 'web/auth/auth';
-import { Policies } from 'web/auth/policies';
-import { safe_route } from 'web/neverthrow_wrapper';
+import RedisWrapper from '#/utilities/redis';
+import { enforce_policy } from '#/web/auth/auth';
+import { Policies } from '#/web/auth/policies';
+import { safe_route } from '#/web/neverthrow_wrapper';
 import z from 'zod';
 
 const router = Router();

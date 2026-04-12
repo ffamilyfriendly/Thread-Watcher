@@ -1,12 +1,11 @@
-import { Database } from 'interfaces/Database';
-import { ConfigType } from 'utilities/config';
+import { Database } from '#/interfaces/Database';
+import { ConfigType } from '#/utilities/config';
 import SqliteHandler from './sqlite/adapter';
 import MysqlHandler from './mysql/adapter';
 import { err, ok, Result } from 'neverthrow';
 import { SQLiteError } from 'bun:sqlite';
 import z from 'zod';
-import { DatabaseError } from 'utilities/error/def';
-import { logger } from '@providers/logger';
+import { DatabaseError } from '#/utilities/error/def';
 
 export default function get_database_instance(config: ConfigType): Database {
   let handler_type;

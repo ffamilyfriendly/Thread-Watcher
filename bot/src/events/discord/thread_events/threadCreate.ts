@@ -1,5 +1,5 @@
 import { ThreadChannel } from 'discord.js';
-import { Event } from 'interfaces/ClientEvent';
+import { Event } from '#/interfaces/ClientEvent';
 import { logger } from '@providers/logger';
 import { modules } from '@providers/modules';
 

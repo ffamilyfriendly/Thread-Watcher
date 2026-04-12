@@ -1,5 +1,5 @@
 import { Result } from 'neverthrow';
-import { FUNCS } from 'utilities/ipc_clients';
+import { FUNCS } from '#/utilities/ipc_clients';
 import z from 'zod';
 
 export interface BaseEvent {

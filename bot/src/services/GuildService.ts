@@ -1,8 +1,8 @@
 import { Guild, ZGuild } from '@watcher/shared';
-import { Database } from 'interfaces/Database';
+import { Database } from '#/interfaces/Database';
 import Redis from 'ioredis';
 import { err, ok } from 'neverthrow';
-import RedisWrapper from 'utilities/redis';
+import RedisWrapper from '#/utilities/redis';
 
 export default class GuildService {
   static readonly CACHE_TTL_SECONDS = 900;

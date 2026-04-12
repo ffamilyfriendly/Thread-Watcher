@@ -1,9 +1,8 @@
-import { event_bus } from '@providers/event_bus';
 import { logger } from '@providers/logger';
 import { AuditData } from '@watcher/shared';
-import { Database } from 'interfaces/Database';
+import { Database } from '#/interfaces/Database';
 import { err, ok, Result } from 'neverthrow';
-import { DatabaseError } from 'utilities/error/def';
+import { DatabaseError } from '#/utilities/error/def';
 
 // Matches your ZAuditTypes literal values
 export const AUDIT_TYPES_LIST = [

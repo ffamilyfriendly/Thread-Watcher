@@ -1,10 +1,10 @@
-import { PrivateEvent } from 'interfaces/PrivateEvents';
-import { load_module_as_and } from 'utilities/load_files';
-import { create_web_server } from 'web';
-import { start_db_backup_routine } from 'routines/do_db_backup';
+import { PrivateEvent } from '#/interfaces/PrivateEvents';
+import { load_module_as_and } from '#/utilities/load_files';
+import { create_web_server } from '#/web';
+import { start_db_backup_routine } from '#/routines/do_db_backup';
 import { ResultAsync } from 'neverthrow';
-import { map_err } from 'utilities/error';
-import { start_cleanup_interval } from 'routines/do_cleanup';
+import { map_err } from '#/utilities/error';
+import { start_cleanup_interval } from '#/routines/do_cleanup';
 import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
 import { sharding_manager } from '@providers/shardingmanager';
 import Logger from '@providers/logger';
@@ -12,9 +12,9 @@ import { database } from '@providers/database';
 import { config } from '@providers/config';
 import { redis } from '@providers/redis';
 import { entitlement_service } from '@providers/services/entitlement_service';
-import { IpcProvider } from 'services/EntitlementService';
+import { IpcProvider } from '#/services/EntitlementService';
 import { ticket_service } from '@providers/services/ticket_service';
-import { fetch_index_context as fetch_users_index_context } from 'fetchers/user_fetcher';
+import { fetch_index_context as fetch_users_index_context } from '#/fetchers/user_fetcher';
 import { event_bus } from '@providers/event_bus';
 
 const logger = Logger.child('Shard');

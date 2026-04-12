@@ -99,8 +99,12 @@ export const Ticket = mysqlTable('tickets', {
     .notNull()
     .references(() => Guilds.guild_id, { onDelete: 'cascade' }),
   expires_at: datetime('expires_at'),
-  discord_channel_id: varchar('discord_channel_id', { length: UUID_LEN }).notNull().unique(),
-  start_message_id: varchar('start_message_id', { length: UUID_LEN }).notNull().unique(),
+  discord_channel_id: varchar('discord_channel_id', { length: DISCORD_SNOWFLAKE_MAX_LEN })
+    .notNull()
+    .unique(),
+  start_message_id: varchar('start_message_id', { length: DISCORD_SNOWFLAKE_MAX_LEN })
+    .notNull()
+    .unique(),
   name: text('name').notNull(),
   owner: text('owner').notNull(),
   variable_dump: json('variable_dump').notNull(),

@@ -8,13 +8,13 @@ import {
 import { ActionReturnType } from '../_on_interaction';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { Ticket } from '@watcher/shared';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 import { component_service } from '@providers/services/component_service';
 import { member_has_role_overlap, member_has_role_overlap_or_fail } from './shared';
-import { safe_reply, safe_update } from 'utilities/interaction_helpers';
+import { safe_reply, safe_update } from '#/utilities/interaction_helpers';
 import { ticket_service } from '@providers/services/ticket_service';
 import { delete_note_btn, note_inserted } from './components/embeds';
-import EmbeddableError from 'utilities/error/EmbeddableError';
+import EmbeddableError from '#/utilities/error/EmbeddableError';
 import { config } from '@providers/config';
 
 export default async function add_note_action(

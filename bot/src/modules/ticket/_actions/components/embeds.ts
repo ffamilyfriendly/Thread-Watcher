@@ -1,6 +1,6 @@
 import { config } from '@providers/config';
 import { component_service } from '@providers/services/component_service';
-import { Ticket } from '@watcher/shared';
+import { Embed, Ticket } from '@watcher/shared';
 import {
   ActionRowBuilder,
   APIUser,
@@ -13,8 +13,8 @@ import {
   User,
 } from 'discord.js';
 import { err, ok, Result } from 'neverthrow';
-import { map_err } from 'utilities/error';
-import { safe_reply_or_followup } from 'utilities/interaction_helpers';
+import { map_err } from '#/utilities/error';
+import { safe_reply_or_followup } from '#/utilities/interaction_helpers';
 
 function base_embed(): EmbedBuilder {
   const e = new EmbedBuilder();
@@ -169,3 +169,10 @@ export function get_ticket_resolved_buttons(ticket_id: string): ActionRowBuilder
   action_row.addComponents(view_ticket_transcript);
   return action_row;
 }
+
+export const DEFAULT_EMBED: Embed = {
+  title: `Ticket Resolved!`,
+  description: `Your ticket, **{{env.name}}** (\`{{env.ID}}\`), was resolved.\nThread-Watcher could not fetch the panel (as it may have been deleted).`,
+  fields: [],
+  colour: config.style.warning.colour,
+};

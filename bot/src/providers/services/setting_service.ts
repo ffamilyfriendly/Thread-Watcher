@@ -1,4 +1,4 @@
-import SettingService from 'services/SettingService';
+import SettingService from '#/services/SettingService';
 import { create_singleton } from '../singleton';
 import database from '../database';
 import redis from '../redis';

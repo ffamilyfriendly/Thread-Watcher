@@ -1,4 +1,4 @@
-import { read_config } from 'utilities/config';
+import { read_config } from '#/utilities/config';
 import logger from './logger';
 import { create_singleton } from './singleton';
 

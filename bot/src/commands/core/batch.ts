@@ -2,30 +2,28 @@ import {
   Channel,
   ChannelType,
   Guild,
+  GuildBasedChannel,
   Interaction,
   PermissionFlagsBits,
   SlashCommandBuilder,
   ThreadChannel,
 } from 'discord.js';
-
-import { GuildChatInteraction, RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { CommandContext, type Command } from 'interfaces/Command';
-
+import { GuildChatInteraction, RegistrationScope } from '#/interfaces/BaseCommandInterface';
+import { CommandContext, type Command } from '#/interfaces/Command';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { Vacuum } from 'services/ComponentService';
-import { make_advanced_embed, State } from 'commands/core/_shared/advanced_view';
+import { Vacuum } from '#/services/ComponentService';
+import { make_advanced_embed, State } from '#/commands/core/_shared/advanced_view';
 import { create_channel_link } from './list';
-import ThreadService from 'services/ThreadService';
-import { map_err } from 'utilities/error';
-import { AuditMeta, PartialAuditObject } from 'services/AuditService';
+import ThreadService from '#/services/ThreadService';
+import { map_err } from '#/utilities/error';
+import { AuditMeta } from '#/services/AuditService';
 import { get_target } from './_shared/check_channel_values';
-import { audit_service } from '@providers/services/audit_service';
 import { client } from '@providers/client';
 import { thread_service } from '@providers/services/thread_service';
 import { channel_service } from '@providers/services/channel_service';
-import { CommandError } from 'utilities/error/def';
+import { CommandError } from '#/utilities/error/def';
 import { logger } from '@providers/logger';
-import { safe_defer, safe_delete, safe_reply } from 'utilities/interaction_helpers';
+import { safe_delete, safe_reply } from '#/utilities/interaction_helpers';
 import { TKey } from '@generated/locales';
 
 async function fetch_all_threads_from_parent(channel: Channel | Guild) {
@@ -197,7 +195,9 @@ async function run(
   const watch_future = !!interaction.options.getBoolean('watch-future');
 
   const channel_link =
-    parent.value instanceof Guild ? 'in this guild' : create_channel_link(parent.value);
+    parent.value instanceof Guild
+      ? 'in this guild'
+      : create_channel_link(parent.value as GuildBasedChannel);
 
   const waiting_embed = ctx.build_embed('info');
   waiting_embed.setTitle(ctx.t('commands.batch.fetching_title'));
@@ -272,15 +272,19 @@ const command_data = new SlashCommandBuilder()
   .addBooleanOption((opt) =>
     opt
       .setName('watch-future')
-      .setDescription('Automatically watch new threads created in this channel/category'),
+      .setDescription(
+        'Automatically watch new threads created in this channel, category, or guild.',
+      ),
   )
   .addBooleanOption((opt) =>
     opt
       .setName('advanced')
-      .setDescription('Use filters (regex, roles, tags) to selectively watch/unwatch threads'),
+      .setDescription('Configure filters such as required roles, tags, or a regex pattern'),
   )
   .addBooleanOption((opt) =>
-    opt.setName('global').setDescription('if you want this monitor to be server wide'),
+    opt
+      .setName('global')
+      .setDescription('Apply this to the entire server rather than a specific channel'),
   );
 
 const command: Command = {

@@ -1,10 +1,10 @@
 import { ipc_client } from '@providers/ipc/bot_ipc_client';
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { CommandContext, type Command } from 'interfaces/Command';
+import { RegistrationScope } from '#/interfaces/BaseCommandInterface';
+import { CommandContext, type Command } from '#/interfaces/Command';
 import { Result } from 'neverthrow';
-import { CommandError } from 'utilities/error/def';
-import { safe_reply } from 'utilities/interaction_helpers';
+import { CommandError } from '#/utilities/error/def';
+import { safe_reply } from '#/utilities/interaction_helpers';
 
 function run(
   interaction: ChatInputCommandInteraction,

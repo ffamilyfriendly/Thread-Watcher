@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { get_safe_error } from 'utilities/error/escape_sensitive_data';
+import { get_safe_error } from '#/utilities/error/escape_sensitive_data';
 
 // this is the most despicable sentance I can imagine.
 // We must rid any and all possibilities of this ever showing up

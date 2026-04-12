@@ -1,10 +1,10 @@
 import { err, ok, Result } from 'neverthrow';
 import { PolicyResult, RequestWithUser } from './policies';
-import { mapped_err } from 'utilities/error';
+import { mapped_err } from '#/utilities/error';
 import { ticket_service } from '@providers/services/ticket_service';
 import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
 import { Response } from 'express';
-import { TicketLocals } from 'web/routes/tickets';
+import { TicketLocals } from '#/web/routes/tickets';
 
 /// <reference path="policies.ts" />
 export namespace Policies {

@@ -1,7 +1,7 @@
 import { client } from '@providers/client';
-import { define_secure_event } from 'interfaces/PrivateEvents';
+import { define_secure_event } from '#/interfaces/PrivateEvents';
 import { err, ok, ResultAsync } from 'neverthrow';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 
 export default define_secure_event('user_has_role', async ({ role_ids, user_id, guild_id }) => {
   const guild_res = await ResultAsync.fromPromise(client.guilds.fetch(guild_id), map_err);

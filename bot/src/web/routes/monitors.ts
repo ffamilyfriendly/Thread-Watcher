@@ -1,17 +1,15 @@
 import { Router } from 'express';
 import { ZAiRegexResponse, ZMonitor, ZEditMonitor } from '@watcher/shared';
-import { RouteFile } from 'interfaces/Web';
-import { enforce_policy } from 'web/auth/auth';
-import { Policies } from 'web/auth/policies';
+import { RouteFile } from '#/interfaces/Web';
+import { enforce_policy } from '#/web/auth/auth';
+import { Policies } from '#/web/auth/policies';
 import { channel_service } from '@providers/services/channel_service';
-import { audit_service } from '@providers/services/audit_service';
-import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
 import { entitlement_service } from '@providers/services/entitlement_service';
-import { err, ok } from 'neverthrow';
+import { err } from 'neverthrow';
 import { ai_service } from '@providers/services/ai_service';
-import { safe_route } from 'web/neverthrow_wrapper';
-import { api_err, HTTPCodes } from 'web/utils/error';
-import { AuditMeta } from 'services/AuditService';
+import { safe_route } from '#/web/neverthrow_wrapper';
+import { api_err, HTTPCodes } from '#/web/utils/error';
+import { AuditMeta } from '#/services/AuditService';
 
 const router = Router();
 

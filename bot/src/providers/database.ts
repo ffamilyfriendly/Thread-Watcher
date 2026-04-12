@@ -1,4 +1,4 @@
-import get_database_instance from 'database';
+import get_database_instance from '#/database';
 import config from './config';
 import { create_singleton } from './singleton';
 

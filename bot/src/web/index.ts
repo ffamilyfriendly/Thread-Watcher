@@ -1,17 +1,16 @@
 import express from 'express';
-import { load_module_as_and } from 'utilities/load_files';
-import { RouteFile } from 'interfaces/Web';
+import { load_module_as_and } from '#/utilities/load_files';
+import { RouteFile } from '#/interfaces/Web';
 import body_parser from 'body-parser';
 import { config } from '@providers/config';
 import { logger } from '@providers/logger';
-import { global_error_handler } from './utils/error';
 import { safe_route } from './neverthrow_wrapper';
-import { ok, Result, ResultAsync } from 'neverthrow';
+import { Result, ResultAsync } from 'neverthrow';
 import { LandingPageData } from '../../../packages/shared/schemas/api_routes';
 import { ticket_service } from '@providers/services/ticket_service';
 import { thread_service } from '@providers/services/thread_service';
 import { sharding_manager } from '@providers/shardingmanager';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 
 export function create_web_server() {
   const server = express();

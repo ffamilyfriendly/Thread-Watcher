@@ -4,11 +4,11 @@ import {
   Command,
   RegistrationScope,
   SubCommand,
-} from 'interfaces/BaseCommandInterface';
+} from '#/interfaces/BaseCommandInterface';
 import { ResultAsync } from 'neverthrow';
 import { Logger } from 'tslog';
-import { read_config } from 'utilities/config';
-import { get_file_paths, load_paths_as_modules } from 'utilities/load_files';
+import { read_config } from '#/utilities/config';
+import { get_file_paths, load_paths_as_modules } from '#/utilities/load_files';
 
 const register_locally = process.argv.includes('-local');
 

@@ -7,15 +7,15 @@ import { DefaultModule, IPipeline, SupportedInteractionType } from './DefaultMod
 import { ILogObj, Logger } from 'tslog';
 import { s3 } from '@providers/s3_client';
 import z from 'zod';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 import { config } from '@providers/config';
-import { safe_reply_or_followup } from 'utilities/interaction_helpers';
+import { safe_reply_or_followup } from '#/utilities/interaction_helpers';
 import { ValueContainer } from './ValueContainter';
 import { ticket_service } from '@providers/services/ticket_service';
 import { create_ticket_opened } from './components/embed';
 import { interpolate_string } from './helpers/var_string';
-import { strip_dangerous_strings } from 'utilities/error/escape_sensitive_data';
-import { TicketPipelineModuleError } from 'utilities/error/def';
+import { strip_dangerous_strings } from '#/utilities/error/escape_sensitive_data';
+import { TicketPipelineModuleError } from '#/utilities/error/def';
 import { entitlement_service } from '@providers/services/entitlement_service';
 import { ContractLeafValue } from '../../../../../packages/shared/tickets/contracts';
 

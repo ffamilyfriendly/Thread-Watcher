@@ -1,16 +1,21 @@
 import { ticket_service } from '@providers/services/ticket_service';
 import { RepliableInteraction, ThreadChannel } from 'discord.js';
 import { err, ok, ResultAsync } from 'neverthrow';
-import { ensure_deferred, safe_delete } from 'utilities/interaction_helpers';
+import { ensure_deferred, safe_delete } from '#/utilities/interaction_helpers';
 import { ActionReturnType } from '../_on_interaction';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 import { Ticket } from '@watcher/shared';
 import { get_action_row } from '../_pipeline/components/ticket_opened';
 import { ValueContainer } from '../_pipeline/ValueContainter';
 import { generate_embed } from '../_pipeline/components/embed';
 import { can_close_ticket_or_fail } from './shared';
-import { confirm_resolve_ticket, get_ticket_resolved_buttons } from './components/embeds';
+import {
+  confirm_resolve_ticket,
+  DEFAULT_EMBED,
+  get_ticket_resolved_buttons,
+} from './components/embeds';
 import { logger } from '@providers/logger';
+import { client } from '@providers/client';
 
 async function update_buttons(
   int: RepliableInteraction,
@@ -48,8 +53,10 @@ export async function do_resolved_actions(
   if (ticket.status === 'CLOSED')
     return err(new Error(`Ticket '${ticket.ticket_id}' is already resolved!`));
 
-  const panel_obj = await ticket_service.get_panel(ticket.panel_id);
-  if (panel_obj.isErr()) {
+  const panel_obj = ticket.panel_id ? await ticket_service.get_panel(ticket.panel_id) : null;
+  if (panel_obj && panel_obj.isErr()) {
+    return err(panel_obj.error);
+  } else if (!panel_obj) {
     logger.warn(
       `Could not get panel '${ticket.panel_id}' for ticket '${ticket.name}' (${ticket.ticket_id}).\nProceeding with defaults`,
     );
@@ -71,15 +78,28 @@ export async function do_resolved_actions(
 
   // We'll default to "nothing" if we cant get the panel as its the safest option.
   // deleting or locking threads "randomly" is not what we want.
-  const resolve_behaviour = panel_obj.isOk() ? panel_obj.value.resolve_behaviour : 'NOTHING';
+  const resolve_behaviour =
+    panel_obj && panel_obj.isOk() ? panel_obj.value.resolve_behaviour : 'NOTHING';
 
-  if (resolve_behaviour === 'DELETE_THREAD')
-    return ResultAsync.fromPromise(thread.delete(), map_err);
-
-  if (panel_obj.isErr()) return ok();
+  let embed_configuration = panel_obj?.value?.resolve_embed ?? DEFAULT_EMBED;
 
   const variables = ValueContainer.from_dump(ticket.variable_dump);
-  const embed = generate_embed(panel_obj.value.resolve_embed, variables);
+  const embed = generate_embed(embed_configuration, variables);
+
+  if (resolve_behaviour === 'DELETE_THREAD') {
+    embed.setFooter({
+      text: `You are getting this message due to a ticket you opened with Thread-Watcher in guild ${ticket.guild_id}`,
+    });
+    const user_send_promise = client.users.send(ticket.owner, {
+      embeds: [embed],
+      components: [get_ticket_resolved_buttons(ticket.ticket_id)],
+    });
+    return ResultAsync.combine([
+      ResultAsync.fromPromise(thread.delete(), map_err),
+      ResultAsync.fromPromise(user_send_promise, map_err),
+    ]);
+  }
+
   const msg_sent = ResultAsync.fromPromise(
     thread.send({
       embeds: [embed],

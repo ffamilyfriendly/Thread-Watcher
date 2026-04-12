@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { BaseCommand, RegistrationScope } from 'interfaces/BaseCommandInterface';
+import { BaseCommand, RegistrationScope } from '#/interfaces/BaseCommandInterface';
 import { command_data as view_notes } from './view_notes';
 import { command_data as new_note } from './new_note';
 import { command_data as assign_ticket } from './assign_ticket';

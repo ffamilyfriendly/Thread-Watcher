@@ -1,4 +1,3 @@
-import { audit_service } from '@providers/services/audit_service';
 import { thread_service } from '@providers/services/thread_service';
 import {
   ChannelType,
@@ -7,12 +6,12 @@ import {
   SlashCommandBuilder,
   ThreadChannel,
 } from 'discord.js';
-import { RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { CommandContext, type Command } from 'interfaces/Command';
-import { err, ok, Result } from 'neverthrow';
-import { AuditMeta, PartialAuditObject } from 'services/AuditService';
-import { CommandError, DatabaseError, WrongChannelType } from 'utilities/error/def';
-import { safe_reply } from 'utilities/interaction_helpers';
+import { RegistrationScope } from '#/interfaces/BaseCommandInterface';
+import { CommandContext, type Command } from '#/interfaces/Command';
+import { err, Result } from 'neverthrow';
+import { AuditMeta } from '#/services/AuditService';
+import { CommandError, WrongChannelType } from '#/utilities/error/def';
+import { safe_reply } from '#/utilities/interaction_helpers';
 
 async function run(
   interaction: ChatInputCommandInteraction,

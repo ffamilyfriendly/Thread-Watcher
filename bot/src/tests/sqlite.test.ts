@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
-import Sqlite from 'database/sqlite/adapter';
+import Sqlite from '#/database/sqlite/adapter';
 import { Result } from 'neverthrow';
 
 function e(v: Result<unknown, unknown>): string {

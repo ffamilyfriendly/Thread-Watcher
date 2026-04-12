@@ -1,7 +1,7 @@
 import { schedule } from 'node-cron';
 import { Dirent, readdirSync, readFileSync, statSync, unlinkSync } from 'fs';
 import { Result, ResultAsync } from 'neverthrow';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 import { Logger } from 'tslog';
 import path from 'path';
 import { config } from '@providers/config';

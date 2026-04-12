@@ -2,16 +2,17 @@ import { ticket_service } from '@providers/services/ticket_service';
 import {
   ChatInputCommandInteraction,
   ContainerBuilder,
+  GuildMemberRoleManager,
   SectionBuilder,
   SeparatorSpacingSize,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { CommandContext, type SubCommand } from 'interfaces/Command';
+import { RegistrationScope } from '#/interfaces/BaseCommandInterface';
+import { CommandContext, type SubCommand } from '#/interfaces/Command';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { map_err } from 'utilities/error';
-import { CommandError } from 'utilities/error/def';
-import { ensure_deferred, safe_reply_or_followup } from 'utilities/interaction_helpers';
+import { map_err } from '#/utilities/error';
+import { CommandError, RequiresAssignedRole } from '#/utilities/error/def';
+import { ensure_deferred, safe_reply_or_followup } from '#/utilities/interaction_helpers';
 
 function create_container(sections: Map<string, SectionBuilder>): ContainerBuilder {
   const c = new ContainerBuilder();
@@ -32,6 +33,20 @@ async function run(
   await ensure_deferred(interaction);
   const ticket = await ticket_service.get_ticket_from_thread_id(interaction.channelId);
   if (ticket.isErr()) return err(ticket.error);
+
+  let user_roles: string[] = [];
+  if (interaction.member?.roles instanceof GuildMemberRoleManager)
+    user_roles = interaction.member?.roles.cache
+      .values()
+      .map((r) => r.id)
+      .toArray();
+  else if (interaction.member?.roles) user_roles = interaction.member.roles;
+
+  const has_assigned_role = user_roles.find((r) => ticket.value.assigned_to_roles.includes(r));
+
+  if (!has_assigned_role) {
+    return err(new RequiresAssignedRole(ticket.value.assigned_to_roles, interaction.user.id));
+  }
 
   const notes = await ticket_service.get_ticket_notes(ticket.value.ticket_id, 20, 0);
   if (notes.isErr()) return err(notes.error);

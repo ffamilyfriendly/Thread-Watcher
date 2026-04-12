@@ -2,8 +2,6 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "nodenext",
-    "rootDir": "src",
-    "outDir": "dist",
     "strict": true,
     "moduleResolution": "nodenext",
     "importHelpers": true,
@@ -16,11 +14,12 @@
     "removeComments": true,
     "typeRoots": ["node_modules/@types"],
     "sourceMap": false,
-    "baseUrl": "./src",
+    "noEmit": true,
     "paths": {
       "@watcher/shared": ["../packages/shared/index.ts"],
-      "@providers/*": ["./providers/*"],
-      "@generated/*": ["./.generated/*"]
+      "@providers/*": ["./src/providers/*"],
+      "@generated/*": ["./src/.generated/*"],
+      "#/*": ["./src/*"]
     }
   },
   "files": ["src/index.ts", "src/bot.ts", "src/scripts/deploy.ts", "src/scripts/gen_docs.ts"],

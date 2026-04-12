@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import Button from '$lib/components/ui/Button.svelte';
-	import bstyle from '$lib/style/button.module.scss';
 	import type { PageData } from './$types';
 
 	type ObjWithHasBot = { guild_has_bot: boolean };

@@ -1,11 +1,11 @@
 import PQueue from 'p-queue';
 import { err, ok, ResultAsync } from 'neverthrow';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 import { ThreadData } from '@watcher/shared';
-import DClient from 'providers/client';
-import Logger from 'providers/logger';
-import ThreadService from 'providers/services/thread_service';
-import SettingService from 'providers/services/setting_service';
+import DClient from '#/providers/client';
+import Logger from '#/providers/logger';
+import ThreadService from '#/providers/services/thread_service';
+import SettingService from '#/providers/services/setting_service';
 
 const d_client = DClient.instance;
 const logger = Logger.instance;

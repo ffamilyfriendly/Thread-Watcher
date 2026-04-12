@@ -1,4 +1,3 @@
-import { SqliteError } from 'better-sqlite3';
 import { Result } from 'neverthrow';
 import {
   type ThreadData,
@@ -19,14 +18,13 @@ import {
   TicketMessage,
   TicketMessageAttachment,
   IntermediaryTicketView,
-  PublicTicketMessage,
   MessagesSeachFilter,
   IntermediaryMessage,
   TicketSummarySegment,
   TicketListData,
   TicketListSearch,
 } from '@watcher/shared';
-import { DatabaseError } from 'utilities/error/def';
+import { DatabaseError } from '#/utilities/error/def';
 
 interface InsertThreadData extends Omit<ThreadData, 'is_watched' | 'due_archive'> {
   due_archive: Date;

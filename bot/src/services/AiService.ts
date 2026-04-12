@@ -3,15 +3,15 @@ import GuildService from './GuildService';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { AgentsCompletionRequest, UsageInfo } from '@mistralai/mistralai/models/components';
 import { config } from '@providers/config';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 import { IntermediaryMessage, TicketSummarySegment, ZAiRegexResponse } from '@watcher/shared';
 import { logger } from '@providers/logger';
 import EntitlementService from './EntitlementService';
 import { IssueNarrower } from './AIWrappers/IssueNarrower';
-import { ValueContainer } from 'modules/ticket/_pipeline/ValueContainter';
+import { ValueContainer } from '#/modules/ticket/_pipeline/ValueContainter';
 import { database } from '@providers/database';
 import z from 'zod';
-import { safe_json } from 'utilities/parsing';
+import { safe_json } from '#/utilities/parsing';
 
 export interface AIModel {
   model_name: string;

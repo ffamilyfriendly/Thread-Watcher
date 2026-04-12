@@ -2,6 +2,7 @@ import { channel_service } from '@providers/services/channel_service';
 import {
   ChannelType,
   ChatInputCommandInteraction,
+  PermissionFlagsBits,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
 import { RegistrationScope } from 'interfaces/BaseCommandInterface';
@@ -39,7 +40,7 @@ export const command_data = new SlashCommandSubcommandBuilder()
   .addChannelOption((o) =>
     o
       .setName('parent')
-      .setDescription('The channel to start or stop monitoring')
+      .setDescription('The channel to stop monitoring')
       .addChannelTypes([
         ChannelType.GuildCategory,
         ChannelType.GuildForum,
@@ -51,7 +52,10 @@ export const command_data = new SlashCommandSubcommandBuilder()
 
 const command: SubCommand = {
   command_scope: RegistrationScope.GLOBAL,
-  access_control: {},
+  access_control: {
+    invoker_requires_permission: [PermissionFlagsBits.ManageThreads],
+    channel_option_name: 'parent',
+  },
   command_data,
   parent_command: 'monitor',
   run,

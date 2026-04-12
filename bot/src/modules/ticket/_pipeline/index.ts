@@ -2,7 +2,7 @@ import { TicketPanel } from '@watcher/shared';
 import { Pipeline } from './Pipeline';
 import { SupportedInteractionType, SupportedInteractionTypeWithGuild } from './DefaultModule';
 import { err, ResultAsync } from 'neverthrow';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 import { Logger } from 'tslog';
 import { ModalSubmitInteraction } from 'discord.js';
 

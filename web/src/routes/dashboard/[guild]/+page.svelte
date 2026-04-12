@@ -12,19 +12,13 @@
 	import { add_toast, add_toast_from_error } from '$lib/state/toasts.svelte.js';
 	import {
 		Check,
-		CheckSquare,
-		CheckSquare2,
-		Coffee,
 		ExternalLink,
 		EyeIcon,
 		Ghost,
 		LayoutPanelLeft,
-		Link2,
-		SailboatIcon,
 		SpoolIcon,
 		Square,
-		SquareCheck,
-		UserSquare2
+		SquareCheck
 	} from '@lucide/svelte';
 	import z from 'zod';
 	import type { PageProps } from './$types';
@@ -32,7 +26,7 @@
 	import { PUBLIC_PREMIUM_SKU_STORE_LINK } from '$env/static/public';
 
 	const { data, params }: PageProps = $props();
-	const guild = data.guild;
+	const guild = $derived(data.guild);
 	const guild_id = $derived(params.guild);
 
 	let bot_master_role = $state<string | null>();

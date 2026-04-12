@@ -1,11 +1,11 @@
-import { ConfigType } from 'utilities/config';
+import { ConfigType } from '#/utilities/config';
 import {
   type Command as BaseCommand,
   type SubCommand as BaseSubCommand,
 } from './BaseCommandInterface';
 import { EmbedBuilder } from 'discord.js';
 import { Logger } from 'tslog';
-import { TypedI18Func } from 'utilities/i18def';
+import { TypedI18Func } from '#/utilities/i18def';
 export * from './BaseCommandInterface';
 
 export interface CommandContext {

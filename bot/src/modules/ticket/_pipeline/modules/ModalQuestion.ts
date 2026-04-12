@@ -1,6 +1,6 @@
 import { TypedComponent, TypedPipelineModule } from '@watcher/shared';
 import { DefaultModule, IPipeline, SupportedInteractionTypeWithGuild } from '../DefaultModule';
-import { err, ok, Result, ResultAsync } from 'neverthrow';
+import { err, ok, Result } from 'neverthrow';
 import {
   BaseSelectMenuBuilder,
   ButtonInteraction,
@@ -18,10 +18,8 @@ import {
   EmbedBuilder,
   ColorResolvable,
 } from 'discord.js';
-import { safe_edit_reply, safe_update } from '../helpers/safe_reply';
+import { safe_edit_reply } from '../helpers/safe_reply';
 import { ValueContainer } from '../ValueContainter';
-import { config } from '@providers/config';
-import { map_err } from 'utilities/error';
 
 export default class ModalQuestion extends DefaultModule<TypedPipelineModule<'MODAL_QUESTION'>> {
   constructor(self: TypedPipelineModule<'MODAL_QUESTION'>, pipeline: IPipeline) {

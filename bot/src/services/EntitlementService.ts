@@ -2,12 +2,12 @@ import { config } from '@providers/config';
 import { logger } from '@providers/logger';
 import { guild_service } from '@providers/services/guild_service';
 import { BaseInteraction, Client, Collection, Entitlement } from 'discord.js';
-import { Database } from 'interfaces/Database';
+import { Database } from '#/interfaces/Database';
 import Redis from 'ioredis';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { map_err } from 'utilities/error';
-import { ShardedIpcClient } from 'utilities/ipc_clients';
-import RedisWrapper from 'utilities/redis';
+import { map_err } from '#/utilities/error';
+import { ShardedIpcClient } from '#/utilities/ipc_clients';
+import RedisWrapper from '#/utilities/redis';
 import z from 'zod';
 
 export const TIER_PERMISSIONS = {

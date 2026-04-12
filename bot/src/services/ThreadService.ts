@@ -2,11 +2,11 @@ import { event_bus } from '@providers/event_bus';
 import { logger } from '@providers/logger';
 import { FilterData, ThreadSearchData, ZThreadData } from '@watcher/shared';
 import { Client, ThreadChannel } from 'discord.js';
-import { Database } from 'interfaces/Database';
+import { Database } from '#/interfaces/Database';
 import Redis from 'ioredis';
 import { err, ok, ResultAsync } from 'neverthrow';
-import { map_err } from 'utilities/error';
-import RedisWrapper from 'utilities/redis';
+import { map_err } from '#/utilities/error';
+import RedisWrapper from '#/utilities/redis';
 import { AuditMeta } from './AuditService';
 
 export type GenericThread = ThreadChannel;

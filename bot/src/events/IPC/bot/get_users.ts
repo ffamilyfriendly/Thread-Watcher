@@ -1,8 +1,8 @@
 import { client } from '@providers/client';
 import { User } from 'discord.js';
-import { PrivateEvent } from 'interfaces/PrivateEvents';
+import { PrivateEvent } from '#/interfaces/PrivateEvents';
 import { err, ok, ResultAsync } from 'neverthrow';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 
 const event: PrivateEvent<{
   user_ids: string[];

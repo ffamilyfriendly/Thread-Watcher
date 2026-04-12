@@ -1,7 +1,7 @@
 import logger from '@providers/logger';
 import { Client } from 'discord.js';
-import { Event } from 'interfaces/ClientEvent';
-import { start_bumper_loop } from 'routines/bump_threads';
+import { Event } from '#/interfaces/ClientEvent';
+import { start_bumper_loop } from '#/routines/bump_threads';
 
 const event: Event<Client> = {
   event_name: 'clientReady',

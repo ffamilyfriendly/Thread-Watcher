@@ -1,5 +1,5 @@
 import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
-import { PrivateEvent } from 'interfaces/PrivateEvents';
+import { PrivateEvent } from '#/interfaces/PrivateEvents';
 import { ok } from 'neverthrow';
 
 const event: PrivateEvent = {

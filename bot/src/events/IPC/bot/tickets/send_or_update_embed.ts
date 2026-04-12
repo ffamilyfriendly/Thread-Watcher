@@ -14,9 +14,9 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
 } from 'discord.js';
-import { CallbackResponse, define_secure_event } from 'interfaces/PrivateEvents';
+import { CallbackResponse, define_secure_event } from '#/interfaces/PrivateEvents';
 import { err, ok, ResultAsync } from 'neverthrow';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 
 function field_thing(data: Embed['fields']): APIEmbedField[] {
   const fields: APIEmbedField[] = [];

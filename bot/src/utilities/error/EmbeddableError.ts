@@ -1,6 +1,5 @@
 import { config } from '@providers/config';
 import {
-  ActionRow,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
@@ -10,9 +9,8 @@ import {
   RepliableInteraction,
 } from 'discord.js';
 import i18next from 'i18next';
-import { err } from 'neverthrow';
-import { map_err } from 'utilities/error';
-import { safe_reply_or_followup } from 'utilities/interaction_helpers';
+import { map_err } from '#/utilities/error';
+import { safe_reply_or_followup } from '#/utilities/interaction_helpers';
 import { strip_dangerous_strings } from './escape_sensitive_data';
 
 export type I18nType = (

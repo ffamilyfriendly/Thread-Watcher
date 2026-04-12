@@ -1,6 +1,6 @@
 import { TypedPipelineModule } from '@watcher/shared';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 import { DefaultModule, IPipeline, SupportedInteractionTypeWithGuild } from '../DefaultModule';
 import { ValueContainer } from '../ValueContainter';
 

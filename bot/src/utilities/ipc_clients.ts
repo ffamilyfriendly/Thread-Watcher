@@ -1,11 +1,10 @@
 import { Client, Shard, ShardClientUtil, ShardingManager } from 'discord.js';
-import { BaseEvent, Callback, ReponseEvent } from 'interfaces/PrivateEvents';
+import { BaseEvent, Callback, ReponseEvent } from '#/interfaces/PrivateEvents';
 import { randomBytes } from 'crypto';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import Redis from 'ioredis';
 import { map_err } from './error';
 import z from 'zod';
-import { with_schema } from 'database';
 import { ZAuditData, ZDiscordUser, ZPublicTicketMessage } from '@watcher/shared';
 
 interface EnsuredSchemaCall<E extends z.ZodType, R extends z.ZodType> {

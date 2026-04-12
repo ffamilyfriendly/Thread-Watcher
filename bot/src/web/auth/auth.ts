@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import { RequestWithUser, SecurityPolicy } from './policies';
 import { config } from '@providers/config';
-import { TWResponse } from 'web/utils/logging';
-import { global_error_handler } from 'web/utils/error';
+import { TWResponse } from '#/web/utils/logging';
+import { global_error_handler } from '#/web/utils/error';
 
 export function enforce_policy(policy: SecurityPolicy) {
   return async function auth(req: Request, res: TWResponse, next: NextFunction) {

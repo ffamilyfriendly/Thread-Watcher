@@ -1,7 +1,7 @@
 import { load_module_as_and } from './load_files';
-import { BaseCommand } from 'interfaces/Command';
-import { Event } from 'interfaces/ClientEvent';
-import { PrivateEvent } from 'interfaces/PrivateEvents';
+import { BaseCommand } from '#/interfaces/Command';
+import { Event } from '#/interfaces/ClientEvent';
+import { PrivateEvent } from '#/interfaces/PrivateEvents';
 import { Client, Collection } from 'discord.js';
 import { Logger } from 'tslog';
 import { BotIpcClient } from './ipc_clients';

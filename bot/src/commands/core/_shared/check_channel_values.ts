@@ -1,9 +1,9 @@
 import { config } from '@providers/config';
 import { entitlement_service } from '@providers/services/entitlement_service';
 import { Channel, ChannelType, Guild, GuildBasedChannel } from 'discord.js';
-import { GuildChatInteraction } from 'interfaces/BaseCommandInterface';
+import { GuildChatInteraction } from '#/interfaces/BaseCommandInterface';
 import { err, ok } from 'neverthrow';
-import { EntitlementsError } from 'utilities/error/def';
+import { EntitlementsError } from '#/utilities/error/def';
 
 const ALLOWED_CHANNEL_TYPES = [
   ChannelType.GuildCategory,

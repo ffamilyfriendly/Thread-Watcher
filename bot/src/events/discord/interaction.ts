@@ -1,9 +1,9 @@
 import { Interaction } from 'discord.js';
-import { Event } from 'interfaces/ClientEvent';
+import { Event } from '#/interfaces/ClientEvent';
 
 import Logger from '@providers/logger';
 import { modules } from '@providers/modules';
-import EmbeddableError from 'utilities/error/EmbeddableError';
+import EmbeddableError from '#/utilities/error/EmbeddableError';
 
 const logger = Logger.instance;
 

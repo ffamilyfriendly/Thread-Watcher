@@ -1,4 +1,4 @@
-import { MODULE_OUTPUTS, PipelineModule, TicketPanel } from '@watcher/shared';
+import { PipelineModule, TicketPanel } from '@watcher/shared';
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -18,17 +18,17 @@ import {
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Logger } from 'tslog';
 import { component_service } from '@providers/services/component_service';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 import {
   interaction_is_clean,
   safe_reply_or_followup,
   safe_update,
-} from 'utilities/interaction_helpers';
+} from '#/utilities/interaction_helpers';
 import { ValueContainer } from './ValueContainter';
-import { ContractLeafValue } from '@watcher/shared/tickets/contracts';
 import { get_default_embed, get_default_proceed, get_default_skip } from './components/modal_cta';
-import { Vacuum } from 'services/ComponentService';
+import { Vacuum } from '#/services/ComponentService';
 import { config } from '@providers/config';
+import { ContractLeafValue } from '@watcher/shared';
 
 namespace Op {
   export function and(v: boolean[]): boolean {

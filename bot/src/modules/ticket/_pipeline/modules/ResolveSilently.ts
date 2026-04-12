@@ -3,7 +3,7 @@ import { DefaultModule, IPipeline, SupportedInteractionTypeWithGuild } from '../
 import { ValueContainer } from '../ValueContainter';
 import { err, ok, Result } from 'neverthrow';
 import { generate_embed } from '../components/embed';
-import { safe_reply_or_followup } from 'utilities/interaction_helpers';
+import { safe_reply_or_followup } from '#/utilities/interaction_helpers';
 
 export default class SilentResolve extends DefaultModule<TypedPipelineModule<'SILENT_RESOLVE'>> {
   constructor(self: TypedPipelineModule<'SILENT_RESOLVE'>, pipeline: IPipeline) {

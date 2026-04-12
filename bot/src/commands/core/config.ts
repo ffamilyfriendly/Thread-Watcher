@@ -5,26 +5,27 @@ import {
   ButtonStyle,
   Interaction,
   MessageActionRowComponentBuilder,
+  PermissionFlagsBits,
   SlashCommandBuilder,
 } from 'discord.js';
-import { GuildChatInteraction, RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { CommandContext, type Command } from 'interfaces/Command';
+import { GuildChatInteraction, RegistrationScope } from '#/interfaces/BaseCommandInterface';
+import { CommandContext, type Command } from '#/interfaces/Command';
 import { err, ok, Result } from 'neverthrow';
-import { Vacuum } from 'services/ComponentService';
+import { Vacuum } from '#/services/ComponentService';
 import {
   create_initial_state,
   generate_embed,
   handle_apply_callback,
   handle_cancel_button,
   handle_default_button,
-} from 'commands/core/_shared/config';
-import { map_err } from 'utilities/error';
-import { safe_parse } from 'utilities/parsing';
+} from '#/commands/core/_shared/config';
+import { map_err } from '#/utilities/error';
+import { safe_parse } from '#/utilities/parsing';
 import { setting_service } from '@providers/services/setting_service';
 import { component_service } from '@providers/services/component_service';
-import { CommandError } from 'utilities/error/def';
-import { safe_reply } from 'utilities/interaction_helpers';
-import { SettingKey, SETTINGS } from 'interfaces/Settings';
+import { CommandError } from '#/utilities/error/def';
+import { safe_reply } from '#/utilities/interaction_helpers';
+import { SettingKey, SETTINGS } from '#/interfaces/Settings';
 
 function create_buttons() {
   const apply_button = new ButtonBuilder().setStyle(ButtonStyle.Primary).setLabel('Save');
@@ -148,7 +149,9 @@ const command_data = new SlashCommandBuilder()
 
 const command: Command = {
   command_scope: RegistrationScope.GLOBAL,
-  access_control: {},
+  access_control: {
+    invoker_requires_permission: [PermissionFlagsBits.ManageGuild],
+  },
   command_data,
   run,
   autocomplete,

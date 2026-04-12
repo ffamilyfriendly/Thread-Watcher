@@ -1,9 +1,9 @@
 import { event_bus } from '@providers/event_bus';
 import { EditMonitor, FilterData, ZMonitor } from '@watcher/shared';
-import { Database } from 'interfaces/Database';
+import { Database } from '#/interfaces/Database';
 import Redis from 'ioredis';
 import { err, ok } from 'neverthrow';
-import RedisWrapper from 'utilities/redis';
+import RedisWrapper from '#/utilities/redis';
 import { AuditMeta } from './AuditService';
 
 export default class ChannelService {

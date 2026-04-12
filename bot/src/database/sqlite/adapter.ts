@@ -1,12 +1,12 @@
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import sql, { Database as SqliteDb } from 'bun:sqlite';
-import { ConfigType } from 'utilities/config';
-import { with_error_handling, with_schema } from 'database';
+import { ConfigType } from '#/utilities/config';
+import { with_error_handling, with_schema } from '#/database';
 import { join, resolve as resolve_path } from 'path';
 import { create as create_tar } from 'tar';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 import { z } from 'zod';
-import { Database, DBResult, TicketInsertion } from 'interfaces/Database';
+import { Database, DBResult, TicketInsertion } from '#/interfaces/Database';
 import { drizzle, BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
 import {
@@ -63,7 +63,7 @@ import {
   or,
   SQL,
 } from 'drizzle-orm';
-import { DatabaseError, TicketNotFound } from 'utilities/error/def';
+import { DatabaseError, TicketNotFound } from '#/utilities/error/def';
 import { logger } from '@providers/logger';
 
 const full_schema = { ...schema, ...relations };

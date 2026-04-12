@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import i18next from 'i18next';
-import { Database } from 'interfaces/Database';
+import { Database } from '#/interfaces/Database';
 import Redis from 'ioredis';
 import { ResultAsync } from 'neverthrow';
 import { Logger } from 'tslog';

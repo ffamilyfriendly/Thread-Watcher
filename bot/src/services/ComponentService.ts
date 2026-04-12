@@ -4,7 +4,6 @@ import {
   ButtonInteraction,
   ChannelSelectMenuBuilder,
   ChannelSelectMenuInteraction,
-  ComponentType,
   Interaction,
   ModalBuilder,
   ModalSubmitInteraction,

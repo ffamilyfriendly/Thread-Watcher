@@ -1,8 +1,8 @@
 import { database } from '@providers/database';
 import { redis } from '@providers/redis';
-import { PrivateEvent } from 'interfaces/PrivateEvents';
+import { PrivateEvent } from '#/interfaces/PrivateEvents';
 import { err, ok, ResultAsync } from 'neverthrow';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 
 const event: PrivateEvent = {
   event_name: 'HEALTH_CHECK',

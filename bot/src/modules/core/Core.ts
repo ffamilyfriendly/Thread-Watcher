@@ -4,13 +4,13 @@ import { entitlement_service } from '@providers/services/entitlement_service';
 import { guild_service } from '@providers/services/guild_service';
 import { thread_service } from '@providers/services/thread_service';
 import { AuditLogEvent, Message, ThreadChannel } from 'discord.js';
-import { Module } from 'interfaces/Module';
+import { Module } from '#/interfaces/Module';
 import { err, ok, ResultAsync } from 'neverthrow';
-import ThreadService from 'services/ThreadService';
+import ThreadService from '#/services/ThreadService';
 import { Logger } from 'tslog';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 import on_interaction from './_cmd_handler';
-import { AuditMeta } from 'services/AuditService';
+import { AuditMeta } from '#/services/AuditService';
 import { config } from '@providers/config';
 
 async function fetch_responsible_manager(thread: ThreadChannel) {

@@ -1,12 +1,11 @@
 import { ticket_service } from '@providers/services/ticket_service';
-import { ButtonInteraction, Interaction, StringSelectMenuInteraction } from 'discord.js';
-import { ResultType } from 'interfaces/Module';
+import { Interaction } from 'discord.js';
+import { ResultType } from '#/interfaces/Module';
 import { err, ok, Result } from 'neverthrow';
 import { Logger } from 'tslog';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 import { start_pipeline } from './_pipeline';
 import mark_ticket_as_resolved from './_actions/mark_resolved';
-import EmbeddableError from 'utilities/error/EmbeddableError';
 import add_note_action from './_actions/add_note';
 import claim_ticket_action from './_actions/claim_ticket';
 

@@ -9,7 +9,7 @@ import {
   SlashCommandSubcommandsOnlyBuilder,
 } from 'discord.js';
 import { Result } from 'neverthrow';
-import { CommandError } from 'utilities/error/def';
+import { CommandError } from '#/utilities/error/def';
 
 export interface AccessControl {
   developer_only?: boolean;

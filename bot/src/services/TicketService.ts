@@ -17,14 +17,14 @@ import {
   ZTicketPanel,
 } from '@watcher/shared';
 import { Message } from 'discord.js';
-import { UserFetcher } from 'fetchers/user_fetcher';
-import { Database, TicketInsertion } from 'interfaces/Database';
+import { UserFetcher } from '#/fetchers/user_fetcher';
+import { Database, TicketInsertion } from '#/interfaces/Database';
 import Redis from 'ioredis';
 import { err, ok, Result } from 'neverthrow';
-import { decrypt, encrypt } from 'utilities/crypto';
-import { map_err, mapped_err } from 'utilities/error';
-import { PanelNotFound, ThreadIdNotFound, TicketNotFound } from 'utilities/error/def';
-import RedisWrapper from 'utilities/redis';
+import { decrypt, encrypt } from '#/utilities/crypto';
+import { map_err, mapped_err } from '#/utilities/error';
+import { PanelNotFound, ThreadIdNotFound, TicketNotFound } from '#/utilities/error/def';
+import RedisWrapper from '#/utilities/redis';
 import z from 'zod';
 import { AuditMeta } from './AuditService';
 import { event_bus } from '@providers/event_bus';

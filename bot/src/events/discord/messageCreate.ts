@@ -1,7 +1,7 @@
 import { logger } from '@providers/logger';
 import { modules } from '@providers/modules';
 import { Message } from 'discord.js';
-import { Event } from 'interfaces/ClientEvent';
+import { Event } from '#/interfaces/ClientEvent';
 
 const event: Event<Message> = {
   event_name: 'messageCreate',

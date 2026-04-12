@@ -11,11 +11,9 @@
 	import z from 'zod';
 	import { add_toast, add_toast_from_error } from '$lib/state/toasts.svelte';
 	import { fetch_as_json } from '$lib/client/fetch';
-	import StringSelect from '$lib/components/ui/tickets/modules/QuestionModule/configurators/StringSelect.svelte';
 	import StringPicker from '$lib/components/ui/settings/StringPicker.svelte';
 
 	const { data, params }: PageProps = $props();
-	page.url.searchParams.get('sigma');
 
 	function update_filter(key: string, value?: string) {
 		const url = new URL(page.url);
@@ -24,7 +22,6 @@
 		} else {
 			url.searchParams.delete(key);
 		}
-
 		if (key !== 'offset') url.searchParams.delete('offset');
 		return goto(url.toString(), { keepFocus: true, noScroll: true });
 	}
@@ -53,19 +50,15 @@
 		for (const p of page.url.searchParams) {
 			param_wrapper[p[0]] = p[1];
 		}
-
-		const data = {
+		const payload = {
 			guild_id: params.guild,
 			exp: default_rss_duration,
 			feed_name: default_rss_feed_name,
 			...param_wrapper
 		};
-
-		console.log(data);
-
 		const res = await fetch_as_json(
 			`/RSS/tickets`,
-			{ method: 'POST', body: JSON.stringify(data) },
+			{ method: 'POST', body: JSON.stringify(payload) },
 			z.object({ sub_url: z.url() })
 		);
 		if (res.isErr()) return add_toast_from_error(res.error);
@@ -134,9 +127,9 @@
 	</div>
 
 	<div class="filter_group search">
-		<label for="owner">Claimed by ID</label>
+		<label for="claimed">Claimed by ID</label>
 		<input
-			id="owner"
+			id="claimed"
 			type="text"
 			placeholder="Search by User ID..."
 			value={page.url.searchParams.get('assigned_to_user_id') ?? ''}
@@ -147,7 +140,7 @@
 		/>
 	</div>
 
-	<button class="clear_btn" onclick={() => goto(page.url.pathname)}> Reset </button>
+	<button class="clear_btn" onclick={() => goto(page.url.pathname)}>Reset</button>
 </div>
 
 <div class="table_container">
@@ -157,9 +150,9 @@
 				<th>Ticket Name</th>
 				<th>Owner</th>
 				<th>Claimed By</th>
-				<th>Last activity</th>
+				<th>Last Activity</th>
 				<th>Status</th>
-				<td class="align_right">Action</td>
+				<th class="align_right">Action</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -169,27 +162,30 @@
 						<span class="name">{ticket.name}</span>
 						<span class="id">{ticket.ticket_id}</span>
 					</td>
-					<td>
+					<td data-label="Owner">
 						<UserLoader user_id={ticket.owner} />
 					</td>
-					<td>
-						{#if ticket.claimed_by_user_id}<UserLoader user_id={ticket.claimed_by_user_id} />
+					<td data-label="Claimed">
+						{#if ticket.claimed_by_user_id}
+							<UserLoader user_id={ticket.claimed_by_user_id} />
 						{/if}
 					</td>
-					<td class="time_cell">{get_pwetty_relative_time(ticket.last_activity)}</td>
-					<td>
+					<td data-label="Activity" class="time_cell">
+						{get_pwetty_relative_time(ticket.last_activity)}
+					</td>
+					<td data-label="Status">
 						<span class="status_badge" data-status={ticket.status.toLowerCase()}>
 							{ticket.status}
 						</span>
 					</td>
-					<td>
+					<td data-label="Action">
 						<a class="view_btn" target="_blank" href="/tickets/{ticket.ticket_id}">View</a>
 					</td>
 				</tr>
 			{/each}
 			{#if data.tickets.length === 0}
 				<tr>
-					<td> No results found with current filters. </td>
+					<td colspan="6">No results found with current filters.</td>
 				</tr>
 			{/if}
 		</tbody>
@@ -200,7 +196,7 @@
 	<Modal title="Get RSS Subscription" bind:set_open={show_rss}>
 		{#snippet buttons()}
 			{#if rss_feed_url}
-				<Button load_with={share_feed} variant="tetriary">Open Feed</Button>
+				<Button load_with={share_feed} variant="tetriary">Share Feed</Button>
 			{/if}
 			<Button load_with={get_rss_subscription}>Subscribe</Button>
 		{/snippet}
@@ -211,11 +207,12 @@
 		<p>
 			This RSS feed can be used by a RSS reader, like <a href="https://www.newsblur.com/"
 				>NewsBlur</a
-			>, or an extention such as
+			>, or a browser extension such as
 			<a
 				href="https://chromewebstore.google.com/detail/rss-feed-reader/pnjaodmkngahhkoihejjehlcdlnohgmp?pli=1"
-				>RSS Feed Reader</a
-			>, allowing you a fast and easy way to keep track of your tickets.
+			>
+				RSS Feed Reader
+			</a>, allowing you a fast and easy way to keep track of your tickets.
 		</p>
 		<b class="lable">Subscription Name</b>
 		<input
@@ -234,15 +231,18 @@
 				{ name: '90 days', id: '90d' }
 			]}
 		/>
-		<small
-			>Never share your subscription link with anyone as that gives them access to the ticket list.
-			There's currently no way to cancel a subscription.</small
-		>
+		<small>
+			Never share your subscription link with anyone as that gives them access to the ticket list.
+			There's currently no way to cancel a subscription.
+		</small>
 
 		{#if rss_feed_url}
 			<div class="rss_created">
 				<Rss />
-				<a href={rss_feed_url}>{default_rss_feed_name} <ExternalLink size="1rem" /></a>
+				<div>
+					<a href={rss_feed_url}>{default_rss_feed_name} <ExternalLink size="1rem" /></a>
+					<small>{rss_feed_url}</small>
+				</div>
 			</div>
 		{/if}
 	</Modal>
@@ -254,12 +254,16 @@
 		<Button
 			variant="tetriary"
 			disabled={offset === 0}
-			load_with={() => update_filter('offset', get_prev_offset())}>Previous</Button
+			load_with={() => update_filter('offset', get_prev_offset())}
 		>
+			Previous
+		</Button>
 		<Button
 			disabled={data.tickets.length < limit}
-			load_with={() => update_filter('offset', get_next_offset())}>Next</Button
+			load_with={() => update_filter('offset', get_next_offset())}
 		>
+			Next
+		</Button>
 	</div>
 </div>
 
@@ -271,11 +275,13 @@
 		border: 1px solid var(--background-900);
 		border-radius: 0.25rem;
 		margin-top: 0.25rem;
+		width: 100%;
 	}
 
 	.lable {
 		margin-top: 0.5rem;
 		opacity: 0.7;
+		display: block;
 	}
 
 	.rss_created {
@@ -290,8 +296,42 @@
 		margin-top: 1rem;
 		border-radius: 0.25rem;
 
-		a {
-			color: white;
+		:global(svg) {
+			flex-shrink: 0;
+			color: var(--success-500);
+		}
+
+		div {
+			display: flex;
+			flex-direction: column;
+			min-width: 0;
+
+			a {
+				color: white;
+				font-weight: 600;
+				display: flex;
+				align-items: center;
+				gap: 0.4rem;
+				text-decoration: none;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+
+				&:hover {
+					text-decoration: underline;
+				}
+			}
+
+			small {
+				color: rgba(255, 255, 255, 0.5);
+				font-family: monospace;
+				font-size: 0.7rem;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				user-select: all;
+				opacity: 0.8;
+			}
 		}
 	}
 
@@ -299,12 +339,23 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
+		margin-top: 1rem;
+
+		@media (max-width: 600px) {
+			flex-direction: column;
+			gap: 0.5rem;
+
+			.buttons {
+				width: 100%;
+				justify-content: space-between;
+				margin-top: 0;
+			}
+		}
 	}
 
 	.buttons {
 		display: flex;
 		justify-content: right;
-		margin-top: 1rem;
 		gap: 0.5rem;
 	}
 
@@ -313,7 +364,14 @@
 		background: var(--background-800);
 		border: 1px solid color-mix(in srgb, var(--background-800) 90%, white);
 		border-radius: 8px;
-		overflow: hidden;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+
+		@media (max-width: 600px) {
+			border: none;
+			background: transparent;
+			overflow: visible;
+		}
 	}
 
 	table {
@@ -321,6 +379,11 @@
 		border-collapse: collapse;
 		text-align: left;
 		font-size: 0.9rem;
+		min-width: 600px;
+
+		@media (max-width: 600px) {
+			min-width: unset;
+		}
 	}
 
 	thead {
@@ -335,6 +398,10 @@
 			font-weight: 600;
 			border-bottom: 1px solid color-mix(in srgb, var(--background-800) 90%, white);
 		}
+
+		@media (max-width: 600px) {
+			display: none;
+		}
 	}
 
 	.ticket_row {
@@ -347,6 +414,45 @@
 
 		&:last-child {
 			border-bottom: none;
+		}
+
+		@media (max-width: 600px) {
+			display: block;
+			background: var(--background-800);
+			border: 1px solid color-mix(in srgb, var(--background-800) 90%, white);
+			border-radius: 8px;
+			margin-bottom: 12px;
+			padding: 12px;
+
+			td {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				padding: 6px 0;
+				border-bottom: 1px solid color-mix(in srgb, var(--background-700) 90%, white);
+
+				&:last-child {
+					border-bottom: none;
+				}
+
+				&[data-label]::before {
+					content: attr(data-label);
+					font-size: 0.7rem;
+					font-weight: 700;
+					text-transform: uppercase;
+					color: gray;
+					min-width: 70px;
+					flex-shrink: 0;
+				}
+			}
+
+			.name_cell {
+				flex-direction: column;
+				align-items: flex-start;
+				border-bottom: 1px solid color-mix(in srgb, var(--background-700) 90%, white);
+				padding-bottom: 8px;
+				margin-bottom: 4px;
+			}
 		}
 	}
 
@@ -409,13 +515,39 @@
 
 	.filter_bar {
 		display: flex;
-		gap: 20px;
+		flex-wrap: wrap;
+		gap: 12px;
 		align-items: flex-end;
 		background: var(--background-800);
 		padding: 16px;
 		border: 1px solid var(--border);
 		border-radius: 8px;
 		margin-bottom: 16px;
+
+		@media (max-width: 768px) {
+			flex-direction: column;
+			align-items: stretch;
+
+			.filter_group {
+				width: 100%;
+
+				input,
+				select {
+					width: 100%;
+					min-width: 0 !important;
+					box-sizing: border-box;
+				}
+			}
+
+			.clear_btn {
+				margin-left: 0;
+				text-align: center;
+				width: 100%;
+				padding: 10px;
+				background: var(--background-900);
+				border-radius: 4px;
+			}
+		}
 	}
 
 	.filter_group {
@@ -463,5 +595,13 @@
 			color: var(--text-focus);
 			text-decoration: underline;
 		}
+	}
+
+	.align_right {
+		text-align: right;
+	}
+
+	.time_cell {
+		white-space: nowrap;
 	}
 </style>

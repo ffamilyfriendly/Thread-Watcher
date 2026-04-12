@@ -1,15 +1,10 @@
 import { Ticket } from '@watcher/shared';
-import { GuildMember, RepliableInteraction, User } from 'discord.js';
+import { GuildMember, RepliableInteraction } from 'discord.js';
 import { ActionReturnType } from '../_on_interaction';
-import { err, ok, ResultAsync } from 'neverthrow';
-import {
-  ensure_deferred,
-  safe_delete,
-  safe_reply_or_followup,
-  safe_update,
-} from 'utilities/interaction_helpers';
+import { err, ResultAsync } from 'neverthrow';
+import { safe_delete, safe_reply_or_followup } from '#/utilities/interaction_helpers';
 import { confirm_claim_ticket, new_claim_embed } from './components/embeds';
-import { map_err } from 'utilities/error';
+import { map_err } from '#/utilities/error';
 import { ticket_service } from '@providers/services/ticket_service';
 import { member_has_role_overlap_or_fail } from './shared';
 

@@ -1,10 +1,10 @@
 import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
 import { Router } from 'express';
-import { RouteFile } from 'interfaces/Web';
+import { RouteFile } from '#/interfaces/Web';
 import { err } from 'neverthrow';
-import { enforce_policy } from 'web/auth/auth';
-import { Policies } from 'web/auth/policies';
-import { safe_route } from 'web/neverthrow_wrapper';
+import { enforce_policy } from '#/web/auth/auth';
+import { Policies } from '#/web/auth/policies';
+import { safe_route } from '#/web/neverthrow_wrapper';
 
 const router = Router();
 

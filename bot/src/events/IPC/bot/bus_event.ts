@@ -1,7 +1,7 @@
-import { define_secure_event } from 'interfaces/PrivateEvents';
+import { define_secure_event } from '#/interfaces/PrivateEvents';
 import { ok } from 'neverthrow';
-import { AppEventKey, AppEventMap } from 'events/bus';
-import { send_audit } from 'utilities/send_audit_log';
+import { AppEventKey, AppEventMap } from '#/events/bus';
+import { send_audit } from '#/utilities/send_audit_log';
 
 export default define_secure_event('bus_event', (audit_event) => {
   const { event_key, ...rest } = audit_event;

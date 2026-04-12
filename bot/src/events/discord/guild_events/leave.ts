@@ -1,7 +1,7 @@
 import logger from '@providers/logger';
 import guild_service from '@providers/services/guild_service';
 import { Guild } from 'discord.js';
-import { Event } from 'interfaces/ClientEvent';
+import { Event } from '#/interfaces/ClientEvent';
 
 const event: Event<Guild> = {
   event_name: 'guildDelete',

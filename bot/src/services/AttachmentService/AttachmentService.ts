@@ -1,14 +1,13 @@
 import { logger } from '@providers/logger';
 import { entitlement_service } from '@providers/services/entitlement_service';
 import { Attachment, Message } from 'discord.js';
-import { Database } from 'interfaces/Database';
+import { Database } from '#/interfaces/Database';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import flag_attachment from './attachment_flagger';
 import PQueue from 'p-queue';
 import { PublicTicketMessageAttachment, TicketMessageAttachment } from '@watcher/shared';
 import { s3 } from '@providers/s3_client';
-import { map_err } from 'utilities/error';
-import { ticket_service } from '@providers/services/ticket_service';
+import { map_err } from '#/utilities/error';
 
 export default class AttachmentService {
   l = logger.getSubLogger({ name: 'Attachments' });

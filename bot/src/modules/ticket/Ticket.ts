@@ -1,4 +1,4 @@
-import { Module } from 'interfaces/Module';
+import { Module } from '#/interfaces/Module';
 import on_interaction from './_on_interaction';
 import on_message_create from './_on_message';
 

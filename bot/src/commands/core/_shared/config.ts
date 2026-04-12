@@ -1,11 +1,11 @@
 import { config } from '@providers/config';
 import { setting_service } from '@providers/services/setting_service';
 import { ButtonInteraction, ColorResolvable } from 'discord.js';
-import { CommandContext } from 'interfaces/Command';
-import { is_setting_key, SettingSchema, SettingValue } from 'interfaces/Settings';
+import { CommandContext } from '#/interfaces/Command';
+import { is_setting_key, SettingSchema, SettingValue } from '#/interfaces/Settings';
 import { err, ok } from 'neverthrow';
-import { AuditMeta } from 'services/AuditService';
-import { safe_delete, safe_update } from 'utilities/interaction_helpers';
+import { AuditMeta } from '#/services/AuditService';
+import { safe_delete, safe_update } from '#/utilities/interaction_helpers';
 
 interface State<T = SettingValue> {
   value: T | null;

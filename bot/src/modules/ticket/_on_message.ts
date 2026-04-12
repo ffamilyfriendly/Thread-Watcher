@@ -1,10 +1,10 @@
 import { ticket_service } from '@providers/services/ticket_service';
 import { Message } from 'discord.js';
-import { ResultType } from 'interfaces/Module';
+import { ResultType } from '#/interfaces/Module';
 import { err, ok } from 'neverthrow';
 import { Logger } from 'tslog';
-import { map_err, mapped_err } from 'utilities/error';
-import { ThreadIdNotFound, TicketNotFound } from 'utilities/error/def';
+import { map_err, mapped_err } from '#/utilities/error';
+import { ThreadIdNotFound, TicketNotFound } from '#/utilities/error/def';
 
 export default async function (message: Message, logger: Logger<unknown>): ResultType {
   if (!message.inGuild() || !message.channel.isThread()) return ok();
@@ -23,6 +23,13 @@ export default async function (message: Message, logger: Logger<unknown>): Resul
   if (res.isErr()) {
     logger.error('could not append message to ticket');
     return mapped_err(res.error);
+  }
+
+  if (!ticket_meta.value.panel_id) {
+    logger.debug(
+      `Ticket '${ticket_meta.value.ticket_id}' has no panel and we can therefore not check if we should AI summarize the message.`,
+    );
+    return ok();
   }
 
   const panel = await ticket_service.get_panel(ticket_meta.value.panel_id);

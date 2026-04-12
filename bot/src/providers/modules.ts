@@ -1,6 +1,6 @@
-import { load_module_as_and } from 'utilities/load_files';
+import { load_module_as_and } from '#/utilities/load_files';
 import { create_singleton } from './singleton';
-import { Module } from 'interfaces/Module';
+import { Module } from '#/interfaces/Module';
 import { logger } from './logger';
 
 async function get_modules(bypass_cache = false): Promise<Module[]> {

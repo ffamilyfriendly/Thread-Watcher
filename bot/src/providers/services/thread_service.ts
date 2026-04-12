@@ -1,4 +1,4 @@
-import ThreadService from 'services/ThreadService';
+import ThreadService from '#/services/ThreadService';
 import { create_singleton } from '../singleton';
 import database from '../database';
 import redis from '../redis';
