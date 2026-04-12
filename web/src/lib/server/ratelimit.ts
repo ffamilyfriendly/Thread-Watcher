@@ -1,5 +1,7 @@
+import { ResultAsync } from 'neverthrow';
 import { redis_client } from './cache';
 import { error } from '@sveltejs/kit';
+import { map_err } from '$lib/error_helper';
 
 export async function check_ratelimit(
 	identifier: string | string[],
@@ -24,4 +26,13 @@ export async function check_ratelimit(
 			message: 'Ratelimits reached'
 		});
 	}
+}
+
+export function check_ratelimit_safe(
+	identifier: string | string[],
+	limit: number,
+	window_seconds: number
+) {
+	const chk = check_ratelimit(identifier, limit, window_seconds);
+	return ResultAsync.fromPromise(chk, map_err);
 }

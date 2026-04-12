@@ -1,4 +1,4 @@
-import { ZAuditData } from '@watcher/shared';
+import { ZAuditData, ZTicketListSearchData } from '@watcher/shared';
 import z from 'zod';
 
 export const ZRawSetting = z.object({
@@ -140,6 +140,18 @@ export const ZExpandedAuditLog = ZAuditData.extend({
 	executing_user: ZDiscordUser.nullish()
 });
 export type ExpandedAuditLog = z.output<typeof ZExpandedAuditLog>;
+
+export const ZRSSTicketCreate = ZTicketListSearchData.extend({
+	exp: z.enum(['14d', '30d', '90d']),
+	feed_name: z.string().max(100)
+});
+export type RSSTicketCreate = z.output<typeof ZRSSTicketCreate>;
+
+export const ZRssTicketJWT = ZTicketListSearchData.extend({
+	uid: z.string(),
+	feed_name: z.string()
+});
+export type RSSTicketJWT = z.output<typeof ZRssTicketJWT>;
 
 /*
 

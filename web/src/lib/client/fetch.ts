@@ -8,7 +8,6 @@ export async function safe_fetch(path: `/${string}`, init?: RequestInit) {
 	if (request.isErr()) return err(request.error);
 
 	if (!request.value.ok) {
-		console.log('TEXT IS ALL KINDS OF FUCKED');
 		const text_res = await ResultAsync.fromPromise(request.value.text(), map_err);
 		if (text_res.isErr()) return err(text_res.error);
 		const body_text = text_res.value;
@@ -17,11 +16,9 @@ export async function safe_fetch(path: `/${string}`, init?: RequestInit) {
 			console.log('tryna do json thing');
 			const json = JSON.parse(body_text);
 			if (json && typeof json === 'object' && 'message' in json) {
-				console.log('HIIII', json);
 				return err(new Error(String(json.message)));
 			}
 		} catch {
-			console.log('HUHHH????');
 			return err(new Error(body_text.substring(0, 500) || request.value.statusText));
 		}
 	}

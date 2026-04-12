@@ -6,8 +6,15 @@
 	import UserLoader from '$lib/components/ui/discord/user/UserLoader.svelte';
 	import { TW_TICKET_LIMIT_DEFAULT } from '@watcher/shared';
 	import type { PageProps } from './$types';
+	import { ExternalLink, Rss } from '@lucide/svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import z from 'zod';
+	import { add_toast, add_toast_from_error } from '$lib/state/toasts.svelte';
+	import { fetch_as_json } from '$lib/client/fetch';
+	import StringSelect from '$lib/components/ui/tickets/modules/QuestionModule/configurators/StringSelect.svelte';
+	import StringPicker from '$lib/components/ui/settings/StringPicker.svelte';
 
-	const { data }: PageProps = $props();
+	const { data, params }: PageProps = $props();
 	page.url.searchParams.get('sigma');
 
 	function update_filter(key: string, value?: string) {
@@ -35,6 +42,53 @@
 
 	const limit_str = $derived(page.url.searchParams.get('limit'));
 	const limit = $derived(limit_str ? Number(limit_str) : TW_TICKET_LIMIT_DEFAULT);
+
+	let show_rss = $state(false);
+	let default_rss_duration = $state('14d');
+	let default_rss_feed_name = $state('Subscribed Tickets');
+	let rss_feed_url = $state<string>();
+
+	async function get_rss_subscription() {
+		let param_wrapper: Record<string, string> = {};
+		for (const p of page.url.searchParams) {
+			param_wrapper[p[0]] = p[1];
+		}
+
+		const data = {
+			guild_id: params.guild,
+			exp: default_rss_duration,
+			feed_name: default_rss_feed_name,
+			...param_wrapper
+		};
+
+		console.log(data);
+
+		const res = await fetch_as_json(
+			`/RSS/tickets`,
+			{ method: 'POST', body: JSON.stringify(data) },
+			z.object({ sub_url: z.url() })
+		);
+		if (res.isErr()) return add_toast_from_error(res.error);
+		rss_feed_url = res.value.sub_url;
+	}
+
+	async function share_feed() {
+		if (!rss_feed_url) return;
+		if (navigator.share) {
+			try {
+				await navigator.share({
+					title: default_rss_feed_name,
+					text: 'Subscribe to my Thread-Watcher ticket feed',
+					url: rss_feed_url
+				});
+			} catch (err) {
+				console.error('Share failed:', err);
+			}
+		} else {
+			navigator.clipboard.writeText(rss_feed_url);
+			add_toast({ message: 'Link copied to clipboard!', type: 'success' });
+		}
+	}
 </script>
 
 <div class="filter_bar">
@@ -75,6 +129,20 @@
 			oninput={(e) => {
 				const val = e.currentTarget.value;
 				if (val.length === 0 || val.length >= 17) update_filter('ticket_owner', val);
+			}}
+		/>
+	</div>
+
+	<div class="filter_group search">
+		<label for="owner">Claimed by ID</label>
+		<input
+			id="owner"
+			type="text"
+			placeholder="Search by User ID..."
+			value={page.url.searchParams.get('assigned_to_user_id') ?? ''}
+			oninput={(e) => {
+				const val = e.currentTarget.value;
+				if (val.length === 0 || val.length >= 17) update_filter('assigned_to_user_id', val);
 			}}
 		/>
 	</div>
@@ -128,19 +196,111 @@
 	</table>
 </div>
 
-<div class="buttons">
-	<Button
-		variant="tetriary"
-		disabled={offset === 0}
-		load_with={() => update_filter('offset', get_prev_offset())}>Previous</Button
-	>
-	<Button
-		disabled={data.tickets.length < limit}
-		load_with={() => update_filter('offset', get_next_offset())}>Next</Button
-	>
+{#if show_rss}
+	<Modal title="Get RSS Subscription" bind:set_open={show_rss}>
+		{#snippet buttons()}
+			{#if rss_feed_url}
+				<Button load_with={share_feed} variant="tetriary">Open Feed</Button>
+			{/if}
+			<Button load_with={get_rss_subscription}>Subscribe</Button>
+		{/snippet}
+		<p>
+			Create a <a href="https://en.wikipedia.org/wiki/RSS">RSS</a> subscription for any ticket matching
+			your selected filters.
+		</p>
+		<p>
+			This RSS feed can be used by a RSS reader, like <a href="https://www.newsblur.com/"
+				>NewsBlur</a
+			>, or an extention such as
+			<a
+				href="https://chromewebstore.google.com/detail/rss-feed-reader/pnjaodmkngahhkoihejjehlcdlnohgmp?pli=1"
+				>RSS Feed Reader</a
+			>, allowing you a fast and easy way to keep track of your tickets.
+		</p>
+		<b class="lable">Subscription Name</b>
+		<input
+			max="100"
+			min="3"
+			class="rss_feed_name"
+			placeholder="Feed Name"
+			bind:value={default_rss_feed_name}
+		/>
+		<b class="lable">Subscription Duration</b>
+		<StringPicker
+			bind:value={default_rss_duration}
+			options={[
+				{ name: '2 weeks', id: '14d' },
+				{ name: '30 days', id: '30d' },
+				{ name: '90 days', id: '90d' }
+			]}
+		/>
+		<small
+			>Never share your subscription link with anyone as that gives them access to the ticket list.
+			There's currently no way to cancel a subscription.</small
+		>
+
+		{#if rss_feed_url}
+			<div class="rss_created">
+				<Rss />
+				<a href={rss_feed_url}>{default_rss_feed_name} <ExternalLink size="1rem" /></a>
+			</div>
+		{/if}
+	</Modal>
+{/if}
+
+<div class="action_segs">
+	<Button on_click={() => (show_rss = !show_rss)}><Rss size={16} /> Subscribe</Button>
+	<div class="buttons">
+		<Button
+			variant="tetriary"
+			disabled={offset === 0}
+			load_with={() => update_filter('offset', get_prev_offset())}>Previous</Button
+		>
+		<Button
+			disabled={data.tickets.length < limit}
+			load_with={() => update_filter('offset', get_next_offset())}>Next</Button
+		>
+	</div>
 </div>
 
 <style lang="scss">
+	.rss_feed_name {
+		padding: 0.75rem;
+		color: white;
+		background-color: var(--background-700);
+		border: 1px solid var(--background-900);
+		border-radius: 0.25rem;
+		margin-top: 0.25rem;
+	}
+
+	.lable {
+		margin-top: 0.5rem;
+		opacity: 0.7;
+	}
+
+	.rss_created {
+		max-width: 100%;
+		overflow: hidden;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		background-color: color-mix(in srgb, var(--success-500), transparent);
+		border: 1px solid var(--success-500);
+		padding: 0.75rem;
+		margin-top: 1rem;
+		border-radius: 0.25rem;
+
+		a {
+			color: white;
+		}
+	}
+
+	.action_segs {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
 	.buttons {
 		display: flex;
 		justify-content: right;
