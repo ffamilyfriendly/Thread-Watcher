@@ -5,11 +5,11 @@ import {
   PermissionFlagsBits,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { RegistrationScope } from 'interfaces/BaseCommandInterface';
-import { CommandContext, type SubCommand } from 'interfaces/Command';
+import { RegistrationScope } from '#/interfaces/BaseCommandInterface';
+import { CommandContext, type SubCommand } from '#/interfaces/Command';
 import { err, Result } from 'neverthrow';
-import { CommandError } from 'utilities/error/def';
-import { safe_reply } from 'utilities/interaction_helpers';
+import { CommandError } from '#/utilities/error/def';
+import { safe_reply } from '#/utilities/interaction_helpers';
 
 async function run(
   interaction: ChatInputCommandInteraction,
