@@ -39,13 +39,18 @@ router.get(
       ticket_id,
       res.locals.ticket_context.is_elevated,
     );
-    return ticket_res;
+
+    const hydrated_res = ticket_res.map((r) => {
+      return { ...r, locals: res.locals.ticket_context };
+    });
+
+    return hydrated_res;
   }),
 );
 
 router.delete(
   `/:ticket_id`,
-  enforce_policy(Policies.user_can_view_ticket),
+  enforce_policy(Policies.user_has_elevated_ticket_perms),
   safe_route(async (req, res: TWResponse<TicketLocals>) => {
     const ticket_id = req.params.ticket_id as string;
     return ticket_service.delete_ticket(ticket_id);
@@ -84,24 +89,19 @@ router.get(
 router.post(
   '/:ticket_id/notes',
   enforce_policy(Policies.user_has_elevated_ticket_perms),
-  safe_route(async (req, _res: TWResponse<TicketLocals>) => {
-    const ticket_id = req.params.ticket_id as string;
+  safe_route(
+    async (req, _res: TWResponse<TicketLocals>) => {
+      const ticket_id = req.params.ticket_id as string;
 
-    const body = z
-      .object({
-        text: z.string().max(200),
-      })
-      .safeParse(req.body);
-
-    if (!body.success) return err(body.error);
-
-    const could_create = await ticket_service.insert_ticket_note({
-      ticket_id,
-      created_by: req.user_id!,
-      text: body.data.text,
-    });
-    return could_create.map((note_id) => ({ note_id }));
-  }),
+      const could_create = await ticket_service.insert_ticket_note({
+        ticket_id,
+        created_by: req.user_id!,
+        text: req.body.text,
+      });
+      return could_create.map((note_id) => ({ note_id }));
+    },
+    z.object({ text: z.string().max(200) }),
+  ),
 );
 
 router.delete(

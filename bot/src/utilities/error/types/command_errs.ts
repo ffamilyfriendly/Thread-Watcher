@@ -125,15 +125,22 @@ export class EntitlementsError extends EmbeddableError {
         ? `</${interaction.commandName}:${interaction.commandId}>`
         : `<unknown command>`;
     embed.setTitle(t('errors.entitlement_err.title'));
-    embed.setColor(config.style.info.colour as ColorResolvable);
+    embed.setColor(config.style.premium.colour);
     const link = `https://discord.com/discovery/applications/${config.clientID}/store/${this.sku_id}`;
 
-    const description = this.option_name
+    let description = this.option_name
       ? t('errors.entitlement_err.command_option_requires_sku', {
           option_name: this.option_name,
           link,
         })
       : t('errors.entitlement_err.command_requires_sku', { command_tag, link });
+
+    description +=
+      '\n\n' +
+      t('errors.entitlement_err.topgg_cta', {
+        topgg_vote_link: `https://top.gg/bot/870715447136366662/vote?guild_id=${interaction.guildId}`,
+      });
+
     embed.setDescription(description);
   }
 }

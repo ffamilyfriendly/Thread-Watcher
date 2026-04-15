@@ -34,31 +34,32 @@ router.get(
 router.post(
   '/:guild_id/monitors',
   enforce_policy(Policies.Common.bot_master_or_guild_master),
-  safe_route(async (req, res) => {
-    const guild_id = req.params.guild_id as string;
-    const parsed_monitor = ZMonitor.omit({ is_suspended: true }).safeParse(req.body);
+  safe_route(
+    async (req, res) => {
+      const guild_id = req.params.guild_id as string;
 
-    if (!parsed_monitor.success) return err(parsed_monitor.error);
-    const monitor = parsed_monitor.data;
+      const monitor = req.body;
 
-    if (monitor.target_id === monitor.guild_id) {
-      const entitled_res = await entitlement_service.has_premium(guild_id);
-      if (entitled_res.isErr()) return err(entitled_res.error);
+      if (monitor.target_id === monitor.guild_id) {
+        const entitled_res = await entitlement_service.has_premium(guild_id);
+        if (entitled_res.isErr()) return err(entitled_res.error);
 
-      if (!entitled_res.value)
-        return api_err(HTTPCodes.PAYMENT_REQUIRED, 'global monitors are a premium feature');
-    }
+        if (!entitled_res.value)
+          return api_err(HTTPCodes.PAYMENT_REQUIRED, 'global monitors are a premium feature');
+      }
 
-    const audit_meta: AuditMeta = { executor_id: req.user_id!, guild_id };
-    const r = await channel_service.add_monitor(
-      monitor.target_id,
-      monitor.guild_id,
-      audit_meta,
-      monitor,
-    );
+      const audit_meta: AuditMeta = { executor_id: req.user_id!, guild_id };
+      const r = await channel_service.add_monitor(
+        monitor.target_id,
+        monitor.guild_id,
+        audit_meta,
+        monitor,
+      );
 
-    return r;
-  }),
+      return r;
+    },
+    ZMonitor.omit({ is_suspended: true }),
+  ),
 );
 
 router.post(
@@ -66,14 +67,11 @@ router.post(
   enforce_policy(Policies.Common.bot_master_or_guild_master),
   safe_route(async (req, _res) => {
     const guild_id = req.params.guild_id as string;
-    const body_parsed = ZAiRegexResponse.safeParse(req.body);
 
-    if (!body_parsed.success) return err(body_parsed.error);
-
-    const prompt = body_parsed.data.prompt;
+    const prompt = req.body.prompt;
 
     return ai_service.get_regex(prompt, guild_id);
-  }),
+  }, ZAiRegexResponse),
 );
 
 router.patch(
@@ -81,13 +79,8 @@ router.patch(
   enforce_policy(Policies.Common.bot_master_or_guild_master),
   safe_route(async (req, _res) => {
     const monitor_id = req.params.monitor_id as string;
-
-    const edit_obj = ZEditMonitor.safeParse(req.body);
-
-    if (!edit_obj.success) return err(edit_obj.error);
-
-    return channel_service.edit_monitor(monitor_id, edit_obj.data);
-  }),
+    return channel_service.edit_monitor(monitor_id, req.body);
+  }, ZEditMonitor),
 );
 
 router.delete(

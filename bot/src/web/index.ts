@@ -11,6 +11,7 @@ import { ticket_service } from '@providers/services/ticket_service';
 import { thread_service } from '@providers/services/thread_service';
 import { sharding_manager } from '@providers/shardingmanager';
 import { map_err } from '#/utilities/error';
+import { pretty_print_request_info } from './auth/auth';
 
 export function create_web_server() {
   const server = express();
@@ -18,6 +19,7 @@ export function create_web_server() {
   server.use((req, res, next) => {
     const auth = req.header('X-Internal-Auth');
     if (!auth) {
+      logger.warn(`Got request that passed no X-Internal-Auth!`, pretty_print_request_info(req));
       return res.status(401).json({
         code: 401,
         message: 'Unauthorized',
@@ -27,6 +29,10 @@ export function create_web_server() {
     req.user_id = req.header('X-User-Id');
 
     if (auth !== config.web.shared_secret) {
+      logger.warn(
+        `Got request that passed incorrect X-Internal-Auth!`,
+        pretty_print_request_info(req),
+      );
       return res.status(403).json({
         code: 403,
         message: 'Forbidden',

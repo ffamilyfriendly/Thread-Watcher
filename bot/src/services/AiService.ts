@@ -165,6 +165,11 @@ export default class AiService {
       input_tokens,
       output_tokens,
     );
+
+    this.logger.debug(
+      `Invocation of '${model_name}' with ${input_tokens} input tokens & ${output_tokens} output tokens cost ${cost_of_operation} (guild: ${guild_id})`,
+    );
+
     return this.guild_service.deduct_ai_tokens(guild_id, cost_of_operation);
   }
 

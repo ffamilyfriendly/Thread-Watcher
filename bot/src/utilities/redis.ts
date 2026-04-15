@@ -1,9 +1,9 @@
 import Redis from 'ioredis';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { z } from 'zod';
+import { number, z } from 'zod';
 import { map_err } from './error';
 
-async function safe_get<TZodType extends z.ZodTypeAny>(
+async function safe_get<TZodType extends z.ZodType>(
   redis: Redis,
   key: string,
   schema: TZodType,
@@ -23,7 +23,7 @@ async function safe_get<TZodType extends z.ZodTypeAny>(
   return ok(schema_res.data);
 }
 
-async function safe_write<TZodType extends z.ZodTypeAny>(
+async function safe_write<TZodType extends z.ZodType>(
   redis: Redis,
   key: string,
   data: unknown,
@@ -50,17 +50,44 @@ export default class RedisWrapper {
     return this.prefix + ':' + (typeof key === 'string' ? key : key.join(':'));
   }
 
-  get<TZodType extends z.ZodTypeAny>(key: string | string[], schema: TZodType) {
+  get<TZodType extends z.ZodType>(key: string | string[], schema: TZodType) {
     const k = this.get_key(key);
     return safe_get(this.redis, k, schema);
   }
 
-  get_non_nullable<TZodType extends z.ZodTypeAny>(key: string | string[], schema: TZodType) {
+  private get default_get_cached_or() {
+    return {
+      expiry: this.default_expiry,
+      should_cache_null: true,
+    };
+  }
+
+  async get_cached_or<TZodType extends z.ZodType>(
+    key: string | string[],
+    schema: TZodType,
+    on_cache_miss: () => Promise<Result<z.output<TZodType>, Error>>,
+    options?: Partial<typeof this.default_get_cached_or>,
+  ): Promise<Result<z.output<TZodType>, Error>> {
+    const opts = { ...this.default_get_cached_or, ...options };
+
+    const cache_hit = await this.get(key, schema);
+    if (cache_hit.isOk() && cache_hit.value) return ok(cache_hit.value);
+
+    const fresh_response = await on_cache_miss();
+    if (fresh_response.isErr()) return err(fresh_response.error);
+
+    if ((!fresh_response.value && opts.should_cache_null) || fresh_response.value)
+      this.set(key, fresh_response.value, schema, opts.expiry);
+
+    return ok(fresh_response.value);
+  }
+
+  get_non_nullable<TZodType extends z.ZodType>(key: string | string[], schema: TZodType) {
     const k = this.get_key(key);
     return safe_get(this.redis, k, schema, false);
   }
 
-  set<TZodType extends z.ZodTypeAny>(
+  set<TZodType extends z.ZodType>(
     key: string | string[],
     data: unknown,
     schema: TZodType,

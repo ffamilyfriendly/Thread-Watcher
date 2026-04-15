@@ -103,7 +103,8 @@
     "entitlement_err": {
       "title": "Premium Feature Required",
       "command_requires_sku": "The **{{command_tag}}** command is a premium feature. [Upgrade now]({{link}}) to unlock this and other advanced tools for your server.",
-      "command_option_requires_sku": "The **{{option_name}}** option is part of Thread-Watcher’s premium features. [Upgrade here]({{link}}) to access it."
+      "command_option_requires_sku": "The **{{option_name}}** option is part of the Thread-Watcher Plus features. [Upgrade here]({{link}}) to access it.",
+      "topgg_cta": "-# 💡 **Tip:** This server earns **global monitors** (12H) and **free AI credits** for every vote Thread-Watcher receives on Top.gg through [this vote link]({{topgg_vote_link}})! Vote now to unlock rewards for your server!"
     },
     "ticket": {
       "ticket_not_found_title": "Ticket not found!",

@@ -40,6 +40,27 @@ export function safe_fetch(input: string | URL | Request, init?: RequestInit) {
 	);
 }
 
+export async function proxied_fetch(endpoint: `/${string}`, incoming_request: Request) {
+	const api_url = `${API_URI}${endpoint}`;
+
+	const body = incoming_request.method !== 'GET' ? await incoming_request.text() : undefined;
+
+	const raw_headers = Object.fromEntries(incoming_request.headers.entries());
+
+	const to_delete = ['host', 'content-length', 'content-encoding', 'connection', 'content-type'];
+	to_delete.forEach((h) => delete raw_headers[h]);
+
+	return fetch(api_url, {
+		method: incoming_request.method,
+		body,
+		headers: {
+			...raw_headers,
+			'X-Internal-Auth': SHARED_API_SECRET,
+			'Content-Type': 'application/json'
+		}
+	});
+}
+
 interface ExtraDetails extends RequestInit {
 	user_id?: string;
 }

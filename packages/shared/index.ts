@@ -10,6 +10,7 @@ export * from "./tickets/ticket_outputs";
 export * from "./constraints";
 export * from "./schemas/api_routes";
 export * from "./tickets/contracts";
+export * from "./schemas/topgg";
 
 /*
 code: 400,

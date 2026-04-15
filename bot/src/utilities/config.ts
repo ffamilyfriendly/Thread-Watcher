@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { existsSync, readFileSync } from 'fs';
 import JSON5 from 'json5';
 import { Result, err, ok } from 'neverthrow';
+import { ColorResolvable } from 'discord.js';
 
 const ConfigTokens = z.object({
   discord: z.string().nonempty(),
@@ -9,7 +10,10 @@ const ConfigTokens = z.object({
 });
 
 const StyleValue = z.object({
-  colour: z.string().startsWith('#'),
+  colour: z
+    .string()
+    .startsWith('#')
+    .transform((v) => v as ColorResolvable),
   emoji: z.string().nonempty(),
 });
 
@@ -18,6 +22,7 @@ const Style = z.object({
   success: StyleValue,
   info: StyleValue,
   warning: StyleValue,
+  premium: StyleValue,
 });
 
 const Web = z.object({
@@ -25,6 +30,7 @@ const Web = z.object({
   port: z.number().min(0).max(65535).default(2003),
   hostname: z.string().url(),
   shared_secret: z.string(),
+  topgg_webhook_secret: z.string(),
 });
 
 const Redis = z.object({
@@ -85,6 +91,7 @@ const ZPaywall = z.object({
 const ZAi = z.object({
   monthly_tokens_premium: z.number(),
   initial_free_tokens: z.number(),
+  vote_reward_tokens: z.number(),
   mistral_key: z.string(),
   agents: z.object({
     regex_agent: z.string(),

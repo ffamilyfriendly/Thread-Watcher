@@ -67,7 +67,7 @@ export function global_error_handler(
   const safe_err = get_safe_error(map_err(err));
   const { code, message, status_str } = get_values_for_error(safe_err);
 
-  res.locals.logger.error(`ERR ${code} (${status_str})`, safe_err);
+  res.locals.logger.error(`${code} (${status_str})`, safe_err);
 
   res.status(code).json({
     code: code,

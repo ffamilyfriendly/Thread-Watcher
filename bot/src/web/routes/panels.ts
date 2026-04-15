@@ -14,15 +14,11 @@ router.post(
   `/:guild_id/panels`,
   enforce_policy(Policies.Common.can_modify_panels),
   safe_route(async (req, res) => {
-    const parsed_panel = ZTicketPanel.safeParse(req.body);
-
-    if (!parsed_panel.success) return err(parsed_panel.error);
-
-    return ticket_service.insert_panel(parsed_panel.data, {
+    return ticket_service.insert_panel(req.body, {
       executor_id: req.user_id!,
       guild_id: req.params.guild_id as string,
     });
-  }),
+  }, ZTicketPanel),
 );
 
 router.delete(
@@ -30,7 +26,6 @@ router.delete(
   enforce_policy(Policies.Common.bot_master_or_guild_master),
   safe_route(async (req, res) => {
     const panel_id = req.params.panel_id as string;
-    console.log(`panel_id:`, panel_id);
     return ticket_service.delete_panel(panel_id);
   }),
 );
@@ -39,12 +34,9 @@ router.put(
   '/:guild_id/panels/:panel_id',
   enforce_policy(Policies.Common.can_modify_panels),
   safe_route(async (req, res) => {
-    const parsed_panel = ZEditTicketPanel.safeParse(req.body);
     const panel_id = req.params.panel_id as string;
-
-    if (!parsed_panel.success) return err(parsed_panel.error);
-    return ticket_service.update_panel(panel_id, parsed_panel.data);
-  }),
+    return ticket_service.update_panel(panel_id, req.body);
+  }, ZEditTicketPanel),
 );
 
 router.post(

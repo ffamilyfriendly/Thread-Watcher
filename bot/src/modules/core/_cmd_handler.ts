@@ -6,18 +6,18 @@ import {
   Interaction,
   InteractionType,
 } from 'discord.js';
-import { BaseCommand, Command, CommandContext, GuildChatInteraction } from 'interfaces/Command';
-import { map_err, mapped_err } from 'utilities/error';
+import { BaseCommand, Command, CommandContext, GuildChatInteraction } from '#/interfaces/Command';
+import { map_err, mapped_err } from '#/utilities/error';
 import Config from '@providers/config';
 import Commands from '@providers/commands';
 import Lgr from '@providers/logger';
 import ComponentService from '@providers/services/component_service';
 import { err, ok } from 'neverthrow';
-import EmbeddableError from 'utilities/error/EmbeddableError';
-import { EntitlementsError, PermissionsError } from 'utilities/error/def';
-import { from_interaction } from 'utilities/i18def';
+import EmbeddableError from '#/utilities/error/EmbeddableError';
+import { EntitlementsError, PermissionsError } from '#/utilities/error/def';
+import { from_interaction } from '#/utilities/i18def';
 import { event_bus } from '@providers/event_bus';
-import { get_safe_error } from 'utilities/error/escape_sensitive_data';
+import { get_safe_error } from '#/utilities/error/escape_sensitive_data';
 
 const config = Config.instance;
 const commands = Commands.instance;

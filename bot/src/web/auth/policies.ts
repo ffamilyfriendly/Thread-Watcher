@@ -22,7 +22,13 @@ export type PolicyResult = PolicyResultError | PolicyResultValid;
 export type PolicyFunctionReturnType =
   | Promise<Result<PolicyResult, Error>>
   | Result<PolicyResult, Error>;
-export type SecurityPolicy = (req: RequestWithUser, res?: TWResponse) => PolicyFunctionReturnType;
+
+export type SecurityPolicy = (req: Request, res?: TWResponse) => PolicyFunctionReturnType;
+
+export type AuthedSecurityPolicy = (
+  req: RequestWithUser,
+  res?: TWResponse,
+) => PolicyFunctionReturnType;
 
 function assert_all_ok<T, E>(results: Result<T, E>[]): asserts results is Ok<T, E>[] {
   if (results.some((r) => r.isErr())) {
@@ -53,7 +59,7 @@ export namespace Policies {
    * @param policy2
    * @returns
    */
-  export function or(policy1: SecurityPolicy, policy2: SecurityPolicy) {
+  export function or(policy1: AuthedSecurityPolicy, policy2: AuthedSecurityPolicy) {
     return async function (req: RequestWithUser): Promise<Result<PolicyResult, Error>> {
       const [res1, res2] = await Promise.all([policy1(req), policy2(req)]);
 
@@ -76,7 +82,7 @@ export namespace Policies {
    * @param policies
    * @returns
    */
-  export function and(...policies: SecurityPolicy[]) {
+  export function and(...policies: AuthedSecurityPolicy[]) {
     return async function (req: RequestWithUser): Promise<Result<PolicyResult, Error>> {
       const results = await Promise.all(policies.map((p) => p(req)));
 
@@ -97,7 +103,11 @@ export namespace Policies {
     };
   }
 
-  export function cached(policy: SecurityPolicy, cache_duration_seconds: 60, policy_name?: string) {
+  export function cached(
+    policy: AuthedSecurityPolicy,
+    cache_duration_seconds: 60,
+    policy_name?: string,
+  ) {
     return async function (req: RequestWithUser): Promise<Result<PolicyResult, Error>> {
       const guild_id = get_valid_guild_id(req);
       if (guild_id.isErr()) return err(guild_id.error);
@@ -118,6 +128,23 @@ export namespace Policies {
       await redis.set(cache_key, String(policy_result.value.passes), 'EX', cache_duration_seconds);
 
       return ok(policy_result.value);
+    };
+  }
+
+  export function header_auth_matches(match_this: string, header_field_name = 'Authorization') {
+    return async function (req: Request): Promise<Result<PolicyResult, Error>> {
+      const header_value = req.header(header_field_name);
+      if (!header_value) {
+        return ok({
+          passes: false,
+          message: `missing required header '${header_field_name}'`,
+        });
+      }
+
+      return ok({
+        passes: match_this === header_value,
+        message: `Header '${header_field_name}' did not match required value!`,
+      });
     };
   }
 

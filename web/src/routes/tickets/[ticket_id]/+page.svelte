@@ -62,20 +62,20 @@
 	async function mark_resolved() {
 		const res = await ts.mark_resolved();
 		if (res.isErr()) return add_toast_from_error(res.error);
-		data.ticket.status === "CLOSED"
-		ts.ticket?.status === "CLOSED"
+		data.ticket.status === 'CLOSED';
+		ts.ticket?.status === 'CLOSED';
 		add_toast({ type: 'success', message: `Ticket '${data.ticket.name}' was resolved!` });
 	}
 
-	let is_deleted = $state(false)
+	let is_deleted = $state(false);
 
 	async function delete_ticket() {
-		const res = await ts.delete()
-		if(res.isErr()) return add_toast_from_error(res.error)
-		is_deleted = true
+		const res = await ts.delete();
+		if (res.isErr()) return add_toast_from_error(res.error);
+		is_deleted = true;
 	}
 
-	const master_summary = $derived(data.ticket.summaries.find(s => s.is_master_summary))
+	const master_summary = $derived(data.ticket.summaries.find((s) => s.is_master_summary));
 </script>
 
 <svelte:window bind:innerWidth={viewport_width} />
@@ -123,8 +123,21 @@
 
 		<h3 class="heading">Actions</h3>
 		<div>
-			<Button load_with={delete_ticket} confirmation={{ title: "Delete Ticket", body: "This will permanently close the ticket and cannot be undone. All associated data will be removed from our records.", proceed_btn_text: `Delete '${data.ticket.name}'`, cancel_btn_text: "Cancel" }} variant="error">Delete Ticket</Button>
-			<Button load_with={mark_resolved} disabled={ts.ticket?.status === "CLOSED"}>Resolve Ticket</Button>
+			{#if data.ticket.locals.is_elevated}
+				<Button
+					load_with={delete_ticket}
+					confirmation={{
+						title: 'Delete Ticket',
+						body: 'This will permanently close the ticket and cannot be undone. All associated data will be removed from our records.',
+						proceed_btn_text: `Delete '${data.ticket.name}'`,
+						cancel_btn_text: 'Cancel'
+					}}
+					variant="error">Delete Ticket</Button
+				>
+			{/if}
+			<Button load_with={mark_resolved} disabled={ts.ticket?.status === 'CLOSED'}
+				>Resolve Ticket</Button
+			>
 		</div>
 
 		<hr />
@@ -144,11 +157,15 @@
 			<Summaries />
 		{/if}
 
-		<h3 class="heading">Mod Notes</h3>
-		<small>Mod notes can only be viewed by the moderation team and are never shared with the ticket creator or AI summarizer.</small>
-		<ModNotes />
-
-		<hr />
+		{#if data.ticket.locals.is_elevated}
+			<h3 class="heading">Mod Notes</h3>
+			<small
+				>Mod notes can only be viewed by the moderation team and are never shared with the ticket
+				creator or AI summarizer.</small
+			>
+			<ModNotes />
+			<hr />
+		{/if}
 
 		<div>
 			<a href={pipeline_logs_location} target="_blank"> Pipeline Logs </a>
@@ -160,18 +177,17 @@
 </main>
 
 <style lang="scss">
-
 	.is_deleted {
 		position: absolute;
 		top: 0;
 		display: flex;
 		align-items: center;
-		gap: .5rem;
+		gap: 0.5rem;
 		margin: 1rem;
-		padding: .5rem .25rem;
+		padding: 0.5rem 0.25rem;
 		background-color: var(--error-500);
 		border: 1px solid var(--error-700);
-		border-radius: .5rem;
+		border-radius: 0.5rem;
 		z-index: 99999999999999;
 	}
 
@@ -179,16 +195,16 @@
 		padding: 1rem;
 		background-color: var(--secondary-500);
 		border: 1px solid var(--secondary-700);
-		border-radius: .25rem;
-		margin-bottom: .5rem;
-		margin-top: .5rem;
+		border-radius: 0.25rem;
+		margin-bottom: 0.5rem;
+		margin-top: 0.5rem;
 
 		b {
-			opacity: .7;
+			opacity: 0.7;
 		}
 
 		small {
-			opacity: .4;
+			opacity: 0.4;
 		}
 	}
 

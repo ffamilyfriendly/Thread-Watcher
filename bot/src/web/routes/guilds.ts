@@ -19,6 +19,7 @@ import { z } from 'zod';
 import { DashboardData } from '../../../../packages/shared/schemas/api_routes';
 import { ticket_service } from '@providers/services/ticket_service';
 import { guild_service } from '@providers/services/guild_service';
+import { ZTopggWebhookSchema } from '@watcher/shared';
 
 const router = Router();
 
@@ -249,11 +250,8 @@ router.post(
   enforce_policy(Policies.Common.bot_master_or_guild_master),
   safe_route(async (req, res) => {
     const guild_id = req.params.guild_id as string;
-    const body = settings_schema.safeParse(req.body);
 
-    if (!body.success) return err(body.error);
-
-    const { guild_id: _, ...settings_to_save } = body.data;
+    const { guild_id: _, ...settings_to_save } = req.body;
     const old_settings = await setting_service.get_guild_settings(guild_id);
     if (old_settings.isErr()) return err(old_settings.error);
 
@@ -279,7 +277,7 @@ router.post(
     }
 
     return ok({ message: 'updated' });
-  }),
+  }, settings_schema),
 );
 
 const route: RouteFile = {

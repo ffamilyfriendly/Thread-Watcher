@@ -1,6 +1,5 @@
 import { client } from '@providers/client';
 import { channel_service } from '@providers/services/channel_service';
-import { entitlement_service } from '@providers/services/entitlement_service';
 import { guild_service } from '@providers/services/guild_service';
 import { thread_service } from '@providers/services/thread_service';
 import { AuditLogEvent, Message, ThreadChannel } from 'discord.js';
@@ -30,13 +29,7 @@ async function fetch_responsible_manager(thread: ThreadChannel) {
     if (!id) continue;
     const res = await channel_service.get_monitor(id);
     if (res.isOk() && res.value) {
-      if (res.value.target_id === res.value.guild_id) {
-        const entitlement_answer = await entitlement_service.has_premium(res.value.guild_id);
-        if (entitlement_answer.isErr()) return err(entitlement_answer.error);
-        if (entitlement_answer.value === false) return ok(null);
-      }
-
-      return ok(res.value);
+      return res;
     }
   }
 
@@ -138,9 +131,9 @@ async function on_thread_update(old: ThreadChannel, thread: ThreadChannel, l: Lo
   };
 
   if (change?.new) {
-    l.info(
-      `Thread ${thread.id} was unwatched due to manual archival by ${audit_entry?.executorId}`,
-    );
+    if (audit_entry?.executorId) audit_meta.executor_id = audit_entry.executorId;
+    audit_meta.reason = `Unwatched due to manual archival`;
+
     const unwatch_res = await thread_service.unwatch_thread(thread, audit_meta);
     if (unwatch_res.isErr()) {
       l.error('could not unwatch thread');

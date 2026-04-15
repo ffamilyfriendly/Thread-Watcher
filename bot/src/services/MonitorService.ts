@@ -2,9 +2,12 @@ import { event_bus } from '@providers/event_bus';
 import { EditMonitor, FilterData, ZMonitor } from '@watcher/shared';
 import { Database } from '#/interfaces/Database';
 import Redis from 'ioredis';
-import { err, ok } from 'neverthrow';
+import { err, ok, ResultAsync } from 'neverthrow';
 import RedisWrapper from '#/utilities/redis';
 import { AuditMeta } from './AuditService';
+import { entitlement_service } from '@providers/services/entitlement_service';
+import { mapped_err } from '#/utilities/error';
+import { logger } from '@providers/logger';
 
 export default class ChannelService {
   static readonly CACHE_TTL_SECONDS = 900;
@@ -18,18 +21,32 @@ export default class ChannelService {
   }
 
   async get_monitor(channel_id: string) {
-    const cached = await this.r.get(channel_id, ZMonitor);
-    if (cached.isErr()) return err(cached.error);
-    if (cached.value) return ok(cached.value);
+    return this.r.get_cached_or(
+      channel_id,
+      ZMonitor.nullable(),
+      async () => {
+        const db_res = await this.db.get_monitor(channel_id);
+        if (db_res.isErr()) return mapped_err(db_res.error);
+        if (!db_res.value) return ok(null);
 
-    const db_res = await this.db.get_monitor(channel_id);
-    return db_res.andThen((raw) => {
-      if (!raw) return ok(null);
+        const is_global = db_res.value.guild_id === db_res.value.target_id;
+        if (!is_global) return ok(db_res.value);
 
-      this.r.set(channel_id, raw, ZMonitor);
+        const is_authorized = await entitlement_service.get_topgg_vote_or_premium(
+          db_res.value.guild_id,
+        );
 
-      return ok(raw);
-    });
+        if (is_authorized) return ok(db_res.value);
+        else {
+          logger.debug(
+            `[MonitorService] could get monitor for ${channel_id} but server was neither premium nor was a top.gg vote present.`,
+          );
+        }
+
+        return ok(null);
+      },
+      { should_cache_null: false },
+    );
   }
 
   get_monitors(guild_id: string) {

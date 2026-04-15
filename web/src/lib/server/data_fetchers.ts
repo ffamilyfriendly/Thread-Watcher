@@ -186,13 +186,26 @@ export const fetch_ticket_panels = (guild_id: string, user_id: string) =>
 		60
 	);
 
+/*
+(property) ticket_context: {
+    is_owner: boolean;
+    is_elevated: boolean;
+}
+*/
+const TicketViewWithLocals = ZTicketView.extend({
+	locals: z.object({
+		is_owner: z.boolean(),
+		is_elevated: z.boolean()
+	})
+});
+
 export const _fetch_ticket = (ticket_id: string, user_id: string) =>
-	json_fetch(`/tickets/${ticket_id}`, { user_id }, ZTicketView);
+	json_fetch(`/tickets/${ticket_id}`, { user_id }, TicketViewWithLocals);
 
 export const fetch_ticket = (ticket_id: string, user_id: string) =>
 	get_cached_or(
 		`ticketview:ticket:${ticket_id}:${user_id}`,
-		ZTicketView,
+		TicketViewWithLocals,
 		() => _fetch_ticket(ticket_id, user_id),
 		60
 	);

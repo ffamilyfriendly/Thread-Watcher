@@ -9,6 +9,7 @@ import { map_err } from '#/utilities/error';
 import { ShardedIpcClient } from '#/utilities/ipc_clients';
 import RedisWrapper from '#/utilities/redis';
 import z from 'zod';
+import { ZTopggWebhookSchema } from '@watcher/shared';
 
 export const TIER_PERMISSIONS = {
   [config.paywall.basic_sku]: [config.paywall.basic_sku],
@@ -46,7 +47,7 @@ export class IpcProvider implements EntitlementProvider {
   }
 }
 
-type HasSkuResponse = Promise<Result<boolean, Error>>;
+type HasSkuResponse = Promise<ResultAsync<boolean, Error>>;
 export default class EntitlementService {
   r: RedisWrapper;
   l = logger.getSubLogger({ name: 'EntitlementService' });
@@ -63,9 +64,24 @@ export default class EntitlementService {
     this.provider = new_provider;
   }
 
+  // This value is set on the sveltekit route handling webhooks!
+  // see: /web/src/routes/api/webhooks/topgg/+server.ts for implementation.
   async get_topgg_vote_perk(guild_id: string) {
-    return this.r.get([guild_id, 'topgg'], z.boolean());
-    //`entitlement:guild_id:topgg`
+    return this.r.get([guild_id, 'topgg'], ZTopggWebhookSchema);
+  }
+
+  async get_topgg_vote_or_premium(guild_id: string, interaction?: BaseInteraction) {
+    const [prem_res, vote_res] = await Promise.all([
+      this.has_premium(guild_id, interaction),
+      this.get_topgg_vote_perk(guild_id),
+    ]);
+
+    if (prem_res.isErr())
+      this.l.error(`Failed to check if ${guild_id} has premium`, prem_res.error);
+    if (vote_res.isErr())
+      this.l.error(`Failed to check if ${guild_id} has premium thru top.gg`, vote_res.error);
+
+    return prem_res.unwrapOr(false) || vote_res.unwrapOr(false);
   }
 
   async get_db_granted_sku(guild_id: string) {
@@ -112,54 +128,29 @@ export default class EntitlementService {
     if (!config.paywall.enabled) return ok(true);
     const sku_id = config.paywall.basic_sku;
 
-    const alright = (v: boolean) => {
-      this.r.set([guild_id, sku_id], v, z.boolean()).then((r) => {
-        if (r.isErr()) {
-          this.l.warn(`Could not set cached information for '${guild_id}'`, r.error);
-        }
-      });
-      return ok(v);
-    };
+    return this.r.get_cached_or([guild_id, sku_id], z.boolean(), async () => {
+      const guild_sku = await this.get_db_granted_sku(guild_id);
+      if (guild_sku.isErr()) {
+        this.l.error(`could not get db granted premium for guild ${guild_id}`, guild_sku.error);
+      }
 
-    // TODO: implement top.gg vote perks
-    // a lot of the infra we need is alr implemented
-    //const topgg_res = await this.get_topgg_vote_perk(guild_id);
-    //if (topgg_res.isOk() && topgg_res.value && sku_id === config.paywall.basic_sku) {
-    //  alright(true);
-    //}
+      if (guild_sku.isOk() && guild_sku.value === sku_id) return ok(true);
 
-    const cache = await this.r.get([guild_id, sku_id], z.boolean());
-    if (cache.isErr()) {
-      this.l.warn(`Could not get cached information for '${guild_id}'`, cache.error);
-    } else if (cache.value !== null) {
-      this.l.silly(`Got value from cache: ${cache.value}`);
-      return alright(cache.value);
-    }
+      let entitlements: Collection<string, Entitlement>;
+      if (interaction) {
+        entitlements = interaction.entitlements;
+      } else {
+        if (!this.provider) return err(new Error('No provider'));
+        const res = await this.provider.fetch(guild_id);
+        if (res.isErr()) return err(res.error);
 
-    const guild_sku = await this.get_db_granted_sku(guild_id);
-    if (guild_sku.isErr()) {
-      this.l.warn(`Could not get guild information for '${guild_id}'`, guild_sku.error);
-    } else if (guild_sku.value === sku_id) {
-      return alright(true);
-    } else {
-      this.l.silly(`guild has this sku: ${guild_sku.value}`);
-    }
+        entitlements = Array.isArray(res.value)
+          ? this.collection_from_entitlement_array(res.value)
+          : res.value;
+      }
 
-    let entitlements: Collection<string, Entitlement>;
-    if (interaction) {
-      entitlements = interaction.entitlements;
-    } else {
-      if (!this.provider) return err(new Error('No provider'));
-      const res = await this.provider.fetch(guild_id);
-      if (res.isErr()) return err(res.error);
-
-      entitlements = Array.isArray(res.value)
-        ? this.collection_from_entitlement_array(res.value)
-        : res.value;
-    }
-
-    const has_active_sku = entitlements.some((e) => e.skuId === sku_id);
-
-    return alright(has_active_sku);
+      const has_active_sku = entitlements.some((e) => e.skuId === sku_id);
+      return ok(has_active_sku);
+    });
   }
 }

@@ -49,7 +49,7 @@ async function run(
   interaction: GuildChatInteraction,
   ctx: CommandContext,
 ): Promise<Result<void, CommandError>> {
-  const parent = await get_target(interaction);
+  const parent = await get_target(interaction, true);
 
   const advanced = !!interaction.options.getBoolean('advanced');
 

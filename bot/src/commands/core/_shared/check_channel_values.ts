@@ -22,12 +22,19 @@ export function check_channel_is_valid(
   return (ALLOWED_CHANNEL_TYPES as readonly ChannelType[]).includes(channel.type);
 }
 
-export async function get_target(interaction: GuildChatInteraction) {
+export async function get_target(interaction: GuildChatInteraction, allow_topgg_vote = false) {
   let parent = interaction.options.getChannel('parent') || interaction.channel;
   const global = interaction.options.getBoolean('global');
 
-  if (global) {
+  if (global && allow_topgg_vote) {
+    const res = await entitlement_service.get_topgg_vote_or_premium(
+      interaction.guildId,
+      interaction,
+    );
+    if (!res) return err(new EntitlementsError(config.paywall.basic_sku, 'global'));
+  } else if (global) {
     const has_sku = await entitlement_service.has_premium(interaction.guildId);
+
     if (has_sku.isErr()) return err(has_sku.error);
 
     if (!has_sku.value) return err(new EntitlementsError(config.paywall.basic_sku, 'global'));
