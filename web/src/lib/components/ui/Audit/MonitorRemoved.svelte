@@ -1,6 +1,5 @@
 <script lang="ts">
     import type { ExpandedAuditLog } from "$lib/types/internal_api";
-    import btn_style from "$lib/style/button.module.scss"
 	import type { NarrowedLog } from "@watcher/shared";
 	import FallBackChannel from "../discord/FallBackChannel.svelte";
 

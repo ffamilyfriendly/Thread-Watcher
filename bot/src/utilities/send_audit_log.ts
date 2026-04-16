@@ -1,13 +1,12 @@
 import { client } from '@providers/client';
 import { config } from '@providers/config';
 import { setting_service } from '@providers/services/setting_service';
-import { AuditData, NarrowedLog } from '@watcher/shared';
+import { AuditData, NarrowedLog, Settings } from '@watcher/shared';
 import { ColorResolvable, EmbedBuilder, Message } from 'discord.js';
 import { AppEventKey, AppEventMap } from '#/events/bus';
 import { ok, ResultAsync } from 'neverthrow';
 import { map_err } from './error';
 import { logger } from '@providers/logger';
-import { is_setting_key } from '#/interfaces/Settings';
 import { from_locale_str, TypedI18Func } from './i18def';
 
 abstract class AuditLoggable<Tkey extends AuditData['data']['audit_type']> {
@@ -51,13 +50,13 @@ abstract class AuditLoggable<Tkey extends AuditData['data']['audit_type']> {
 
 class ConfigChange extends AuditLoggable<'CONFIG'> {
   configure_embed(e: EmbedBuilder): void {
-    if (!is_setting_key(this.event.data.setting_key)) return;
+    if (!Settings.is_setting_key(this.event.data.setting_key)) return;
     const adapter = setting_service.get_adapter(this.event.data.setting_key);
     if (!adapter) return;
 
     function display_safe(v: unknown) {
-      if (!adapter.adapter!.is_type(v)) return String(v);
-      return adapter.adapter!.display_value(v);
+      if (!adapter.is_type(v)) return String(v);
+      return adapter.display_value(v);
     }
 
     e.setTitle(this.t('audit.config_embed_title'))

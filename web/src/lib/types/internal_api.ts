@@ -53,23 +53,6 @@ export const ZGuildOverview = z.object({
 
 export type GuildOverview = z.output<typeof ZGuildOverview>;
 
-/*
-export interface AuditData {
-  id: number;
-  guild_id: string;
-  executor_id: string;
-  target_id?: string;
-  old_value?: string;
-  new_value?: string;
-  reason?: string;
-  error?: string;
-  exec_time_ms?: number;
-  command_name?: string;
-  timestamp: number;
-  audit_type: string;
-}
-*/
-
 export const ZAuditLogResponse = z.object({
 	logs: z.array(ZAuditData),
 	next_cursor: z.number().nullish()

@@ -4,22 +4,19 @@ import { audit_service } from '@providers/services/audit_service';
 import { channel_service } from '@providers/services/channel_service';
 import { entitlement_service } from '@providers/services/entitlement_service';
 import { setting_service } from '@providers/services/setting_service';
-import { thread_service } from '@providers/services/thread_service';
-import { Guild, GuildChannel, Role } from 'discord.js';
+import { Channel, GuildChannel, Role } from 'discord.js';
 import { Router } from 'express';
 import { RouteFile } from '#/interfaces/Web';
-import { err, ok, Result, ResultAsync } from 'neverthrow';
+import { err, ok, Result } from 'neverthrow';
 import { AuditMeta } from '#/services/AuditService';
-import { map_err } from '#/utilities/error';
 import { enforce_policy } from '#/web/auth/auth';
 import { Policies, RequestWithUser } from '#/web/auth/policies';
 import { safe_route } from '#/web/neverthrow_wrapper';
 import { api_err, HTTPCodes } from '#/web/utils/error';
 import { z } from 'zod';
-import { DashboardData } from '../../../../packages/shared/schemas/api_routes';
 import { ticket_service } from '@providers/services/ticket_service';
 import { guild_service } from '@providers/services/guild_service';
-import { ZTopggWebhookSchema } from '@watcher/shared';
+import { DashboardData, GuildOverview } from '@watcher/shared';
 
 const router = Router();
 
@@ -55,24 +52,22 @@ router.get(
   safe_route<DashboardData>(async (req, res) => {
     const guild_id = req.params.guild_id as string;
 
-    const relevant_tickets = ticket_service.get_tickets({
-      guild_id,
-      offset: 0,
-    });
-
-    const recent_audits = audit_service.get_audit_logs(guild_id, 10);
-
-    const monitor_count = channel_service.get_monitor_count(guild_id);
-    const panel_count = ticket_service.get_panel_count(guild_id);
-
-    const guild_info = guild_service.get_guild_info(guild_id);
-
     const combined = Result.combine(
-      await Promise.all([relevant_tickets, recent_audits, monitor_count, panel_count, guild_info]),
+      await Promise.all([
+        ticket_service.get_tickets({
+          guild_id,
+          offset: 0,
+        }),
+        audit_service.get_audit_logs(guild_id, 10),
+        channel_service.get_monitor_count(guild_id),
+        ticket_service.get_panel_count(guild_id),
+        guild_service.get_guild_info(guild_id),
+        setting_service.get_guild_settings(guild_id),
+      ]),
     );
     if (combined.isErr()) return err(combined.error);
 
-    const [rel_tickets, rec_audits, mon_count, pan_count, guild_inf] = combined.value;
+    const [rel_tickets, rec_audits, mon_count, pan_count, guild_inf, settings] = combined.value;
 
     return ok({
       ticket_panels_count: pan_count,
@@ -80,6 +75,7 @@ router.get(
       monitors_count: mon_count,
       relevant_tickets: rel_tickets,
       guild: guild_inf,
+      guild_settings: settings,
     });
   }),
 );
@@ -87,61 +83,63 @@ router.get(
 /*
   THIS CODE IS HORRIBLE. FIX IT BEFORE DEPLOYING
   (I know you wont)
+
+  2026-04-15 you is fixing this!
+  TODO: fix this. Need to sleep
 */
+
+async function time<T>(label: string, p: Promise<T>): Promise<T> {
+  const start = Date.now();
+  const res = await p;
+  console.log(`TIMER [${label}]: ${Date.now() - start}ms`);
+  return res;
+}
+
 router.get(
   '/:guild_id',
   enforce_policy(Policies.Common.bot_master_or_guild_master),
-  safe_route(async (req, _res) => {
+  safe_route<GuildOverview>(async (req, _res) => {
     const guild_id = req.params.guild_id as string;
 
-    const p = await ResultAsync.fromPromise(
-      Promise.all([
-        thread_service.get_count_threads(guild_id),
-        channel_service.get_monitor_count(guild_id),
-        ipc_client.get_shard_from_guild_id(guild_id),
-        setting_service.get_guild_settings(guild_id),
-        entitlement_service.has_premium(guild_id),
-        ipc_client.send_to_shard_having_guild<Guild>(guild_id, 'get_guild', {
+    const [roles_res, channel_res, guild, entitlement, guild_obj] = await Promise.all([
+      time(
+        'roles',
+        ipc_client.send_to_shard_having_guild<Role[]>(guild_id, 'fetch_roles', {
           guild_id,
         }),
-      ]),
-      map_err,
-    ).andThen((results) => {
-      return Result.combine(results).map(
-        ([threads, channels, shard, settings, entitlements, guild]) => ({
-          threads_watched: threads,
-          monitors_active: channels,
-          owned_by_shard: shard,
-          guild_settings: settings,
-          entitlements: entitlements,
-          guild: guild,
+      ),
+      time(
+        'channels',
+        ipc_client.send_to_shard_having_guild<Channel[]>(guild_id, 'fetch_channels', {
+          guild_id,
         }),
-      );
-    });
+      ),
+      time('guild_info', guild_service.get_guild_info(guild_id)),
+      time('entitlements', entitlement_service.get_entitlement_breakdown(guild_id)),
+      time('guild', ipc_client.send_shard(guild_id, 'get_guild', { guild_id })),
+    ]);
 
-    if (p.isErr()) return err(p.error);
+    if (guild.isErr()) return err(guild.error);
+    if (!guild.value) return err(new Error('could not get guild'));
+    if (guild_obj.isErr()) return err(guild_obj.error);
+    if (entitlement.isErr()) return err(entitlement.error);
 
-    const {
-      threads_watched,
-      monitors_active,
-      owned_by_shard,
-      guild_settings,
-      entitlements,
-      guild,
-    } = p.value;
-
-    const dict: { [index: string]: string } = {};
-    for (const setting of guild_settings) {
-      dict[setting.setting_id] = setting.setting_value;
-    }
+    const channels = channel_res.unwrapOr([]).filter(Boolean);
+    const roles = roles_res.unwrapOr([]);
 
     return ok({
-      threads_watched,
-      monitors_active,
-      owned_by_shard,
-      guild_settings: dict,
-      entitlements,
-      guild,
+      channels: channels.map((c) => ({
+        ...c,
+        flags: c.flags?.valueOf(),
+      })),
+      roles: roles.map((r) => ({
+        ...r,
+        permissions: r.permissions.toString(),
+        flags: r.flags.valueOf(),
+      })),
+      guild: guild.value,
+      guild_data: guild_obj.value,
+      entitlements: entitlement.value,
     });
   }),
 );
@@ -240,6 +238,15 @@ router.get(
   }),
 );
 
+router.get(
+  '/:guild_id/settings',
+  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  safe_route(async (req, res) => {
+    const guild_id = req.params.guild_id as string;
+    return setting_service.get_guild_settings(guild_id);
+  }),
+);
+
 // This is (or has the potential) to be bad.
 // We run each setting one by one which might mean partial successes.
 // we should refactor this to way to update multiple guild settings at the same time
@@ -261,8 +268,9 @@ router.post(
     if (update_result.isErr()) return err(update_result.error);
 
     const old_values: Record<string, string> = {};
-    for (const v of old_settings.value) {
-      old_values[v.setting_id] = v.setting_value;
+    old_settings.value;
+    for (const [key, value] of Object.entries(old_settings.value)) {
+      if (value) old_values[key] = value;
     }
 
     for (const [key, value] of Object.entries(settings_to_save)) {

@@ -7,3 +7,5 @@ export const ZTopggWebhookSchema = z.object({
   isWeekend: z.boolean().default(false),
   query: z.string().nullish(),
 });
+
+export type TopggVote = z.output<typeof ZTopggWebhookSchema>;

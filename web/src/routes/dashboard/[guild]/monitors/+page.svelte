@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { safe_fetch } from '$lib/client/fetch.js';
-	import FallBackChannel from '$lib/components/ui/discord/FallBackChannel.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Monitor from '$lib/components/ui/monitor/Monitor.svelte';
 	import MonitorConfiguration from '$lib/components/ui/monitor/MonitorConfiguration.svelte';
@@ -44,17 +43,10 @@
 	async function create_new_monitor() {
 		if (!monitor_configuration) return;
 
-		// DOing this just to ensure our serializers are attached
-		const safe_parse = ZMonitor.omit({ manages_threads_count: true }).safeParse(
-			monitor_configuration
-		);
-		if (!safe_parse.success) {
-			return add_toast_from_error(safe_parse.error);
-		}
 
 		const res = await safe_fetch('/api/monitor', {
 			method: 'POST',
-			body: JSON.stringify(safe_parse.data)
+			body: JSON.stringify(monitor_configuration)
 		});
 
 		if (res.isErr()) {
@@ -102,7 +94,7 @@
 {/if}
 
 <div class="btn_row">
-	<PremiumButton on_click={() => start_monitor_process(guild_state.guild_id)}>
+	<PremiumButton allow_topgg_vote={true} on_click={() => start_monitor_process(guild_state.guild_id)}>
 		Create Server-Wide
 	</PremiumButton>
 	<button class={[btn_styles.button, btn_styles.primary]} onclick={() => start_monitor_process()}>

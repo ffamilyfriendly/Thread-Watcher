@@ -1,8 +1,6 @@
 <script lang="ts">
-	import type { DJSGuild } from '$lib/types/internal_api';
-
 	interface Props {
-		guild: DJSGuild;
+		guild: { name: string, icon?: string | null, nameAcronym: string, id: string };
 	}
 
 	const { guild }: Props = $props();

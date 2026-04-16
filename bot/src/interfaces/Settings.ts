@@ -1,3 +1,4 @@
+import { Settings } from '@watcher/shared';
 import {
   ButtonBuilder,
   ButtonInteraction,
@@ -12,7 +13,6 @@ import {
   StringSelectMenuInteraction,
 } from 'discord.js';
 import { err, ok, Result } from 'neverthrow';
-import { z } from 'zod';
 
 export type SettingValue = number | string | boolean | string[];
 
@@ -103,16 +103,19 @@ class RoleSelectAdapter implements InputAdapter<string, RoleSelectMenuBuilder> {
   }
 }
 
-class StringSelectAdapter implements InputAdapter<string, StringSelectMenuBuilder> {
+class StringSelectAdapter<T extends string = string> implements InputAdapter<
+  T,
+  StringSelectMenuBuilder
+> {
   constructor(private values: SelectMenuComponentOptionData[]) {}
 
   create_component() {
     return new StringSelectMenuBuilder().addOptions(this.values);
   }
 
-  into(value: unknown): Result<string, Error> {
+  into(value: unknown): Result<T, Error> {
     if (typeof value === 'string') {
-      return ok(value);
+      return ok(value as T);
     } else return err(new Error(`could not turn ${typeof value} into string`));
   }
 
@@ -120,15 +123,16 @@ class StringSelectAdapter implements InputAdapter<string, StringSelectMenuBuilde
     return ok(value);
   }
 
-  is_type(value: unknown): value is string {
+  is_type(value: unknown): value is T {
     return typeof value == 'string';
   }
 
   parse_interaction(
     interaction: InteractionForComponent<StringSelectMenuBuilder>,
-  ): Result<string, Error> {
-    if (!interaction.values[0]) return err(new Error('no string was selected'));
-    return ok(interaction.values[0]);
+  ): Result<T, Error> {
+    const val = interaction.values[0];
+    if (!val) return err(new Error('no string was selected'));
+    return ok(val as T);
   }
 
   display_value(value: string | null): string {
@@ -137,91 +141,28 @@ class StringSelectAdapter implements InputAdapter<string, StringSelectMenuBuilde
   }
 }
 
-export interface SettingSchema<T extends SettingValue> {
-  key: string;
-  name: string;
-  default: T | null;
-  type: SettingType;
-  adapter: InputAdapter<T, MessageActionRowComponentBuilder>;
-  schema: z.ZodType<T>;
-  description: string;
-}
+// 1. Define a helper to extract the component type based on the setting definition
+// This assumes your shared Settings has a 'type' field ('channel', 'role', 'string', etc.)
+type ComponentForKey<K extends Settings.SettingKey> =
+  (typeof Settings.SETTINGS)[K]['type'] extends 'channel'
+    ? ChannelSelectMenuBuilder
+    : (typeof Settings.SETTINGS)[K]['type'] extends 'role'
+      ? RoleSelectMenuBuilder
+      : StringSelectMenuBuilder; // Default to string select
 
-const LOGGING_CHANNEL: SettingSchema<string> = {
-  key: 'LOGGING_CHANNEL',
-  name: 'Logging Channel',
-  adapter: new ChannelSelectAdapter(),
-  default: null,
-  type: 'channel',
-  schema: z.string(),
-  description: 'the channel where logs will be sent to',
+// 2. Define the adapters object using a Mapped Type
+const adapters: {
+  [K in Settings.SettingKey]: InputAdapter<Settings.SettingOutput<K>, ComponentForKey<K>>;
+} = {
+  LOGGING_CHANNEL: new ChannelSelectAdapter(),
+  BUMP_BEHAVIOUR: new StringSelectAdapter([...Settings.SETTINGS.BUMP_BEHAVIOUR.options]),
+  BOT_MASTER_ROLE: new RoleSelectAdapter(),
+  AUDIT_LOG_RETENTION: new StringSelectAdapter([...Settings.SETTINGS.AUDIT_LOG_RETENTION.options]),
 };
 
-const BUMP_BEHAVIOUR: SettingSchema<string> = {
-  key: 'BUMP_BEHAVIOUR',
-  name: 'Bump Behaviour',
-  adapter: new StringSelectAdapter([
-    {
-      label: 'Bump and Un-Archive',
-      value: 'BUMP_AND_UNARCHIVE',
-      description: 'keep thread un-archived and active',
-    },
-    { label: 'Un-Archive', value: 'UNARCHIVE_ONLY', description: 'Only un-archive the thread' },
-  ]),
-  default: 'BUMP_AND_UNARCHIVE',
-  type: 'string',
-  schema: z.enum(['BUMP_AND_UNARCHIVE', 'UNARCHIVE_ONLY']),
-  description: 'the behaviour of the bot idk',
-};
-
-const BOT_MASTER_ROLE: SettingSchema<string> = {
-  key: 'BOT_MASTER_ROLE',
-  name: 'Bot Master Role',
-  adapter: new RoleSelectAdapter(),
-  default: null,
-  type: 'string',
-  schema: z.string(),
-  description: 'The role which allows dashboard access',
-};
-
-const AUDIT_LOG_RETENTION: SettingSchema<string> = {
-  key: 'AUDIT_LOG_RETENTION',
-  name: 'Audit Log Retention',
-  adapter: new StringSelectAdapter([
-    {
-      label: '24 Hours',
-      value: '86400',
-    },
-    {
-      label: '30 Days',
-      value: '2592000',
-    },
-    {
-      label: '90 Days',
-      value: '7776000',
-    },
-  ]),
-  default: '86400',
-  schema: z.enum(['86400', '2592000', '7776000']),
-  type: 'string',
-  description: 'How long to retain audit logs for your server',
-};
-
-export const SETTINGS = {
-  LOGGING_CHANNEL,
-  BUMP_BEHAVIOUR,
-  BOT_MASTER_ROLE,
-  AUDIT_LOG_RETENTION,
-} as const;
-
-export type SettingKey = keyof typeof SETTINGS;
-export type SettingConfig<K extends SettingKey> = (typeof SETTINGS)[K];
-
-export type SettingOutput<K extends SettingKey> =
-  (typeof SETTINGS)[K] extends SettingSchema<infer T>
-    ? z.output<SettingConfig<K>['schema']>
-    : never;
-
-export function is_setting_key(key: string): key is SettingKey {
-  return Object.keys(SETTINGS).includes(key);
+// 3. Update the getter to return the specific mapped type
+export function get_adapter<K extends Settings.SettingKey>(
+  key: K,
+): InputAdapter<Settings.SettingOutput<K>, ComponentForKey<K>> {
+  return adapters[key];
 }

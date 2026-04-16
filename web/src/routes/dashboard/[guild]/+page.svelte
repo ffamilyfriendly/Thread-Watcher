@@ -26,7 +26,9 @@
 	import { PUBLIC_PREMIUM_SKU_STORE_LINK } from '$env/static/public';
 
 	const { data, params }: PageProps = $props();
-	const guild = $derived(data.guild);
+
+	const gs = use_guild_state()
+
 	const guild_id = $derived(params.guild);
 
 	let bot_master_role = $state<string | null>();
@@ -79,7 +81,6 @@
 		return new Date(last_granted.getTime() + avg_month);
 	});
 
-	const gs = use_guild_state();
 	const as_frac_of_montly = $derived(total_credits / 500000);
 </script>
 
@@ -91,8 +92,8 @@
 <div class="onboarding_section">
 	<div class="checklist_sidebar">
 		<ul class="todo_list">
-			<li class="task" class:completed={!!guild.guild_settings.BOT_MASTER_ROLE}>
-				{#if guild.guild_settings.BOT_MASTER_ROLE}
+			<li class="task" class:completed={data.guild_settings.BOT_MASTER_ROLE}>
+				{#if data.guild_settings.BOT_MASTER_ROLE}
 					<SquareCheck class="icon-success" />
 				{:else}
 					<Square />
@@ -102,7 +103,7 @@
 					<small>Get your staff involved</small>
 				</div>
 				<Button
-					disabled={!!guild.guild_settings.BOT_MASTER_ROLE}
+					disabled={!!data.guild_settings.BOT_MASTER_ROLE}
 					variant="tetriary"
 					on_click={() => (show_bot_master_modal = true)}>Go</Button
 				>
@@ -147,7 +148,7 @@
 			<div class="card_content">
 				<SpoolIcon size={32} />
 				<div class="stat">
-					<span>{guild.threads_watched}</span>
+					<span>{2}</span>
 					<small>Threads Watched</small>
 				</div>
 			</div>
@@ -158,7 +159,7 @@
 			<div class="card_content">
 				<EyeIcon size={32} />
 				<div class="stat">
-					<span>{guild.monitors_active}</span>
+					<span>{2}</span>
 					<small>Active Monitors</small>
 				</div>
 			</div>
@@ -211,7 +212,7 @@
 			description="Select the role that can access the bot dashboard."
 			disclaimer="Any role with Administrator will be considered a Bot Master"
 		>
-			<RolePicker bind:value={bot_master_role} roles={data.roles} />
+			<RolePicker bind:value={bot_master_role} roles={gs.roles} />
 		</SettingBox>
 
 		{#snippet buttons()}

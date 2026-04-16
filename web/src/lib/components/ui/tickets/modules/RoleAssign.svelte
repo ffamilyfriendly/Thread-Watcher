@@ -5,7 +5,6 @@
 	import Toggle from '../../Toggle.svelte';
 	import { use_guild_state } from '$lib/stores/guild.svelte';
 	import Cheng from './components/Cheng.svelte';
-	import style from "$lib/style/pipeline.module.scss"
 
 	const guild_state = use_guild_state()
 

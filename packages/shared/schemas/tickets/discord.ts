@@ -99,3 +99,65 @@ export const ZDiscordUser = z.object({
   username: z.string(),
 });
 export type DiscordUser = z.output<typeof ZDiscordUser>;
+
+// Stuff moved over from web internal_api.ts
+
+const ZDiscordColours = z.object({
+  primaryColor: z.number(),
+  secondaryColor: z.number().nullish(),
+  tertiaryColor: z.number().nullish(),
+});
+
+export const ZDiscordRole = z.object({
+  id: z.string(),
+  name: z.string(),
+  color: z.number(),
+  colors: ZDiscordColours,
+  hoist: z.boolean(),
+  icon: z.string().nullish(),
+  unicode_emoji: z.string().nullish(),
+  permissions: z.string(),
+  managed: z.boolean(),
+  mentionable: z.boolean(),
+  flags: z.number(),
+});
+export type DiscordRole = z.output<typeof ZDiscordRole>;
+
+const ZDiscordTag = z.object({
+  id: z.string(),
+  name: z.string(),
+  moderated: z.boolean(),
+  emoji: z
+    .object({ id: z.string().nullish(), name: z.string().nullish() })
+    .nullish(),
+});
+
+export type DiscordTag = z.output<typeof ZDiscordTag>;
+
+export const ZDiscordChannel = z.object({
+  id: z.string(),
+  type: z.number(),
+  position: z.number().nullish(),
+  name: z.string().nullish(),
+  topic: z.string().nullish(),
+  nsfw: z.boolean().nullish(),
+  owner_id: z.string().nullish(),
+  parentId: z.string().nullish(),
+  flags: z.number().nullish(),
+  availableTags: z.array(ZDiscordTag).nullish(),
+  appliedTags: z.array(z.string()).nullish(),
+});
+export type DiscordChannel = z.output<typeof ZDiscordChannel>;
+
+export const ZDJSGuild = z.object({
+  banner: z.string().nullish(),
+  description: z.string().nullish(),
+  icon: z.string().nullish(),
+  id: z.string(),
+  large: z.boolean(),
+  memberCount: z.number(),
+  name: z.string(),
+  nameAcronym: z.string(),
+  ownerId: z.string(),
+});
+export type DJSGuild = z.output<typeof ZDJSGuild>;

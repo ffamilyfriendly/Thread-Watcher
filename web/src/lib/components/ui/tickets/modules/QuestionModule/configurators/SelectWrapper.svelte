@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { BaseSelect } from '@watcher/shared';
 	import type { Snippet } from 'svelte';
 	import style from '$lib/style/pipeline.module.scss';
 	import common from '$lib/style/common.module.scss';

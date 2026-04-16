@@ -14,15 +14,12 @@ export async function get_cached_or<T>(
 	const cache_result = await get_cached<T>(key, schema);
 
 	if (cache_result.isErr()) {
-		console.error('failed :(', cache_result.error);
-		return err(cache_result.error);
+		console.error('cache failed', cache_result.error);
 	}
 
 	if (cache_result.isOk() && cache_result.value) {
-		console.log(`'${key}' is a cache hit!`);
 		return ok(cache_result.value);
 	}
-	console.log(`'${key}' is a cache miss!`);
 
 	const fallback_res = await fallback();
 	if (fallback_res.isErr()) return err(fallback_res.error);

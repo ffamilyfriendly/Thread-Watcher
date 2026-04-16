@@ -4,32 +4,26 @@
 	import type { Snippet } from 'svelte';
 	import Modal from '../Modal.svelte';
 	import PremiumInformation from './PremiumInformation.svelte';
-	import { PUBLIC_PREMIUM_SKU_STORE_LINK } from '$env/static/public';
 	import { use_guild_state } from '$lib/stores/guild.svelte';
-	import { add_toast_from_error } from '$lib/state/toasts.svelte';
 
 	const guild_state = use_guild_state()
 
 	interface Props {
 		on_click: () => void;
+		allow_topgg_vote?: boolean;
 		children?: Snippet;
 		icon?: Snippet;
 		class_name?: string;
 	}
 
-	const { on_click, children, icon, class_name }: Props = $props();
+	const { on_click, children, icon, class_name, allow_topgg_vote = false }: Props = $props();
 
 	let show_premium_modal = $state(false);
 
 	async function on_click_wrapper() {
 		if (!guild_state.guild_id) return;
 
-		let is_subscribed = guild_state.is_subscribed
-		if(typeof is_subscribed === "undefined") {
-			const res = await guild_state.get_guild_subscription(guild_state.guild_id)
-			if(res.isErr()) return add_toast_from_error(res.error)
-			is_subscribed = res.value.is_subscribed
-		}
+		let is_subscribed = guild_state.is_subscribed || (allow_topgg_vote ? guild_state.has_active_vote : false)
 
 		if(!is_subscribed) return show_premium_modal = true
 

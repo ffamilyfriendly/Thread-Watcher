@@ -117,20 +117,10 @@
 		return channel_obj?.availableTags?.find((t) => t.id == tag_id);
 	}
 
-	let has_premium = $state(guild_state.is_subscribed)
-	const is_global_monitor = $derived(monitor.target_id === monitor.guild_id)
-	$effect(() => {
-		if(typeof is_paused === "undefined" && is_global_monitor && guild_state.guild_id) {
-			guild_state.get_guild_subscription(guild_state.guild_id).then(r => {
-				if(r.isOk()) has_premium = r.value.is_subscribed
-				else {
-					add_toast_from_error(r.error)
-				}
-			})
-		}
-	})
 
-	const is_paused = $derived(is_global_monitor && !has_premium)
+	const is_global_monitor = $derived(monitor.target_id === monitor.guild_id)
+
+	const is_paused = $derived(is_global_monitor && !(guild_state.has_active_vote || guild_state.is_subscribed))
 </script>
 
 {#if show_delete_modal}
@@ -164,7 +154,7 @@
 			<p>Monitor in</p>
 			{#if monitor.target_id == monitor.guild_id}
 				{#if guild_state.guild}
-					<Guild guild={guild_state.guild.guild} />
+					<Guild guild={guild_state.guild} />
 				{:else}
 					GUILD
 				{/if}

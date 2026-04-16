@@ -2,76 +2,78 @@ import { config } from '@providers/config';
 import { setting_service } from '@providers/services/setting_service';
 import { ButtonInteraction, ColorResolvable } from 'discord.js';
 import { CommandContext } from '#/interfaces/Command';
-import { is_setting_key, SettingSchema, SettingValue } from '#/interfaces/Settings';
+import { Settings } from '@watcher/shared';
 import { err, ok } from 'neverthrow';
 import { AuditMeta } from '#/services/AuditService';
 import { safe_delete, safe_update } from '#/utilities/interaction_helpers';
+import { get_adapter } from '#/interfaces/Settings';
 
-interface State<T = SettingValue> {
-  value: T | null;
-  old_value: T | null;
+interface State<K extends Settings.SettingKey> {
+  value: Settings.SettingOutput<K> | null;
+  old_value: Settings.SettingOutput<K> | null;
 }
 
-export function create_initial_state<T = SettingValue>(value: T | null): State<T> {
+export function create_initial_state<K extends Settings.SettingKey>(
+  value: Settings.SettingOutput<K> | null,
+): State<K> {
   return {
     value,
     old_value: value,
   };
 }
 
-export function generate_embed<T extends SettingValue>(
+export function generate_embed<K extends Settings.SettingKey>(
   ctx: CommandContext,
-  setting: SettingSchema<T>,
-  state: State<T>,
+  key: K,
+  state: State<K>,
 ) {
+  const setting = Settings.SETTINGS[key];
+  const adapter = get_adapter(key);
+
   const e = ctx.build_embed('info');
   e.setTitle(setting.name);
   e.setDescription(setting.description);
+
   e.setFields([
     {
       name: 'Current',
-      value: state.value ? setting.adapter.display_value(state.value) : '`<null>`',
+      value: state.value !== null ? adapter.display_value(state.value) : '`<null>`',
       inline: true,
     },
     {
       name: 'Default',
-      value: setting.default ? setting.adapter.display_value(setting.default) : '`<null>`',
+      value: setting.default !== null ? adapter.display_value(setting.default as any) : '`<null>`',
       inline: true,
     },
   ]);
   return e;
 }
 
-export async function handle_apply_callback<T extends SettingValue>(
+export async function handle_apply_callback<K extends Settings.SettingKey>(
   response: ButtonInteraction,
   ctx: CommandContext,
-  setting: SettingSchema<T>,
-  state: State<T>,
+  key: K,
+  state: State<K>,
 ) {
   if (!response.inGuild()) return;
+
+  const audit_value: AuditMeta = { executor_id: response.user.id, guild_id: response.guildId };
   let setting_result;
 
-  // If the new setting value is null we're deleting the row instead of setting the value to null
-  const audit_value: AuditMeta = { executor_id: response.user.id, guild_id: response.guildId };
-  if (state.value) {
-    if (!is_setting_key(setting.key)) return ok();
+  if (state.value !== null) {
     setting_result = await setting_service.set_setting(
       response.guildId,
-      setting.key,
+      key,
       state.value,
       audit_value,
     );
   } else {
-    setting_result = await setting_service.remove_setting(
-      response.guildId,
-      setting.key,
-      audit_value,
-    );
+    setting_result = await setting_service.remove_setting(response.guildId, key, audit_value);
   }
 
   if (setting_result.isErr()) return err(setting_result.error);
 
-  const embed = generate_embed(ctx, setting, state);
+  const embed = generate_embed(ctx, key, state);
   embed.setColor(config.style.success.colour as ColorResolvable);
   embed.setTitle(ctx.t('commands.config.saved_title'));
 
@@ -82,14 +84,15 @@ export function handle_cancel_button(response: ButtonInteraction) {
   safe_delete(response);
 }
 
-export function handle_default_button<T extends SettingValue>(
+export function handle_default_button<K extends Settings.SettingKey>(
   response: ButtonInteraction,
-  setting: SettingSchema<T>,
-  state: State<T>,
+  key: K,
+  state: State<K>,
   ctx: CommandContext,
 ) {
-  state.value = setting.default;
-  const embed = generate_embed(ctx, setting, state);
+  const setting = Settings.SETTINGS[key];
+  state.value = setting.default as Settings.SettingOutput<K>;
 
+  const embed = generate_embed(ctx, key, state);
   safe_update(response, { embeds: [embed] });
 }

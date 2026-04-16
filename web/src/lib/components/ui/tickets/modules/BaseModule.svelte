@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ChevronDown, ChevronUp, Trash2 } from '@lucide/svelte';
-	import { MODULE_OUTPUTS, type PipelineModule } from '@watcher/shared';
+	import { type PipelineModule } from '@watcher/shared';
 	import type { Snippet } from 'svelte';
 	import { slide } from 'svelte/transition';
 	import PermissionsSection from './components/PermissionsSection.svelte';

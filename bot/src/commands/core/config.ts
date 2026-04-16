@@ -25,7 +25,7 @@ import { setting_service } from '@providers/services/setting_service';
 import { component_service } from '@providers/services/component_service';
 import { CommandError } from '#/utilities/error/def';
 import { safe_reply } from '#/utilities/interaction_helpers';
-import { SettingKey, SETTINGS } from '#/interfaces/Settings';
+import { Settings } from '@watcher/shared';
 
 function create_buttons() {
   const apply_button = new ButtonBuilder().setStyle(ButtonStyle.Primary).setLabel('Save');
@@ -53,36 +53,30 @@ async function run(
     let settings_key = interaction.options.getString('setting');
     if (!settings_key) return resolve(err(new Error('setting option not set')));
 
-    const setting = setting_service.try_get_adapter(settings_key);
+    if (!Settings.is_setting_key(settings_key))
+      return err(new Error(`\`${settings_key}\` is not a valid setting`));
 
-    if (!setting) return resolve(err(new Error(`\`${settings_key}\` is not a valid setting`)));
-    // try_get_adapter only returns value if key is a valid SettingKey. We can therefore safely cast
-    const s_key = settings_key as SettingKey;
+    const adapter = setting_service.get_adapter(settings_key);
+    const setting = Settings.SETTINGS[settings_key];
 
-    const current_value = await setting_service.get_setting(interaction.guildId, s_key);
-
-    if (current_value.isErr()) {
-      return resolve(err(map_err(current_value.error)));
-    }
-
-    const current_val = (await setting_service.get_setting(interaction.guildId, s_key)).unwrapOr(
-      setting.default,
-    );
+    const current_val = (
+      await setting_service.get_setting(interaction.guildId, settings_key)
+    ).unwrapOr(setting.default);
     const state = create_initial_state(current_val);
 
     const { apply_button, reset_button, cancel_button, action_row } = create_buttons();
-    let component = setting.adapter.create_component();
+    let component = adapter.create_component();
     const input_row = new ActionRowBuilder<MessageActionRowComponentBuilder>();
     input_row.addComponents(component);
 
     cleaner.add(
       component_service.wait_for_interaction_callback(apply_button, filter, (response) => {
-        handle_apply_callback(response, ctx, setting, state);
+        handle_apply_callback(response, ctx, settings_key, state);
         cleaner.clean();
         return resolve(ok());
       }),
       component_service.wait_for_interaction_callback(reset_button, filter, (response) =>
-        handle_default_button(response, setting, state, ctx),
+        handle_default_button(response, settings_key, state, ctx),
       ),
       component_service.wait_for_interaction_callback(cancel_button, filter, (response) => {
         handle_cancel_button(response);
@@ -91,13 +85,13 @@ async function run(
       }),
 
       component_service.wait_for_interaction_callback(component, filter, (response) => {
-        setting.adapter
+        adapter
           .parse_interaction(response)
           .andThen((val) => safe_parse(setting.schema, val))
           .match(
             (validated_val) => {
               state.value = validated_val;
-              response.update({ embeds: [generate_embed(ctx, setting, state)] });
+              response.update({ embeds: [generate_embed(ctx, settings_key, state)] });
             },
             (error) => {
               resolve(err(error));
@@ -106,7 +100,7 @@ async function run(
       }),
     );
 
-    let embed = generate_embed(ctx, setting, state);
+    let embed = generate_embed(ctx, settings_key, state);
 
     safe_reply(interaction, {
       embeds: [embed],
@@ -117,7 +111,7 @@ async function run(
 }
 
 async function autocomplete(interaction: AutocompleteInteraction) {
-  const settings_values = Object.values(SETTINGS);
+  const settings_values = Object.values(Settings.SETTINGS);
   const query = interaction.options.getFocused();
 
   const filtered = query

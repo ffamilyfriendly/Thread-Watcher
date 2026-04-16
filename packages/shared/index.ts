@@ -11,6 +11,7 @@ export * from "./constraints";
 export * from "./schemas/api_routes";
 export * from "./tickets/contracts";
 export * from "./schemas/topgg";
+export * as Settings from "./settings/index";
 
 /*
 code: 400,

@@ -1,8 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { fly } from 'svelte/transition';
 	import btn_style from '$lib/style/button.module.scss';
-	import { click_outside } from '$lib/client/attachments/click_outside';
 	import { modal_portal } from '$lib/client/attachments/portal';
 
 	interface Props {

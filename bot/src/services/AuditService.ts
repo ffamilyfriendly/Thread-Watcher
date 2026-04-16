@@ -4,7 +4,6 @@ import { Database } from '#/interfaces/Database';
 import { err, ok, Result } from 'neverthrow';
 import { DatabaseError } from '#/utilities/error/def';
 
-// Matches your ZAuditTypes literal values
 export const AUDIT_TYPES_LIST = [
   'COMMAND',
   'CONFIG',

@@ -4,14 +4,10 @@
 	import NavbarV2 from '$lib/components/ui/NavbarV2.svelte';
 	import { init_guild_state } from '$lib/stores/guild.svelte';
 	import { init_ticket_state } from '$lib/stores/ticket.svelte.js';
-	import btn_style from '$lib/style/button.module.scss';
-	import { File, Info, Menu } from '@lucide/svelte';
+	import { Info, Menu } from '@lucide/svelte';
 	import common from '$lib/style/common.module.scss';
 	import ModNotes from '$lib/components/transcript/mod_notes/ModNotes.svelte';
-	import type { DiscordUser } from '@watcher/shared';
 	import { add_toast, add_toast_from_error } from '$lib/state/toasts.svelte';
-	import { map_err } from '$lib/error_helper';
-	import User from '$lib/components/ui/discord/user/User.svelte';
 	import UserLoader from '$lib/components/ui/discord/user/UserLoader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import TWMarkdown from '$lib/components/ui/Markdown/TWMarkdown.svelte';

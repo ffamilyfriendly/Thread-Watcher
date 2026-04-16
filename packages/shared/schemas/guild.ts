@@ -1,4 +1,5 @@
 import z from "zod";
+import { SETTINGS, type SettingKey } from "../settings";
 
 /*
 
@@ -29,3 +30,23 @@ export const ZGuildSubscription = z.object({
   is_subscribed: z.boolean(),
 });
 export type GuildSubscription = z.output<typeof ZGuildSubscription>;
+
+// I stole this straight up from Gemini. I don't have the willpower to do any zod wrangling tonight.
+export const ZGuildSettingsDictWithDefaults = z.object(
+  Object.fromEntries(
+    Object.entries(SETTINGS).map(([key, def]) => {
+      const schema = def.schema as z.ZodTypeAny;
+      // Runtime logic: use default if it exists, otherwise allow null
+      return [
+        key,
+        def.default !== null ? schema.default(def.default) : schema.nullable(),
+      ];
+    }),
+  ),
+) as unknown as z.ZodObject<{
+  [K in SettingKey]: (typeof SETTINGS)[K]["default"] extends null
+    ? z.ZodNullable<(typeof SETTINGS)[K]["schema"]>
+    : z.ZodDefault<(typeof SETTINGS)[K]["schema"]>;
+}>;
+
+export type GuildSettingsDict = z.infer<typeof ZGuildSettingsDictWithDefaults>;

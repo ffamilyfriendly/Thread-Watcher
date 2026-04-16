@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { PUBLIC_PREMIUM_SKU_STORE_LINK } from '$env/static/public';
 	import btn_style from '$lib/style/button.module.scss';
-	import { Crown, ExternalLink, Rocket, ShieldCheck } from '@lucide/svelte';
+	import { ExternalLink, Rocket, ShieldCheck } from '@lucide/svelte';
 
-	// Update this with your actual Discord App Directory / Store link
 	const DISCORD_STORE_URL = PUBLIC_PREMIUM_SKU_STORE_LINK;
 </script>
 

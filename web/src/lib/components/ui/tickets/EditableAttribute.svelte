@@ -3,7 +3,7 @@
 	import { tick, type Snippet } from 'svelte';
 	import type { HTMLInputAttributes, HTMLTextareaAttributes } from 'svelte/elements';
 	import VariableSelector from './modules/components/VariableSelector.svelte';
-	import { s_tooltip, tooltip } from '$lib/client/attachments/tooltip';
+	import { tooltip } from '$lib/client/attachments/tooltip';
 
 	type TextAreaProps = {
 		use_text_area: true;

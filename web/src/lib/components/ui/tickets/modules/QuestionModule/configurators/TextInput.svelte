@@ -3,8 +3,6 @@
 	import SelectWrapper from './SelectWrapper.svelte';
 	import VariableInputSupreme from '../../components/VariableInputSupreme.svelte';
 	import style from '$lib/style/pipeline.module.scss';
-	import common from '$lib/style/common.module.scss';
-	import { portal } from '$lib/client/attachments/portal';
 
 	interface Props {
 		data: TypedComponent<'TEXT_INPUT'>;

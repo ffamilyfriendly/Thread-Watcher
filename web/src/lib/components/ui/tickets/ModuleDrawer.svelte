@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { portal } from '$lib/client/attachments/portal';
 	import { tooltip } from '$lib/client/attachments/tooltip';
 	import { get_contrast_colour, str_to_vibrant_clr } from '$lib/client/colour';
 	import {

@@ -17,7 +17,6 @@
 	} from '@lucide/svelte';
 	import EditableAttribute from '../../../EditableAttribute.svelte';
 	import { fly } from 'svelte/transition';
-	import common from '$lib/style/common.module.scss';
 	import { portal } from '$lib/client/attachments/portal';
 	import { click_outside } from '$lib/client/attachments/click_outside';
 

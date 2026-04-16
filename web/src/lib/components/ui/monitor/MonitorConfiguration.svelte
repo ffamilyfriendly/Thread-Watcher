@@ -7,10 +7,8 @@
 	import { add_toast_from_error } from '$lib/state/toasts.svelte';
 	import type { DiscordTag } from '$lib/types/internal_api';
 	import TagPicker from '../settings/TagPicker.svelte';
-	import PremiumButton from '../premium/PremiumButton.svelte';
 	import { Sparkles } from '@lucide/svelte';
-	import style from './monitorconfig.module.scss';
-	import { fetch_as_json, safe_fetch } from '$lib/client/fetch';
+	import { fetch_as_json } from '$lib/client/fetch';
 	import { use_guild_state } from '$lib/stores/guild.svelte';
 	import Button from '../Button.svelte';
 

@@ -11,15 +11,18 @@
 	import { invalidateAll } from '$app/navigation';
 	import { ChannelTypes } from '$lib/types/discord.js';
 	import type { MappedSettings } from '$lib/types/internal_api.js';
+	import { use_guild_state } from '$lib/stores/guild.svelte.js';
 
 	const { data } = $props();
+
+	const gs = use_guild_state()
 
 	let settings = $state<MappedSettings>({} as MappedSettings);
 	let compare_to = $state<MappedSettings>({} as MappedSettings);
 
 	$effect(() => {
-		settings = { ...data.guild.guild_settings }
-		compare_to = data.guild.guild_settings
+		settings = { ...data.settings }
+		compare_to = data.settings
 	})
 
 	const is_dirty = $derived(JSON.stringify(settings) !== JSON.stringify(compare_to));
@@ -49,7 +52,7 @@
 		const save_res = await fetch_as_json(
 			'/api/update_settings',
 			{
-				body: JSON.stringify({ updated_settings: patch, guild_id: data.guild_id }),
+				body: JSON.stringify({ updated_settings: patch, guild_id: gs.guild_id }),
 				method: 'POST'
 			},
 			z.object({ code: z.number(), message: z.string() })
@@ -80,7 +83,7 @@
 			description="Select a management role for the dashboard."
 			disclaimer="Users with the 'Administrator' permission are granted access by default"
 		>
-			<RolePicker roles={data.roles} bind:value={settings.BOT_MASTER_ROLE} />
+			<RolePicker roles={gs.roles} bind:value={settings.BOT_MASTER_ROLE} />
 		</SettingsBox>
 
 		<SettingsBox
@@ -94,8 +97,8 @@
 					ChannelTypes.PUBLIC_THREAD,
 					ChannelTypes.PRIVATE_THREAD
 				]}
-				guild_id={data.guild_id}
-				channels={data.channels}
+				guild_id={gs.guild_id!}
+				channels={gs.channels}
 				bind:value={settings.LOGGING_CHANNEL}
 			/>
 		</SettingsBox>

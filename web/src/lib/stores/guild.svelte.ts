@@ -3,12 +3,15 @@ import {
 	ZDiscordChannel,
 	ZDiscordRole,
 	ZDiscordUser,
+	ZGuildSubscription,
+	ZMonitor,
 	type DiscordChannel,
 	type DiscordRole,
 	type DiscordUser,
-	type GuildOverview
-} from '$lib/types/internal_api';
-import { ZGuildSubscription, ZMonitor, type Monitor } from '@watcher/shared';
+	type GuildOverview,
+	type Monitor,
+	type TopggVote
+} from '@watcher/shared';
 import { err, ok, Result } from 'neverthrow';
 import { getContext, setContext } from 'svelte';
 import z from 'zod';
@@ -20,9 +23,10 @@ export class GuildState {
 	channels = $state<DiscordChannel[]>([]);
 	users = $state<Map<string, DiscordUser>>(new Map());
 	guild_id = $state<string>();
-	guild = $state<GuildOverview>();
+	guild = $state<GuildOverview['guild']>();
 	monitors = $state<Map<string, Monitor>>(new Map());
 	is_subscribed = $state<boolean>();
+	last_topgg_vote = $state<TopggVote>();
 
 	batch_wait_ms = 100;
 	pending_users: Map<string, UserFetchCallback[]> = new Map();
@@ -30,6 +34,10 @@ export class GuildState {
 
 	constructor(guild_id: string) {
 		this.guild_id = guild_id;
+	}
+
+	get has_active_vote() {
+		return !!this.last_topgg_vote;
 	}
 
 	get is_ready() {
@@ -67,11 +75,15 @@ export class GuildState {
 		new_users.forEach((u) => this.users.set(u.id, u));
 	}
 
-	init(roles: DiscordRole[], channels: DiscordChannel[], guild: GuildOverview) {
-		this.guild_id = guild.guild.id;
-		this.guild = guild;
-		this.roles = roles;
-		this.channels = channels;
+	init(obj: GuildOverview) {
+		this.guild_id = obj.guild.guild_id;
+		this.guild = obj.guild;
+		this.roles = obj.roles;
+		this.channels = obj.channels;
+		this.is_subscribed = obj.entitlements.has_premium;
+
+		if (obj.entitlements.active_topgg_vote)
+			this.last_topgg_vote = obj.entitlements.active_topgg_vote;
 	}
 
 	async get_role(role_id: string) {
@@ -208,8 +220,7 @@ export class GuildState {
 		// For the convinience in ConfigChange we allow the snowflake parameter to be anything
 		if (typeof snowflake !== 'string') return { entity_type: 'UNKNOWN' as const, data: snowflake };
 
-		if (snowflake === this.guild_id)
-			return { entity_type: 'GUILD' as const, data: this.guild?.guild };
+		if (snowflake === this.guild_id) return { entity_type: 'GUILD' as const, data: this.guild };
 
 		const channel = this.channels.find((ch) => ch.id === snowflake);
 		if (channel) {

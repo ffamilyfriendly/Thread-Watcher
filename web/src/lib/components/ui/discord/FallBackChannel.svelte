@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { fetch_as_json } from '$lib/client/fetch';
-	import { add_toast_from_error } from '$lib/state/toasts.svelte';
 	import { use_guild_state } from '$lib/stores/guild.svelte';
 	import { ZDiscordChannel, type DiscordChannel } from '$lib/types/internal_api';
 	import Channel from './Channel.svelte';

@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { onDestroy, type Snippet } from 'svelte';
+	import {  type Snippet } from 'svelte';
 	import { ChevronDown } from '@lucide/svelte';
 	import { fly } from 'svelte/transition';
-	import { browser } from '$app/environment';
 	import { portal } from '$lib/client/attachments/portal';
 
 	interface Props {
@@ -10,9 +9,6 @@
 		child_item: Snippet;
 		show_dropdown?: boolean;
 	}
-
-	let btn_elem: HTMLButtonElement;
-	let child_elem: HTMLDivElement | null = $state(null);
 
 	let { parent_item, child_item, show_dropdown = $bindable(false) }: Props = $props();
 
@@ -28,7 +24,6 @@
 	{@render parent_item()}
 	<button
 		bind:this={wrapper_ref}
-		bind:this={btn_elem}
 		class:dropped={show_dropdown}
 		class="arrow"
 		onclick={toggle_fella}><ChevronDown /></button
@@ -36,7 +31,6 @@
 
 	{#if show_dropdown && wrapper_ref}
 		<div
-			bind:this={child_elem}
 			{@attach portal(wrapper_ref)}
 			class="child_container"
 			in:fly={{ duration: 200, opacity: 0, y: -8 }}

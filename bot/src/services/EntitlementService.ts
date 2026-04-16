@@ -64,10 +64,24 @@ export default class EntitlementService {
     this.provider = new_provider;
   }
 
-  // This value is set on the sveltekit route handling webhooks!
-  // see: /web/src/routes/api/webhooks/topgg/+server.ts for implementation.
+  // This is handled by our topgg webhook handler
+  // see: /bot/src/web/routes/webhooks.ts for implementation.
   async get_topgg_vote_perk(guild_id: string) {
     return this.r.get([guild_id, 'topgg'], ZTopggWebhookSchema);
+  }
+
+  async get_entitlement_breakdown(guild_id: string, interaction?: BaseInteraction) {
+    const [topgg_res, premium_res] = await Promise.all([
+      this.get_topgg_vote_perk(guild_id),
+      this.has_premium(guild_id, interaction),
+    ]);
+
+    return Result.combine([topgg_res, premium_res]).map(([top, prem]) => {
+      return {
+        has_premium: prem,
+        active_topgg_vote: top,
+      };
+    });
   }
 
   async get_topgg_vote_or_premium(guild_id: string, interaction?: BaseInteraction) {
@@ -136,6 +150,7 @@ export default class EntitlementService {
 
       if (guild_sku.isOk() && guild_sku.value === sku_id) return ok(true);
 
+      console.log('calling external fetch provider...');
       let entitlements: Collection<string, Entitlement>;
       if (interaction) {
         entitlements = interaction.entitlements;

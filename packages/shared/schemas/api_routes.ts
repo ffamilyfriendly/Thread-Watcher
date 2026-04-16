@@ -1,10 +1,13 @@
 import z from "zod";
-import { ZGuild } from "./guild";
+import { ZGuild, ZGuildSettingsDictWithDefaults } from "./guild";
 import { ZTicketListData } from "./tickets/entities";
 import { ZAuditData } from "./audit";
+import { ZTopggWebhookSchema } from "./topgg";
+import { ZDiscordChannel, ZDiscordRole, ZDJSGuild } from "./tickets/discord";
 
 export const ZDashboardData = z.object({
   guild: ZGuild.nullish(),
+  guild_settings: ZGuildSettingsDictWithDefaults,
   ticket_panels_count: z.number(),
   monitors_count: z.number(),
   relevant_tickets: z.array(ZTicketListData),
@@ -18,3 +21,16 @@ export const ZLandingPageData = z.object({
   ticket_panels_count: z.number(),
 });
 export type LandingPageData = z.output<typeof ZLandingPageData>;
+
+export const ZGuildOverview = z.object({
+  entitlements: z.object({
+    has_premium: z.boolean(),
+    active_topgg_vote: ZTopggWebhookSchema.nullish(),
+  }),
+  guild: ZGuild,
+  guild_data: ZDJSGuild,
+  roles: z.array(ZDiscordRole),
+  channels: z.array(ZDiscordChannel),
+});
+
+export type GuildOverview = z.output<typeof ZGuildOverview>;

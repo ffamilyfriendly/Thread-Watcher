@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { click_outside } from '$lib/client/attachments/click_outside';
 	import { portal } from '$lib/client/attachments/portal';
-	import { s_tooltip, tooltip } from '$lib/client/attachments/tooltip';
 	import { use_pipeline } from '$lib/stores/pipeline.svelte';
 	import {
 		ArrowRightFromLine,
@@ -112,7 +111,7 @@
 		<Percent {size} />
 	{:else if v.value == 'string'}
 		<TextInitial {size} />
-	{:else if v.value == 'array'}
+	{:else if Array.isArray(v.value)}
 		<List {size} />
 	{:else}
 		<ArrowRightFromLine {size} />

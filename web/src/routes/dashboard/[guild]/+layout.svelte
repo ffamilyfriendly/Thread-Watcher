@@ -15,18 +15,18 @@
 	let { children, data } = $props();
 
 	// svelte-ignore state_referenced_locally
-	const gs = init_guild_state(data.guild_id);
+	const gs = init_guild_state(data.base.guild.guild_id)
 
 	$effect(() => {
-		gs.init(data.roles, data.channels, data.guild);
-	});
+		gs.init(data.base)
+	})
 </script>
 
 <NavSection
 	id="HOME"
 	section={{
 		name: 'Home',
-		base: `/dashboard/${data.guild_id}`,
+		base: `/dashboard/${gs.guild_id}`,
 		items: [
 			{ name: 'Home', href: ``, icon: House },
 			{ name: 'Settings', href: `/settings`, icon: Settings },
@@ -40,7 +40,7 @@
 	id="CORE"
 	section={{
 		name: 'Core',
-		base: `/dashboard/${data.guild_id}`,
+		base: `/dashboard/${gs.guild_id}`,
 		items: [
 			{ name: 'Watched Threads', href: `/threads`, icon: Spool },
 			{ name: 'Channel Monitors', href: `/monitors`, icon: Eye }
@@ -52,7 +52,7 @@
 	id="TICKETS"
 	section={{
 		name: 'Tickets',
-		base: `/dashboard/${data.guild_id}`,
+		base: `/dashboard/${gs.guild_id}`,
 		items: [
 			{ name: 'Panels', href: `/ticket-panels`, icon: LayoutPanelLeft },
 			{ name: 'Tickets', href: `/tickets`, icon: Ticket }
