@@ -259,6 +259,9 @@ router.post(
     const guild_id = req.params.guild_id as string;
 
     const { guild_id: _, ...settings_to_save } = req.body;
+
+    res.locals.logger.debug('updated settings', req.body);
+
     const old_settings = await setting_service.get_guild_settings(guild_id);
     if (old_settings.isErr()) return err(old_settings.error);
 
@@ -266,23 +269,6 @@ router.post(
 
     const update_result = await setting_service.set_settings(guild_id, settings_to_save, meta_obj);
     if (update_result.isErr()) return err(update_result.error);
-
-    const old_values: Record<string, string> = {};
-    old_settings.value;
-    for (const [key, value] of Object.entries(old_settings.value)) {
-      if (value) old_values[key] = value;
-    }
-
-    for (const [key, value] of Object.entries(settings_to_save)) {
-      const adapter = setting_service.try_get_adapter(key as string);
-      if (!adapter) {
-        res.locals.logger.warn(`could not get adapter for setting '${key}'`);
-        continue;
-      }
-
-      const old_value = old_values[key];
-      if (typeof old_value != 'string') continue;
-    }
 
     return ok({ message: 'updated' });
   }, settings_schema),

@@ -141,6 +141,39 @@ class StringSelectAdapter<T extends string = string> implements InputAdapter<
   }
 }
 
+class BoolSelectAdapter implements InputAdapter<boolean, StringSelectMenuBuilder> {
+  create_component() {
+    return new StringSelectMenuBuilder().addOptions([
+      { label: 'Enabled', value: 'true', emoji: '✅' },
+      { label: 'Disabled', value: 'false', emoji: '❌' },
+    ]);
+  }
+
+  into(value: unknown): Result<boolean, Error> {
+    if (typeof value === 'boolean') return ok(value);
+    if (value === 'true') return ok(true);
+    if (value === 'false') return ok(false);
+    return err(new Error(`Could not turn ${value} into boolean`));
+  }
+
+  to_string(value: boolean): Result<string, Error> {
+    return ok(value ? 'true' : 'false');
+  }
+
+  parse_interaction(interaction: StringSelectMenuInteraction): Result<boolean, Error> {
+    const val = interaction.values[0];
+    return ok(val === 'true');
+  }
+
+  is_type(value: unknown): value is boolean {
+    return typeof value === 'boolean';
+  }
+
+  display_value(value: boolean | null): string {
+    return value ? '`Enabled` ✅' : '`Disabled` ❌';
+  }
+}
+
 // 1. Define a helper to extract the component type based on the setting definition
 // This assumes your shared Settings has a 'type' field ('channel', 'role', 'string', etc.)
 type ComponentForKey<K extends Settings.SettingKey> =
@@ -158,6 +191,7 @@ const adapters: {
   BUMP_BEHAVIOUR: new StringSelectAdapter([...Settings.SETTINGS.BUMP_BEHAVIOUR.options]),
   BOT_MASTER_ROLE: new RoleSelectAdapter(),
   AUDIT_LOG_RETENTION: new StringSelectAdapter([...Settings.SETTINGS.AUDIT_LOG_RETENTION.options]),
+  NEEDLE_INTEGRATION: new BoolSelectAdapter(),
 };
 
 // 3. Update the getter to return the specific mapped type

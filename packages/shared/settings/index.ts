@@ -52,6 +52,21 @@ const BOT_MASTER_ROLE = {
   default: null,
 };
 
+const NEEDLE_INTEGRATION = {
+  key: "NEEDLE_INTEGRATION",
+  name: "Watch Needle Threads",
+  description: `Will automatically watch any threads created with Needle!`,
+  type: "boolean" as const,
+  schema: z.preprocess((val) => {
+    if (typeof val === "string") {
+      if (val.toLowerCase() === "true") return true;
+      if (val.toLowerCase() === "false") return false;
+    }
+    return val;
+  }, z.boolean()),
+  default: false,
+};
+
 const AUDIT_LOG_RETENTION = {
   key: "AUDIT_LOG_RETENTION",
   name: "Audit Log Retention",
@@ -71,6 +86,7 @@ export const SETTINGS = {
   BUMP_BEHAVIOUR,
   BOT_MASTER_ROLE,
   AUDIT_LOG_RETENTION,
+  NEEDLE_INTEGRATION,
 } as const;
 
 export type SettingKey = keyof typeof SETTINGS;

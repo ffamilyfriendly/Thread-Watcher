@@ -31,6 +31,7 @@ const Web = z.object({
   hostname: z.string().url(),
   shared_secret: z.string(),
   topgg_webhook_secret: z.string(),
+  ms_request_considered_slow: z.number().default(200),
 });
 
 const Redis = z.object({

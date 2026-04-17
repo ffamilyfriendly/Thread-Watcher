@@ -1,24 +1,20 @@
 <script lang="ts">
-	import ChannelPicker from '$lib/components/ui/settings/ChannelPicker.svelte';
-	import RolePicker from '$lib/components/ui/settings/RolePicker.svelte';
-	import SettingsBox from '$lib/components/ui/settings/SettingBox.svelte';
-	import StringPicker from '$lib/components/ui/settings/StringPicker.svelte';
 	import { add_toast, add_toast_from_error } from '$lib/state/toasts.svelte.js';
 	import { fly } from 'svelte/transition';
 	import style from '$lib/style/button.module.scss';
 	import { fetch_as_json } from '$lib/client/fetch.js';
 	import z from 'zod';
 	import { invalidateAll } from '$app/navigation';
-	import { ChannelTypes } from '$lib/types/discord.js';
-	import type { MappedSettings } from '$lib/types/internal_api.js';
 	import { use_guild_state } from '$lib/stores/guild.svelte.js';
+	import { Settings, type GuildSettingsDict } from '@watcher/shared';
+	import SettingBox from '$lib/components/ui/settings/SettingBox.svelte';
 
 	const { data } = $props();
 
 	const gs = use_guild_state()
 
-	let settings = $state<MappedSettings>({} as MappedSettings);
-	let compare_to = $state<MappedSettings>({} as MappedSettings);
+	let settings = $state<GuildSettingsDict>();
+	let compare_to = $state<GuildSettingsDict>();
 
 	$effect(() => {
 		settings = { ...data.settings }
@@ -74,69 +70,17 @@
 			type: 'success'
 		});
 	}
+
+	
 </script>
 
 <main class="main">
 	<div class="settings">
-		<SettingsBox
-			name="Bot Master"
-			description="Select a management role for the dashboard."
-			disclaimer="Users with the 'Administrator' permission are granted access by default"
-		>
-			<RolePicker roles={gs.roles} bind:value={settings.BOT_MASTER_ROLE} />
-		</SettingsBox>
-
-		<SettingsBox
-			name="Logging Channel"
-			description="Where the bot will send it's audit logs and other activity"
-		>
-			<ChannelPicker
-				only_with_types={[
-					ChannelTypes.GUILD_ANNOUNCEMENT,
-					ChannelTypes.GUILD_TEXT,
-					ChannelTypes.PUBLIC_THREAD,
-					ChannelTypes.PRIVATE_THREAD
-				]}
-				guild_id={gs.guild_id!}
-				channels={gs.channels}
-				bind:value={settings.LOGGING_CHANNEL}
-			/>
-		</SettingsBox>
-
-		<SettingsBox
-			name="Bump Behaviour"
-			description="Choose how the bot should react when a watched thread is about to expire"
-		>
-			<StringPicker
-				bind:value={settings.BUMP_BEHAVIOUR}
-				options={[
-					{
-						name: 'Bump and Un-Archive',
-						id: 'BUMP_AND_UNARCHIVE',
-						description: 'keep thread un-archived and active'
-					},
-					{ name: 'Un-Archive', id: 'UNARCHIVE_ONLY', description: 'Only un-archive the thread' }
-				]}
-			/>
-		</SettingsBox>
-
-		<SettingsBox
-			name="Audit Log Retention"
-			description="Control the lifespan of your activity history."
-		>
-			<StringPicker
-				bind:value={settings.AUDIT_LOG_RETENTION}
-				options={[
-					{
-						name: '24 hours',
-						id: '86400',
-						description: 'Short-term retention'
-					},
-					{ name: '30 days', id: '2592000', description: 'Standard retention' },
-					{ name: '90 days', id: '7776000', description: 'Extended retention' }
-				]}
-			/>
-		</SettingsBox>
+		{#each Object.entries(Settings.SETTINGS) as [key, setting] }
+			{#if Settings.is_setting_key(key) && settings}
+			<SettingBox bind:value={settings[key]} setting_key={key} />
+			{/if}
+		{/each}
 	</div>
 
 	{#if is_dirty}

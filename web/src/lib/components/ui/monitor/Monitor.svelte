@@ -153,8 +153,8 @@
 		<div class="mimimimi">
 			<p>Monitor in</p>
 			{#if monitor.target_id == monitor.guild_id}
-				{#if guild_state.guild}
-					<Guild guild={guild_state.guild} />
+				{#if guild_state.guild_data}
+					<Guild guild={guild_state.guild_data} />
 				{:else}
 					GUILD
 				{/if}

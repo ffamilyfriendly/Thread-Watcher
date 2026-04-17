@@ -4,6 +4,7 @@ import { NextFunction, Request } from 'express';
 import { global_error_handler } from './utils/error';
 import z from 'zod';
 import { pretty_print_request_info } from './auth/auth';
+import { config } from '@providers/config';
 
 export function safe_route<
   TOut = unknown,
@@ -31,13 +32,20 @@ export function safe_route<
       return global_error_handler(result.error, req, res, next);
     }
 
-    if (typeof result.value !== 'object' || result.value === null)
-      return res.json({ no_content: 'sloppy_code', value: result.value });
+    const proc_duration = Date.now() - req_start;
 
-    res.locals.logger.debug(
-      `request resolved succesfully in ${Date.now() - req_start}ms`,
-      pretty_print_request_info(req, res),
-    );
+    if (proc_duration > config.web.ms_request_considered_slow) {
+      res.locals.logger.warn('slow request', {
+        slow_thresh: config.web.ms_request_considered_slow,
+        proc_duration,
+        delta: proc_duration - config.web.ms_request_considered_slow,
+      });
+    }
+
+    res.locals.logger.debug(`success`, {
+      ...pretty_print_request_info(req, res),
+      proc_duration,
+    });
 
     return res.json(result.value);
   };

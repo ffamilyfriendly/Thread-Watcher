@@ -53,8 +53,9 @@ export default class ChannelService {
     return this.db.get_monitors_in_guild(guild_id);
   }
 
-  async get_monitor_count(guild_id: string) {
-    return await this.db.get_monitors_count(guild_id);
+  async get_monitor_count(guild_id?: string) {
+    if (guild_id) return await this.db.get_monitors_count(guild_id);
+    else return await this.db.count_monitored_channels();
   }
 
   async add_monitor(monitor_id: string, guild_id: string, audit: AuditMeta, filters?: FilterData) {

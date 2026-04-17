@@ -14,10 +14,13 @@ import { DatabaseError } from '../def';
 import EmbeddableError, { I18nType } from '../EmbeddableError';
 import { config } from '@providers/config';
 
-function find_perm(permission: BigInt) {
+function find_perm(permission: PermissionResolvable) {
+  const as_bitfield = PermissionsBitField.resolve(permission);
+
   for (const perm of Object.keys(PermissionsBitField.Flags)) {
     const indexable_perms_lookup = PermissionsBitField.Flags as { [index: string]: bigint };
-    if (indexable_perms_lookup[perm] === permission) return perm;
+
+    if (indexable_perms_lookup[perm] === as_bitfield) return perm;
   }
 
   return 'Unknown Permission';
@@ -42,7 +45,7 @@ export class PermissionsError extends EmbeddableError {
         ? t('errors.permissions_err.you')
         : t('errors.permissions_err.bot');
 
-    const permission = `\`${find_perm(this.missing_perm as bigint)}\``;
+    const permission = `\`${find_perm(this.missing_perm)}\``;
 
     embed.setDescription(
       t('errors.permissions_err.description', { command_tag, target, permission }),

@@ -23,7 +23,11 @@ export class GuildState {
 	channels = $state<DiscordChannel[]>([]);
 	users = $state<Map<string, DiscordUser>>(new Map());
 	guild_id = $state<string>();
+
+	// Should be renamed
 	guild = $state<GuildOverview['guild']>();
+	guild_data = $state<GuildOverview['guild_data']>();
+
 	monitors = $state<Map<string, Monitor>>(new Map());
 	is_subscribed = $state<boolean>();
 	last_topgg_vote = $state<TopggVote>();
@@ -78,6 +82,7 @@ export class GuildState {
 	init(obj: GuildOverview) {
 		this.guild_id = obj.guild.guild_id;
 		this.guild = obj.guild;
+		this.guild_data = obj.guild_data;
 		this.roles = obj.roles;
 		this.channels = obj.channels;
 		this.is_subscribed = obj.entitlements.has_premium;

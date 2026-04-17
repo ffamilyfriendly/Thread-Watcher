@@ -11,7 +11,7 @@ export async function load({ locals, params }) {
 	// this cache value will not be busted if any change to underlying data occurs.
 	const CACHE_TTL_SECONDS = 60 * 2;
 	const essential_data = await get_cached_or(
-		`${guild_id}:sigmasigma`,
+		`${guild_id}:overviewInfo`,
 		ZGuildOverview,
 		() => {
 			return json_fetch(`/guilds/${guild_id}`, { user_id: user.user.id }, ZGuildOverview);

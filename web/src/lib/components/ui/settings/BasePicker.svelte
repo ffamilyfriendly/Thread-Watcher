@@ -6,6 +6,8 @@
 	import { ChevronDown, ChevronUp, Delete } from '@lucide/svelte';
 	import { portal } from '$lib/client/attachments/portal';
 	import { click_outside } from '$lib/client/attachments/click_outside';
+	import Button from '../Button.svelte';
+	import { add_toast_from_error } from '$lib/state/toasts.svelte';
 
 	interface Props {
 		items: T[];
@@ -29,17 +31,18 @@
 
 	const selected_ids = $derived(Array.isArray(value) ? value : value ? [value] : []);
 
-	const local_selected_items = $derived(items.filter((i) => selected_ids.includes(i.id)));
-
 	let fetched_items = $state<T[]>([]);
 
+	const item_lookup = $derived(new Map([...items, ...fetched_items].map(i => [i.id, i])))
+
 	const active_items_data = $derived(
-		[...local_selected_items, ...fetched_items].filter((i) => selected_ids.includes(i.id))
+		selected_ids.map(id => item_lookup.get(id)).filter((i): i is T => !!i)
 	);
 
 	let show_item_picker = $state(false);
 
 	function toggle_item(id: string) {
+		custom_item_id = ""
 		if (multiple) {
 			const current = Array.isArray(value) ? [...value] : value ? [value] : [];
 			if (current.includes(id)) {
@@ -53,15 +56,25 @@
 		}
 	}
 
-	function handle_custom_submit(e: SubmitEvent) {
-		e.preventDefault();
-		if (!(e.target instanceof HTMLFormElement)) return;
-		const form_data = new FormData(e.target);
-		const item_id = form_data.get('custom_item_id') as string;
+	let custom_item_id = $state<string>()
 
-		if (item_id && /^\d{17,21}$/.test(item_id)) {
-			toggle_item(item_id);
-			(e.target as HTMLFormElement).reset();
+	async function handle_custom_submit() {
+		if(!custom_item_id || !fetcher) return
+		if (!/^\d{17,21}$/.test(custom_item_id)) return console.error(`'custom_item_id' is not a valid snowflake.`, { got: custom_item_id })
+
+		// If we've already got the item there's no need to fetch it again, just cuz the user asked nicely.
+		// just toggle the item in that case.
+		if([...fetched_items, ...items].map(i => i.id).includes(custom_item_id)) {
+			return toggle_item(custom_item_id)
+		}
+
+		const item_res = await fetcher(custom_item_id)
+		if(item_res.isErr()) return add_toast_from_error(item_res.error)
+
+		fetched_items = [...fetched_items, item_res.value]
+
+		if (/^\d{17,21}$/.test(custom_item_id)) {
+			toggle_item(custom_item_id);
 		}
 	}
 
@@ -161,10 +174,10 @@
 
 			{#if fetcher}
 				<hr />
-				<form onsubmit={handle_custom_submit} class="custom_id">
-					<input pattern={'\\d{17,21}'} placeholder="ID (Snowflake)" name="custom_item_id" />
-					<input value="Add" type="submit" />
-				</form>
+				<div class="custom_id">
+					<input bind:value={custom_item_id} pattern={'\\d{17,21}'} placeholder="ID (Snowflake)" name="custom_item_id" />
+					<Button load_with={handle_custom_submit}>Add</Button>
+				</div>
 			{/if}
 		</div>
 	{/if}
