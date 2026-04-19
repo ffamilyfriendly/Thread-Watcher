@@ -4,7 +4,7 @@ import { Logger } from 'tslog';
 
 type LoggerType = Logger<unknown>;
 
-export type ResultType = Promise<Result<void, Error>>;
+export type ResultType = Promise<Result<unknown, Error | unknown>>;
 
 export interface Module {
   name: string;
