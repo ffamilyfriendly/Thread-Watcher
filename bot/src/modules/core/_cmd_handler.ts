@@ -18,6 +18,7 @@ import { EntitlementsError, PermissionsError } from '#/utilities/error/def';
 import { from_interaction } from '#/utilities/i18def';
 import { event_bus } from '@providers/event_bus';
 import { get_safe_error } from '#/utilities/error/escape_sensitive_data';
+import { setting_service } from '@providers/services/setting_service';
 
 const config = Config.instance;
 const commands = Commands.instance;
@@ -43,20 +44,34 @@ function is_standalone_command(command?: BaseCommand): command is Command {
   return command !== undefined && 'run' in command;
 }
 
-function check_command_gatekeeping(interaction: ChatInputCommandInteraction, command: BaseCommand) {
-  if (command.access_control.developer_only && !config.owners.includes(interaction.user.id)) {
-    return EmbeddableError.handle_error(
-      interaction,
-      new Error('this command can only be ran by the devs'),
-    );
-  }
+async function check_command_gatekeeping(
+  interaction: ChatInputCommandInteraction,
+  command: BaseCommand,
+) {
+  if (command.access_control.developer_only && !config.owners.includes(interaction.user.id))
+    return err(new Error('this command can only be ran by the devs'));
 
   const check_perms_in = command.access_control.channel_option_name
     ? interaction.options.getChannel(command.access_control.channel_option_name) ||
       interaction.channel
     : interaction.channel;
 
-  if (command.access_control.invoker_requires_permission) {
+  const use_discord_native_check = await setting_service.get_setting(
+    interaction.guildId!,
+    'USE_INTEGRATION_PERMISSIONS',
+  );
+  if (use_discord_native_check.isErr()) {
+    logger.error("could not fetch 'USE_INTEGRATION_PERMISSIONS' setting value", {
+      guild_id: interaction.guildId,
+      command: interaction.commandName,
+      user: interaction.user.id,
+      error: use_discord_native_check.error,
+    });
+  }
+
+  const use_discord_perms = use_discord_native_check.unwrapOr(false);
+
+  if (command.access_control.invoker_requires_permission && !use_discord_perms) {
     if (check_perms_in && 'permissionsFor' in check_perms_in) {
       const has_perms = interaction.memberPermissions?.has(
         command.access_control.invoker_requires_permission,
@@ -67,7 +82,7 @@ function check_command_gatekeeping(interaction: ChatInputCommandInteraction, com
           command.access_control.invoker_requires_permission,
           'user',
         );
-        return error.send_error(interaction);
+        return err(error);
       }
     }
   }
@@ -82,7 +97,7 @@ function check_command_gatekeeping(interaction: ChatInputCommandInteraction, com
 
       if (!has_perms) {
         const error = new PermissionsError(command.access_control.bot_requires_permission, 'bot');
-        return error.send_error(interaction);
+        return err(error);
       }
     }
   }
@@ -96,11 +111,11 @@ function check_command_gatekeeping(interaction: ChatInputCommandInteraction, com
 
     if (!entitlement_active) {
       const error = new EntitlementsError(SKU_ID);
-      return error.send_error(interaction);
+      return err(error);
     }
   }
 
-  return true;
+  return ok(true);
 }
 
 async function handle_command_interaction(interaction: ChatInputCommandInteraction) {
@@ -119,7 +134,10 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
     return err(error);
   }
 
-  if (!check_command_gatekeeping(interaction, command)) return ok();
+  const command_gatekeeping = await check_command_gatekeeping(interaction, command);
+  if (command_gatekeeping.isErr()) return err(command_gatekeeping.error);
+
+  if (!command_gatekeeping.value) return ok();
 
   const command_context = get_command_context(interaction);
 
@@ -161,7 +179,12 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
 
   if (result.isErr()) return mapped_err(result.error);
   else {
-    logger.debug(`Command interaction with id ${interaction.id} handled without issues!`);
+    logger.debug(`Command handled`, {
+      guild_id: interaction.guildId,
+      user_id: interaction.user.id,
+      command: interaction.commandName,
+      interaction_id: interaction.id,
+    });
     return ok();
   }
 }

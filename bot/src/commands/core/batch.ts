@@ -285,7 +285,8 @@ const command_data = new SlashCommandBuilder()
     opt
       .setName('global')
       .setDescription('Apply this to the entire server rather than a specific channel'),
-  );
+  )
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageThreads);
 
 const command: Command = {
   command_scope: RegistrationScope.GLOBAL,

@@ -52,18 +52,20 @@ const BOT_MASTER_ROLE = {
   default: null,
 };
 
+const ZBoolean = z.preprocess((val) => {
+  if (typeof val === "string") {
+    if (val.toLowerCase() === "true") return true;
+    if (val.toLowerCase() === "false") return false;
+  }
+  return val;
+}, z.boolean());
+
 const NEEDLE_INTEGRATION = {
   key: "NEEDLE_INTEGRATION",
   name: "Watch Needle Threads",
   description: `Will automatically watch any threads created with Needle!`,
   type: "boolean" as const,
-  schema: z.preprocess((val) => {
-    if (typeof val === "string") {
-      if (val.toLowerCase() === "true") return true;
-      if (val.toLowerCase() === "false") return false;
-    }
-    return val;
-  }, z.boolean()),
+  schema: ZBoolean,
   default: false,
 };
 
@@ -81,12 +83,23 @@ const AUDIT_LOG_RETENTION = {
   ],
 };
 
+const USE_INTEGRATION_PERMISSIONS = {
+  key: "USE_INTEGRATION_PERMISSIONS",
+  name: "Use Discord Command Permissions",
+  description:
+    "When enabled, Thread-Watcher will respect Discord\'s built-in command permissions instead of its own permission checks. This allows server administrators to configure exactly who can run which commands directly from Server Settings → Integrations.",
+  type: "boolean" as const,
+  schema: ZBoolean,
+  default: false,
+};
+
 export const SETTINGS = {
   LOGGING_CHANNEL,
   BUMP_BEHAVIOUR,
   BOT_MASTER_ROLE,
   AUDIT_LOG_RETENTION,
   NEEDLE_INTEGRATION,
+  USE_INTEGRATION_PERMISSIONS,
 } as const;
 
 export type SettingKey = keyof typeof SETTINGS;

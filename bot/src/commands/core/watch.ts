@@ -62,7 +62,8 @@ const command_data = new SlashCommandBuilder()
         ChannelType.PublicThread,
         ChannelType.PrivateThread,
       ]),
-  );
+  )
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageThreads);
 
 const command: Command = {
   command_scope: RegistrationScope.GLOBAL,

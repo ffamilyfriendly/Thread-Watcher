@@ -139,7 +139,8 @@ const command_data = new SlashCommandBuilder()
       .setDescription('The setting you want to configure (use autocomplete)')
       .setAutocomplete(true)
       .setRequired(true),
-  );
+  )
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 
 const command: Command = {
   command_scope: RegistrationScope.GLOBAL,
