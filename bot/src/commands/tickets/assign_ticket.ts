@@ -1,5 +1,9 @@
 import { ticket_service } from '@providers/services/ticket_service';
-import { ChatInputCommandInteraction, SlashCommandSubcommandBuilder } from 'discord.js';
+import {
+  ChannelType,
+  ChatInputCommandInteraction,
+  SlashCommandSubcommandBuilder,
+} from 'discord.js';
 import { RegistrationScope } from '#/interfaces/BaseCommandInterface';
 import { CommandContext, SubCommand } from '#/interfaces/Command';
 import claim_ticket_action from '#/modules/ticket/_actions/claim_ticket';
@@ -40,6 +44,12 @@ export const command_data = new SlashCommandSubcommandBuilder()
   .setDescription('Assign this ticket to a user (default: assign to self)')
   .addUserOption((o) =>
     o.setName('assign-to').setDescription('The user you want to assign to this ticket'),
+  )
+  .addChannelOption((o) =>
+    o
+      .setName('ticket-thread')
+      .setDescription('The ticket you want to target (default: current channel)')
+      .addChannelTypes([ChannelType.PublicThread, ChannelType.PrivateThread]),
   );
 
 const command: SubCommand = {
