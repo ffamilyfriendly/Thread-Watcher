@@ -11,8 +11,6 @@ import Logger from '@providers/logger';
 import { database } from '@providers/database';
 import { config } from '@providers/config';
 import { redis } from '@providers/redis';
-import { entitlement_service } from '@providers/services/entitlement_service';
-import { IpcProvider } from '#/services/EntitlementService';
 import { ticket_service } from '@providers/services/ticket_service';
 import { fetch_index_context as fetch_users_index_context } from '#/fetchers/user_fetcher';
 import { event_bus } from '@providers/event_bus';
@@ -20,7 +18,6 @@ import { event_bus } from '@providers/event_bus';
 const logger = Logger.child('Shard');
 
 // set provider strategies
-entitlement_service.set_provider(new IpcProvider(ipc_client));
 ticket_service.set_user_fetcher(fetch_users_index_context);
 event_bus.set_on_emit((key, payload) => {
   ipc_client.send_shard(payload.guild_id, 'bus_event', { event_key: key, ...payload });

@@ -6,6 +6,7 @@ import { CommandContext, type Command } from '#/interfaces/Command';
 import { err, Result } from 'neverthrow';
 import { CommandError } from '#/utilities/error/def';
 import { safe_reply } from '#/utilities/interaction_helpers';
+import { entitlement_service } from '@providers/services/entitlement_service';
 
 async function run(
   interaction: ChatInputCommandInteraction,
@@ -15,7 +16,19 @@ async function run(
   const sku_value = interaction.options.getString('sku', true);
   const sku = sku_value === 'NONE' ? null : sku_value;
 
-  const r = await guild_service.set_guild_SKU(guild_id, sku);
+  const r = await entitlement_service.create_entitlement({
+    entitlement_id: 'xx',
+    external_id: 'DEV_GRANTED',
+    guild_id: guild_id,
+    sku_id: sku_value,
+    user_id: interaction.user.id,
+    source: 'dev_granted',
+    status: 'ACTIVE',
+    starts_at: new Date(),
+    created_at: new Date(),
+    updated_at: new Date(),
+    raw: {},
+  });
 
   if (r.isErr()) return err(r.error);
 

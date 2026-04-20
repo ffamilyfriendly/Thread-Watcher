@@ -1,5 +1,9 @@
 import z from "zod";
-import { ZGuild, ZGuildSettingsDictWithDefaults } from "./guild";
+import {
+  ZGuild,
+  ZGuildSettingsDictWithDefaults,
+  ZGuildWithEntitlement,
+} from "./guild";
 import { ZTicketListData } from "./tickets/entities";
 import { ZAuditData } from "./audit";
 import { ZTopggWebhookSchema } from "./topgg";
@@ -27,7 +31,7 @@ export const ZGuildOverview = z.object({
     has_premium: z.boolean(),
     active_topgg_vote: ZTopggWebhookSchema.nullish(),
   }),
-  guild: ZGuild,
+  guild: ZGuildWithEntitlement,
   guild_data: ZDJSGuild,
   roles: z.array(ZDiscordRole),
   channels: z.array(ZDiscordChannel),

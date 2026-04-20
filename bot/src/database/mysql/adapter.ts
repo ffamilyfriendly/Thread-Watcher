@@ -4,7 +4,7 @@ import { with_error_handling, with_schema } from '#/database';
 import { join, resolve as resolve_path } from 'path';
 import { z } from 'zod';
 import { create as create_tar } from 'tar';
-import { Database, DBResult, TicketInsertion } from '#/interfaces/Database';
+import { Database, DBResult, EntitlementFilters, TicketInsertion } from '#/interfaces/Database';
 import { migrate } from 'drizzle-orm/mysql2/migrator';
 import { MySql2Database, drizzle } from 'drizzle-orm/mysql2';
 import {
@@ -15,7 +15,6 @@ import {
   Guild,
   ZAuditData,
   ZMonitor,
-  ZGuild,
   ThreadSearchData,
   TicketPanel,
   ZTicketPanel,
@@ -36,6 +35,9 @@ import {
   ZMessageAttachment,
   TicketListSearch,
   ZTicketListData,
+  ZGuildWithEntitlement,
+  GuildEntitlement,
+  ZGuildEntitlement,
 } from '@watcher/shared';
 
 import * as schema from './schema';
@@ -95,6 +97,59 @@ export default class MySql implements Database {
     });
 
     this._config = config;
+  }
+
+  @with_error_handling
+  async get_entitlement(entitlement_id: string) {
+    const entitlement = await this.drizzle.query.Entitlements.findFirst({
+      where: eq(schema.Entitlements.entitlement_id, entitlement_id),
+    });
+
+    return with_schema(entitlement, ZGuildEntitlement.nullable());
+  }
+
+  @with_error_handling
+  async create_entitlement(entitlement: GuildEntitlement) {
+    await this.drizzle.insert(schema.Entitlements).values(entitlement);
+    return ok();
+  }
+
+  @with_error_handling
+  async get_entitlements(filters: EntitlementFilters): DBResult<GuildEntitlement[]> {
+    const { guild_id, external_id, source, status } = filters;
+    const conditions = [];
+
+    if (guild_id) conditions.push(eq(schema.Entitlements.guild_id, guild_id));
+    if (external_id) conditions.push(eq(schema.Entitlements.external_id, external_id));
+    if (source) conditions.push(eq(schema.Entitlements.source, source));
+    if (status) conditions.push(eq(schema.Entitlements.status, status));
+
+    const results = await this.drizzle
+      .select()
+      .from(schema.Entitlements)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+    return with_schema(results, z.array(ZGuildEntitlement));
+  }
+
+  @with_error_handling
+  async update_entitlement(id: string, data: Partial<GuildEntitlement>) {
+    const { entitlement_id: _, ...update_data } = data;
+
+    await this.drizzle
+      .update(schema.Entitlements)
+      .set({ ...update_data, updated_at: new Date() })
+      .where(eq(schema.Entitlements.entitlement_id, id));
+
+    return ok();
+  }
+
+  @with_error_handling
+  async delete_entitlement(entitlement_id: string) {
+    await this.drizzle
+      .delete(schema.Entitlements)
+      .where(eq(schema.Entitlements.entitlement_id, entitlement_id));
+    return ok();
   }
 
   @with_error_handling
@@ -795,11 +850,16 @@ export default class MySql implements Database {
   async get_guild_info(guild_id: string) {
     const val = await this.drizzle.query.Guilds.findFirst({
       where: eq(schema.Guilds.guild_id, guild_id),
+      with: {
+        entitlements: {
+          where: eq(schema.Entitlements.status, 'ACTIVE'),
+        },
+      },
     });
 
     if (!val) return ok(null);
 
-    return with_schema(val, ZGuild);
+    return with_schema(val, ZGuildWithEntitlement);
   }
 
   @with_error_handling

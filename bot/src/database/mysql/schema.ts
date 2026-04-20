@@ -180,3 +180,20 @@ export const TicketSummary = mysqlTable('t_summary_segments', {
   summary_title: text('summary_title'),
   is_master_summary: boolean('is_master_summary'),
 });
+
+export const Entitlements = mysqlTable('entitlements', {
+  entitlement_id: varchar('entitlement_id', { length: UUID_LEN }).primaryKey(),
+  guild_id: varchar('guild_id', { length: DISCORD_SNOWFLAKE_MAX_LEN })
+    .notNull()
+    .references(() => Guilds.guild_id, { onDelete: 'cascade' }),
+  user_id: varchar('user_id', { length: DISCORD_SNOWFLAKE_MAX_LEN }).notNull(),
+  sku_id: varchar('sku_id', { length: DISCORD_SNOWFLAKE_MAX_LEN }),
+  source: text('source').notNull(),
+  status: text('status').notNull().default('ACTIVE'),
+  starts_at: datetime('starts_at').notNull(),
+  ends_at: datetime('ends_at'),
+  created_at: datetime('created_at').$defaultFn(date_now),
+  updated_at: datetime('updated_at').$defaultFn(date_now),
+  external_id: varchar('external_id', { length: 255 }).unique(),
+  raw: json('raw'),
+});

@@ -1,5 +1,6 @@
 import z from "zod";
 import { SETTINGS, type SettingKey } from "../settings";
+import { DISCORD_SNOWFLAKE_MAX_LEN, UUID_LEN } from "./tickets/constants";
 
 /*
 
@@ -16,15 +17,35 @@ export const Guilds = sqliteTable('guilds', {
 
 */
 
+export const ZGuildEntitlement = z.object({
+  entitlement_id: z.string().max(UUID_LEN),
+  guild_id: z.string().max(DISCORD_SNOWFLAKE_MAX_LEN),
+  user_id: z.string().max(DISCORD_SNOWFLAKE_MAX_LEN),
+  sku_id: z.string().max(DISCORD_SNOWFLAKE_MAX_LEN),
+  source: z.enum(["discord", "dev_granted", "stripe"]),
+  status: z.enum(["ACTIVE", "EXPIRED"]),
+  starts_at: z.coerce.date(),
+  ends_at: z.coerce.date().nullish(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date(),
+  external_id: z.string().max(255),
+  raw: z.unknown(),
+});
+export type GuildEntitlement = z.output<typeof ZGuildEntitlement>;
+
 export const ZGuild = z.object({
   guild_id: z.string(),
   left_at: z.coerce.date().nullish(),
-  granted_SKU: z.string().nullish(),
   monthly_budget_eurocents: z.number(),
   persistent_budget_eurocents: z.number(),
   monthly_budget_last_granted: z.coerce.date().nullish(),
 });
 export type Guild = z.output<typeof ZGuild>;
+
+export const ZGuildWithEntitlement = ZGuild.extend({
+  entitlements: z.array(ZGuildEntitlement),
+});
+export type GuildWithEntitlement = z.output<typeof ZGuildWithEntitlement>;
 
 export const ZGuildSubscription = z.object({
   is_subscribed: z.boolean(),

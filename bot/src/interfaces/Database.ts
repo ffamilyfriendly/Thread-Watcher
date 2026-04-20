@@ -23,6 +23,8 @@ import {
   TicketSummarySegment,
   TicketListData,
   TicketListSearch,
+  GuildWithEntitlement,
+  GuildEntitlement,
 } from '@watcher/shared';
 import { DatabaseError } from '#/utilities/error/def';
 
@@ -112,9 +114,25 @@ interface Audit {
 
 interface Guilds {
   ensure_guild: (guild_id: string) => DBResult;
-  get_guild_info: (guild_id: string) => DBResult<Guild | null>;
+  get_guild_info: (guild_id: string) => DBResult<GuildWithEntitlement | null>;
   remove_data_from_inactive_guilds: (inactive_time_in_seconds?: number) => DBResult;
   upsert_guild_info: (guild_id: string, data: Partial<Omit<Guild, 'guild_id'>>) => DBResult;
+}
+
+export interface EntitlementFilters {
+  guild_id?: string;
+  external_id?: string;
+  source?: 'discord' | 'dev_granted' | 'stripe';
+  status?: 'ACTIVE' | 'EXPIRED';
+  sku_id?: string;
+}
+
+interface Entitlements {
+  get_entitlements: (filters: EntitlementFilters) => DBResult<GuildEntitlement[]>;
+  get_entitlement: (filters: EntitlementFilters) => DBResult<GuildEntitlement | null>;
+  create_entitlement: (entitlement: GuildEntitlement) => DBResult;
+  update_entitlement: (entitlement_id: string, data: Partial<GuildEntitlement>) => DBResult;
+  delete_entitlement: (entitlement_id: string) => DBResult;
 }
 
 export type TicketInsertion = Omit<Ticket, 'closed_at' | 'status' | 'created_at'>;
@@ -163,4 +181,4 @@ interface Tickets {
   delete_attachment: (attachment_id: string) => DBResult;
 }
 
-export interface Database extends Core, GuildSettings, Audit, Guilds, Tickets {}
+export interface Database extends Core, GuildSettings, Audit, Guilds, Tickets, Entitlements {}
