@@ -2,7 +2,7 @@ import { config } from '@providers/config';
 import { logger } from '@providers/logger';
 import { guild_service } from '@providers/services/guild_service';
 import { BaseInteraction, Client, Collection, Entitlement } from 'discord.js';
-import { Database, EntitlementFilters } from '#/interfaces/Database';
+import { Database, EntitlementFilters, EntitlementInsertion } from '#/interfaces/Database';
 import Redis from 'ioredis';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { map_err, mapped_err } from '#/utilities/error';
@@ -69,11 +69,17 @@ export default class EntitlementService {
     return this.db.get_entitlement(filters);
   }
 
-  async create_entitlement(entitlement: GuildEntitlement) {
-    const { entitlement_id, ...rest } = entitlement;
-    const new_id = crypto.randomUUID();
+  async upsert_entitlement(ext_id: string, data: EntitlementInsertion) {
+    const existing = await this.get_entitlement({ external_id: ext_id });
+    if (existing.isErr()) return err(existing.error);
 
-    return this.db.create_entitlement({ entitlement_id: new_id, ...rest });
+    return existing.value
+      ? this.update_entitlement(existing.value.entitlement_id, data)
+      : this.create_entitlement(data);
+  }
+
+  async create_entitlement(entitlement: EntitlementInsertion) {
+    return this.db.create_entitlement(entitlement);
   }
 
   async update_entitlement(rawr_entitlement_id: string, data: Partial<GuildEntitlement>) {

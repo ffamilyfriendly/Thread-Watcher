@@ -2,7 +2,7 @@ import { client } from '@providers/client';
 import { channel_service } from '@providers/services/channel_service';
 import { guild_service } from '@providers/services/guild_service';
 import { thread_service } from '@providers/services/thread_service';
-import { AuditLogEvent, Message, ThreadChannel } from 'discord.js';
+import { AuditLogEvent, Message, PermissionsBitField, ThreadChannel } from 'discord.js';
 import { Module } from '#/interfaces/Module';
 import { err, ok, ResultAsync } from 'neverthrow';
 import ThreadService from '#/services/ThreadService';
@@ -107,40 +107,55 @@ async function check_msg_should_bump_thread(msg: Message, l: Logger<unknown>) {
 }
 
 async function on_thread_update(old: ThreadChannel, thread: ThreadChannel, l: Logger<unknown>) {
-  const audit = await ResultAsync.fromPromise(
-    thread.guild.fetchAuditLogs({
-      type: AuditLogEvent.ThreadUpdate,
-      limit: 10,
-    }),
-    (err) => err,
-  ).match(
-    (ok_val) => ok_val,
-    (err_val) => {
-      l.error(`Could not fetch audit log`, err_val);
-      return null;
-    },
-  );
+  const member_bot = thread.guild.members.me;
+  const parent_chan = thread.parent;
 
-  const audit_entry = audit?.entries.find((audit_entry) => audit_entry.targetId == thread.id);
-  const change = audit_entry?.changes.find((change) => change.key == 'archived');
+  if (
+    member_bot &&
+    parent_chan &&
+    parent_chan.permissionsFor(member_bot).has(PermissionsBitField.Flags.ViewAuditLog)
+  ) {
+    const audit = await ResultAsync.fromPromise(
+      thread.guild.fetchAuditLogs({
+        type: AuditLogEvent.ThreadUpdate,
+        limit: 10,
+      }),
+      (err) => err,
+    ).match(
+      (ok_val) => ok_val,
+      (err_val) => {
+        l.error(`Could not fetch audit log`, err_val);
+        return null;
+      },
+    );
 
-  const audit_meta: AuditMeta = {
-    executor_id: config.clientID,
-    guild_id: thread.guildId,
-    reason: 'channel monitor',
-  };
+    const audit_entry = audit?.entries.find((audit_entry) => audit_entry.targetId == thread.id);
+    const change = audit_entry?.changes.find((change) => change.key == 'archived');
 
-  if (change?.new) {
-    if (audit_entry?.executorId) audit_meta.executor_id = audit_entry.executorId;
-    audit_meta.reason = `Unwatched due to manual archival`;
+    const audit_meta: AuditMeta = {
+      executor_id: config.clientID,
+      guild_id: thread.guildId,
+      reason: 'channel monitor',
+    };
 
-    const unwatch_res = await thread_service.unwatch_thread(thread, audit_meta);
-    if (unwatch_res.isErr()) {
-      l.error('could not unwatch thread');
-      return err(map_err(unwatch_res.error));
+    if (change?.new) {
+      if (audit_entry?.executorId) audit_meta.executor_id = audit_entry.executorId;
+      audit_meta.reason = `Unwatched due to manual archival`;
+
+      const unwatch_res = await thread_service.unwatch_thread(thread, audit_meta);
+      if (unwatch_res.isErr()) {
+        l.error('could not unwatch thread');
+        return err(map_err(unwatch_res.error));
+      }
+
+      return ok();
     }
-
-    return ok();
+  } else {
+    l.warn('no auditlog access', {
+      guild_id: thread.guildId,
+      thread_id: thread.id,
+      thread_parent: thread.parentId,
+    });
   }
 
   const thread_is_watched = await thread_service.get_thread(thread.id, true);

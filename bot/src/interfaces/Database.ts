@@ -127,10 +127,12 @@ export interface EntitlementFilters {
   sku_id?: string;
 }
 
+export type EntitlementInsertion = Omit<GuildEntitlement, 'entitlement_id' | 'created_at'>;
+
 interface Entitlements {
   get_entitlements: (filters: EntitlementFilters) => DBResult<GuildEntitlement[]>;
   get_entitlement: (filters: EntitlementFilters) => DBResult<GuildEntitlement | null>;
-  create_entitlement: (entitlement: GuildEntitlement) => DBResult;
+  create_entitlement: (entitlement: EntitlementInsertion) => DBResult;
   update_entitlement: (entitlement_id: string, data: Partial<GuildEntitlement>) => DBResult;
   delete_entitlement: (entitlement_id: string) => DBResult;
 }

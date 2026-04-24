@@ -4,7 +4,13 @@ import { with_error_handling, with_schema } from '#/database';
 import { join, resolve as resolve_path } from 'path';
 import { z } from 'zod';
 import { create as create_tar } from 'tar';
-import { Database, DBResult, EntitlementFilters, TicketInsertion } from '#/interfaces/Database';
+import {
+  Database,
+  DBResult,
+  EntitlementFilters,
+  EntitlementInsertion,
+  TicketInsertion,
+} from '#/interfaces/Database';
 import { migrate } from 'drizzle-orm/mysql2/migrator';
 import { MySql2Database, drizzle } from 'drizzle-orm/mysql2';
 import {
@@ -100,16 +106,24 @@ export default class MySql implements Database {
   }
 
   @with_error_handling
-  async get_entitlement(entitlement_id: string) {
+  async get_entitlement(filters: EntitlementFilters) {
+    const { guild_id, external_id, source, status } = filters;
+    const conditions = [];
+
+    if (guild_id) conditions.push(eq(schema.Entitlements.guild_id, guild_id));
+    if (external_id) conditions.push(eq(schema.Entitlements.external_id, external_id));
+    if (source) conditions.push(eq(schema.Entitlements.source, source));
+    if (status) conditions.push(eq(schema.Entitlements.status, status));
+
     const entitlement = await this.drizzle.query.Entitlements.findFirst({
-      where: eq(schema.Entitlements.entitlement_id, entitlement_id),
+      where: conditions.length > 0 ? and(...conditions) : undefined,
     });
 
     return with_schema(entitlement, ZGuildEntitlement.nullable());
   }
 
   @with_error_handling
-  async create_entitlement(entitlement: GuildEntitlement) {
+  async create_entitlement(entitlement: EntitlementInsertion) {
     await this.drizzle.insert(schema.Entitlements).values(entitlement);
     return ok();
   }

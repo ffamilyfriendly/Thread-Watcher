@@ -14,6 +14,7 @@ import { redis } from '@providers/redis';
 import { ticket_service } from '@providers/services/ticket_service';
 import { fetch_index_context as fetch_users_index_context } from '#/fetchers/user_fetcher';
 import { event_bus } from '@providers/event_bus';
+import { start_reconsile_payments } from './routines/reconsile_payment';
 
 const logger = Logger.child('Shard');
 
@@ -43,6 +44,7 @@ async function load_events() {
 
 start_db_backup_routine();
 start_cleanup_interval();
+start_reconsile_payments();
 load_events();
 
 sharding_manager.on('shardCreate', (shard) => {

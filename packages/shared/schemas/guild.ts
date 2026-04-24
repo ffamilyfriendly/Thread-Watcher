@@ -20,7 +20,7 @@ export const Guilds = sqliteTable('guilds', {
 export const ZGuildEntitlement = z.object({
   entitlement_id: z.string().max(UUID_LEN),
   guild_id: z.string().max(DISCORD_SNOWFLAKE_MAX_LEN),
-  user_id: z.string().max(DISCORD_SNOWFLAKE_MAX_LEN),
+  user_id: z.string().max(DISCORD_SNOWFLAKE_MAX_LEN).nullish(),
   sku_id: z.string().max(DISCORD_SNOWFLAKE_MAX_LEN),
   source: z.enum(["discord", "dev_granted", "stripe"]),
   status: z.enum(["ACTIVE", "EXPIRED"]),
@@ -29,7 +29,7 @@ export const ZGuildEntitlement = z.object({
   created_at: z.coerce.date(),
   updated_at: z.coerce.date(),
   external_id: z.string().max(255),
-  raw: z.unknown(),
+  raw: z.unknown().nullish(),
 });
 export type GuildEntitlement = z.output<typeof ZGuildEntitlement>;
 

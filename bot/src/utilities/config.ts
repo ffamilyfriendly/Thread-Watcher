@@ -87,6 +87,7 @@ const ZPaywall = z.object({
   basic_sku: z.string(),
   retain_tickets_days_free: z.number(),
   retain_tickets_days_premium: z.number(),
+  reconsile_payments_schedule: ZCronTab.default('0 */6 * * *'),
 });
 
 const ZAi = z.object({

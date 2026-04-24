@@ -182,12 +182,14 @@ export const TicketSummary = mysqlTable('t_summary_segments', {
 });
 
 export const Entitlements = mysqlTable('entitlements', {
-  entitlement_id: varchar('entitlement_id', { length: UUID_LEN }).primaryKey(),
+  entitlement_id: varchar('entitlement_id', { length: UUID_LEN })
+    .primaryKey()
+    .$defaultFn(random_id),
   guild_id: varchar('guild_id', { length: DISCORD_SNOWFLAKE_MAX_LEN })
     .notNull()
     .references(() => Guilds.guild_id, { onDelete: 'cascade' }),
-  user_id: varchar('user_id', { length: DISCORD_SNOWFLAKE_MAX_LEN }).notNull(),
-  sku_id: varchar('sku_id', { length: DISCORD_SNOWFLAKE_MAX_LEN }),
+  user_id: varchar('user_id', { length: DISCORD_SNOWFLAKE_MAX_LEN }),
+  sku_id: varchar('sku_id', { length: DISCORD_SNOWFLAKE_MAX_LEN }).notNull(),
   source: text('source').notNull(),
   status: text('status').notNull().default('ACTIVE'),
   starts_at: datetime('starts_at').notNull(),
