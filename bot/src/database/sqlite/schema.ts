@@ -150,3 +150,20 @@ export const TicketSummary = sqliteTable('ticket_summary_segments', {
   summary_title: text(),
   is_master_summary: integer({ mode: 'boolean' }),
 });
+
+export const Entitlements = sqliteTable('entitlements', {
+  entitlement_id: text('entitlement_id').$defaultFn(random_id).primaryKey(),
+  guild_id: text('guild_id')
+    .notNull()
+    .references(() => Guilds.guild_id, { onDelete: 'cascade' }),
+  user_id: text('user_id'),
+  sku_id: text('sku_id').notNull(),
+  source: text('source').notNull(),
+  status: text('status').notNull().default('ACTIVE'),
+  starts_at: integer('starts_at', { mode: 'timestamp' }).notNull(),
+  ends_at: integer('ends_at', { mode: 'timestamp' }),
+  created_at: integer('created_at', { mode: 'timestamp' }).$defaultFn(date_now),
+  updated_at: integer('updated_at', { mode: 'timestamp' }).$defaultFn(date_now),
+  external_id: text('external_id').unique(),
+  raw: text('raw', { mode: 'json' }),
+});

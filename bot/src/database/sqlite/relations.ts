@@ -44,3 +44,40 @@ export const ticketNoteRelations = relations(schema.TicketNote, ({ one }) => ({
     references: [schema.Ticket.ticket_id],
   }),
 }));
+
+export const ticketPanelRelations = relations(schema.TicketPanels, ({ one, many }) => ({
+  guild: one(schema.Guilds, {
+    fields: [schema.TicketPanels.guild_id],
+    references: [schema.Guilds.guild_id],
+  }),
+  tickets: many(schema.Ticket),
+}));
+
+export const guildRelations = relations(schema.Guilds, ({ many }) => ({
+  entitlements: many(schema.Entitlements),
+  monitors: many(schema.Monitors),
+  threads: many(schema.Threads),
+  settings: many(schema.Settings),
+  audit: many(schema.Audit),
+}));
+
+export const entitlementRelations = relations(schema.Entitlements, ({ one }) => ({
+  guild: one(schema.Guilds, {
+    fields: [schema.Entitlements.guild_id],
+    references: [schema.Guilds.guild_id],
+  }),
+}));
+
+export const monitorRelations = relations(schema.Monitors, ({ one }) => ({
+  guild: one(schema.Guilds, {
+    fields: [schema.Monitors.guild_id],
+    references: [schema.Guilds.guild_id],
+  }),
+}));
+
+export const threadRelations = relations(schema.Threads, ({ one }) => ({
+  guild: one(schema.Guilds, {
+    fields: [schema.Threads.guild_id],
+    references: [schema.Guilds.guild_id],
+  }),
+}));
