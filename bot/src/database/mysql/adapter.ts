@@ -105,6 +105,10 @@ export default class MySql implements Database {
     this._config = config;
   }
 
+  get_connection() {
+    return this.connection_pool.getConnection();
+  }
+
   @with_error_handling
   async get_entitlement(filters: EntitlementFilters) {
     const { guild_id, external_id, source, status } = filters;

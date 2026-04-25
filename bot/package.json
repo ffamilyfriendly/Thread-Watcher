@@ -42,6 +42,7 @@
     "gen_docs": "bun ./src/scripts/gen_docs.ts",
     "deploy:dev": "bun ./src/scripts/deploy.ts -local",
     "deploy:prod": "bun ./src/scripts/deploy.ts",
+    "migrate": "bun ./src/scripts/migrate_db.ts",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write ."
