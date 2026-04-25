@@ -1,9 +1,6 @@
-> [!CAUTION]
-> This branch is _very_ WIP. Trust nothing and no one. Not even yourself. You might have been replaced. You can never know. Dont trust this branch
+# Thread-Watcher 🧵
 
-# Thread-Watcher V3 🧵
-
-> A Discord bot that keeps threads active, automates bumping, and adds extra utilities for managing your server’s tangled mess of threads.
+> A Discord bot that keeps threads active, automates bumping, and adds extra utilities for managing your server’s tangled mess of threads. Always open source <3
 
 <p align="center">
   <a href="https://docs.threadwatcher.xyz">
@@ -12,58 +9,97 @@
   <a href="https://botsuite.co/join">
     <img src="https://img.shields.io/badge/discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" />
   </a>
-  <a href="https://botsuite.co">
+  <a href="https://threadwatcher.xyz">
     <img src="https://img.shields.io/badge/Website-b82ada?style=for-the-badge&logo=firefoxbrowser&logoColor=white" />
   </a>
 </p>
 <p align="center">
-  <img src="https://img.shields.io/badge/status-WIP-critical?style=flat" />
   <img src="https://img.shields.io/github/license/ffamilyfriendly/Thread-Watcher?style=flat" />
   <img src="https://img.shields.io/github/stars/ffamilyfriendly/Thread-Watcher?style=flat" />
   <img src="https://img.shields.io/github/issues/ffamilyfriendly/Thread-Watcher?style=flat" />
 </p>
 
-## 🌟 Features (so far)
-
-- auto-bumps threads/posts so they stay active and showing in the sidebar
-- i18n system with generation from docs
-- shard support
-- SQLite by default with more adapters coming
-
-## 🧰 Requirement
+## 🧰 Requirements
 
 - [Redis](https://redis.io/)
 - [Bun](https://bun.sh/)
 - [Node](https://nodejs.org/en)
+- \*(optional) Any S3 compatible storage provider
+  - This is used to store attachments for ticket transcripts and to store database backups if enabled. Cloudflare has a generous free tier on [R2](https://www.cloudflare.com/developer-platform/products/r2/)
+- \*(optional) [Mistral AI](https://console.mistral.ai/home) credentials
+  - AI is used to summarize tickets, provide functionality to some ticket modules, and to generate RegExprs.
+
+<small style="color:red">\* Please note that Thread-Watcher is designed to work with S3 storage and Mistral AI properly configured. It <i>should</i> still work without them but your milage may vary.</small>
 
 ## 🚀 Quick Start
 
-1. Clone the repo
-2. Run `bun install` to install required deps for bot and dashboard code
-3. configure the bot:
-   - Edit `bot/_config.json5` and rename it to `config.json5`
-   - Set up your database (SQLite by default)
-4. Deploy commands:
-   - `npm run deploy:dev -w bot` (for local commands only)
-   - `npm run deploy:prod -w bot` (for global commands)
-5. Generate i18n from docs:
-   - `npm run gen_docs -w bot`
-6. Start the bot:
-   - `npm run start -w bot`
-7. Start the dashboard
-   - `npm run dev -w web`
+> [!IMPORTANT]
+> The ticket feature of Thread-Watcher expects the `Message Intent` to be enabled. Please enable it for your bot in the Discord Developer Portal. Alternativly, if you are not intending to use tickets, you can remove the intent from [the client](/bot/src/providers/client.ts).
 
-## 🌐 Dashboard
+### **1** - Install the code
 
-The dashboard is a "proxy" for the actual API which is ran on the bot shard manager. This is as our API frequently needs to fetch data from a shard instance in which case an IPC call is required. Sveltekit handles authentication (thru Auth.js), ratelimits, and limited caching.
+> 🤓 Make sure you've [git](https://git-scm.com/install/) and [bun](https://bun.com/) installed.
 
-To facilitate safe trafic between the shard manager and sveltekit server should they need to communicate over "the world wide web" we define a shared secret key for both locations.
-Every request contains this secret key in an `X-Internal-Auth` header wherein all requests lacking this header or containing the wrong value are rejected. Ideally we'd not need to communicate
-across servers for the sake of safety and speed but this meassure has been taken to future proof Thread-Watcher.
+```bash
+  git clone https://github.com/ffamilyfriendly/Thread-Watcher.git
+  cd Thread-Watcher
+  bun install
+```
 
-Authorization is handled by the express api running on the shard manager and is better detailed [in the API documentation](/docs/api_policies.md)
+### **2** - Configure
 
-## 🤓 Development
+> 🤓 Rename the example `_config.json5` file to `config.json5`. Bot won't start otherwise
+
+```bash
+  cd bot
+  mv _config.json5 config.json5
+```
+
+The [configuration file](./bot/_config.json5) has comments inside it that will guide you thru the configuration itself.
+
+### **3** - Deploy commands
+
+For the quickest start you should deploy all your commands locally. This will register the commands instantly to your dev-server (defined in the config). However, the commands will only show up on this server.
+
+```bash
+npm run deploy:dev -w bot
+```
+
+For the commands to show up across all servers, you will need to register the commands globally. This takes around an hour, give or take.
+
+```bash
+npm run deploy:prod -w bot
+```
+
+### **4** - Run the bot!
+
+> 🤓 if you see any weird errors starting the bot, it's likely that you entered incorrect information into the configuration or forgot to install dependencies (`bun install`)
+
+```bash
+npm run start -w bot
+```
+
+### **(optional) 5** - Run the dashboard
+
+> 🤓 While it's not neccesary for the bot to function, I put a lot of time into it and it would make me happy if you tried it out!
+
+The dashboard has it's own configuration you'll need to fill out. Edit [example.env](/web/example.env), ensuring you have the same `SHARED_API_SECRET` as you set in the bot config. Rename `example.env` to `.env`.
+
+```bash
+npm run dev -w web
+```
+
+## Modifying Thread-Watcher
+
+You can create a deeper understanding of the inner workings of Thread-Watcher by reading [the documentation](/docs/). It should cover enough for you to get started!<br/>
+<small style="opacity:0.7">You are of course welcome to ask me directly about anything in [the support server](https://botsuite.co/join)!</small>
+
+Here's some quick documents to get you started!
+
+- [adding a command](/docs/command.md)
+- [adding a database](/docs/database.md)
+
+## 💖 Contributing
 
 > [!NOTE]
-> Currently, Thread-Watcher is **not accepting contributions**. Once V3 is stable and deployed this might change.
+> Currently, Thread-Watcher is **not accepting contributions**. I plan to take contributions as soon as I've got the codebase at a solid state and have some tests written. Hang tight and [join the support server](https://botsuite.co/join) for updates <3
