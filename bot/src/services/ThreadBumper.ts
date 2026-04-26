@@ -51,7 +51,7 @@ export default class ThreadBumper {
    * Millisecond interval used by the internal PQueue for interval-based rate limiting.
    * Intended to control how quickly items from the queue are processed in bursts.
    */
-  static DEFAULT_INTERVAL = 500;
+  static DEFAULT_INTERVAL = 1000;
   /**
    * DEFAULT_TIMEOUT
    *
@@ -63,7 +63,7 @@ export default class ThreadBumper {
   private queue = new PQueue({
     concurrency: 2,
     timeout: ThreadBumper.DEFAULT_TIMEOUT,
-    intervalCap: 2,
+    intervalCap: 1,
     interval: ThreadBumper.DEFAULT_INTERVAL,
   });
   private l = logger.getSubLogger({ name: 'ThreadBumper' });
@@ -108,7 +108,6 @@ export default class ThreadBumper {
 
     const bump_behaviour = bump_behaviour_res.value;
     if (thread.archived && thread.unarchivable) {
-      this.l.silly('un-archiving', thread.id);
       const set_archived_res = await ResultAsync.fromPromise<unknown, Error>(
         thread.setArchived(false),
         map_err,
@@ -127,28 +126,21 @@ export default class ThreadBumper {
     if (!thread.locked && thread.manageable) {
       const new_duration = thread.autoArchiveDuration === 10080 ? 4320 : 10080;
 
-      this.l.silly('current auto_archive_duration:', thread.autoArchiveDuration);
       const set_auto_archive_promise = thread.setAutoArchiveDuration(new_duration);
 
-      this.l.silly('setting auto_archive_duration', new_duration, thread.id);
       const auto_archive_res = await ResultAsync.fromPromise<unknown, Error>(
         set_auto_archive_promise,
         map_err,
       );
       if (auto_archive_res.isErr())
         this.l.error(`could not bump thread w/ edit ${thread.id}`, auto_archive_res.error);
-
-      this.l.silly('new auto_archive_duration:', thread.autoArchiveDuration);
     } else if (thread.sendable && !thread.archived) {
-      this.l.silly('bumping with message', thread.id);
       const send_bump_msg_res = await ResultAsync.fromPromise(
         thread.send('bumping thread.'),
         map_err,
       );
       if (send_bump_msg_res.isErr())
         this.l.error(`could not bump thread w/ msg ${thread.id}`, send_bump_msg_res.error);
-    } else {
-      this.l.silly('NO ACTION TAKEN', thread.id);
     }
 
     thread_service.bump_thread_time(thread);
@@ -192,32 +184,26 @@ export default class ThreadBumper {
    * Returns:
    * - Promise<void> on success (after scheduling jobs). If fetching stale threads fails, returns the error value from the fetch.
    */
+
   public async bump_stale() {
     const stale = await thread_service.get_stale_threads_for_guilds(
       Array.from(d_client.guilds.cache.keys()),
     );
     if (stale.isErr()) return stale.error;
 
-    const threads_to_bump = stale.value.filter(
-      (thread) => !this.queued_threads.has(thread.thread_id),
-    );
-
-    if (threads_to_bump.length > 0)
-      this.l.debug(`adding ${threads_to_bump.length} stale threads to queue...`);
-
-    threads_to_bump.forEach((thread) => {
-      this.queued_threads.add(thread.thread_id);
-      const prom = this.queue.add(async () => {
-        const res = await this.bump_thread(thread);
-        if (res.isErr()) {
-          this.l.error(`Could not bump ${thread.thread_id}: `, res.error);
-        }
-        this.queued_threads.delete(thread.thread_id);
-      });
-
-      ResultAsync.fromPromise(prom, map_err).then((r) => {
-        if (r.isErr()) logger.error(`PQueue err on bumping thread '${thread.thread_id}'`, r.error);
-      });
-    });
+    for (let i = 0; i < stale.value.length; i += 100) {
+      const batch = stale.value.slice(i, i + 100);
+      await Promise.all(
+        batch.map(async (thread) => {
+          if (this.queued_threads.has(thread.thread_id)) return;
+          this.queued_threads.add(thread.thread_id);
+          const res = await this.bump_thread(thread);
+          if (res.isErr()) {
+            this.l.error(`Could not bump ${thread.thread_id}: `, res.error);
+          }
+          this.queued_threads.delete(thread.thread_id);
+        }),
+      );
+    }
   }
 }
