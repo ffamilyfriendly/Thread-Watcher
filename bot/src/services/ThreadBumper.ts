@@ -51,7 +51,7 @@ export default class ThreadBumper {
    * Millisecond interval used by the internal PQueue for interval-based rate limiting.
    * Intended to control how quickly items from the queue are processed in bursts.
    */
-  static DEFAULT_INTERVAL = 1000;
+  static DEFAULT_INTERVAL = 1200;
   /**
    * DEFAULT_TIMEOUT
    *
@@ -61,35 +61,13 @@ export default class ThreadBumper {
   static DEFAULT_TIMEOUT = 1000 * 5;
   private queued_threads = new Set<string>();
   private queue = new PQueue({
-    concurrency: 2,
+    concurrency: 1,
     timeout: ThreadBumper.DEFAULT_TIMEOUT,
     intervalCap: 1,
     interval: ThreadBumper.DEFAULT_INTERVAL,
   });
   private l = logger.getSubLogger({ name: 'ThreadBumper' });
 
-  /**
-   * bump_thread(thread_data)
-   *
-   * Attempt to perform the configured "bump" action for a single thread.
-   *
-   * Steps:
-   * 1. Fetch the channel by ID; ensure it exists and is a Thread.
-   * 2. Read guild setting for bump behaviour (fallback: "BUMP_AND_UNARCHIVE").
-   * 3. If the thread is archived and unarchivable, attempt to unarchive it.
-   * 4. If bump behaviour is "UNARCHIVE_ONLY", return success after unarchiving (or when unarchiving is not possible).
-   * 5. Otherwise:
-   *    - If the thread is not locked and manageable, toggle the auto-archive duration between two presets
-   *      (10080 <-> 4320 minutes) to create activity without sending a message.
-   *    - Else if the thread is sendable and not archived, send a small "bumping thread." message to bump it.
-   * 6. Log successes and non-fatal errors; return an ok() result on success or err(...) with diagnostic information.
-   *
-   * Parameters:
-   * - thread_data: ThreadData — minimal thread descriptor containing at least id and server/guild id.
-   *
-   * Returns:
-   * - A result-style value (ok()/err()) indicating success or carrying an error value describing the failure.
-   */
   private async bump_thread(thread_data: ThreadData) {
     const thread_res = await ResultAsync.fromPromise(
       d_client.channels.fetch(thread_data.thread_id),
@@ -147,63 +125,32 @@ export default class ThreadBumper {
     return ok();
   }
 
-  /*
-          const new_duration = thread.autoArchiveDuration === 10080 ? 4320 : 10080;
-
-      this.l.silly('current auto_archive_duration:', thread.autoArchiveDuration);
-      const set_auto_archive_promise = thread.setAutoArchiveDuration(new_duration);
-
-      this.l.silly('setting auto_archive_duration', new_duration, thread.id);
-      const auto_archive_res = await ResultAsync.fromPromise<unknown, Error>(
-        set_auto_archive_promise,
-        map_err,
-      );
-      if (auto_archive_res.isErr())
-        this.l.error(`could not bump thread w/ edit ${thread.id}`, auto_archive_res.error);
-
-      this.l.silly('new auto_archive_duration:', thread.autoArchiveDuration);
-  
-  */
-
-  /**
-   * bump_stale()
-   *
-   * Discover stale threads and schedule bump jobs for them.
-   *
-   * Steps:
-   * 1. Retrieve stale threads via thread_service.get_stale_threads().
-   * 2. If retrieval fails, propagate/return the error.
-   * 3. Filter out threads that are already scheduled (tracked in queued_threads) and
-   *    threads whose guild is not present in the client's guild cache.
-   * 4. For each remaining thread:
-   *    - Mark its id in queued_threads to prevent duplicate scheduling.
-   *    - Add an async job to the internal PQueue which calls bump_thread(thread).
-   *    - After the job completes (success or failure), remove the id from queued_threads.
-   * 5. Log the number of threads enqueued and any per-thread errors encountered during execution.
-   *
-   * Returns:
-   * - Promise<void> on success (after scheduling jobs). If fetching stale threads fails, returns the error value from the fetch.
-   */
-
   public async bump_stale() {
     const stale = await thread_service.get_stale_threads_for_guilds(
       Array.from(d_client.guilds.cache.keys()),
     );
     if (stale.isErr()) return stale.error;
 
-    for (let i = 0; i < stale.value.length; i += 100) {
-      const batch = stale.value.slice(i, i + 100);
-      await Promise.all(
-        batch.map(async (thread) => {
-          if (this.queued_threads.has(thread.thread_id)) return;
-          this.queued_threads.add(thread.thread_id);
-          const res = await this.bump_thread(thread);
-          if (res.isErr()) {
-            this.l.error(`Could not bump ${thread.thread_id}: `, res.error);
-          }
-          this.queued_threads.delete(thread.thread_id);
-        }),
-      );
-    }
+    const threads_to_bump = stale.value.filter(
+      (thread) => !this.queued_threads.has(thread.thread_id),
+    );
+
+    if (threads_to_bump.length > 0)
+      this.l.info(`adding ${threads_to_bump.length} stale threads to queue...`);
+
+    threads_to_bump.forEach((thread) => {
+      this.queued_threads.add(thread.thread_id);
+      const prom = this.queue.add(async () => {
+        const res = await this.bump_thread(thread);
+        if (res.isErr()) {
+          this.l.error(`Could not bump ${thread.thread_id}: `, res.error);
+        }
+        this.queued_threads.delete(thread.thread_id);
+      });
+
+      ResultAsync.fromPromise(prom, map_err).then((r) => {
+        if (r.isErr()) logger.error(`PQueue err on bumping thread '${thread.thread_id}'`, r.error);
+      });
+    });
   }
 }
