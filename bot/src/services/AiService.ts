@@ -59,9 +59,9 @@ export default class AiService {
     output_tokens: number,
   ): number {
     const model = AiModels[model_name];
-    const input_cost = (input_tokens * model.eur_per_1m_tokens_input) / 10_000;
-    const output_cost = (output_tokens * model.eur_per_1m_token_output) / 10_000;
-    return Math.ceil((input_cost + output_cost) * 10_000);
+    const input_cost = (input_tokens * model.eur_per_1m_tokens_input) / 1_000_000;
+    const output_cost = (output_tokens * model.eur_per_1m_token_output) / 1_000_000;
+    return Math.ceil((input_cost + output_cost) * 1_000_000);
   }
 
   private should_be_given_tokens(d: Date) {
@@ -70,11 +70,6 @@ export default class AiService {
     const delta_time = now.getTime() - d.getTime();
 
     return delta_time > avg_month;
-  }
-
-  static token_to_millicent(model_name: AiModelName, tokens: number) {
-    const model = AiModels[model_name];
-    return (tokens * model.eur_per_1m_token_output) / 10;
   }
 
   async check_quota_for_guild(guild_id: string) {
@@ -395,7 +390,7 @@ export default class AiService {
       const { promptTokens, completionTokens } = result_async.value.usage;
       if (!promptTokens || !completionTokens) return err(new Error('could not get usage tokens'));
       this.deduct_quota(guild_id, model_name, promptTokens, completionTokens).then((r) => {
-        if (r.isErr()) this.logger.warn(`Could not deduct AI quota for '${guild_id}'`, r.error);
+        if (r.isErr()) this.logger.error(`Could not deduct AI quota for '${guild_id}'`, r.error);
       });
     }
 
