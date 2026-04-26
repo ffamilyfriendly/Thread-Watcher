@@ -116,6 +116,7 @@ export const ZConfig = z.object({
   logWebhook: z.string().url().startsWith('https://discord.com').optional(),
   style: Style,
   crypto_key: z.string(),
+  limited_mode: z.boolean(),
   modules: z.object({
     thread_create_bots: z.array(z.string()).default(['878399831238909952']),
   }),

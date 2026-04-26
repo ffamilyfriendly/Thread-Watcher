@@ -51,7 +51,7 @@ export default class ThreadBumper {
    * Millisecond interval used by the internal PQueue for interval-based rate limiting.
    * Intended to control how quickly items from the queue are processed in bursts.
    */
-  static DEFAULT_INTERVAL = 1500;
+  static DEFAULT_INTERVAL = 2000;
   /**
    * DEFAULT_TIMEOUT
    *
@@ -78,6 +78,11 @@ export default class ThreadBumper {
     const thread = thread_res.value;
 
     if (!thread.isThread()) return err('not a thread');
+
+    if (thread.archived && !thread.unarchivable) {
+      this.l.warn(`Skipping archived thread (unarchivable): ${thread.id}`);
+      return ok();
+    }
 
     const bump_behaviour_res = await setting_service.get_setting(thread.guildId, 'BUMP_BEHAVIOUR');
 

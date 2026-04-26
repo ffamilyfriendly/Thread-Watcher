@@ -2,12 +2,14 @@ import { logger } from '@providers/logger';
 import { modules } from '@providers/modules';
 import { Message } from 'discord.js';
 import { Event } from '#/interfaces/ClientEvent';
+import { config } from '@providers/config';
+import { ok } from 'neverthrow';
 
 const event: Event<Message> = {
   event_name: 'messageCreate',
   async event_callback(msg) {
     const l = logger.getSubLogger({ name: 'messageCreate' });
-
+    if (config.limited_mode) return ok();
     for (const mod of await modules) {
       mod.on_message_create?.(msg, l).then((r) => {
         if (r.isErr()) {

@@ -2,11 +2,15 @@ import { ThreadChannel } from 'discord.js';
 import { Event } from '#/interfaces/ClientEvent';
 import { modules } from '@providers/modules';
 import { logger } from '@providers/logger';
+import { config } from '@providers/config';
+import { ok } from 'neverthrow';
 
 const event: Event<ThreadChannel> = {
   event_name: 'threadDelete',
   async event_callback(thread) {
     const l = logger.getSubLogger({ name: 'THREAD_UPDATE' });
+
+    if (config.limited_mode) return ok();
 
     for (const mod of await modules) {
       mod.on_thread_delete?.(thread, l).then((r) => {
