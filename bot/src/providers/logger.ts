@@ -2,7 +2,7 @@ import { Logger } from 'tslog';
 import { create_singleton } from './singleton';
 
 const singleton = create_singleton(
-  () => new Logger(),
+  () => new Logger({ minLevel: 2 }),
   (instance) => ({
     child: (name: string) => instance.getSubLogger({ name }),
     with_name: (name: string) => {

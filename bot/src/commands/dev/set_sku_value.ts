@@ -1,5 +1,4 @@
 import { config } from '@providers/config';
-import { guild_service } from '@providers/services/guild_service';
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { RegistrationScope } from '#/interfaces/BaseCommandInterface';
 import { CommandContext, type Command } from '#/interfaces/Command';
@@ -17,7 +16,6 @@ async function run(
   const sku = sku_value === 'NONE' ? null : sku_value;
 
   const r = await entitlement_service.create_entitlement({
-    entitlement_id: 'xx',
     external_id: 'DEV_GRANTED',
     guild_id: guild_id,
     sku_id: sku_value,
@@ -25,7 +23,6 @@ async function run(
     source: 'dev_granted',
     status: 'ACTIVE',
     starts_at: new Date(),
-    created_at: new Date(),
     updated_at: new Date(),
     raw: {},
   });

@@ -16,6 +16,7 @@ export const ZDashboardData = z.object({
   monitors_count: z.number(),
   relevant_tickets: z.array(ZTicketListData),
   recent_audits: z.array(ZAuditData),
+  threads_count: z.number(),
 });
 export type DashboardData = z.output<typeof ZDashboardData>;
 

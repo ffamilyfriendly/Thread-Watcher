@@ -7,6 +7,9 @@ import { map_err, mapped_err } from '#/utilities/error';
 import { ThreadIdNotFound, TicketNotFound } from '#/utilities/error/def';
 
 export default async function (message: Message, logger: Logger<unknown>): ResultType {
+  // No need to ingest empty messages until we have message content
+  if (!message.content) return ok();
+
   if (!message.inGuild() || !message.channel.isThread()) return ok();
   const ticket_meta = await ticket_service.get_ticket_from_thread_id(message.channelId);
   if (ticket_meta.isErr()) {

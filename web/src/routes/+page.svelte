@@ -27,6 +27,8 @@
 	const guild_count = $derived(data.stats.guild_count);
 	const thread_count = $derived(data.stats.watched_threads_count);
 	const panel_count = $derived(data.stats.ticket_panels_count);
+
+	const meta_desc = $derived(`Never lose a Discord thread again. Thread-Watcher is your open-source toolbox for Discord threads, keeping threads working smooth across ${format_number(guild_count)} servers.`)
 </script>
 
 <svelte:head>
@@ -34,11 +36,11 @@
 	<meta name="title" content="Thread-Watcher | The Toolbox for Discord Threads" />
 	<meta
 		name="description"
-		content="Stop fighting Discord's auto-archive. Keep threads alive forever, manage support tickets with AI, and organize your community with the most powerful open-source thread bot."
+		content={meta_desc}
 	/>
 	<meta
 		name="keywords"
-		content="discord bot, discord threads, keep threads open, thread watcher, discord auto-archive fix, discord ticket bot, open source discord bot"
+		content="discord bot, discord threads, keep threads open, thread watcher, discord auto-archive fix, discord ticket bot, open source discord bot, discord thread dissapear, discord thread hide"
 	/>
 
 	<meta property="og:type" content="website" />
@@ -46,18 +48,15 @@
 	<meta property="og:title" content="Thread-Watcher | The Toolbox for Discord Threads" />
 	<meta
 		property="og:description"
-		content="Trusted by {format_number(
-			guild_count
-		)} servers to keep conversations alive and support organized."
+		content={meta_desc}
 	/>
 	<meta property="og:image" content={Banner} />
 
-	<meta property="twitter:card" content="summary_large_image" />
 	<meta property="twitter:url" content="https://threadwatcher.xyz/" />
 	<meta property="twitter:title" content="Thread-Watcher | The Toolbox for Discord Threads" />
 	<meta
 		property="twitter:description"
-		content="The industry standard for Discord thread management. AI summaries, ticket flows, and persistent threads."
+		content={meta_desc}
 	/>
 	<meta property="twitter:image" content={Banner} />
 
@@ -158,7 +157,7 @@
 				Thread-Watcher has a public roadmap to keep you informed on what's going on.
 			</p>
 
-			<Button variant="tetriary" href="https://github.com/users/ffamilyfriendly/projects/4/views/2"
+			<Button variant="tetriary" href="https://github.com/users/ffamilyfriendly/projects/4/views/8"
 				>Public Roadmap</Button
 			>
 		</div>

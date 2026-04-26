@@ -130,6 +130,9 @@ export default define_secure_event('send_embed', async (data) => {
   if (d_channel.isErr()) return err(d_channel.error);
   if (!d_channel.value) return err(new Error('channel not found'));
   if (!d_channel.value?.isSendable()) return err(new Error('Channel is not sendable'));
+  if ('guildId' in d_channel.value && d_channel.value.guildId !== panel_response.value.guild_id) {
+    return err(new Error(`channel is not in the guild the channel resides in`));
+  }
 
   const channel = d_channel.value;
 

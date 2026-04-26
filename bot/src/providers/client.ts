@@ -4,11 +4,8 @@ import { create_singleton } from './singleton';
 const singleton = create_singleton(
   () =>
     new Client({
-      intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-      ],
+      // TODO: Add MessageContent back when Discord grants the intent.
+      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
 
       sweepers: {
         messages: {

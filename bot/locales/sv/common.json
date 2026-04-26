@@ -1,7 +1,124 @@
 {
-  "watch": {
-    "thread": "tråden",
-    "watch": "bevakad",
-    "unwatch": "o-bevakad"
+  "commands": {
+    "watch": {
+      "embed_title": "Lyckat!",
+      "embed_body": "<#{{thread_id}}> blev {{thread_action}}",
+      "thread": "tråd",
+      "watch": "bevaked",
+      "unwatch": "obevakad",
+      "footer_watch": "Thread-Watcher kommer se till att den aldrig arkiveras",
+      "footer_unwatch": "Thread-Watcher kommer ej längre se till att den aldrig arkiveras"
+    },
+    "batch": {
+      "fetching_title": "🔍 Hämtar Trådar...",
+      "fetching_body": "Håll i hatten! Jag sammlar in alla trådar i **{{channel_link}}** (inkluderat arkiverade trådar)\n*Detta kan ta en stund om det finns många trådar...*",
+      "cancelled": "avbruten",
+      "result_title": "{{action}} {{action_amount}} trådar",
+      "will_watch_future": "Framtida trådar kommer också bevakas om de följer filtret",
+      "in_channel": "i {{channel_link}}",
+      "success_embed_title": "Lyckat!",
+      "success_embed_body": "**{{actioned_number}}** trådar blev {{action_name}}",
+      "success_embed_footer_monitor_enabled": "Samtliga nya trådar skapade i <#{{target_id}}> kommer bevakas!",
+      "action_toggled": "togglad",
+      "action_watched": "bevakad",
+      "action_unwatched": "obevakad"
+    },
+    "monitors": {
+      "monitor_added_title": "Bevakare tillagd!",
+      "monitor_added_body": "Samtliga nya trådar som skapas i <#{{monitor_id}}> kommer bevakas!",
+      "monitor_removed_title": "Bevakare Borttagen!",
+      "monitor_removed_body": "Bevakaren för <#{{monitor_id}}> blev borttagen. Samtliga trådar som redan blivit bevakade av denna bevakare förblir bevakade."
+    },
+    "list": {
+      "no_data_title": "Hittade inget!",
+      "no_data_body": "Det finns inget att visa :(",
+      "btn_view_online": "Kika Online"
+    },
+    "info": {
+      "title": "Information",
+      "description": "Thread-Watcher är en Discord-bot som är designad för att hjälpa communities få ut det mesta av Discord-trådar. Från att hålla trådar vid liv oändligt, till ärendeflöden, Thread-Watcher är din splitternya verktygslåda för trådar. Bottens kod är 100% öppen källkod och utvecklas i Uppsala 🇸🇪\n\n**Kör på shard {{shard_id}} av {{shard_count}} | {{guild_count}} servrar | {{watched_threads}} bevakade trådar**\n\n### Funktioner\n\n🧵 **Trådbevakning**: Hindra trådar från att döljas automatiskt. Bevaka enstaka trådar eller hela kanaler på en och samma gång.\n👁️ **Kanalbevakare**: Automatiskt bevaka nya trådar i en kanal, forum, kategori, eller hela servern med konfigurerbara filter.\n🎫 **Ärendepaneler**: Bygg egna ärendeflöden med en grafisk pipeline-redigerare. AI-drivna problembeskrivningar, transkriptioner, och sammanfattningar inkluderade!\n\n### Användbara Länkar\n\n🔐 **[Integritetspolicy](https://threadwatcher.xyz/policies/privacy-policy)**\n📋 **[Användarvillkor](https://threadwatcher.xyz/policies/terms-of-service)**\n✨ **[Dokumentation](https://docs.threadwatcher.xyz/)**\n💬 **[Supportserver](https://botsuite.co/join)**\n⭐ **[Rösta På Top.gg](https://top.gg/bot/870715447136366662/vote?guild_id={{guild_id}})**",
+      "btn_website": "Webbsajt",
+      "btn_support": "Support Server"
+    },
+    "config": {
+      "saved_title": "Sparad!"
+    }
+  },
+  "advanced": {
+    "embed_title": "Avancerad",
+    "regex_modal_title": "Avancerad",
+    "no_value": "`inget värde`",
+    "edit_mode": "Redigeringsläge: nuvarande bevakare kommer överskrivas",
+    "regex_helper": "**Regex (Regular Expression) Tips**\nRegex lets you match thread names using patterns. Here are some simple examples to get started:\n\n> **Match threads containing a word:**\n> \\`._bug._\\` → Matches threads with \"bug\" anywhere in the name (e.g., \"report-bug\", \"bug fix\").\n> \\`^help\\` → Matches threads **starting with** \"help\" (e.g., \"help-me\", \"help-desired\").\n\n> **Match exact phrases:** > \\`^bug report$\\` → Matches _only_ threads named exactly \"bug report\".\n\n> **Exclude threads:**\n> Add \\`!\\` at the start to invert the match (e.g., \\`!._wip._\\` ignores threads with \"wip\").\n\n📖 **[Full Regex Guide](https://docs.threadwatcher.xyz/usage/advanced-filtering#regex)**\n✨ **[AI Regex Generator](https://rgx.tools/)** (External)\n🔗 **[Regex Cheat Sheet](https://www.rexegg.com/regex-quickstart.html)** (External)\n💡 _Need help? Try your pattern with the **Test Regex** button!_",
+    "required_roles": "Nödvändiga Roller",
+    "required_tags": "Nödvändiga Etiketter",
+    "roles": "Roller",
+    "tags": "Ettiketer",
+    "button": {
+      "proceed": "Fortsätt",
+      "cancel": "Avbryt",
+      "set_regex": "Välj Regex",
+      "clear_regex": "Rensa Regex",
+      "test_regex": "Testa Regex"
+    }
+  },
+  "audit": {
+    "is_bot_staff": "(Bot-Administratör)",
+    "view_log": "Visa Händelse",
+    "config_embed_title": "Konfiguration Ändrad",
+    "config_desc": "för inställning `{{setting_key}}`",
+    "cant_send_in_log_channel": "-# Jag kan inte skapa meddelanden i {{channel_link}}. Vänligen ge mig tillåtelse eller ändra kannal med `/config`",
+    "config_embed_from": "Gammalt Värde",
+    "config_embed_to": "Nytt Värde",
+    "batch_title": "{{action}}ed {{action_amount}} trådar",
+    "monitor_title": "Kanalbevakare",
+    "monitor_start": "Startad",
+    "monitor_end": "Stannad",
+    "monitor_desc": "{{action}} bevakar trådar i {{channel_link}}",
+    "thread_watch_title": "Trådens bevakningsstatus ändrad",
+    "thread_watch_desc": "Tråd {{channel_link}} blev {{action}}"
+  },
+  "ticket": {
+    "panel_created": "Panel Skapad!",
+    "panel_created_text": "hej?",
+    "panel_removed": "Panel Borttagen!",
+    "panel_removed_text": "Den kan inte längre användas för att skapa nya ärenden. Existerande ärenden kommer fortsatt fungera",
+    "ticket_opened_title": "Ärende Skapat!",
+    "ticket_opened_body": "Ärende med ID **[{{ticket_id}}](https://threadwatcher.xyz/tickets/{{ticket_id}})** öppnat. Tilldelade roller har blivit pingade",
+    "ticket_closed_title": "Ärende Stängt!",
+    "ticket_closed_body": "Ärende med ID **{{ticket_id}}** blev klarmarkerat."
+  },
+  "errors": {
+    "fatal": "Kritiskt Fel",
+    "failed_without_clear_cause": "Kommandot stötte på ett okänt fel.",
+    "get_help_btn_text": "Få Hjälp",
+    "read_docs_btn_text": "Lär dig mer",
+    "channel_type_title": "Fel kanaltyp",
+    "channel_type_body": "{{channel_tag}} har fel kanaltyp",
+    "permissions_err": {
+      "you": "du har",
+      "bot": "botten har",
+      "description": "{{command_tag}} krävar att {{target}} {{permission}}."
+    },
+    "entitlement_err": {
+      "title": "Thread-Watcher+ Krävs",
+      "command_requires_sku": "**{{command_tag}}** kommandot är en premiumfunktion. [Uppgradera nu]({{link}}) för att låsa upp detta och andra avancerade funktioner för din server!",
+      "command_option_requires_sku": "**{{option_name}}** valet är en Thread-Watcher+ funktion. [Uppgradera här]({{link}}) för att få tillgång!",
+      "topgg_cta": "-# 💡 **Tips:** Denna server får **globala bevakare** (i 12 timmar) och **gratis AI-krediter** för varje röst Thread-Watcher får på Top.gg via [denna länk]({{topgg_vote_link}})! Rösta nu för att låsa upp belöningar för din server."
+    },
+    "ticket": {
+      "ticket_not_found_title": "Ärende kunde ej hittas!",
+      "ticket_not_found_body": "Ärende med ID `{{ticket_id}}` kunde ej hittas.",
+      "panel_not_found_title": "Panel kunde ej hittas!",
+      "panel_not_found_body": "Panelen med ID `{{panel_id}}` kunde ej hittas.",
+      "ticket_not_found_from_channel_title": "Ärende kunde ej hittas!",
+      "ticket_not_found_from_channel_body": "Kanalen <#{{channel_id}}> är ej relaterat till något ärende!",
+      "ticket_not_found_from_channel_body_footer": "Säkerställ att du utför detta i ett ärende",
+      "required_assigned_roles_title": "Ej tillåtet",
+      "required_assigned_roles_body": "Detta kräver att du har en av de tilldelade rollerna\n{{assigned_roles}}",
+      "required_assigned_roles_body_or_ownership": "Detta kräver att du har en av de tilldelade rollerna eller att det var du som skapade ärendet\n{{assigned_roles}}",
+      "pipeline_failed_title": "Pipeline misslyckades!",
+      "pipeline_failed_desc": "Panel stötte på ett fel i modulen `{{module_id}}` och kan ej fortsätta.\n-# Felmeddelande följer`"
+    }
   }
 }

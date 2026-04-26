@@ -39,6 +39,7 @@ async function run(
       guild_count,
       shard_id,
       shard_count,
+      guild_id: interaction.guildId!,
     }),
   );
 

@@ -202,7 +202,7 @@ export class Pipeline implements IPipeline {
     this.is_resolved = true;
     await this.before_exit();
 
-    const guild_has_premium = (await entitlement_service.has_premium(int.guildId!, int)).match(
+    const guild_has_premium = (await entitlement_service.has_premium(int.guildId!)).match(
       (t) => t,
       (ent_err) => {
         this.logger.error(`could not get premium status of '${int.guildId!}'`, ent_err);

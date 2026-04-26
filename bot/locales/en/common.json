@@ -36,7 +36,7 @@
     },
     "info": {
       "title": "Information",
-      "description": "Thread-Watcher is a Discord bot designed to help communities get the most out of Discord threads. From keeping threads alive indefinitely to a support ticket workflows, Thread-Watcher is your all-in-one thread management toolbox.\n\n**Running on shard {{shard_id}} of {{shard_count}} | {{guild_count}} servers | {{watched_threads}} watched threads**\n\n### Features\n\n🧵 **Thread Watching**: Prevent threads from being hidden automatically. Watch individual threads or entire channels at once.\n🎫 **Ticket Panels**: Build custom support ticket flows with a visual pipeline editor. AI-powered issue narrowing, transcripts, and summaries included.\n👁️ **Channel Monitors**: Automatically watch new threads in a channel, forum, or category based on configurable filters.\n\n### Useful Links\n\n🔐 **[Privacy Policy](https://threadwatcher.xyz/policies/privacy-policy)**\n📋 **[Terms of Service](https://threadwatcher.xyz/policies/terms-of-service)**\n✨ **[Documentation](https://docs.threadwatcher.xyz/)**\n💬 **[Support Server](https://botsuite.co/join)**\n⭐ **[Vote on Top.gg](https://top.gg/bot/870715447136366662)**",
+      "description": "Thread-Watcher is a Discord bot that is designed to help communities get the most out of Discord threads. From keeping threads alive indefinitely, to ticket workflows, Thread-Watcher is your thread tool-box. The bot is 100% open source.\n\n**Running on shard {{shard_id}} of {{shard_count}} | {{guild_count}} servers | {{watched_threads}} watched threads**\n\n### Features\n\n🧵 **Thread Watching**: Prevent threads from being hidden automatically. Watch individual threads or entire channels at once.\n👁️ **Channel Monitors**: Automatically watch new threads in a channel, forum, category, or the whole server based on configurable filters.\n🎫 **Ticket Panels**: Build custom support ticket flows with a visual pipeline editor. AI-powered issue narrowing, transcripts, and summaries included.\n\n### Useful Links\n\n🔐 **[Privacy Policy](https://threadwatcher.xyz/policies/privacy-policy)**\n📋 **[Terms of Service](https://threadwatcher.xyz/policies/terms-of-service)**\n✨ **[Documentation](https://docs.threadwatcher.xyz/)**\n💬 **[Support Server](https://botsuite.co/join)**\n⭐ **[Vote on Top.gg](https://top.gg/bot/870715447136366662/vote?guild_id={{guild_id}})**",
       "btn_website": "Website",
       "btn_support": "Support Server"
     },
@@ -101,7 +101,7 @@
       "description": "{{command_tag}} requires that {{target}} the {{permission}} permission."
     },
     "entitlement_err": {
-      "title": "Premium Feature Required",
+      "title": "Thread-Watcher+ Required",
       "command_requires_sku": "The **{{command_tag}}** command is a premium feature. [Upgrade now]({{link}}) to unlock this and other advanced tools for your server.",
       "command_option_requires_sku": "The **{{option_name}}** option is part of the Thread-Watcher Plus features. [Upgrade here]({{link}}) to access it.",
       "topgg_cta": "-# 💡 **Tip:** This server earns **global monitors** (12H) and **free AI credits** for every vote Thread-Watcher receives on Top.gg through [this vote link]({{topgg_vote_link}})! Vote now to unlock rewards for your server!"

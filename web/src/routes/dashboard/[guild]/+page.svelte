@@ -31,7 +31,7 @@
 
 	const guild_id = $derived(params.guild);
 
-	let bot_master_role = $state<string | null>();
+	let bot_master_role = $state<string>("");
 
 	async function update_bot_master_role() {
 		const save_res = await fetch_as_json(
@@ -148,7 +148,7 @@
 			<div class="card_content">
 				<SpoolIcon size={32} />
 				<div class="stat">
-					<span>{2}</span>
+					<span>{data.threads_count}</span>
 					<small>Threads Watched</small>
 				</div>
 			</div>
@@ -159,7 +159,7 @@
 			<div class="card_content">
 				<EyeIcon size={32} />
 				<div class="stat">
-					<span>{2}</span>
+					<span>{data.monitors_count}</span>
 					<small>Active Monitors</small>
 				</div>
 			</div>
@@ -208,12 +208,10 @@
 {#if show_bot_master_modal}
 	<Modal title="Assign Bot Master" bind:set_open={show_bot_master_modal}>
 		<SettingBox
-			name="Bot Master"
-			description="Select the role that can access the bot dashboard."
-			disclaimer="Any role with Administrator will be considered a Bot Master"
-		>
-			<RolePicker bind:value={bot_master_role} roles={gs.roles} />
-		</SettingBox>
+			setting_key="BOT_MASTER_ROLE"
+			bind:value={bot_master_role}
+		/>
+
 
 		{#snippet buttons()}
 			<Button load_with={update_bot_master_role} disabled={!bot_master_role} variant="primary"

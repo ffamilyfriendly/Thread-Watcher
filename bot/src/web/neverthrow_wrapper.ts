@@ -47,6 +47,11 @@ export function safe_route<
       proc_duration,
     });
 
+    if (!result.value) {
+      res.locals.logger.warn('empty response');
+      return res.json({ _fallback: 'resp empty' });
+    }
+
     return res.json(result.value);
   };
 }

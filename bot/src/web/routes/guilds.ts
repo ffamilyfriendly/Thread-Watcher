@@ -17,6 +17,7 @@ import { z } from 'zod';
 import { ticket_service } from '@providers/services/ticket_service';
 import { guild_service } from '@providers/services/guild_service';
 import { DashboardData, GuildOverview } from '@watcher/shared';
+import { thread_service } from '@providers/services/thread_service';
 
 const router = Router();
 
@@ -63,11 +64,13 @@ router.get(
         ticket_service.get_panel_count(guild_id),
         guild_service.get_guild_info(guild_id),
         setting_service.get_guild_settings(guild_id),
+        thread_service.get_count_threads(guild_id),
       ]),
     );
     if (combined.isErr()) return err(combined.error);
 
-    const [rel_tickets, rec_audits, mon_count, pan_count, guild_inf, settings] = combined.value;
+    const [rel_tickets, rec_audits, mon_count, pan_count, guild_inf, settings, threads_count] =
+      combined.value;
 
     return ok({
       ticket_panels_count: pan_count,
@@ -76,17 +79,10 @@ router.get(
       relevant_tickets: rel_tickets,
       guild: guild_inf,
       guild_settings: settings,
+      threads_count,
     });
   }),
 );
-
-/*
-  THIS CODE IS HORRIBLE. FIX IT BEFORE DEPLOYING
-  (I know you wont)
-
-  2026-04-15 you is fixing this!
-  TODO: fix this. Need to sleep
-*/
 
 async function time<T>(label: string, p: Promise<T>): Promise<T> {
   const start = Date.now();
@@ -102,21 +98,15 @@ router.get(
     const guild_id = req.params.guild_id as string;
 
     const [roles_res, channel_res, guild, entitlement, guild_obj] = await Promise.all([
-      time(
-        'roles',
-        ipc_client.send_to_shard_having_guild<Role[]>(guild_id, 'fetch_roles', {
-          guild_id,
-        }),
-      ),
-      time(
-        'channels',
-        ipc_client.send_to_shard_having_guild<Channel[]>(guild_id, 'fetch_channels', {
-          guild_id,
-        }),
-      ),
-      time('guild_info', guild_service.get_guild_info(guild_id)),
-      time('entitlements', entitlement_service.get_entitlement_breakdown(guild_id)),
-      time('guild', ipc_client.send_shard(guild_id, 'get_guild', { guild_id })),
+      ipc_client.send_to_shard_having_guild<Role[]>(guild_id, 'fetch_roles', {
+        guild_id,
+      }),
+      ipc_client.send_to_shard_having_guild<Channel[]>(guild_id, 'fetch_channels', {
+        guild_id,
+      }),
+      guild_service.get_guild_info(guild_id),
+      entitlement_service.get_entitlement_breakdown(guild_id),
+      ipc_client.send_shard(guild_id, 'get_guild', { guild_id }),
     ]);
 
     if (guild.isErr()) return err(guild.error);

@@ -1,17 +1,17 @@
-Thread-Watcher is a Discord bot designed to help communities get the most out of Discord threads. From keeping threads alive indefinitely to a support ticket workflows, Thread-Watcher is your all-in-one thread management toolbox.
+Thread-Watcher är en Discord-bot som är designad för att hjälpa communities få ut det mesta av Discord-trådar. Från att hålla trådar vid liv oändligt, till ärendeflöden, Thread-Watcher är din splitternya verktygslåda för trådar. Bottens kod är 100% öppen källkod och utvecklas i Uppsala 🇸🇪
 
-**Running on shard {{shard_id}} of {{shard_count}} | {{guild_count}} servers | {{watched_threads}} watched threads**
+**Kör på shard {{shard_id}} av {{shard_count}} | {{guild_count}} servrar | {{watched_threads}} bevakade trådar**
 
-### Features
+### Funktioner
 
-🧵 **Thread Watching**: Prevent threads from being hidden automatically. Watch individual threads or entire channels at once.
-🎫 **Ticket Panels**: Build custom support ticket flows with a visual pipeline editor. AI-powered issue narrowing, transcripts, and summaries included.
-👁️ **Channel Monitors**: Automatically watch new threads in a channel, forum, or category based on configurable filters.
+🧵 **Trådbevakning**: Hindra trådar från att döljas automatiskt. Bevaka enstaka trådar eller hela kanaler på en och samma gång.
+👁️ **Kanalbevakare**: Automatiskt bevaka nya trådar i en kanal, forum, kategori, eller hela servern med konfigurerbara filter.
+🎫 **Ärendepaneler**: Bygg egna ärendeflöden med en grafisk pipeline-redigerare. AI-drivna problembeskrivningar, transkriptioner, och sammanfattningar inkluderade!
 
-### Useful Links
+### Användbara Länkar
 
-🔐 **[Privacy Policy](https://threadwatcher.xyz/policies/privacy-policy)**
-📋 **[Terms of Service](https://threadwatcher.xyz/policies/terms-of-service)**
-✨ **[Documentation](https://docs.threadwatcher.xyz/)**
-💬 **[Support Server](https://botsuite.co/join)**
-⭐ **[Vote on Top.gg](https://top.gg/bot/870715447136366662)**
+🔐 **[Integritetspolicy](https://threadwatcher.xyz/policies/privacy-policy)**
+📋 **[Användarvillkor](https://threadwatcher.xyz/policies/terms-of-service)**
+✨ **[Dokumentation](https://docs.threadwatcher.xyz/)**
+💬 **[Supportserver](https://botsuite.co/join)**
+⭐ **[Rösta På Top.gg](https://top.gg/bot/870715447136366662/vote?guild_id={{guild_id}})**

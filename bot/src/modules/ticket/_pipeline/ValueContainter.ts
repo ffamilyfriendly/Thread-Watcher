@@ -1,5 +1,5 @@
 import { StringSelectOption } from '@watcher/shared';
-import { ContractLeafValue, ContractObject, ContractType } from '@watcher/shared/tickets/contracts';
+import { ContractLeafValue, ContractObject, ContractType } from '@watcher/shared/';
 import { APIRole, Attachment, Channel, Role, User } from 'discord.js';
 
 export type ValueContainerValue =

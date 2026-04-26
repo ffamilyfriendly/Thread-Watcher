@@ -41,10 +41,9 @@ router.post(
       const monitor = req.body;
 
       if (monitor.target_id === monitor.guild_id) {
-        const entitled_res = await entitlement_service.has_premium(guild_id);
-        if (entitled_res.isErr()) return err(entitled_res.error);
+        const entitled_res = await entitlement_service.get_topgg_vote_or_premium(guild_id);
 
-        if (!entitled_res.value)
+        if (!entitled_res)
           return api_err(HTTPCodes.PAYMENT_REQUIRED, 'global monitors are a premium feature');
       }
 

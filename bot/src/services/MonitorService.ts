@@ -82,9 +82,9 @@ export default class ChannelService {
         ...audit,
         data: { audit_type: 'MONITOR_ADD', target_channel: monitor_id, filters },
       });
-    }
+    } else return err(res.error);
 
-    return res;
+    return ok(combined_object);
   }
 
   async edit_monitor(channel_id: string, edit_obj: EditMonitor) {

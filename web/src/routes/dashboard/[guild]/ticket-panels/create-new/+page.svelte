@@ -86,6 +86,7 @@
             </div>
             <div class="content">
                 <div class="input-group">
+                    <!-- svelte-ignore a11y_label_has_associated_control -->
                     <label>Destination Channel</label>
                     <ChannelPicker 
                         bind:value={channel} 
@@ -96,6 +97,7 @@
                 </div>
 
                 <div class="input-group">
+                    <!-- svelte-ignore a11y_label_has_associated_control -->
                     <label>Support Staff Roles</label>
                     <RolePicker 
                         bind:value={roles} 

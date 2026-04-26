@@ -80,7 +80,7 @@ type ResponseCallback = (ev: ReponseEvent) => void;
 class BaseClient implements IpcClient {
   listeners = new Map<string, Callback<unknown>>();
   response_events = new Map<string, ResponseCallback>();
-  request_timeout_after_ms = 1000 * 3;
+  request_timeout_after_ms = 1000 * 10;
 
   on(event: string, callback: Callback<unknown>) {
     this.listeners.set(event, callback);

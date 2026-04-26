@@ -1,9 +1,14 @@
 <script lang="ts">
 	import ToastContainer from '$lib/components/ui/ToastContainer.svelte';
 	import TwLogoBranding from '$lib/components/ui/TwLogoBranding.svelte';
+	import Logo from "$lib/assets/thread_watcher_icon.png"
 	import '$lib/style/app.scss';
 	let { children } = $props();
 </script>
+
+<svelte:head>
+	<link rel="icon" type="image/x-icon" href={Logo}>
+</svelte:head>
 
 <ToastContainer />
 {@render children()}

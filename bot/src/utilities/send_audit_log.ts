@@ -4,7 +4,7 @@ import { setting_service } from '@providers/services/setting_service';
 import { AuditData, NarrowedLog, Settings } from '@watcher/shared';
 import { ColorResolvable, EmbedBuilder, Message } from 'discord.js';
 import { AppEventKey, AppEventMap } from '#/events/bus';
-import { ok, ResultAsync } from 'neverthrow';
+import { err, ok, ResultAsync } from 'neverthrow';
 import { map_err } from './error';
 import { logger } from '@providers/logger';
 import { from_locale_str, TypedI18Func } from './i18def';
@@ -226,6 +226,14 @@ async function flush_audit_buffer(guildId: string) {
   if (channelRes.isErr() || !channelRes.value?.isSendable()) return;
 
   const channel = channelRes.value;
+
+  if ('guildId' in channel && channel.guildId !== guildId) {
+    logger.warn("guild 'LOGGING_CHANNEL' set to another guild", {
+      guild_id: guildId,
+      channel_guild_id: channel.guildId,
+    });
+    return err(new Error("guild 'LOGGING_CHANNEL' set to another guild"));
+  }
 
   const chunks: EmbedBuilder[][] = [];
   for (let i = 0; i < embeds.length; i += MAX_EMBEDS_PER_MSG) {

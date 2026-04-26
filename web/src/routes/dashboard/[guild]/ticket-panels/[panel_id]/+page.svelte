@@ -201,8 +201,8 @@
 		<div class="option">
 			<h3>Assigned Channel</h3>
 			<ChannelPicker
-				channels={data.channels}
-				guild_id={data.guild_id}
+				channels={guild_state.channels}
+				guild_id={guild_state.guild_id!}
 				only_with_types={CAN_HOLD_THREADS}
 				bind:value={pipeline_state.panel.initial_channel_id}
 			/>
@@ -210,7 +210,7 @@
 		<div class="option">
 			<h3>Assigned Roles</h3>
 			<RolePicker
-				roles={data.roles}
+				roles={guild_state.roles}
 				multiple={true}
 				bind:value={pipeline_state.panel.initial_assigned_roles}
 			/>

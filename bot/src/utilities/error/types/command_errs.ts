@@ -109,13 +109,10 @@ export class EntitlementsError extends EmbeddableError {
     interaction: RepliableInteraction,
     t: I18nType,
   ): void {
-    const IS_DEV_ENV = true;
-    if (!IS_DEV_ENV) {
-      const sku_cta_button = new ButtonBuilder();
-      sku_cta_button.setStyle(ButtonStyle.Premium);
-      sku_cta_button.setSKUId(this.sku_id);
-      action_row.setComponents(sku_cta_button);
-    }
+    const sku_cta_button = new ButtonBuilder();
+    sku_cta_button.setStyle(ButtonStyle.Premium);
+    sku_cta_button.setSKUId(this.sku_id);
+    action_row.setComponents(sku_cta_button);
   }
 
   protected configure_embed(
