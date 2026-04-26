@@ -51,7 +51,7 @@ export default class ThreadBumper {
    * Millisecond interval used by the internal PQueue for interval-based rate limiting.
    * Intended to control how quickly items from the queue are processed in bursts.
    */
-  static DEFAULT_INTERVAL = 1200;
+  static DEFAULT_INTERVAL = 1500;
   /**
    * DEFAULT_TIMEOUT
    *
