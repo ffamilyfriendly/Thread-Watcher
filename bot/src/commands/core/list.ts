@@ -20,7 +20,12 @@ import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { Vacuum } from '#/services/ComponentService';
 import { map_err } from '#/utilities/error';
 import { CommandError } from '#/utilities/error/def';
-import { safe_reply_or_followup } from '#/utilities/interaction_helpers';
+import {
+  safe_defer,
+  safe_edit_reply,
+  safe_reply_or_followup,
+  safe_update,
+} from '#/utilities/interaction_helpers';
 
 type DisplayType = 'THREADS' | 'CHANNELS';
 
@@ -130,7 +135,8 @@ class PageGenerator {
   }
 
   get() {
-    return this.pages[this._page].text;
+    const page_data = this.pages[this._page];
+    return page_data ? page_data.text : '';
   }
 
   back() {
@@ -193,17 +199,21 @@ class PageGenerator {
   }
 
   async next() {
-    if (this._page + 1 <= this.pages.length) {
+    if (this._page + 1 < this.pages.length) {
       this._page += 1;
       return this.get();
     }
 
-    const page = await this.generate_page();
-    if (page.length > 0) {
-      this._page += 1;
+    // If we don't have it, try to generate it
+    if (!this.is_completed()) {
+      const page = await this.generate_page();
+      if (page.length > 0) {
+        this._page += 1;
+        return page;
+      }
     }
 
-    return page;
+    return this.get();
   }
 
   get_page_data() {
@@ -257,7 +267,7 @@ async function run(
     return safe_reply_or_followup(interaction, { embeds: [e] });
   }
 
-  await interaction.deferReply(show_private ? { flags: 'Ephemeral' } : {});
+  await safe_defer(interaction, show_private ? { flags: 'Ephemeral' } : {});
   const { btn_back, btn_next, btn_website_cta } = create_buttons(
     interaction.guildId,
     display_type,
@@ -310,13 +320,12 @@ async function run(
       btn_back,
       filter_function,
       async (interaction) => {
-        await interaction.deferUpdate();
         const page = page_generator.back();
         embed.setDescription(page);
 
         update_state(state);
 
-        interaction.update({
+        safe_update(interaction, {
           embeds: [embed],
           components: [button_row, dashboard_row],
         });
@@ -331,7 +340,7 @@ async function run(
 
         update_state(state);
 
-        interaction.update({
+        safe_update(interaction, {
           embeds: [embed],
           components: [button_row, dashboard_row],
         });
@@ -341,7 +350,7 @@ async function run(
 
   update_state(state);
 
-  interaction.editReply({
+  safe_edit_reply(interaction, {
     embeds: [embed],
     components: [button_row, dashboard_row],
   });
