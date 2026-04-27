@@ -1,4 +1,5 @@
 import { DISCORD_SNOWFLAKE_MAX_LEN, UUID_LEN } from '@watcher/shared';
+import { index } from 'drizzle-orm/mysql-core';
 import {
   boolean,
   datetime,
@@ -16,18 +17,34 @@ import {
 const date_now = () => new Date();
 const random_id = () => crypto.randomUUID();
 
-export const Threads = mysqlTable('threads', {
-  thread_id: varchar('thread_id', { length: DISCORD_SNOWFLAKE_MAX_LEN }).primaryKey(),
-  guild_id: varchar('guild_id', { length: DISCORD_SNOWFLAKE_MAX_LEN })
-    .notNull()
-    .references(() => Guilds.guild_id, { onDelete: 'cascade' }),
-  parent_channel_id: text('parent_channel_id'),
-  due_archive: datetime('due_archive').notNull(),
-  is_watched: boolean('is_watched').notNull(),
-  managed_by: text('managed_by'),
-  fail_count: int('fail_count'),
-  next_retry: datetime('next_retry'),
-});
+export const Threads = mysqlTable(
+  'threads',
+  {
+    thread_id: varchar('thread_id', { length: DISCORD_SNOWFLAKE_MAX_LEN }).primaryKey(),
+    guild_id: varchar('guild_id', { length: DISCORD_SNOWFLAKE_MAX_LEN })
+      .notNull()
+      .references(() => Guilds.guild_id, { onDelete: 'cascade' }),
+    parent_channel_id: text('parent_channel_id'),
+    due_archive: datetime('due_archive').notNull(),
+    is_watched: boolean('is_watched').notNull(),
+    managed_by: text('managed_by'),
+    fail_count: int('fail_count'),
+    next_retry: datetime('next_retry'),
+  },
+  (table) => ({
+    idx_thread_is_watched: index('idx_threads_is_watched').on(table.is_watched),
+    idx_threads_due_archive: index('idx_threads_due_archive').on(table.due_archive),
+    idx_threads_backoff_lookup: index('idx_threads_backoff').on(
+      table.is_watched,
+      table.next_retry,
+      table.due_archive,
+    ),
+    idx_threads_guild_watched: index('idx_threads_guild_watched').on(
+      table.guild_id,
+      table.is_watched,
+    ),
+  }),
+);
 
 export const Monitors = mysqlTable('monitors', {
   target_id: varchar('target_id', { length: DISCORD_SNOWFLAKE_MAX_LEN }).primaryKey(),
