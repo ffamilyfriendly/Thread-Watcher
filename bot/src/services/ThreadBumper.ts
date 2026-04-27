@@ -72,7 +72,12 @@ export default class ThreadBumper {
     // Helper to log errors and trigger backoff
     const handle_failure = async (id: string, message: string, error?: any) => {
       this.l.error(`${message} ${id}`, error);
-      await thread_service.set_exp_backoff(id);
+      const exp_res = await thread_service.set_exp_backoff(id);
+      if (exp_res.isErr())
+        this.l.error('failed to set exponential backoff', {
+          thread_id: thread_data.thread_id,
+          error: exp_res.error,
+        });
       return err(error || message);
     };
 
@@ -117,7 +122,7 @@ export default class ThreadBumper {
     }
 
     const bump_behaviour = bump_behaviour_res.value;
-    if (bump_behaviour === 'UNARCHIVE_ONLY') return ok();
+    if (bump_behaviour === 'UNARCHIVE_ONLY' || thread.locked) return ok();
 
     if (!thread.locked && thread.manageable) {
       const new_duration = thread.autoArchiveDuration === 10080 ? 4320 : 10080;
@@ -134,6 +139,7 @@ export default class ThreadBumper {
         );
       }
     } else if (thread.sendable && !thread.archived) {
+      // TODO: set up a more pleasant message than this
       const send_bump_msg_res = await ResultAsync.fromPromise(
         thread.send('bumping thread.'),
         map_err,

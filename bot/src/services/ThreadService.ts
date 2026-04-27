@@ -187,7 +187,13 @@ export default class ThreadService {
     const exp_backoff_delta = Math.pow(2, n_fail_count) * base_ms;
     const retry_after = new Date(Date.now() + exp_backoff_delta);
 
-    return this.db.set_thread_exp_backoff(thread_id, retry_after, n_fail_count);
+    const res = await this.db.set_thread_exp_backoff(thread_id, retry_after, n_fail_count);
+
+    if (res.isOk()) {
+      await this.r.del(thread_id);
+    }
+
+    return res;
   }
 
   async bump_thread_time(thread: GenericThread) {

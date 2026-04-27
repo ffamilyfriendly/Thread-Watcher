@@ -603,6 +603,7 @@ export default class MySql implements Database {
     const val = await this.drizzle.query.Threads.findFirst({
       where: eq(schema.Threads.thread_id, thread_id),
     });
+
     return ok(val ?? null);
   }
 
