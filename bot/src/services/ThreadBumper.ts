@@ -59,7 +59,7 @@ export default class ThreadBumper {
    * duration will be considered failed/time-limited by the queue.
    */
   static DEFAULT_TIMEOUT = 1000 * 5;
-  private queued_threads = new Set<string>();
+  public queued_threads = new Set<string>();
   private queue = new PQueue({
     concurrency: 1,
     timeout: ThreadBumper.DEFAULT_TIMEOUT,

@@ -11,6 +11,7 @@ import { map_err } from '#/utilities/error';
 import on_interaction from './_cmd_handler';
 import { AuditMeta } from '#/services/AuditService';
 import { config } from '@providers/config';
+import { thread_bumper } from '@providers/services/thread_bumper';
 
 async function fetch_responsible_manager(thread: ThreadChannel) {
   const res_thread = await thread_service.get_thread(thread.id);
@@ -83,6 +84,7 @@ export async function check_should_be_watched(thread: ThreadChannel, l: Logger<u
 }
 
 async function check_watched_and_bump(thread: ThreadChannel, l: Logger<unknown>) {
+  if (thread_bumper.queued_threads.has(thread.id)) return ok();
   const res = await thread_service.get_thread(thread.id);
   if (res.isErr()) return l.error(res.error);
   if (!res.value) return l.debug(`Thread ${thread.id} is not watched`);
@@ -93,6 +95,7 @@ async function check_watched_and_bump(thread: ThreadChannel, l: Logger<unknown>)
 
 async function check_msg_should_bump_thread(msg: Message, l: Logger<unknown>) {
   if (!msg.guildId) return ok();
+  if (thread_bumper.queued_threads.has(msg.channelId)) return ok();
 
   guild_service.nullify_left_at(msg.guildId).then((res) => {
     if (res.isErr()) l.error(`Could not unmark guild '${msg.guildId}' as left!`, res.error);
@@ -107,6 +110,8 @@ async function check_msg_should_bump_thread(msg: Message, l: Logger<unknown>) {
 }
 
 async function on_thread_update(old: ThreadChannel, thread: ThreadChannel, l: Logger<unknown>) {
+  if (thread_bumper.queued_threads.has(old.id)) return ok();
+
   const member_bot = thread.guild.members.me;
   const parent_chan = thread.parent;
 
@@ -190,6 +195,7 @@ function on_thread_create(thread: ThreadChannel, l: Logger<unknown>) {
 }
 
 async function on_thread_delete(thread: ThreadChannel, l: Logger<unknown>) {
+  if (thread_bumper.queued_threads.has(thread.id)) return ok();
   const changes = await thread_service.delete_thread(thread.id);
   if (changes.isErr()) {
     l.error('Could not delete thread!', changes.error);
@@ -201,6 +207,7 @@ async function on_thread_delete(thread: ThreadChannel, l: Logger<unknown>) {
 
 async function on_message_create(message: Message, l: Logger<unknown>) {
   if (!message.channel.isThread()) return ok();
+  if (thread_bumper.queued_threads.has(message.channelId)) return ok();
 
   const res_thread = (await thread_service.get_thread(message.channelId)).match(
     (value) => ok(value),
