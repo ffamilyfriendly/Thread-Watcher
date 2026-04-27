@@ -33,11 +33,16 @@
     {
       "label": "Run Bot",
       "type": "shell",
-      "command": "npm run start -w bot",
+      "command": "NODE_ENV=development npm run start -w bot",
       "isBackground": true,
       "icon": { "id": "robot", "color": "terminal.ansiMagenta" },
       "presentation": {
         "group": "watcher-group"
+      },
+      "options": {
+        "env": {
+          "NODE_ENV": "development"
+        }
       }
     }
   ]

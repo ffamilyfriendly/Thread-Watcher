@@ -1,4 +1,3 @@
-import { config } from '@providers/config';
 import { DISCORD_SNOWFLAKE_MAX_LEN, UUID_LEN } from '@watcher/shared';
 import {
   boolean,
@@ -26,6 +25,8 @@ export const Threads = mysqlTable('threads', {
   due_archive: datetime('due_archive').notNull(),
   is_watched: boolean('is_watched').notNull(),
   managed_by: text('managed_by'),
+  fail_count: int('fail_count'),
+  next_retry: datetime('next_retry'),
 });
 
 export const Monitors = mysqlTable('monitors', {
@@ -67,9 +68,7 @@ export const Guilds = mysqlTable('guilds', {
   left_at: datetime('left_at'),
   granted_SKU: text('granted_SKU'),
   monthly_budget_eurocents: int('monthly_budget_eurocents').default(0),
-  persistent_budget_eurocents: int('persistent_budget_eurocents').default(
-    config.ai.initial_free_tokens,
-  ),
+  persistent_budget_eurocents: int('persistent_budget_eurocents').default(6969),
   monthly_budget_last_granted: datetime('monthly_budget_last_granted'),
 });
 

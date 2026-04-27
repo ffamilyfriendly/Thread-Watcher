@@ -8,6 +8,7 @@ const singleton = create_singleton(
       intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
 
       sweepers: {
+        ...Options.DefaultSweeperSettings,
         messages: {
           // We only handle messages in passing. There's no real need to cache
           interval: 300,
@@ -22,7 +23,10 @@ const singleton = create_singleton(
         GuildBanManager: 0,
         GuildEmojiManager: 0,
         MessageManager: 0,
-        GuildMemberManager: 200,
+        GuildMemberManager: {
+          maxSize: 20,
+          keepOverLimit: (member) => member.id === member.client.user.id,
+        },
         UserManager: 100,
         ReactionManager: 0,
         ReactionUserManager: 0,

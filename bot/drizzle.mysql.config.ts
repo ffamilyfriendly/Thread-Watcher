@@ -7,7 +7,7 @@ export default defineConfig({
   dbCredentials: {
     host: 'localhost',
     user: 'threadwatcher',
-    password: 'XXXX',
+    password: 'dab420',
     database: 'threadwatcher',
   },
 });

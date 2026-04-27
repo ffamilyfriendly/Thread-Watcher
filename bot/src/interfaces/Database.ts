@@ -46,6 +46,7 @@ interface CoreThread {
   set_thread_manager: (thread_id: string, mgr?: string) => DBResult;
   set_thread_auto_archive: (thread_id: string, auto_archive_duration: Date) => DBResult;
   set_thread_watched: (thread_id: string, is_watched: boolean) => DBResult;
+  set_thread_exp_backoff: (thread_id: string, retry_after: Date, attempt_nr: number) => DBResult;
   get_thread: (thread_id: string) => DBResult<ThreadData | null>;
   get_threads_in_guild: (guild_id: string, watched: boolean) => DBResult<ThreadData[]>;
   get_paginated_threads_in_guild: (

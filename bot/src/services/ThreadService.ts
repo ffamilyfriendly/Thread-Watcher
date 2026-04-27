@@ -175,6 +175,21 @@ export default class ThreadService {
     return result;
   }
 
+  async set_exp_backoff(thread_id: string) {
+    const t = await this.get_thread(thread_id, false);
+    if (t.isErr()) return err(t.error);
+    if (!t.value) return err(new Error(`Thread with id '${thread_id}' does not exist`));
+
+    const { fail_count } = t.value;
+    let n_fail_count = (fail_count ?? 0) + 1;
+
+    const base_ms = 1000 * 60 * 60;
+    const exp_backoff_delta = Math.pow(2, n_fail_count) * base_ms;
+    const retry_after = new Date(Date.now() + exp_backoff_delta);
+
+    return this.db.set_thread_exp_backoff(thread_id, retry_after, n_fail_count);
+  }
+
   async bump_thread_time(thread: GenericThread) {
     return this.set_bump_thread_time(thread.id, thread.autoArchiveDuration ?? 0);
   }

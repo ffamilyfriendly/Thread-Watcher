@@ -7,6 +7,8 @@ export const ZThreadData = z.object({
   due_archive: z.coerce.date(),
   is_watched: z.coerce.boolean().default(true),
   managed_by: z.string().nullish(),
+  next_retry: z.coerce.date().nullish(),
+  fail_count: z.number().nullish(),
 });
 export type ThreadData = z.output<typeof ZThreadData>;
 

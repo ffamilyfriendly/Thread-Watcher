@@ -1,4 +1,3 @@
-import { config } from '@providers/config';
 import { integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 const date_now = () => new Date();
@@ -13,6 +12,8 @@ export const Threads = sqliteTable('threads', {
   due_archive: integer('due_archive', { mode: 'timestamp' }).notNull(),
   is_watched: integer('is_watched', { mode: 'boolean' }).notNull(),
   managed_by: text('managed_by'),
+  fail_count: integer('fail_count'),
+  next_retry: integer('next_retry', { mode: 'timestamp' }),
 });
 
 export const Monitors = sqliteTable('monitors', {
@@ -54,9 +55,7 @@ export const Guilds = sqliteTable('guilds', {
   left_at: integer('left_at', { mode: 'timestamp' }),
   granted_SKU: text('granted_SKU'),
   monthly_budget_eurocents: integer('monthly_budget_eurocents').default(0),
-  persistent_budget_eurocents: integer('persistent_budget_eurocents').default(
-    config.ai.initial_free_tokens,
-  ),
+  persistent_budget_eurocents: integer('persistent_budget_eurocents').default(6969),
   monthly_budget_last_granted: integer('monthly_budget_last_granted', { mode: 'timestamp' }),
 });
 

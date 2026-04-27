@@ -1,5 +1,5 @@
 import PQueue from 'p-queue';
-import { err, ok, ResultAsync } from 'neverthrow';
+import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { map_err } from '#/utilities/error';
 import { ThreadData } from '@watcher/shared';
 import DClient from '#/providers/client';
@@ -68,65 +68,85 @@ export default class ThreadBumper {
   });
   private l = logger.getSubLogger({ name: 'ThreadBumper' });
 
-  private async bump_thread(thread_data: ThreadData) {
+  private async bump_thread(thread_data: ThreadData): Promise<Result<unknown, any>> {
+    // Helper to log errors and trigger backoff
+    const handle_failure = async (id: string, message: string, error?: any) => {
+      this.l.error(`${message} ${id}`, error);
+      await thread_service.set_exp_backoff(id);
+      return err(error || message);
+    };
+
     const thread_res = await ResultAsync.fromPromise(
       d_client.channels.fetch(thread_data.thread_id),
       map_err,
     );
-    if (thread_res.isErr()) return err(thread_res.error);
-    if (!thread_res.value) return err('no thread returned');
+
+    if (thread_res.isErr()) {
+      return handle_failure(thread_data.thread_id, 'Could not fetch channel', thread_res.error);
+    }
+
     const thread = thread_res.value;
+    if (!thread || !thread.isThread()) {
+      return handle_failure(thread_data.thread_id, 'Channel is null or not a thread');
+    }
 
-    if (!thread.isThread()) return err('not a thread');
-
+    // if the thread is archived and not unarchivable we cannot do anything with it.
+    // Discord API does not allow edits of archived threads, other than archiving them.
     if (thread.archived && !thread.unarchivable) {
       this.l.warn(`Skipping archived thread (unarchivable): ${thread.id}`);
-      return ok();
+      return thread_service.set_exp_backoff(thread.id);
+    }
+
+    if (thread.archived && thread.unarchivable) {
+      const set_archived_res = await ResultAsync.fromPromise<unknown, Error>(
+        thread.edit({ archived: false }),
+        map_err,
+      );
+      if (set_archived_res.isErr()) {
+        return handle_failure(thread.id, 'Failed to unarchive', set_archived_res.error);
+      }
+
+      // If we're un-archiving a thread we are already inherently bumping it.
+      // We can therefore safely terminate the function here
+      return thread_service.bump_thread_time(thread);
     }
 
     const bump_behaviour_res = await setting_service.get_setting(thread.guildId, 'BUMP_BEHAVIOUR');
-
-    if (bump_behaviour_res.isErr()) return err(bump_behaviour_res.error);
-    if (!bump_behaviour_res.value) return err('bump_behaviour was null');
+    if (bump_behaviour_res.isErr()) {
+      return err(bump_behaviour_res.error);
+    }
 
     const bump_behaviour = bump_behaviour_res.value;
-    if (thread.archived && thread.unarchivable) {
-      const set_archived_res = await ResultAsync.fromPromise<unknown, Error>(
-        thread.setArchived(false),
-        map_err,
-      );
-
-      if (set_archived_res.isErr())
-        this.l.error(`could not un-archive thread ${thread.id}`, set_archived_res.error);
-    }
-
-    if (bump_behaviour === 'UNARCHIVE_ONLY') {
-      this.l.silly('bump behaviour is unarchive_only.', thread.id);
-      thread_service.bump_thread_time(thread);
-      return ok();
-    }
+    if (bump_behaviour === 'UNARCHIVE_ONLY') return ok();
 
     if (!thread.locked && thread.manageable) {
       const new_duration = thread.autoArchiveDuration === 10080 ? 4320 : 10080;
-
-      const set_auto_archive_promise = thread.setAutoArchiveDuration(new_duration);
-
       const auto_archive_res = await ResultAsync.fromPromise<unknown, Error>(
-        set_auto_archive_promise,
+        thread.setAutoArchiveDuration(new_duration),
         map_err,
       );
-      if (auto_archive_res.isErr())
-        this.l.error(`could not bump thread w/ edit ${thread.id}`, auto_archive_res.error);
+
+      if (auto_archive_res.isErr()) {
+        return handle_failure(
+          thread.id,
+          'Auto-archive duration bump failed',
+          auto_archive_res.error,
+        );
+      }
     } else if (thread.sendable && !thread.archived) {
       const send_bump_msg_res = await ResultAsync.fromPromise(
         thread.send('bumping thread.'),
         map_err,
       );
-      if (send_bump_msg_res.isErr())
-        this.l.error(`could not bump thread w/ msg ${thread.id}`, send_bump_msg_res.error);
+
+      if (send_bump_msg_res.isErr()) {
+        return handle_failure(thread.id, 'Message-based bump failed', send_bump_msg_res.error);
+      }
+    } else {
+      return handle_failure(thread.id, 'Thread is locked or not manageable/sendable');
     }
 
-    thread_service.bump_thread_time(thread);
+    await thread_service.bump_thread_time(thread);
     return ok();
   }
 

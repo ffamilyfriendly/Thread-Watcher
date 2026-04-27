@@ -146,43 +146,47 @@ class PageGenerator {
    *
    * @returns a list of threads/channels **not exceeding** `4096` chars
    */
+  // This should fix infinate loop
   async generate_page() {
     let page = '';
-
     let item_count = 0;
-    while (this.last_unread < this.items.length) {
-      const space_left_on_page = PageGenerator.MAX_PER_PAGE > page.length;
-      if (!space_left_on_page) break;
+    let page_full = false;
 
-      const end_index = Math.min(this.last_unread + PageGenerator.GET_PER_BATCH, this.items.length);
-      const items = this.items.slice(this.last_unread, end_index);
-      this.last_unread = end_index;
+    while (this.last_unread < this.items.length && !page_full) {
+      if (this.left_overs.length === 0) {
+        const end_index = Math.min(
+          this.last_unread + PageGenerator.GET_PER_BATCH,
+          this.items.length,
+        );
+        const items = this.items.slice(this.last_unread, end_index);
+        this.last_unread = end_index;
 
-      const items_fetched = await fetch_data_from_id(
-        items.map((t) => {
-          const id = 'thread_id' in t ? t.thread_id : t.target_id;
-          return { id };
-        }),
-      );
-      // TODO: Handle displaying of threads that fail.
-      // MIGHT just push users to web dashboard for this. Unsure yet.
-      const as_links = items_fetched.succeeded.map((c) => create_channel_link(c));
-      const items_to_add = [...this.left_overs, ...as_links];
+        const items_fetched = await fetch_data_from_id(
+          items.map((t) => ({ id: 'thread_id' in t ? t.thread_id : t.target_id })),
+        );
+        this.left_overs = items_fetched.succeeded.map((c) => create_channel_link(c));
+      }
 
-      for (let i = 0; i < items_to_add.length; i++) {
-        const page_len_with_current_item = page.length + items_to_add[i].length + 2;
-        if (page_len_with_current_item > PageGenerator.MAX_PER_PAGE) {
-          const unused_items = items_to_add.splice(i);
-          this.left_overs.push(...unused_items);
+      while (this.left_overs.length > 0) {
+        const next_item = this.left_overs[0];
+
+        const item_to_process =
+          next_item.length > PageGenerator.MAX_PER_PAGE
+            ? next_item.substring(0, PageGenerator.MAX_PER_PAGE - 5) + '...'
+            : next_item;
+
+        if (page.length + item_to_process.length + 2 > PageGenerator.MAX_PER_PAGE) {
+          page_full = true;
           break;
         }
 
-        item_count += 1;
-        page += items_to_add[i] + ', ';
+        page += item_to_process + ', ';
+        item_count++;
+        this.left_overs.shift();
       }
     }
 
-    page = page.substring(0, page.length - 2);
+    page = page.endsWith(', ') ? page.substring(0, page.length - 2) : page;
 
     this.pages.push({ text: page, item_count: item_count });
     return page;

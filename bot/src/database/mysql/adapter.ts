@@ -105,6 +105,15 @@ export default class MySql implements Database {
     this._config = config;
   }
 
+  @with_error_handling
+  async set_thread_exp_backoff(thread_id: string, retry_after: Date, attempt_nr: number) {
+    await this.drizzle
+      .update(schema.Threads)
+      .set({ next_retry: retry_after, fail_count: attempt_nr })
+      .where(eq(schema.Threads.thread_id, thread_id));
+    return ok();
+  }
+
   get_connection() {
     return this.connection_pool.getConnection();
   }
@@ -566,7 +575,7 @@ export default class MySql implements Database {
   async set_thread_auto_archive(thread_id: string, auto_archive_duration: Date) {
     await this.drizzle
       .update(schema.Threads)
-      .set({ due_archive: auto_archive_duration })
+      .set({ due_archive: auto_archive_duration, next_retry: undefined, fail_count: undefined })
       .where(eq(schema.Threads.thread_id, thread_id));
     return ok();
   }
@@ -651,13 +660,14 @@ export default class MySql implements Database {
   static STALE_BUFFER_MS = this.STALE_BUFFER_MINUTES * 60 * 1000;
   @with_error_handling
   async get_stale_threads(buffer_in_ms = MySql.STALE_BUFFER_MS) {
-    const now = Date.now();
-    const stale_thresh = new Date(now + buffer_in_ms);
+    const now = new Date();
+    const stale_thresh = new Date(now.getTime() + buffer_in_ms);
 
     const val = await this.drizzle.query.Threads.findMany({
       where: and(
-        lte(schema.Threads.due_archive, stale_thresh),
         eq(schema.Threads.is_watched, true),
+        lte(schema.Threads.due_archive, stale_thresh),
+        or(isNull(schema.Threads.next_retry), lte(schema.Threads.next_retry, now)),
       ),
     });
 

@@ -108,6 +108,8 @@
       emoji: '👑',
     },
   },
+  // Limited mode will stop TW from processing most Discord events. You want this as "false" unless things are crashing and burning (been there)
+  limited_mode: false,
   // This is the key used to encrypt any ticket message content data at rest. Keep it secret m'kay?
   crypto_key: 'xxx_discord_is_angry_if_you_dont_encrypt_which_is_fair',
   modules: {
