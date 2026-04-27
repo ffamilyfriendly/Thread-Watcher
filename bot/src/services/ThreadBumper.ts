@@ -98,8 +98,7 @@ export default class ThreadBumper {
     // if the thread is archived and not unarchivable we cannot do anything with it.
     // Discord API does not allow edits of archived threads, other than archiving them.
     if (thread.archived && !thread.unarchivable) {
-      this.l.warn(`Skipping archived thread (unarchivable): ${thread.id}`);
-      return thread_service.set_exp_backoff(thread.id);
+      return handle_failure(thread_data.thread_id, 'Skipping archived thread (unarchivable)');
     }
 
     if (thread.archived && thread.unarchivable) {

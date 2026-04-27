@@ -184,7 +184,8 @@ export default class ThreadService {
     let n_fail_count = (fail_count ?? 0) + 1;
 
     const base_ms = 1000 * 60 * 60;
-    const exp_backoff_delta = Math.pow(2, n_fail_count) * base_ms;
+    const MAX_BACKOFF_MS = 1000 * 60 * 60 * 24 * 30;
+    const exp_backoff_delta = Math.min(Math.pow(2, n_fail_count) * base_ms, MAX_BACKOFF_MS);
     const retry_after = new Date(Date.now() + exp_backoff_delta);
 
     const res = await this.db.set_thread_exp_backoff(thread_id, retry_after, n_fail_count);
