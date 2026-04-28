@@ -216,12 +216,6 @@ export default class Sqlite implements Database {
   }
 
   @with_error_handling
-  async run_migration() {
-    await migrate(this.drizzle, { migrationsFolder: './drizzle/sqlite' });
-    return ok();
-  }
-
-  @with_error_handling
   async delete_old_tickets() {
     const deleted_count = await this.drizzle
       .delete(schema.Ticket)

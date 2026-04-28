@@ -36,7 +36,6 @@ export type DBResult<T = void> = Promise<Result<T, DatabaseError>>;
 
 interface CoreUtils {
   create_backup_file: (base_dir?: string) => DBResult<{ full_path: string; file_name: string }>;
-  run_migration: () => DBResult;
   close: () => DBResult<void>;
 }
 

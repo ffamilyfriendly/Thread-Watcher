@@ -42,6 +42,7 @@
     "gen_docs": "bun ./src/scripts/gen_docs.ts",
     "deploy:dev": "bun ./src/scripts/deploy.ts -local",
     "deploy:prod": "bun ./src/scripts/deploy.ts",
+    "export_commands": "bun ./src/scripts/export_commands.ts",
     "migrate_v2db": "bun ./src/scripts/migration/migrate_db.ts",
     "migrate": "bun ./src/scripts/migrate.ts",
     "lint": "eslint . --ext .ts",

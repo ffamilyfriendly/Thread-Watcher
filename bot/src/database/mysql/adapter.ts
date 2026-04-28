@@ -230,23 +230,6 @@ export default class MySql implements Database {
   }
 
   @with_error_handling
-  async run_migration() {
-    if (this._config.database.flavour !== 'mysql') throw new Error('wrong db flavour');
-    const migration_connection = await mysql.createConnection({
-      host: this._config.database.host,
-      user: this._config.database.user,
-      password: this._config.database.password,
-      database: this._config.database.name,
-      multipleStatements: true,
-    });
-    const migration_db = drizzle(migration_connection);
-    migration_db.execute(sql`SET FOREIGN_KEY_CHECKS = 0;`);
-    await migrate(migration_db, { migrationsFolder: './drizzle/mysql' });
-    migration_db.execute(sql`SET FOREIGN_KEY_CHECKS = 1;`);
-    return ok();
-  }
-
-  @with_error_handling
   async delete_old_tickets() {
     await this.drizzle.delete(schema.Ticket).where(lt(schema.Ticket.expires_at, new Date()));
     return ok();
