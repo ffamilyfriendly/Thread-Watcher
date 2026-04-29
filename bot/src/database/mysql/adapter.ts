@@ -659,12 +659,13 @@ export default class MySql implements Database {
 
   @with_error_handling
   async get_stale_threads_for_guilds(guild_ids: string[], buffer_in_ms = MySql.STALE_BUFFER_MS) {
-    const now = Date.now();
-    const stale_thresh = new Date(now + buffer_in_ms);
+    const now = new Date();
+    const stale_thresh = new Date(now.getTime() + buffer_in_ms);
 
     const val = await this.drizzle.query.Threads.findMany({
       where: and(
         lte(schema.Threads.due_archive, stale_thresh),
+        or(isNull(schema.Threads.next_retry), lte(schema.Threads.next_retry, now)),
         eq(schema.Threads.is_watched, true),
         inArray(schema.Threads.guild_id, guild_ids),
       ),
