@@ -16,8 +16,6 @@ if (config_result.isErr()) {
   process.exit(1);
 }
 
-const config = config_result.value;
-
 logger.info('registering commands!');
 
 function is_subcommand(cmd: BaseCommand): cmd is SubCommand<unknown> {

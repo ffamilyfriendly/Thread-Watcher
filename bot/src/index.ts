@@ -55,7 +55,11 @@ if (config.web.enabled) {
   create_web_server();
 }
 
-sharding_manager.spawn();
+sharding_manager.spawn({
+  delay: 1000 * 20,
+  timeout: 60000,
+  amount: 'auto',
+});
 
 async function shutdown() {
   logger.info('SHUTTING DOWN...');

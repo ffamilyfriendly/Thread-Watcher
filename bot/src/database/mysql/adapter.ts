@@ -11,7 +11,6 @@ import {
   EntitlementInsertion,
   TicketInsertion,
 } from '#/interfaces/Database';
-import { migrate } from 'drizzle-orm/mysql2/migrator';
 import { MySql2Database, drizzle } from 'drizzle-orm/mysql2';
 import {
   AuditData,
@@ -71,7 +70,7 @@ import { DatabaseError, TicketNotFound } from '#/utilities/error/def';
 import mysql from 'mysql2/promise';
 import { logger } from '@providers/logger';
 import { map_err } from '#/utilities/error';
-import { rm, rmSync } from 'fs';
+import { rmSync } from 'fs';
 
 const full_schema = { ...schema, ...relations };
 type FullSchema = typeof full_schema;

@@ -12,6 +12,7 @@ import on_interaction from './_cmd_handler';
 import { AuditMeta } from '#/services/AuditService';
 import { config } from '@providers/config';
 import { thread_bumper } from '@providers/services/thread_bumper';
+import { logger } from '@providers/logger';
 
 async function fetch_responsible_manager(thread: ThreadChannel) {
   const res_thread = await thread_service.get_thread(thread.id);
@@ -114,6 +115,8 @@ async function on_thread_update(old: ThreadChannel, thread: ThreadChannel, l: Lo
 
   const member_bot = thread.guild.members.me;
   const parent_chan = thread.parent;
+
+  logger.info('thread_update', { thread_id: old.id, guild_id: old.guildId });
 
   if (
     member_bot &&

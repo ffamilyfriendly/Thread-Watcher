@@ -6,6 +6,7 @@ import DClient from '#/providers/client';
 import Logger from '#/providers/logger';
 import ThreadService from '#/providers/services/thread_service';
 import SettingService from '#/providers/services/setting_service';
+import { DiscordAPIError } from 'discord.js';
 
 const d_client = DClient.instance;
 const logger = Logger.instance;
@@ -58,12 +59,12 @@ export default class ThreadBumper {
    * Millisecond timeout applied to queue tasks; individual bump operations exceeding this
    * duration will be considered failed/time-limited by the queue.
    */
-  static DEFAULT_TIMEOUT = 1000 * 5;
+  static DEFAULT_TIMEOUT = 1000 * 10;
   public queued_threads = new Set<string>();
   private queue = new PQueue({
-    concurrency: 1,
+    concurrency: 2,
     timeout: ThreadBumper.DEFAULT_TIMEOUT,
-    intervalCap: 1,
+    intervalCap: 2,
     interval: ThreadBumper.DEFAULT_INTERVAL,
   });
   private l = logger.getSubLogger({ name: 'ThreadBumper' });
@@ -72,6 +73,15 @@ export default class ThreadBumper {
     // Helper to log errors and trigger backoff
     const handle_failure = async (id: string, message: string, error?: any) => {
       this.l.error(`${message} ${id}`, error);
+
+      // 10003: Unknown Channel
+      // we should be able to safely delete these
+      if (error instanceof DiscordAPIError && error.code === 10003) {
+        const t_del_res = await thread_service.delete_thread(thread_data.thread_id);
+        if (t_del_res.isErr()) return err(t_del_res.error);
+        return err(error || message);
+      }
+
       const exp_res = await thread_service.set_exp_backoff(id);
       if (exp_res.isErr())
         this.l.error('failed to set exponential backoff', {
@@ -151,8 +161,7 @@ export default class ThreadBumper {
       return handle_failure(thread.id, 'Thread is locked or not manageable/sendable');
     }
 
-    await thread_service.bump_thread_time(thread);
-    return ok();
+    return await thread_service.bump_thread_time(thread);
   }
 
   public async bump_stale() {

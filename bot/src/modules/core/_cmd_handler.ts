@@ -179,7 +179,7 @@ async function handle_command_interaction(interaction: ChatInputCommandInteracti
 
   if (result.isErr()) return mapped_err(result.error);
   else {
-    logger.debug(`Command handled`, {
+    logger.info(`Command handled`, {
       guild_id: interaction.guildId,
       user_id: interaction.user.id,
       command: interaction.commandName,

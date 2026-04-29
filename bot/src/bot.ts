@@ -3,7 +3,7 @@ import { map_err } from '#/utilities/error';
 import { initialize_i18n, setup_shutdown_function } from '#/utilities/lifecycle';
 import { load_commands, load_events, load_ipc_events } from '#/utilities/file_loaders';
 import Config from '@providers/config';
-import Logger from '@providers/logger';
+import Logger, { logger } from '@providers/logger';
 import Redis from '@providers/redis';
 import Database from '@providers/database';
 import Client from '@providers/client';
@@ -15,11 +15,13 @@ import { event_bus } from '@providers/event_bus';
 import { send_audit } from '#/utilities/send_audit_log';
 import { audit_service } from '@providers/services/audit_service';
 
-const logger = Logger.with_name('bot');
 const config = Config.instance;
 const client = Client.instance;
 const database = Database.instance;
 const redis = Redis.instance;
+
+const shard_id = client.shard?.ids.join(',') ?? '<unknown>';
+logger.settings.name = `(${shard_id}) bot`;
 
 // set provider strategies
 ticket_service.set_user_fetcher(fetch_user_bot_context);
