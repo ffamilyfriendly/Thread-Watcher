@@ -7,6 +7,7 @@ const singleton = create_singleton(() => {
   return new ShardingManager('./src/bot.ts', {
     token: config.tokens.discord,
     shardArgs: args,
+    respawn: false,
   });
 });
 export default singleton;

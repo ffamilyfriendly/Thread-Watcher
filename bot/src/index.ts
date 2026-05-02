@@ -44,7 +44,15 @@ sharding_manager.on('shardCreate', (shard) => {
   });
 
   shard.on('death', () => {
-    shard_logger.error(`Shard died`);
+    shard_logger.error(`Shard ${shard.id} died. Respawning in 30 seconds`);
+
+    // I dunno if this will fix our issues. Worth a try
+    setTimeout(() => {
+      if (!shard.ready) {
+        shard_logger.info(`Respawning shard ${shard.id}`);
+        shard.spawn(60_000);
+      }
+    }, 30_000);
   });
 
   ipc_client.prepare();
