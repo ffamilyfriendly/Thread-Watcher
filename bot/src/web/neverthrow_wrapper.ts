@@ -42,7 +42,7 @@ export function safe_route<
       });
     }
 
-    res.locals.logger.debug(`success`, {
+    res.locals.logger.info(`success`, {
       ...pretty_print_request_info(req, res),
       proc_duration,
     });

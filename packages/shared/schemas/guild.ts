@@ -60,7 +60,7 @@ export const ZGuildSettingsDictWithDefaults = z.object(
       // Runtime logic: use default if it exists, otherwise allow null
       return [
         key,
-        def.default !== null ? schema.default(def.default) : schema.nullable(),
+        def.default !== null ? schema.default(def.default) : schema.nullish(),
       ];
     }),
   ),
