@@ -23,6 +23,24 @@ export default class GuildService {
     });
   }
 
+  async get_or_create_guild_info(guild_id: string) {
+    return this.r.get_cached_or(guild_id, ZGuildWithEntitlement, async () => {
+      const existing_guild_res = await this.get_guild_info(guild_id);
+      if (existing_guild_res.isErr()) return mapped_err(existing_guild_res.error);
+      if (existing_guild_res.value) return ok(existing_guild_res.value);
+
+      const update_guild_res = await this.db.ensure_guild(guild_id);
+      if (update_guild_res.isErr()) return mapped_err(update_guild_res.error);
+
+      // We're fetching the guild directly after inserting it. From a performance standpoint it might be better to use returning on .update_guild()
+      // However, as guilds are cached this should not matter all that much in the long run
+      return (await this.get_guild_info(guild_id)).andThen((g) => {
+        if (!g) return err(new Error(`Guild could not be fetched`));
+        else return ok(g);
+      });
+    });
+  }
+
   async deduct_ai_tokens(guild_id: string, amount: number) {
     this.r.del(guild_id);
     const guild = await this.get_guild_info(guild_id);
@@ -73,13 +91,6 @@ export default class GuildService {
   }
 
   async nullify_left_at(guild_id: string) {
-    const db_res = await this.get_guild_info(guild_id);
-    if (db_res.isErr()) return err(db_res.error);
-    if (db_res.isOk() && !db_res.value) return ok();
-
-    this.r.del(guild_id);
-    return this.db.upsert_guild_info(guild_id, {
-      left_at: null,
-    });
+    return this.update_guild(guild_id, { left_at: null });
   }
 }

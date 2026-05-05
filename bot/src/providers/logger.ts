@@ -1,6 +1,6 @@
 import { ISettingsParam, Logger } from 'tslog';
 import { create_singleton } from './singleton';
-import { config } from './config';
+import { IS_DEVELOPMENT } from '#/CONSTANTS';
 
 const singleton = create_singleton(
   () => {
@@ -10,7 +10,7 @@ const singleton = create_singleton(
       type: 'json',
     };
 
-    if (process.env.NODE_ENV === 'development') {
+    if (IS_DEVELOPMENT) {
       conf = {
         ...conf,
         minLevel: 0,

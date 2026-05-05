@@ -104,13 +104,12 @@ router.get(
       ipc_client.send_to_shard_having_guild<Channel[]>(guild_id, 'fetch_channels', {
         guild_id,
       }),
-      guild_service.get_guild_info(guild_id),
+      guild_service.get_or_create_guild_info(guild_id),
       entitlement_service.get_entitlement_breakdown(guild_id),
       ipc_client.send_shard(guild_id, 'get_guild', { guild_id }),
     ]);
 
     if (guild.isErr()) return err(guild.error);
-    if (!guild.value) return err(new Error('could not get guild'));
     if (guild_obj.isErr()) return err(guild_obj.error);
     if (entitlement.isErr()) return err(entitlement.error);
 
