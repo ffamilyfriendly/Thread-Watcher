@@ -1,4 +1,5 @@
 import {
+  AnyThreadChannel,
   Channel,
   ChannelType,
   Guild,
@@ -25,18 +26,20 @@ import { CommandError } from '#/utilities/error/def';
 import { logger } from '@providers/logger';
 import { safe_delete, safe_reply } from '#/utilities/interaction_helpers';
 import { TKey } from '@generated/locales';
+import { Logger } from 'tslog';
 
-async function fetch_all_threads_from_parent(channel: Channel | Guild) {
+async function fetch_all_threads_from_parent(channel: Channel | Guild, l: Logger<unknown>) {
   let thread_list: ThreadChannel[] = [];
 
   if (channel instanceof Guild) {
     for (const child_channel of channel.channels.cache.values()) {
-      const children_of_guild_threads = await fetch_all_threads_from_parent(child_channel);
+      const children_of_guild_threads = await fetch_all_threads_from_parent(child_channel, l);
 
       if (children_of_guild_threads.isErr()) {
-        logger.error(
-          `[BATCH] could not get children of ${child_channel.id} (guild: ${child_channel.guildId})`,
-        );
+        l.error(`could not get threads of guild`, {
+          error: children_of_guild_threads.error,
+          guild_id: channel.id,
+        });
         continue;
       }
 
@@ -48,12 +51,14 @@ async function fetch_all_threads_from_parent(channel: Channel | Guild) {
 
   if (channel.type === ChannelType.GuildCategory) {
     for (const child_of_channel of channel.children.cache.values()) {
-      const child_of_channel_threads = await fetch_all_threads_from_parent(child_of_channel);
+      const child_of_channel_threads = await fetch_all_threads_from_parent(child_of_channel, l);
 
       if (child_of_channel_threads.isErr()) {
-        logger.error(
-          `[BATCH] could not get children of ${child_of_channel.id} (guild: ${child_of_channel.guildId})`,
-        );
+        l.error('could not get threads of category', {
+          error: child_of_channel_threads.error,
+          guild_id: channel.guildId,
+          channel_id: channel.id,
+        });
         continue;
       }
 
@@ -70,13 +75,33 @@ async function fetch_all_threads_from_parent(channel: Channel | Guild) {
       map_err,
     );
 
-    if (active_threads_in_channel.isErr()) return err(active_threads_in_channel.error);
-    if (archived_threads_in_channel.isErr()) return err(archived_threads_in_channel.error);
+    const threads_in_channel: AnyThreadChannel[] = [];
 
-    const threads_in_channel = [
-      ...active_threads_in_channel.value.threads.values(),
-      ...archived_threads_in_channel.value.threads.values(),
-    ];
+    active_threads_in_channel.match(
+      (threads) => {
+        threads_in_channel.push(...threads.threads.values());
+      },
+      (e) => {
+        l.error('failed to fetch active threads', {
+          error: e,
+          channel_id: channel.id,
+          guild_id: channel.guildId,
+        });
+      },
+    );
+
+    archived_threads_in_channel.match(
+      (threads) => {
+        threads_in_channel.push(...threads.threads.values());
+      },
+      (e) => {
+        l.error('failed to fetch archived threads', {
+          error: e,
+          channel_id: channel.id,
+          guild_id: channel.guildId,
+        });
+      },
+    );
 
     thread_list.push(...threads_in_channel);
   }
@@ -225,7 +250,7 @@ async function run(
   };
 
   await safe_reply(interaction, { embeds: [waiting_embed], flags: 'Ephemeral' });
-  const fetch_threads = await fetch_all_threads_from_parent(parent.value);
+  const fetch_threads = await fetch_all_threads_from_parent(parent.value, ctx.logger);
 
   if (fetch_threads.isErr()) return err(fetch_threads.error);
   state.threads = fetch_threads.value;

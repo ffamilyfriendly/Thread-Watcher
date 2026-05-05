@@ -9,6 +9,7 @@ import {
   GuildForumTagEmoji,
   Interaction,
   ModalBuilder,
+  RepliableInteraction,
   RoleSelectMenuBuilder,
   RoleSelectMenuInteraction,
   StringSelectMenuBuilder,
@@ -24,7 +25,7 @@ import { component_service } from '@providers/services/component_service';
 import { GenericCommandError } from '#/utilities/error/def';
 import EmbeddableError from '#/utilities/error/EmbeddableError';
 import { CommandContext } from '#/interfaces/Command';
-import { safe_reply } from '#/utilities/interaction_helpers';
+import { safe_edit_reply, safe_reply } from '#/utilities/interaction_helpers';
 import { Result } from 'neverthrow';
 
 export interface State<TContext = unknown> {
@@ -47,12 +48,8 @@ export interface State<TContext = unknown> {
   on_cleanup: (state: State, interaction: ButtonInteraction) => void;
 }
 
-function update_displayed_state(interaction: Interaction, state: State) {
-  if (interaction.isCommand()) {
-    interaction.editReply({ embeds: [create_embed(state)], components: state.components });
-  } else if ('update' in interaction) {
-    interaction.update({ embeds: [create_embed(state)], components: state.components });
-  }
+function update_displayed_state(interaction: RepliableInteraction, state: State) {
+  safe_edit_reply(interaction, { embeds: [create_embed(state)], components: state.components });
 }
 
 function create_regex_modal(state: State) {
@@ -289,7 +286,7 @@ function create_embed(state: State) {
   return embed;
 }
 
-export function make_advanced_embed(interaction: Interaction, state: State) {
+export function make_advanced_embed(interaction: RepliableInteraction, state: State) {
   const [save, cancel, set_regex, delete_regex, test_regex] = create_advanced_buttons(
     state,
     interaction.user.id,

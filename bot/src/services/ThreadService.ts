@@ -243,7 +243,13 @@ export default class ThreadService {
       });
     }
 
-    if (db_entry.value === null || !db_entry.value.is_watched) return ok(false);
+    if (db_entry.value === null || !db_entry.value.is_watched) {
+      logger.debug(
+        'unwatch_thread called on already unwatched / non-existing thread',
+        db_entry.value,
+      );
+      return ok(false);
+    }
 
     return (await this.set_thread_watch_status(thread.id, audit, false)).map(() => true);
   }

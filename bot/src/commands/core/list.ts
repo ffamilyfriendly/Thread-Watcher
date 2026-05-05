@@ -254,7 +254,7 @@ async function run(
   const show_private = interaction.options.getBoolean('private') ?? true;
 
   const data_to_display = await (display_type === 'THREADS'
-    ? thread_service.get_threads(interaction.guildId)
+    ? thread_service.get_threads(interaction.guildId, true)
     : channel_service.get_monitors(interaction.guildId));
 
   if (data_to_display.isErr()) return err(data_to_display.error);

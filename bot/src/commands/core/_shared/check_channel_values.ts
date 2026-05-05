@@ -27,10 +27,7 @@ export async function get_target(interaction: GuildChatInteraction, allow_topgg_
   const global = interaction.options.getBoolean('global');
 
   if (global && allow_topgg_vote) {
-    const res = await entitlement_service.get_topgg_vote_or_premium(
-      interaction.guildId,
-      interaction,
-    );
+    const res = await entitlement_service.get_topgg_vote_or_premium(interaction.guildId);
     if (!res) return err(new EntitlementsError(config.paywall.basic_sku, 'global'));
   } else if (global) {
     const has_sku = await entitlement_service.has_premium(interaction.guildId);
