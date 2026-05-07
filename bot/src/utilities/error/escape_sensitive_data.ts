@@ -34,6 +34,6 @@ export function strip_dangerous_strings(str: string): string {
 
 export function get_safe_error<EType extends Error>(e: EType): EType {
   e.message = strip_dangerous_strings(e.message);
-  if (e.stack && IS_PROD) e.stack = strip_dangerous_strings(e.stack);
+  if (e.stack && IS_PROD) e.stack = undefined;
   return e;
 }

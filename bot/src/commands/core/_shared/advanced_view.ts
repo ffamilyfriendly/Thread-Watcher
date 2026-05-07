@@ -25,8 +25,9 @@ import { component_service } from '@providers/services/component_service';
 import { GenericCommandError } from '#/utilities/error/def';
 import EmbeddableError from '#/utilities/error/EmbeddableError';
 import { CommandContext } from '#/interfaces/Command';
-import { safe_edit_reply, safe_reply } from '#/utilities/interaction_helpers';
+import { safe_edit_reply, safe_reply, safe_update } from '#/utilities/interaction_helpers';
 import { Result } from 'neverthrow';
+import { logger } from '@providers/logger';
 
 export interface State<TContext = unknown> {
   components: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder | RoleSelectMenuBuilder>[];
@@ -48,8 +49,22 @@ export interface State<TContext = unknown> {
   on_cleanup: (state: State, interaction: ButtonInteraction) => void;
 }
 
-function update_displayed_state(interaction: RepliableInteraction, state: State) {
-  safe_edit_reply(interaction, { embeds: [create_embed(state)], components: state.components });
+async function update_displayed_state(interaction: RepliableInteraction, state: State) {
+  const update_res = await safe_update(interaction, {
+    embeds: [create_embed(state)],
+    components: state.components,
+  });
+
+  if (update_res.isErr()) {
+    state._ctx.logger.warn('update_displayed_state failed', {
+      interaction_id: interaction.id,
+      guild_id: interaction.guildId,
+      user_id: interaction.user.id,
+      error: update_res.error,
+    });
+  }
+
+  return update_res;
 }
 
 function create_regex_modal(state: State) {
@@ -184,7 +199,14 @@ function handle_role_select(state: State, interaction: RoleSelectMenuInteraction
     .values()
     .map((r) => r.id)
     .toArray();
-  update_displayed_state(interaction, state);
+
+  update_displayed_state(interaction, state).then((r) => {
+    if (r.isOk()) {
+      logger.info('update_displayed_state: OK');
+    } else {
+      logger.error('update_displayed_state: ERR', r.error);
+    }
+  });
 }
 
 function create_role_select(state: State, user_id: string) {

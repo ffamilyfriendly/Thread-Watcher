@@ -71,18 +71,21 @@ export async function safe_reply_or_followup(
 
 export async function safe_update(
   interaction: RepliableInteraction,
-  content: InteractionUpdateOptions,
+  msg_content: InteractionUpdateOptions,
 ) {
-  if (!('update' in interaction))
-    return err(
-      new Error(`safe_update cannot be used for interaction of type '${interaction.type}'`),
-    );
   let promise: Promise<Message<boolean> | InteractionResponse<boolean>>;
 
-  const { flags, ...rest } = content;
+  const { flags, ...rest } = msg_content;
 
   if (interaction.replied || interaction.deferred) promise = interaction.editReply(rest);
-  else promise = interaction.update(content);
+  else if ('update' in interaction) promise = interaction.update(msg_content);
+  else {
+    const { flags, content, ...rest } = msg_content;
+
+    const msg_content_safe = content === null ? undefined : content;
+
+    promise = interaction.reply({ ...rest, content: msg_content_safe });
+  }
 
   return ResultAsync.fromPromise(promise, map_err);
 }
