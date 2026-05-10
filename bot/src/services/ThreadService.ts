@@ -130,9 +130,8 @@ export default class ThreadService {
 
   async set_thread_watch_status(thread_id: string, audit: AuditMeta, is_watched: boolean) {
     const result = await this.db.set_thread_watched(thread_id, is_watched);
-    if (result.isOk()) {
-      await this.r.del(thread_id);
-    }
+    if (result.isErr()) return err(result.error);
+    await this.r.del(thread_id);
 
     if (is_watched) {
       event_bus.emit('thread:watched', {
@@ -261,21 +260,19 @@ export default class ThreadService {
 
     const is_watched = db_thread_entry.value && db_thread_entry.value.is_watched;
 
-    if (db_thread_entry.value && db_thread_entry.value.is_watched) {
-      const unwatch_result = await this.unwatch_thread(thread, audit, true);
-      if (unwatch_result.isErr()) return err(unwatch_result.error);
-    } else {
-      const watch_result = await this.watch_thread(thread, audit);
-      if (watch_result.isErr()) return err(watch_result.error);
-    }
+    const result = await (is_watched
+      ? this.unwatch_thread(thread, audit, true)
+      : this.watch_thread(thread, audit));
+
+    if (result.isErr()) return err(result.error);
 
     return ok(!is_watched);
   }
 
   async delete_thread(thread_id: string) {
-    this.r.del(thread_id);
-
-    return this.db.delete_thread(thread_id);
+    return (await this.db.delete_thread(thread_id)).asyncAndThen((_r) => {
+      return this.r.del(thread_id);
+    });
   }
 
   static async should_be_watched(client: Client, thread: ThreadChannel, filters: FilterData) {

@@ -7,7 +7,7 @@ import { Module } from '#/interfaces/Module';
 import { err, ok, ResultAsync } from 'neverthrow';
 import ThreadService from '#/services/ThreadService';
 import { Logger } from 'tslog';
-import { map_err } from '#/utilities/error';
+import { map_err, mapped_err } from '#/utilities/error';
 import on_interaction from './_cmd_handler';
 import { AuditMeta } from '#/services/AuditService';
 import { config } from '@providers/config';
@@ -159,7 +159,7 @@ async function on_thread_update(old: ThreadChannel, thread: ThreadChannel, l: Lo
       return ok();
     }
   } else {
-    l.warn('no auditlog access', {
+    l.debug('no auditlog access', {
       guild_id: thread.guildId,
       thread_id: thread.id,
       thread_parent: thread.parentId,
@@ -169,7 +169,7 @@ async function on_thread_update(old: ThreadChannel, thread: ThreadChannel, l: Lo
   const thread_is_watched = await thread_service.get_thread(thread.id, true);
   if (thread_is_watched.isErr()) return err(map_err(thread_is_watched.error));
 
-  const is_watched = thread_is_watched.value !== null;
+  const is_watched = thread_is_watched.value?.is_watched;
   const is_fixable = thread.archived && thread.unarchivable && !thread.locked;
   const should_be_edited = is_watched && is_fixable;
 
@@ -212,15 +212,8 @@ async function on_message_create(message: Message, l: Logger<unknown>) {
   if (!message.channel.isThread()) return ok();
   if (thread_bumper.queued_threads.has(message.channelId)) return ok();
 
-  const res_thread = (await thread_service.get_thread(message.channelId)).match(
-    (value) => ok(value),
-    (err_value) => {
-      l.error('could not fetch thread from db: ', err_value);
-      return err(map_err(err_value));
-    },
-  );
-
-  if (res_thread.isErr()) return err(res_thread.error);
+  const res_thread = await thread_service.get_thread(message.channelId);
+  if (res_thread.isErr()) return mapped_err(res_thread);
   if (!res_thread.value) return ok();
 
   return check_msg_should_bump_thread(message, l);
