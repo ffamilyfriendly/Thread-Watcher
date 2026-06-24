@@ -7,6 +7,7 @@ import Logger from '#/providers/logger';
 import ThreadService from '#/providers/services/thread_service';
 import SettingService from '#/providers/services/setting_service';
 import { DiscordAPIError } from 'discord.js';
+import get_bumper_message from '#/utilities/discord_components/bumper_message';
 
 const d_client = DClient.instance;
 const logger = Logger.instance;
@@ -148,9 +149,8 @@ export default class ThreadBumper {
         );
       }
     } else if (thread.sendable && !thread.archived) {
-      // TODO: set up a more pleasant message than this
       const send_bump_msg_res = await ResultAsync.fromPromise(
-        thread.send('bumping thread.'),
+        thread.send(get_bumper_message(thread)),
         map_err,
       );
 
