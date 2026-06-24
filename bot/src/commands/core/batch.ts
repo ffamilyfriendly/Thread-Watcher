@@ -1,9 +1,14 @@
 import {
+  AllowedThreadTypeForTextChannel,
   AnyThreadChannel,
+  CategoryChannel,
   Channel,
   ChannelType,
   Guild,
   GuildBasedChannel,
+  GuildChannel,
+  GuildForumThreadManager,
+  GuildTextThreadManager,
   Interaction,
   PermissionFlagsBits,
   SlashCommandBuilder,
@@ -16,94 +21,145 @@ import { Vacuum } from '#/services/ComponentService';
 import { make_advanced_embed, State } from '#/commands/core/_shared/advanced_view';
 import { create_channel_link } from './list';
 import ThreadService from '#/services/ThreadService';
-import { map_err } from '#/utilities/error';
+import { async_from, map_err, mapped_err } from '#/utilities/error';
 import { AuditMeta } from '#/services/AuditService';
 import { get_target } from './_shared/check_channel_values';
 import { client } from '@providers/client';
 import { thread_service } from '@providers/services/thread_service';
 import { channel_service } from '@providers/services/channel_service';
 import { CommandError } from '#/utilities/error/def';
-import { logger } from '@providers/logger';
 import { safe_delete, safe_reply } from '#/utilities/interaction_helpers';
 import { TKey } from '@generated/locales';
 import { Logger } from 'tslog';
 
+const MAX_PAGES_FETCHED_PER_CHANNEL = 5;
+
+type ThreadMgr =
+  | GuildTextThreadManager<ChannelType.AnnouncementThread>
+  | GuildTextThreadManager<AllowedThreadTypeForTextChannel>
+  | GuildForumThreadManager;
+
+/**
+ * @description Archived threads from a channel is fetched in pages, instead of in one go as active threads. This function will fetch multiple pages of archived threads, defined by the constant `MAX_PAGES_FETCHER_PER_CHANNEL`
+ */
+async function fetch_all_archived_threads_from_channel(threadmgr: ThreadMgr) {
+  let before: string | undefined;
+
+  let threads: AnyThreadChannel[] = [];
+
+  for (let i = 0; i < MAX_PAGES_FETCHED_PER_CHANNEL; i++) {
+    const fetched_threads = await async_from(threadmgr.fetchArchived({ limit: 100, before }));
+    if (fetched_threads.isErr()) return mapped_err(fetched_threads.error);
+    threads.push(...fetched_threads.value.threads.values());
+    if (!fetched_threads.value.hasMore) break;
+    before = fetched_threads.value.threads.last()?.id;
+  }
+
+  return ok(threads);
+}
+
+async function fetch_from_guild(guild: Guild, l: Logger<unknown>) {
+  let thread_list: ThreadChannel[] = [];
+  for (const child_channel of guild.channels.cache.values()) {
+    const children_of_guild_threads = await fetch_all_threads_from_parent(child_channel, l);
+
+    if (children_of_guild_threads.isErr()) {
+      l.error(`could not get threads of guild`, {
+        error: children_of_guild_threads.error,
+        guild_id: guild.id,
+      });
+      continue;
+    }
+
+    thread_list.push(...children_of_guild_threads.value);
+  }
+
+  return ok(thread_list);
+}
+
+async function fetch_from_category(channel: CategoryChannel, l: Logger<unknown>) {
+  let thread_list: ThreadChannel[] = [];
+  for (const child_of_channel of channel.children.cache.values()) {
+    const child_of_channel_threads = await fetch_all_threads_from_parent(child_of_channel, l);
+
+    if (child_of_channel_threads.isErr()) {
+      l.error('could not get threads of category', {
+        error: child_of_channel_threads.error,
+        guild_id: channel.guildId,
+        channel_id: channel.id,
+      });
+      continue;
+    }
+
+    thread_list.push(...child_of_channel_threads.value);
+  }
+
+  return ok(thread_list);
+}
+
+async function fetch_from_channel(
+  channel: GuildChannel & { threads: ThreadMgr },
+  l: Logger<unknown>,
+) {
+  let thread_list: ThreadChannel[] = [];
+
+  const active_threads_in_channel = await ResultAsync.fromPromise(
+    channel.threads.fetchActive(),
+    map_err,
+  );
+
+  const archived_threads_in_channel = await fetch_all_archived_threads_from_channel(
+    channel.threads,
+  );
+
+  const threads_in_channel: AnyThreadChannel[] = [];
+
+  active_threads_in_channel.match(
+    (threads) => {
+      threads_in_channel.push(...threads.threads.values());
+    },
+    (e) => {
+      l.error('failed to fetch active threads', {
+        error: e,
+        channel_id: channel.id,
+        guild_id: channel.guildId,
+      });
+    },
+  );
+
+  archived_threads_in_channel.match(
+    (threads) => {
+      threads_in_channel.push(...threads);
+    },
+    (e) => {
+      l.error('failed to fetch archived threads', {
+        error: e,
+        channel_id: channel.id,
+        guild_id: channel.guildId,
+      });
+    },
+  );
+
+  thread_list.push(...threads_in_channel);
+
+  return ok(threads_in_channel);
+}
+
 async function fetch_all_threads_from_parent(channel: Channel | Guild, l: Logger<unknown>) {
   let thread_list: ThreadChannel[] = [];
 
-  if (channel instanceof Guild) {
-    for (const child_channel of channel.channels.cache.values()) {
-      const children_of_guild_threads = await fetch_all_threads_from_parent(child_channel, l);
-
-      if (children_of_guild_threads.isErr()) {
-        l.error(`could not get threads of guild`, {
-          error: children_of_guild_threads.error,
-          guild_id: channel.id,
-        });
-        continue;
-      }
-
-      thread_list.push(...children_of_guild_threads.value);
-    }
-
-    return ok(thread_list);
-  }
+  if (channel instanceof Guild) return fetch_from_guild(channel, l);
 
   if (channel.type === ChannelType.GuildCategory) {
-    for (const child_of_channel of channel.children.cache.values()) {
-      const child_of_channel_threads = await fetch_all_threads_from_parent(child_of_channel, l);
-
-      if (child_of_channel_threads.isErr()) {
-        l.error('could not get threads of category', {
-          error: child_of_channel_threads.error,
-          guild_id: channel.guildId,
-          channel_id: channel.id,
-        });
-        continue;
-      }
-
-      thread_list.push(...child_of_channel_threads.value);
+    const r = await fetch_from_category(channel, l);
+    if (r.isOk()) {
+      thread_list.push(...r.value);
     }
   } else if ('threads' in channel) {
-    const active_threads_in_channel = await ResultAsync.fromPromise(
-      channel.threads.fetchActive(),
-      map_err,
-    );
-
-    const archived_threads_in_channel = await ResultAsync.fromPromise(
-      channel.threads.fetchArchived(),
-      map_err,
-    );
-
-    const threads_in_channel: AnyThreadChannel[] = [];
-
-    active_threads_in_channel.match(
-      (threads) => {
-        threads_in_channel.push(...threads.threads.values());
-      },
-      (e) => {
-        l.error('failed to fetch active threads', {
-          error: e,
-          channel_id: channel.id,
-          guild_id: channel.guildId,
-        });
-      },
-    );
-
-    archived_threads_in_channel.match(
-      (threads) => {
-        threads_in_channel.push(...threads.threads.values());
-      },
-      (e) => {
-        l.error('failed to fetch archived threads', {
-          error: e,
-          channel_id: channel.id,
-          guild_id: channel.guildId,
-        });
-      },
-    );
-
-    thread_list.push(...threads_in_channel);
+    const r = await fetch_from_channel(channel, l);
+    if (r.isOk()) {
+      thread_list.push(...r.value);
+    }
   }
 
   return ok(thread_list);
@@ -156,6 +212,8 @@ async function handle_execution(state: State, interaction: Interaction, context:
   const result_thing = await ResultAsync.combineWithAllErrors(results);
   if (result_thing.isErr()) return err(result_thing.error);
 
+  // TODO: look inte partial degradation here
+  // a failure to add a monitor does not mean that the command failed outright
   if (context.watch_future) {
     const could_add_monitor = await channel_service.add_monitor(
       state.target_channel.id,
@@ -258,7 +316,11 @@ async function run(
   if (advanced) {
     make_advanced_embed(interaction, state as State<unknown>);
   } else {
-    handle_execution(state as State<unknown>, interaction, { action, watch_future });
+    const res = await handle_execution(state as State<unknown>, interaction, {
+      action,
+      watch_future,
+    });
+    if (res?.isErr()) return mapped_err(res.error);
   }
 
   return ok();

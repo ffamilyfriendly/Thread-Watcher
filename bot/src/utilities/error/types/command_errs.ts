@@ -13,6 +13,7 @@ import {
 import { DatabaseError } from '../def';
 import EmbeddableError, { I18nType } from '../EmbeddableError';
 import { config } from '@providers/config';
+import { IS_PROD } from '#/CONSTANTS';
 
 function find_perm(permission: PermissionResolvable) {
   const as_bitfield = PermissionsBitField.resolve(permission);
@@ -109,6 +110,9 @@ export class EntitlementsError extends EmbeddableError {
     interaction: RepliableInteraction,
     t: I18nType,
   ): void {
+    // Attempting to include a SKU not registered fails.
+    // Dev bot does not have any registered SKU so we add this check
+    if (!IS_PROD) return;
     const sku_cta_button = new ButtonBuilder();
     sku_cta_button.setStyle(ButtonStyle.Premium);
     sku_cta_button.setSKUId(this.sku_id);

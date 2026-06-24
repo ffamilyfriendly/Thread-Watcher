@@ -25,7 +25,12 @@ import { component_service } from '@providers/services/component_service';
 import { GenericCommandError } from '#/utilities/error/def';
 import EmbeddableError from '#/utilities/error/EmbeddableError';
 import { CommandContext } from '#/interfaces/Command';
-import { safe_edit_reply, safe_reply, safe_update } from '#/utilities/interaction_helpers';
+import {
+  safe_edit_reply,
+  safe_reply,
+  safe_reply_or_followup,
+  safe_update,
+} from '#/utilities/interaction_helpers';
 import { Result } from 'neverthrow';
 import { logger } from '@providers/logger';
 
@@ -172,6 +177,11 @@ function create_advanced_buttons(state: State, user_id: string) {
       async (button_interaction) => {
         const [func, context] = state.on_save;
         const func_res = await func(state, button_interaction, context);
+
+        if (func_res && func_res.isErr()) {
+          const e = EmbeddableError.from(func_res.error);
+          safe_reply_or_followup(button_interaction, e.get_obj(button_interaction));
+        }
       },
     ),
     component_service.wait_for_interaction_callback(cancel_button, filter, (button_interaction) =>
