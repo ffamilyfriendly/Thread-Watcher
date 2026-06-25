@@ -47,6 +47,7 @@
     "migrate": "bun ./src/scripts/migrate.ts",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "icons": "bun ./src/scripts/register_icons.ts"
   }
 }
