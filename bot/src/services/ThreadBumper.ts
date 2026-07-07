@@ -134,21 +134,24 @@ export default class ThreadBumper {
     const bump_behaviour = bump_behaviour_res.value;
     if (bump_behaviour === 'UNARCHIVE_ONLY' || thread.locked) return ok();
 
-    if (!thread.locked && thread.manageable) {
+    // Editable is all we need for autoarchiveduration.
+    if (thread.editable) {
       const new_duration = thread.autoArchiveDuration === 10080 ? 4320 : 10080;
       const auto_archive_res = await ResultAsync.fromPromise<unknown, Error>(
         thread.setAutoArchiveDuration(new_duration),
         map_err,
       );
 
-      if (auto_archive_res.isErr()) {
-        return handle_failure(
-          thread.id,
-          'Auto-archive duration bump failed',
-          auto_archive_res.error,
-        );
+      if (auto_archive_res.isOk()) {
+        return await thread_service.bump_thread_time(thread);
       }
-    } else if (thread.sendable && !thread.archived) {
+
+      this.l.warn(
+        `Auto-archive duration bump failed for ${thread.id}, falling back to message bump`,
+      );
+    }
+
+    if (thread.sendable && !thread.archived) {
       const send_bump_msg_res = await ResultAsync.fromPromise(
         thread.send(get_bumper_message(thread)),
         map_err,

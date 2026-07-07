@@ -12,6 +12,7 @@ import { err, Result } from 'neverthrow';
 import { AuditMeta } from '#/services/AuditService';
 import { CommandError, WrongChannelType } from '#/utilities/error/def';
 import { safe_reply } from '#/utilities/interaction_helpers';
+import emoji from '#/utilities/use_emoji';
 
 async function run(
   interaction: ChatInputCommandInteraction,
@@ -38,8 +39,11 @@ async function run(
 
   if (result.isErr()) return err(result.error);
 
+  const thread_was_watched = result.value;
+  const action_emoji = thread_was_watched ? emoji('watch') : emoji('unwatch');
+
   const e = ctx.build_embed('success');
-  e.setTitle(ctx.t('commands.watch.embed_title'));
+  e.setTitle(action_emoji + ' ' + ctx.t('commands.watch.embed_title'));
   const thread_action = ctx.t(result.value ? 'commands.watch.watch' : 'commands.watch.unwatch');
   e.setDescription(ctx.t('commands.watch.embed_body', { thread_id: thread.id, thread_action }));
 
