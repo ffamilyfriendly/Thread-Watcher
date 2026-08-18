@@ -70,60 +70,78 @@ export default class ThreadBumper {
   });
   private l = logger.getSubLogger({ name: 'ThreadBumper' });
 
-  private async bump_thread(thread_data: ThreadData): Promise<Result<unknown, any>> {
-    // Helper to log errors and trigger backoff
-    const handle_failure = async (id: string, message: string, error?: any) => {
-      this.l.error(`${message} ${id}`, error);
+  private async handle_bump_error(thread_id: string, error: Error, trigger_exp_backoff?: boolean) {
+    const ERROR_UNKNOWN_CHANNEL = 10003;
+    const ERROR_MISSING_ACCESS = 50001;
+    const ERROR_LACKING_PERMISSIONS = 50013;
 
-      // 10003: Unknown Channel
-      // we should be able to safely delete these
-      if (error instanceof DiscordAPIError && error.code === 10003) {
-        const t_del_res = await thread_service.delete_thread(thread_data.thread_id);
-        if (t_del_res.isErr()) return err(t_del_res.error);
-        return err(error || message);
-      }
+    this.l.error('failed to bump thread', {
+      thread_id,
+      error: error,
+    });
 
-      const exp_res = await thread_service.set_exp_backoff(id);
-      if (exp_res.isErr())
-        this.l.error('failed to set exponential backoff', {
-          thread_id: thread_data.thread_id,
-          error: exp_res.error,
+    if (error instanceof DiscordAPIError && error.code === ERROR_UNKNOWN_CHANNEL) {
+      thread_service.delete_thread(thread_id).then((delete_thread_res) => {
+        if (delete_thread_res.isOk()) return;
+        this.l.error('failed to delete thread', {
+          thread_id,
+          error: delete_thread_res.error,
         });
-      return err(error || message);
-    };
+      });
+    }
 
+    const guild_configuration_issue =
+      error instanceof DiscordAPIError &&
+      (error.code === ERROR_MISSING_ACCESS || error.code === ERROR_LACKING_PERMISSIONS);
+
+    if (guild_configuration_issue || trigger_exp_backoff) {
+      thread_service.set_exp_backoff(thread_id).then((set_backoff_result) => {
+        if (set_backoff_result.isOk()) return;
+        this.l.error('failed to set exp backoff', {
+          thread_id,
+          error: set_backoff_result.error,
+        });
+      });
+    }
+
+    return err(error);
+  }
+
+  private async bump_thread(thread_data: ThreadData): Promise<Result<unknown, any>> {
     const thread_res = await ResultAsync.fromPromise(
       d_client.channels.fetch(thread_data.thread_id),
       map_err,
     );
 
     if (thread_res.isErr()) {
-      return handle_failure(thread_data.thread_id, 'Could not fetch channel', thread_res.error);
+      return this.handle_bump_error(thread_data.thread_id, thread_res.error);
     }
 
     const thread = thread_res.value;
     if (!thread || !thread.isThread()) {
-      return handle_failure(thread_data.thread_id, 'Channel is null or not a thread');
+      return this.handle_bump_error(
+        thread_data.thread_id,
+        new Error('Channel is null or not a thread'),
+        true,
+      );
     }
 
     // if the thread is archived and not unarchivable we cannot do anything with it.
-    // Discord API does not allow edits of archived threads, other than archiving them.
+    // Discord API does not allow edits of archived threads, other than un-archiving them.
     if (thread.archived && !thread.unarchivable) {
-      return handle_failure(thread_data.thread_id, 'Skipping archived thread (unarchivable)');
+      return this.handle_bump_error(thread_data.thread_id, new Error('thread unarchivable'), true);
     }
 
-    if (thread.archived && thread.unarchivable) {
+    if (thread.archived) {
       const set_archived_res = await ResultAsync.fromPromise<unknown, Error>(
         thread.edit({ archived: false }),
         map_err,
       );
-      if (set_archived_res.isErr()) {
-        return handle_failure(thread.id, 'Failed to unarchive', set_archived_res.error);
-      }
 
-      // If we're un-archiving a thread we are already inherently bumping it.
-      // We can therefore safely terminate the function here
-      return thread_service.bump_thread_time(thread);
+      return set_archived_res.match(
+        (_ok) => thread_service.bump_thread_time(thread),
+        (e) => this.handle_bump_error(thread.id, e),
+      );
     }
 
     const bump_behaviour_res = await setting_service.get_setting(thread.guildId, 'BUMP_BEHAVIOUR');
@@ -158,10 +176,14 @@ export default class ThreadBumper {
       );
 
       if (send_bump_msg_res.isErr()) {
-        return handle_failure(thread.id, 'Message-based bump failed', send_bump_msg_res.error);
+        return this.handle_bump_error(thread.id, send_bump_msg_res.error);
       }
     } else {
-      return handle_failure(thread.id, 'Thread is locked or not manageable/sendable');
+      return this.handle_bump_error(
+        thread.id,
+        new Error('Thread is locked or not manageable/sendable'),
+        true,
+      );
     }
 
     return await thread_service.bump_thread_time(thread);
