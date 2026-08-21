@@ -160,16 +160,7 @@ export default class ThreadService {
     const expires_at = get_stale_timestamp(auto_archive_duration, new Date());
     const result = await this.db.set_thread_auto_archive(thread_id, expires_at);
 
-    if (result.isOk()) {
-      const cached_value = await this.r.get(thread_id, ZThreadData);
-
-      if (cached_value.isOk() && cached_value.value) {
-        const as_obj = cached_value.value;
-
-        as_obj.due_archive = expires_at;
-        this.r.set(thread_id, as_obj, ZThreadData);
-      }
-    }
+    if (result.isOk()) await this.r.del(thread_id);
 
     return result;
   }
@@ -189,9 +180,7 @@ export default class ThreadService {
 
     const res = await this.db.set_thread_exp_backoff(thread_id, retry_after, n_fail_count);
 
-    if (res.isOk()) {
-      await this.r.del(thread_id);
-    }
+    if (res.isOk()) await this.r.del(thread_id);
 
     return res;
   }

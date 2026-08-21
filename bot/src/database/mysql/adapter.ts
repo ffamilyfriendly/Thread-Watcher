@@ -105,7 +105,11 @@ export default class MySql implements Database {
   }
 
   @with_error_handling
-  async set_thread_exp_backoff(thread_id: string, retry_after: Date, attempt_nr: number) {
+  async set_thread_exp_backoff(
+    thread_id: string,
+    retry_after: Date | null,
+    attempt_nr: number | null,
+  ) {
     await this.drizzle
       .update(schema.Threads)
       .set({ next_retry: retry_after, fail_count: attempt_nr })
@@ -557,7 +561,7 @@ export default class MySql implements Database {
   async set_thread_auto_archive(thread_id: string, auto_archive_duration: Date) {
     await this.drizzle
       .update(schema.Threads)
-      .set({ due_archive: auto_archive_duration, next_retry: undefined, fail_count: undefined })
+      .set({ due_archive: auto_archive_duration, next_retry: null, fail_count: null })
       .where(eq(schema.Threads.thread_id, thread_id));
     return ok();
   }

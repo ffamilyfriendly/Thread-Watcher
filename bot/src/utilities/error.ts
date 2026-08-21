@@ -3,7 +3,7 @@ import { err, Err, ResultAsync } from 'neverthrow';
 
 export function map_err(error: unknown) {
   if (error instanceof DiscordAPIError) {
-    return new Error(`Discord API Error [${error.code}]: ${error.message}`);
+    return error;
   }
   if (error instanceof HTTPError) {
     return new Error(`HTTP Error [${error.status}]: ${error.message}`);

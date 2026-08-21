@@ -1,6 +1,6 @@
 import PQueue from 'p-queue';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
-import { map_err } from '#/utilities/error';
+import { map_err, mapped_err } from '#/utilities/error';
 import { ThreadData } from '@watcher/shared';
 import DClient from '#/providers/client';
 import Logger from '#/providers/logger';
@@ -8,6 +8,9 @@ import ThreadService from '#/providers/services/thread_service';
 import SettingService from '#/providers/services/setting_service';
 import { DiscordAPIError } from 'discord.js';
 import get_bumper_message from '#/utilities/discord_components/bumper_message';
+import RedisWrapper from '#/utilities/redis';
+import Redis from 'ioredis';
+import z from 'zod';
 
 const d_client = DClient.instance;
 const logger = Logger.instance;
@@ -62,6 +65,13 @@ export default class ThreadBumper {
    */
   static DEFAULT_TIMEOUT = 1000 * 10;
   public queued_threads = new Set<string>();
+  static readonly CACHE_TTL_SECONDS = 900;
+  private r: RedisWrapper;
+
+  constructor(private redis: Redis) {
+    this.r = new RedisWrapper(redis, ThreadBumper.CACHE_TTL_SECONDS, 'bumper');
+  }
+
   private queue = new PQueue({
     concurrency: 2,
     timeout: ThreadBumper.DEFAULT_TIMEOUT,
@@ -70,7 +80,7 @@ export default class ThreadBumper {
   });
   private l = logger.getSubLogger({ name: 'ThreadBumper' });
 
-  private async handle_bump_error(thread_id: string, error: Error, trigger_exp_backoff?: boolean) {
+  private handle_bump_error(thread_id: string, error: Error, trigger_exp_backoff?: boolean) {
     const ERROR_UNKNOWN_CHANNEL = 10003;
     const ERROR_MISSING_ACCESS = 50001;
     const ERROR_LACKING_PERMISSIONS = 50013;
@@ -107,7 +117,7 @@ export default class ThreadBumper {
     return err(error);
   }
 
-  private async bump_thread(thread_data: ThreadData): Promise<Result<unknown, any>> {
+  private async bump_thread(thread_data: ThreadData): Promise<Result<unknown, Error>> {
     const thread_res = await ResultAsync.fromPromise(
       d_client.channels.fetch(thread_data.thread_id),
       map_err,
@@ -139,14 +149,14 @@ export default class ThreadBumper {
       );
 
       return set_archived_res.match(
-        (_ok) => thread_service.bump_thread_time(thread),
+        (_ok) => ok(thread_service.bump_thread_time(thread)),
         (e) => this.handle_bump_error(thread.id, e),
       );
     }
 
     const bump_behaviour_res = await setting_service.get_setting(thread.guildId, 'BUMP_BEHAVIOUR');
     if (bump_behaviour_res.isErr()) {
-      return err(bump_behaviour_res.error);
+      return mapped_err(bump_behaviour_res.error);
     }
 
     const bump_behaviour = bump_behaviour_res.value;
@@ -161,7 +171,10 @@ export default class ThreadBumper {
       );
 
       if (auto_archive_res.isOk()) {
-        return await thread_service.bump_thread_time(thread);
+        return (await thread_service.bump_thread_time(thread)).match(
+          (_ok) => ok(_ok),
+          (er) => mapped_err(er),
+        );
       }
 
       this.l.warn(
@@ -186,7 +199,10 @@ export default class ThreadBumper {
       );
     }
 
-    return await thread_service.bump_thread_time(thread);
+    return (await thread_service.bump_thread_time(thread)).match(
+      (_ok) => ok(_ok),
+      (er) => mapped_err(er),
+    );
   }
 
   public async bump_stale() {
@@ -216,5 +232,76 @@ export default class ThreadBumper {
         if (r.isErr()) logger.error(`PQueue err on bumping thread '${thread.thread_id}'`, r.error);
       });
     });
+  }
+
+  public async seconds_until_can_retry(guild_id: string): Promise<number> {
+    const redis_key = this.r.get_key(guild_id);
+
+    const ttl_res = await ResultAsync.fromPromise(this.redis.ttl(redis_key), map_err);
+
+    return ttl_res.match(
+      (seconds) => (seconds > 0 ? seconds : 0),
+      () => 0,
+    );
+  }
+
+  public async retry_failed_threads(guild_id: string) {
+    const threads_result = await thread_service.get_threads(guild_id);
+
+    const result_stats: {
+      threads_succesfully_bumped: string[];
+      threads_failed_bump: string[];
+    } = {
+      threads_succesfully_bumped: [],
+      threads_failed_bump: [],
+    };
+
+    if (threads_result.isErr()) return err(threads_result.error);
+
+    const seconds_until_next_retry = await this.seconds_until_can_retry(guild_id);
+    if (seconds_until_next_retry > 0)
+      return err(
+        new Error(
+          `Retry has been done too recently. Try again in ${seconds_until_next_retry} seconds.`,
+        ),
+      );
+
+    this.r.set(guild_id, true, z.boolean()).then((r) => {
+      if (r.isErr()) {
+        logger.error('could not set timeout on threadbumper', {
+          guild_id,
+          error: r.error,
+        });
+      }
+    });
+
+    const broken_thread_ids = threads_result.value.filter(
+      (thread) => !this.queued_threads.has(thread.thread_id) && thread.next_retry,
+    );
+
+    const failed_threads_maybe_fixed_array = await Promise.all(
+      broken_thread_ids.map((thread) => {
+        return this.queue.add(
+          async () => {
+            this.queued_threads.add(thread.thread_id);
+            return (await this.bump_thread(thread)).match(
+              (_ok) => ({ id: thread.thread_id, result: ok(_ok) }),
+              (error) => {
+                this.queued_threads.delete(thread.thread_id);
+                return { id: thread.thread_id, result: mapped_err(error) };
+              },
+            );
+          },
+          { priority: 100 },
+        );
+      }),
+    );
+
+    for (const result of failed_threads_maybe_fixed_array) {
+      if (result.result.isOk()) result_stats.threads_succesfully_bumped.push(result.id);
+      else result_stats.threads_failed_bump.push(result.id);
+    }
+
+    return ok(result_stats);
   }
 }

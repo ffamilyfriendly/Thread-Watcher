@@ -7,11 +7,15 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ContainerBuilder,
   DMChannel,
   EmbedBuilder,
   GuildBasedChannel,
   Interaction,
+  SectionBuilder,
+  SeparatorSpacingSize,
   SlashCommandBuilder,
+  TextDisplayBuilder,
 } from 'discord.js';
 
 import { GuildChatInteraction, RegistrationScope } from '#/interfaces/BaseCommandInterface';
@@ -23,25 +27,22 @@ import { CommandError } from '#/utilities/error/def';
 import {
   safe_defer,
   safe_edit_reply,
+  safe_reply,
   safe_reply_or_followup,
   safe_update,
 } from '#/utilities/interaction_helpers';
+import { thread_bumper } from '@providers/services/thread_bumper';
+import emoji from '#/utilities/use_emoji';
+import i18next from 'i18next';
+import { seconds_to_duration_parts } from '#/utilities/time';
 
 type DisplayType = 'THREADS' | 'CHANNELS';
 
 function create_buttons(guild_id: string, display_as: DisplayType, ctx: CommandContext) {
-  const url =
-    `${config.web.hostname}/dashboard/${guild_id}/` +
-    (display_as === 'CHANNELS' ? 'monitors' : 'threads');
-
   const btn_back = new ButtonBuilder().setStyle(ButtonStyle.Secondary).setEmoji('⏪');
   const btn_next = new ButtonBuilder().setStyle(ButtonStyle.Secondary).setEmoji('⏩');
-  const btn_website_cta = new ButtonBuilder()
-    .setStyle(ButtonStyle.Link)
-    .setURL(url)
-    .setLabel(ctx.t('commands.list.btn_view_online'));
 
-  return { btn_back, btn_next, btn_website_cta };
+  return { btn_back, btn_next };
 }
 
 interface State {
@@ -49,20 +50,6 @@ interface State {
   btn_next: ButtonBuilder;
   page_generator: PageGenerator;
   embed: EmbedBuilder;
-}
-
-function set_button_states({ btn_back, btn_next, page_generator }: State) {
-  btn_back.setDisabled(page_generator.page === 0);
-  btn_next.setDisabled(page_generator.is_completed());
-}
-
-function set_embed_page_counter({ embed, page_generator }: State) {
-  embed.setFooter({ text: page_generator.get_page_indicator() });
-}
-
-function update_state(state: State) {
-  set_button_states(state);
-  set_embed_page_counter(state);
 }
 
 interface FetchDataFailType {
@@ -122,7 +109,7 @@ class PageGenerator {
   private last_unread: number = 0;
   private left_overs: string[] = [];
   static GET_PER_BATCH = 10;
-  static MAX_PER_PAGE = 4096;
+  static MAX_PER_PAGE = 3000;
 
   constructor(private items: ({ thread_id: string } | { target_id: string })[]) {}
 
@@ -268,15 +255,6 @@ async function run(
   }
 
   await safe_defer(interaction, show_private ? { flags: 'Ephemeral' } : {});
-  const { btn_back, btn_next, btn_website_cta } = create_buttons(
-    interaction.guildId,
-    display_type,
-    ctx,
-  );
-  const button_row = new ActionRowBuilder<ButtonBuilder>();
-  const dashboard_row = new ActionRowBuilder<ButtonBuilder>();
-  button_row.addComponents(btn_back, btn_next);
-  dashboard_row.addComponents(btn_website_cta);
 
   const d_member = await ResultAsync.fromPromise(
     interaction.guild.members.fetch(interaction.user.id),
@@ -303,16 +281,77 @@ async function run(
   const page_generator = new PageGenerator(filtered_items);
   const page_1 = await page_generator.generate_page();
 
-  const embed = new EmbedBuilder();
-  embed.setTitle(display_type.toLowerCase());
-  embed.setDescription(page_1);
+  const { btn_back, btn_next } = create_buttons(interaction.guildId, display_type, ctx);
 
-  const state: State = {
-    embed,
-    btn_back,
-    btn_next,
-    page_generator,
-  };
+  const section = new ContainerBuilder();
+  section.addTextDisplayComponents((t) => t.setContent('## Viewing Threads'));
+  const text_section = new TextDisplayBuilder();
+  text_section.setContent(page_1);
+
+  const dashbord_threads_view_url =
+    `${config.web.hostname}/dashboard/${interaction.guildId}/` +
+    (display_type === 'CHANNELS' ? 'monitors' : 'threads');
+
+  section.addTextDisplayComponents(text_section, (hint) =>
+    hint.setContent(`-# [${ctx.t('commands.list.btn_view_online')}](${dashbord_threads_view_url})`),
+  );
+  section.addSeparatorComponents((sep) =>
+    sep.setDivider(true).setSpacing(SeparatorSpacingSize.Large),
+  );
+  section.addActionRowComponents((ar) => ar.addComponents(btn_back, btn_next));
+
+  let containers: ContainerBuilder[] = [];
+
+  // Run checks for if there's any existing threads that are not being bumped due to exp backoff relating to permission errs.
+  const punished_threads = data_to_display.value.filter(
+    (entity) => 'is_watched' in entity && entity.next_retry,
+  );
+  const has_punished_threads = punished_threads.length !== 0;
+
+  const fix_button = new ButtonBuilder();
+  fix_button.setLabel(ctx.t('errors.thread_punished.fix_button'));
+  fix_button.setStyle(ButtonStyle.Primary);
+  fix_button.setEmoji(emoji('retry'));
+
+  if (has_punished_threads) {
+    // TODO: update this colour to match the styling of the bot. d.js seems inconsistent w/ colour types. This one does not accept the colour type that embeds expect, only accepting RGBTuples and number (hex)
+    const warning_container = new ContainerBuilder().setAccentColor(0xff4545);
+
+    const seconds_until_retry = await thread_bumper.seconds_until_can_retry(interaction.guildId);
+
+    const timestamp_formatted = Result.fromThrowable(() =>
+      new Intl.DurationFormat(interaction.locale, {
+        style: 'narrow',
+      }).format(seconds_to_duration_parts(seconds_until_retry)),
+    )().unwrapOr(`${seconds_until_retry}s`);
+
+    if (seconds_until_retry > 0) {
+      fix_button.setDisabled(true);
+      fix_button.setLabel(
+        ctx.t('errors.thread_punished.fix_button_cooldown', { timestamp: timestamp_formatted }),
+      );
+      fix_button.setEmoji(emoji('retry_blocked'));
+    }
+
+    const warning_section = new SectionBuilder()
+      .addTextDisplayComponents(
+        (header_text) =>
+          header_text.setContent(
+            '## ' +
+              ctx.t('errors.thread_punished.title', {
+                punished_threads_count: punished_threads.length,
+              }),
+          ),
+        (description_text) =>
+          description_text.setContent(ctx.t('errors.thread_punished.description')),
+      )
+      .setButtonAccessory(fix_button);
+    warning_container.addSectionComponents(warning_section);
+
+    containers.push(warning_container);
+  }
+
+  containers.push(section);
 
   const cleaner = new Vacuum();
   cleaner.add(
@@ -321,13 +360,10 @@ async function run(
       filter_function,
       async (interaction) => {
         const page = page_generator.back();
-        embed.setDescription(page);
-
-        update_state(state);
+        text_section.setContent(page);
 
         safe_update(interaction, {
-          embeds: [embed],
-          components: [button_row, dashboard_row],
+          components: containers,
         });
       },
     ),
@@ -336,26 +372,40 @@ async function run(
       filter_function,
       async (interaction) => {
         const page = await page_generator.next();
-        embed.setDescription(page);
-
-        update_state(state);
+        text_section.setContent(page);
 
         safe_update(interaction, {
-          embeds: [embed],
-          components: [button_row, dashboard_row],
+          components: containers,
+        });
+      },
+    ),
+    component_service.wait_for_interaction_callback(
+      fix_button,
+      filter_function,
+      async (interaction) => {
+        console.log('YU WE GOT INTERACTION THO FR :D :D ');
+        await safe_reply(interaction, {
+          content: 'yo ait ait we queuing that shi fr quick tho xD *rawr*',
+        });
+
+        const res_retry_bump = await thread_bumper.retry_failed_threads(interaction.guildId!);
+
+        if (res_retry_bump.isErr())
+          return safe_edit_reply(interaction, { content: 'shi failed (no-op)' });
+
+        const { threads_failed_bump, threads_succesfully_bumped } = res_retry_bump.value;
+
+        await safe_edit_reply(interaction, {
+          content: `## 🧑‍🍳 Cooked up a result fr\n- Success: ${threads_succesfully_bumped.join(', ')}\n- Error: ${threads_failed_bump.join(', ')}`,
         });
       },
     ),
   );
 
-  update_state(state);
-
-  safe_edit_reply(interaction, {
-    embeds: [embed],
-    components: [button_row, dashboard_row],
+  return safe_edit_reply(interaction, {
+    components: containers,
+    flags: 'IsComponentsV2',
   });
-
-  return ok();
 }
 
 const command_data = new SlashCommandBuilder()

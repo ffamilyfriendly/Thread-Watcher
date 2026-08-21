@@ -3,7 +3,7 @@ import { map_err } from '#/utilities/error';
 import { initialize_i18n, setup_shutdown_function } from '#/utilities/lifecycle';
 import { load_commands, load_events, load_ipc_events } from '#/utilities/file_loaders';
 import Config from '@providers/config';
-import Logger, { logger } from '@providers/logger';
+import { logger } from '@providers/logger';
 import Redis from '@providers/redis';
 import Database from '@providers/database';
 import Client from '@providers/client';

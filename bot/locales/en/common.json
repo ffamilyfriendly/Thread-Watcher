@@ -119,6 +119,16 @@
       "required_assigned_roles_body_or_ownership": "This action requires one of the roles assigned to this ticket or that you created the ticket\n{{assigned_roles}}",
       "pipeline_failed_title": "Pipeline failed!",
       "pipeline_failed_desc": "Panel ran into an error on module `{{module_id}}` and cannot continue.\n-# Original error below`"
+    },
+    "thread_punished": {
+      "title": "{{punished_threads_count}} thread are NOT being bumped!",
+      "description": "hello",
+      "fix_button": "Retry Threads",
+      "fix_button_cooldown": "Retry Threads in {{timestamp}}",
+      "fix_flow_started_title": "Retrying threads...",
+      "fix_flow_started_description": "Thread-Watcher is bumping your threads...",
+      "fix_flow_finished_title": "Threads Retried",
+      "fix_flow_finished_description": "hi"
     }
   }
 }
