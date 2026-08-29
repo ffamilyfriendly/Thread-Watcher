@@ -1,4 +1,7 @@
 import {
+  ButtonStyle,
+  ContainerBuilder,
+  MediaGalleryItemBuilder,
   MessageCreateOptions,
   PrivateThreadChannel,
   PublicThreadChannel,
@@ -8,6 +11,8 @@ import {
 } from 'discord.js';
 
 function get_componentv2_bumper(): MessageCreateOptions {
+  const container = new ContainerBuilder();
+
   const section = new SectionBuilder()
     .addTextDisplayComponents(
       new TextDisplayBuilder().setContent('🔼 **Keeping this thread alive!**'),
@@ -15,15 +20,25 @@ function get_componentv2_bumper(): MessageCreateOptions {
         "Thread-Watcher just bumped this thread so it doesn't get hidden. Grant the `Manage Threads` permission to stop these messages!",
       ),
     )
-    .setThumbnailAccessory(
-      new ThumbnailBuilder({
-        media: { url: 'https://cdn.threadwatcher.xyz/images/manage_threads_gif.gif' },
-      }),
+    .setButtonAccessory((btn) =>
+      btn
+        .setStyle(ButtonStyle.Link)
+        .setLabel('Read More')
+        .setURL('https://docs.threadwatcher.xyz/common-issues/bump-issues'),
     );
+
+  container.addSectionComponents(section);
+  container.addMediaGalleryComponents((mg) =>
+    mg.addItems(
+      new MediaGalleryItemBuilder().setURL(
+        'https://cdn.threadwatcher.xyz/images/manage_threads_gif.gif',
+      ),
+    ),
+  );
 
   return {
     flags: 'IsComponentsV2',
-    components: [section],
+    components: [container],
   };
 }
 
