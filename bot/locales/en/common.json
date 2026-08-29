@@ -121,14 +121,19 @@
       "pipeline_failed_desc": "Panel ran into an error on module `{{module_id}}` and cannot continue.\n-# Original error below`"
     },
     "thread_punished": {
-      "title": "{{punished_threads_count}} thread are NOT being bumped!",
-      "description": "hello",
+      "title": "{{punished_threads_count}} threads are NOT being bumped!",
+      "description": "Thread-Watcher lacks the required permissions needed to bump some of your threads. To safeguard the availability of the service to as many as possible, those threads have been (temporarily) paused from being bumped.\n\nThe bot will keep retrying these threads on a slow schedule. Once you've fixed the permissions below, click **Retry Threads** to re-check them immediately instead of waiting.",
       "fix_button": "Retry Threads",
       "fix_button_cooldown": "Retry Threads in {{timestamp}}",
       "fix_flow_started_title": "Retrying threads...",
-      "fix_flow_started_description": "Thread-Watcher is bumping your threads...",
+      "fix_flow_started_description": "Thread-Watcher is retrying your threads and has placed your threads at the front of the queue. You might see them pop up again shortly.",
       "fix_flow_finished_title": "Threads Retried",
-      "fix_flow_finished_description": "hi"
+      "fix_flow_finished_description": "Thread-Watcher has retried bumping the threads! **{{succeeded_count}}** threads were successfully bumped and **{{failed_count}}** threads failed.",
+      "fix_flow_status_unknown": "Thread-Watcher could not load this channel as it might have been removed.",
+      "fix_flow_status_misses_mng_threads": "Thread-Watcher does __not__ have permissions to manage threads in this channel. This makes Thread-Watcher revert to message based bumps and also leaves it unable to watch private threads.",
+      "fix_flow_status_misses_all_perms": "Thread-Watcher does __not__ have permissions to send messages in this channel, making bumping threads here impossible.",
+      "fix_flow_status_mystery": "Thread-Watcher __does__ have adequate permissions in this channel. Please click \"Retry Threads\" to retry the affected threads.",
+      "fix_flow_error": "Thread-Watcher failed to generate a detailed breakdown of channels with faulty configuration. Please try again later."
     }
   }
 }

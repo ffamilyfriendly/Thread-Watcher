@@ -4,12 +4,10 @@ import { channel_service } from '@providers/services/channel_service';
 import { component_service } from '@providers/services/component_service';
 import { thread_service } from '@providers/services/thread_service';
 import {
-  ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
   ContainerBuilder,
   DMChannel,
-  EmbedBuilder,
   GuildBasedChannel,
   Interaction,
   SectionBuilder,
@@ -33,8 +31,8 @@ import {
 } from '#/utilities/interaction_helpers';
 import { thread_bumper } from '@providers/services/thread_bumper';
 import emoji from '#/utilities/use_emoji';
-import i18next from 'i18next';
 import { seconds_to_duration_parts } from '#/utilities/time';
+import { ThreadData } from '@watcher/shared';
 
 type DisplayType = 'THREADS' | 'CHANNELS';
 
@@ -43,13 +41,6 @@ function create_buttons(guild_id: string, display_as: DisplayType, ctx: CommandC
   const btn_next = new ButtonBuilder().setStyle(ButtonStyle.Secondary).setEmoji('⏩');
 
   return { btn_back, btn_next };
-}
-
-interface State {
-  btn_back: ButtonBuilder;
-  btn_next: ButtonBuilder;
-  page_generator: PageGenerator;
-  embed: EmbedBuilder;
 }
 
 interface FetchDataFailType {
@@ -229,6 +220,77 @@ class PageGenerator {
   }
 }
 
+async function get_fix_steps(
+  threads: ThreadData[],
+  interaction: GuildChatInteraction,
+  ctx: CommandContext,
+): Promise<Result<TextDisplayBuilder, Error>> {
+  const channel_ids = new Set(threads.map((thread) => thread.parent_channel_id));
+
+  const threads_without_declared_parent_id = threads.filter((thread) => !thread.parent_channel_id);
+
+  const thread_promises = await Promise.all(
+    threads_without_declared_parent_id.map((orphan) =>
+      ResultAsync.fromPromise(interaction.guild.channels.fetch(orphan.thread_id), map_err),
+    ),
+  );
+
+  for (const channel_result of thread_promises) {
+    // We are disregarding the Channel object present under `...result.parent`. However, it should be cached by d.js and makes the rest of the code more readable
+    if (channel_result.isOk() && channel_result.value)
+      channel_ids.add(channel_result.value.parentId);
+  }
+
+  const channel_promises = await Promise.all(
+    channel_ids
+      .values()
+      .filter(Boolean)
+      .map(async (channel_id) => ({
+        channel_id: channel_id!,
+        resolved: await ResultAsync.fromPromise(
+          interaction.guild.channels.fetch(channel_id!),
+          map_err,
+        ),
+      }))
+      .toArray(),
+  );
+
+  const text = new TextDisplayBuilder();
+
+  const channel_descriptions: string[] = [];
+
+  const member_res = await ResultAsync.fromPromise(interaction.guild.members.fetchMe(), map_err);
+  if (member_res.isErr()) return err(member_res.error);
+  const bot_as_guild_member = member_res.value;
+
+  for (const channel_res of channel_promises) {
+    let res_str = `**<#${channel_res.channel_id}>** `;
+    if (channel_res.resolved.isErr() || !channel_res.resolved.value) {
+      channel_descriptions.push(res_str + ctx.t('errors.thread_punished.fix_flow_status_unknown'));
+      continue;
+    }
+
+    const channel = channel_res.resolved.value;
+    const permissions = channel.permissionsFor(bot_as_guild_member);
+
+    if (!permissions.has('ManageThreads'))
+      channel_descriptions.push(
+        res_str + ctx.t('errors.thread_punished.fix_flow_status_misses_mng_threads'),
+      );
+    else if (!permissions.has('SendMessagesInThreads'))
+      channel_descriptions.push(
+        res_str + ctx.t('errors.thread_punished.fix_flow_status_misses_all_perms'),
+      );
+    else
+      channel_descriptions.push(res_str + ctx.t('errors.thread_punished.fix_flow_status_mystery'));
+  }
+
+  const str_formatted = channel_descriptions.map((str) => '- ' + str).join('\n');
+  text.setContent(str_formatted);
+
+  return ok(text);
+}
+
 async function run(
   interaction: GuildChatInteraction,
   ctx: CommandContext,
@@ -333,20 +395,42 @@ async function run(
       fix_button.setEmoji(emoji('retry_blocked'));
     }
 
-    const warning_section = new SectionBuilder()
-      .addTextDisplayComponents(
-        (header_text) =>
-          header_text.setContent(
-            '## ' +
-              ctx.t('errors.thread_punished.title', {
-                punished_threads_count: punished_threads.length,
-              }),
-          ),
-        (description_text) =>
-          description_text.setContent(ctx.t('errors.thread_punished.description')),
-      )
-      .setButtonAccessory(fix_button);
+    const warning_section = new SectionBuilder().addTextDisplayComponents(
+      (header_text) =>
+        header_text.setContent(
+          '## ' +
+            ctx.t('errors.thread_punished.title', {
+              punished_threads_count: punished_threads.length,
+            }),
+        ),
+      (description_text) =>
+        description_text.setContent(ctx.t('errors.thread_punished.description')),
+    );
+
+    if (interaction.memberPermissions?.has('ManageThreads'))
+      warning_section.setButtonAccessory(fix_button);
+    else {
+      warning_section.setButtonAccessory((btn) =>
+        btn
+          .setStyle(ButtonStyle.Link)
+          .setLabel('Read More')
+          .setURL('https://docs.threadwatcher.xyz/common-issues/bump-issues'),
+      );
+    }
+
     warning_container.addSectionComponents(warning_section);
+
+    // We can safely cast to ThreadData[] here as we narrow down the type to ThreadData on L372
+    const fix_step_breakdowns = await get_fix_steps(
+      punished_threads as ThreadData[],
+      interaction,
+      ctx,
+    );
+    if (fix_step_breakdowns.isErr())
+      warning_section.addTextDisplayComponents((txt) =>
+        txt.setContent(`-# ${ctx.t('errors.thread_punished.fix_flow_error')}`),
+      );
+    else warning_container.addTextDisplayComponents(fix_step_breakdowns.value);
 
     containers.push(warning_container);
   }
@@ -383,20 +467,46 @@ async function run(
       fix_button,
       filter_function,
       async (interaction) => {
-        console.log('YU WE GOT INTERACTION THO FR :D :D ');
+        const started_container = new ContainerBuilder()
+          .setAccentColor(0x223344)
+          .addTextDisplayComponents((txt) =>
+            txt.setContent(
+              '## ' + emoji('retry') + ' ' + ctx.t('errors.thread_punished.fix_flow_started_title'),
+            ),
+          )
+          .addTextDisplayComponents((txt) =>
+            txt.setContent(ctx.t('errors.thread_punished.fix_flow_started_description')),
+          );
+
         await safe_reply(interaction, {
-          content: 'yo ait ait we queuing that shi fr quick tho xD *rawr*',
+          components: [started_container],
+          flags: ['IsComponentsV2', 'Ephemeral'],
         });
 
         const res_retry_bump = await thread_bumper.retry_failed_threads(interaction.guildId!);
+
+        const finished_container = new ContainerBuilder().setAccentColor(0x223344);
 
         if (res_retry_bump.isErr())
           return safe_edit_reply(interaction, { content: 'shi failed (no-op)' });
 
         const { threads_failed_bump, threads_succesfully_bumped } = res_retry_bump.value;
 
+        finished_container
+          .addTextDisplayComponents((txt) =>
+            txt.setContent('# ' + ctx.t('errors.thread_punished.fix_flow_finished_title')),
+          )
+          .addTextDisplayComponents((txt) =>
+            txt.setContent(
+              ctx.t('errors.thread_punished.fix_flow_finished_description', {
+                succeeded_count: threads_succesfully_bumped.length,
+                failed_count: threads_failed_bump.length,
+              }),
+            ),
+          );
+
         await safe_edit_reply(interaction, {
-          content: `## 🧑‍🍳 Cooked up a result fr\n- Success: ${threads_succesfully_bumped.join(', ')}\n- Error: ${threads_failed_bump.join(', ')}`,
+          components: [finished_container],
         });
       },
     ),
