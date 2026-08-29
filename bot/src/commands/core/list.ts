@@ -286,7 +286,11 @@ async function get_fix_steps(
   }
 
   const str_formatted = channel_descriptions.map((str) => '- ' + str).join('\n');
-  text.setContent(str_formatted);
+  text.setContent(
+    str_formatted.length > 0
+      ? str_formatted
+      : ctx.t('errors.thread_punished.fix_flow_no_threads_returned'),
+  );
 
   return ok(text);
 }

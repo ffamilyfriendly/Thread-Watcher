@@ -128,12 +128,13 @@
       "fix_flow_started_title": "Retrying threads...",
       "fix_flow_started_description": "Thread-Watcher is retrying your threads and has placed your threads at the front of the queue. You might see them pop up again shortly.",
       "fix_flow_finished_title": "Threads Retried",
-      "fix_flow_finished_description": "Thread-Watcher has retried bumping the threads! **{{succeeded_count}}** threads were successfully bumped and **{{failed_count}}** threads failed.",
+      "fix_flow_finished_description": "Thread-Watcher has retried bumping the threads! **{{succeeded_count}}** threads were succesfully bumped and **{{failed_count}}** threads failed.",
       "fix_flow_status_unknown": "Thread-Watcher could not load this channel as it might have been removed.",
       "fix_flow_status_misses_mng_threads": "Thread-Watcher does __not__ have permissions to manage threads in this channel. This makes Thread-Watcher revert to message based bumps and also leaves it unable to watch private threads.",
       "fix_flow_status_misses_all_perms": "Thread-Watcher does __not__ have permissions to send messages in this channel, making bumping threads here impossible.",
       "fix_flow_status_mystery": "Thread-Watcher __does__ have adequate permissions in this channel. Please click \"Retry Threads\" to retry the affected threads.",
-      "fix_flow_error": "Thread-Watcher failed to generate a detailed breakdown of channels with faulty configuration. Please try again later."
+      "fix_flow_error": "Thread-Watcher failed to generate a detailed breakdown of channels with faulty configuration. Please try again later.",
+      "fix_flow_no_threads_returned": "Thread-Watcher failed to fetch the faulty threads from Discord as they might have been deleted."
     }
   }
 }
