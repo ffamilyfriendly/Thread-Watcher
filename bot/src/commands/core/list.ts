@@ -352,7 +352,7 @@ async function run(
   const section = new ContainerBuilder();
   section.addTextDisplayComponents((t) => t.setContent('## Viewing Threads'));
   const text_section = new TextDisplayBuilder();
-  text_section.setContent(page_1);
+  text_section.setContent(page_1.length > 0 ? page_1 : ctx.t('commands.list.no_data_body'));
 
   const dashbord_threads_view_url =
     `${config.web.hostname}/dashboard/${interaction.guildId}/` +
@@ -448,7 +448,7 @@ async function run(
       filter_function,
       async (interaction) => {
         const page = page_generator.back();
-        text_section.setContent(page);
+        text_section.setContent(page.length > 0 ? page : ctx.t('commands.list.no_data_body'));
 
         safe_update(interaction, {
           components: containers,
@@ -460,7 +460,7 @@ async function run(
       filter_function,
       async (interaction) => {
         const page = await page_generator.next();
-        text_section.setContent(page);
+        text_section.setContent(page.length > 0 ? page : ctx.t('commands.list.no_data_body'));
 
         safe_update(interaction, {
           components: containers,
