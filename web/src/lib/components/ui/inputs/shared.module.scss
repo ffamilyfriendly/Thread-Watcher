@@ -1,0 +1,46 @@
+@mixin base($base_colour) {
+	border: 1px solid color-mix(in srgb, $base_colour, transparent 70%);
+	background-color: transparent;
+	color: inherit;
+	width: 100%;
+	padding: 0.5rem 0.75rem;
+	border-radius: 0.25rem;
+	outline: none;
+
+	&:active,
+	&:focus,
+	&:focus-within {
+		border: 1px solid $base_colour;
+	}
+}
+
+.duration {
+	@include base(white);
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+
+	input {
+		background-color: transparent;
+		border: 0;
+		color: white;
+		outline: none;
+		line-height: 1;
+		width: 1rem;
+	}
+
+	input[type='number']::-webkit-inner-spin-button,
+	input[type='number']::-webkit-outer-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+	}
+	input[type='number'] {
+		-moz-appearance: textfield;
+		appearance: textfield;
+	}
+
+	span {
+		opacity: 0.7;
+		margin-left: auto;
+	}
+}

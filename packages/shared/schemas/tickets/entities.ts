@@ -34,6 +34,9 @@ export const ZTicketPanel = ZTicketPanelMeta.extend({
   resolve_embed: ZEmbed,
   resolve_behaviour: z.enum(["DELETE_THREAD", "LOCK_THREAD", "NOTHING"]),
   pipeline: ZPipeline,
+  ai_assist: z.coerce.boolean().nullish().default(false),
+  max_concurring_tickets: z.number().nullish(),
+  ticket_cooldown_seconds: z.number().nullish(),
 });
 
 export const ZEditTicketPanel = ZTicketPanel.partial();

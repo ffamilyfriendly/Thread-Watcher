@@ -1,0 +1,70 @@
+.explainer {
+	margin-bottom: 1rem;
+
+	h2 {
+		font-weight: 100;
+		font-size: 1rem;
+	}
+	p {
+		opacity: 0.7;
+		margin-bottom: 0.5rem;
+	}
+
+	.contained {
+		max-width: 60ch;
+	}
+}
+
+@mixin base($base_colour) {
+	border: 1px solid color-mix(in srgb, $base_colour, transparent 70%);
+	background-color: transparent;
+	color: inherit;
+	width: 100%;
+	padding: 0.5rem 0.75rem;
+	border-radius: 0.25rem;
+	outline: none;
+
+	&:active,
+	&:focus {
+		border: 1px solid $base_colour;
+	}
+}
+
+.input {
+	@include base(white);
+}
+
+.textarea {
+	@include base(white);
+	resize: vertical;
+}
+
+.section {
+	max-width: 60ch;
+}
+
+.divider {
+	margin-top: 2rem;
+	margin-bottom: 2rem;
+	color: white;
+	opacity: 0.25;
+}
+
+.divine_divider {
+	border-bottom: 1px solid var(--primary-500);
+	font-size: small;
+	color: var(--primary-500);
+	padding-bottom: 0.25rem;
+	margin-top: 2rem;
+	margin-bottom: 1.5rem;
+}
+
+.embed_section {
+	display: flex;
+	justify-content: space-evenly;
+	gap: 0.5rem;
+
+	@media screen and (max-width: 800px) {
+		flex-direction: column;
+	}
+}
