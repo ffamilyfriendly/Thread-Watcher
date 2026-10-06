@@ -14,9 +14,11 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
 } from 'discord.js';
-import { CallbackResponse, define_secure_event } from '#/interfaces/PrivateEvents';
+import { CallbackResponse } from '#/interfaces/PrivateEvents';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { map_err } from '#/utilities/error';
+import { define_typed_event } from '../../shared/typed_events';
+import { fetch_channel_bot_context } from '../../shared/fetchers/channel_fetcher';
 
 function field_thing(data: Embed['fields']): APIEmbedField[] {
   const fields: APIEmbedField[] = [];
@@ -117,19 +119,17 @@ async function send_new_message(
   return ok({ message_id: d_message.value.id });
 }
 
-export default define_secure_event('send_embed', async (data) => {
+export default define_typed_event('send_embed', async (data) => {
   const panel_response = await ticket_service.get_panel(data.panel_id);
   if (panel_response.isErr()) return err(panel_response.error);
   if (!panel_response.value) return err(new Error('Panel not found'));
   const panel = panel_response.value;
 
-  const d_channel = await ResultAsync.fromPromise(
-    client.channels.fetch(panel.initial_channel_id),
-    map_err,
-  );
+  const d_channel = await ResultAsync.fromPromise(client.channels.fetch(data.channel_id), map_err);
   if (d_channel.isErr()) return err(d_channel.error);
   if (!d_channel.value) return err(new Error('channel not found'));
   if (!d_channel.value?.isSendable()) return err(new Error('Channel is not sendable'));
+
   if ('guildId' in d_channel.value && d_channel.value.guildId !== panel_response.value.guild_id) {
     return err(new Error(`channel is not in the guild the channel resides in`));
   }

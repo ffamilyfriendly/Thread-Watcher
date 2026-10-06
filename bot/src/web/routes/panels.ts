@@ -3,11 +3,12 @@ import { ticket_service } from '@providers/services/ticket_service';
 import { ZEditTicketPanel, ZTicketPanel } from '@watcher/shared';
 import { Router } from 'express';
 import { RouteFile } from '#/interfaces/Web';
-import { err } from 'neverthrow';
+import { err, ok } from 'neverthrow';
 import { enforce_policy } from '#/web/auth/auth';
 import { Policies } from '#/web/auth/policies';
 import { safe_route } from '#/web/neverthrow_wrapper';
 import { api_err, HTTPCodes } from '#/web/utils/error';
+import z from 'zod';
 const router = Router();
 
 router.post(
@@ -42,23 +43,30 @@ router.put(
 router.post(
   '/:guild_id/panels/:panel_id/send_message',
   enforce_policy(Policies.Common.can_modify_panels),
-  safe_route(async (req, res) => {
-    const panel_id = req.params.panel_id as string;
-    const guild_id = req.params.guild_id as string;
+  safe_route(
+    async (req, res) => {
+      const panel_id = req.params.panel_id as string;
+      const guild_id = req.params.guild_id as string;
+      const { channel_id } = req.body;
 
-    const msg_id = await ipc_client.send_shard(guild_id, 'send_embed', { panel_id });
+      const msg_id = await ipc_client.send_shard(guild_id, 'send_embed', { panel_id, channel_id });
 
-    if (msg_id.isErr()) return err(msg_id.error);
+      if (msg_id.isErr()) return err(msg_id.error);
 
-    ticket_service
-      .update_panel(panel_id, { discord_message_id: msg_id.value.message_id })
-      .then((r) => {
-        if (msg_id.isErr())
-          res.locals.logger.error('Could not update ticket panel message ID', msg_id.error);
-      });
+      ticket_service
+        .update_panel(panel_id, {
+          discord_message_id: msg_id.value.message_id,
+          discord_message_channel_id: channel_id,
+        })
+        .then((r) => {
+          if (r.isErr())
+            res.locals.logger.error('Could not update ticket panel message ID', r.error);
+        });
 
-    return msg_id;
-  }),
+      return msg_id;
+    },
+    z.object({ channel_id: z.string() }),
+  ),
 );
 
 router.get(
@@ -91,6 +99,19 @@ router.get(
       return api_err(HTTPCodes.FORBIDDEN, 'guild_id mismatch!');
 
     return ticket_panel;
+  }),
+);
+
+router.get(
+  '/:guild_id/panel/:panel_id/deployment',
+  enforce_policy(Policies.Common.bot_master_or_guild_master),
+  safe_route(async (req, _res) => {
+    const panel_id = req.params.panel_id as string;
+
+    const panel_info = await ticket_service.get_panel(panel_id);
+    if (panel_info.isErr()) return err(panel_info.error);
+
+    return ok(true);
   }),
 );
 

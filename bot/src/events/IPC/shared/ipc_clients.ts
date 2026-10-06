@@ -3,57 +3,9 @@ import { BaseEvent, Callback, ReponseEvent } from '#/interfaces/PrivateEvents';
 import { randomBytes } from 'crypto';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import Redis from 'ioredis';
-import { map_err } from './error';
+import { map_err } from '../../../utilities/error';
 import z from 'zod';
-import { ZAuditData, ZDiscordUser, ZDJSGuild, ZGuild, ZPublicTicketMessage } from '@watcher/shared';
-
-interface EnsuredSchemaCall<E extends z.ZodType, R extends z.ZodType> {
-  event_name: string;
-  return_schema: R;
-  expected_data: E;
-}
-
-export const FUNCS = {
-  send_embed: {
-    event_name: 'send_embed',
-    expected_data: z.object({ panel_id: z.string() }),
-    return_schema: z.object({ message_id: z.string() }),
-  },
-  fetch_users: {
-    event_name: 'fetch_users',
-    expected_data: z.object({ user_ids: z.array(z.string()), guild_id: z.string() }),
-    return_schema: z.array(ZDiscordUser),
-  },
-  user_has_role: {
-    event_name: 'user_has_role',
-    expected_data: z.object({
-      role_ids: z.array(z.string()),
-      guild_id: z.string(),
-      user_id: z.string(),
-    }),
-    return_schema: z.boolean(),
-  },
-  mark_ticket_resolved: {
-    event_name: 'mark_ticket_resolved',
-    expected_data: z.object({
-      ticket_id: z.string(),
-      user_id: z.string(),
-    }),
-    return_schema: z.void(),
-  },
-  bus_event: {
-    event_name: 'bus_event',
-    expected_data: ZAuditData.omit({ id: true, timestamp: true }).extend({ event_key: z.string() }),
-    return_schema: z.void(),
-  },
-  get_guild: {
-    event_name: 'get_guild',
-    expected_data: z.object({
-      guild_id: z.string(),
-    }),
-    return_schema: ZDJSGuild,
-  },
-} satisfies Record<string, EnsuredSchemaCall<z.ZodType, z.ZodType>>;
+import { TYPED_EVENTS } from './typed_events';
 
 function generate_request_id() {
   return randomBytes(16).toString('hex');
@@ -87,7 +39,7 @@ class BaseClient implements IpcClient {
   }
 
   protected ensure_schema(data: ShardedBaseEvent | BaseEvent) {
-    const schema_config = FUNCS[data.type as keyof typeof FUNCS];
+    const schema_config = TYPED_EVENTS[data.type as keyof typeof TYPED_EVENTS];
     if (!schema_config) return true;
 
     const parsed = schema_config.expected_data.safeParse(data.data);
@@ -131,13 +83,13 @@ class BaseClient implements IpcClient {
     });
   }
 
-  with_schema<K extends keyof typeof FUNCS>(
+  with_schema<K extends keyof typeof TYPED_EVENTS>(
     shard: Shard | ShardClientUtil,
     key: K,
-    data: z.input<(typeof FUNCS)[K]['expected_data']>,
+    data: z.input<(typeof TYPED_EVENTS)[K]['expected_data']>,
   ) {
-    const details = FUNCS[key];
-    type ReturnSchema = (typeof FUNCS)[K]['return_schema'];
+    const details = TYPED_EVENTS[key];
+    type ReturnSchema = (typeof TYPED_EVENTS)[K]['return_schema'];
     const schema = details.return_schema as unknown as z.ZodType<z.output<ReturnSchema>>;
     return this._send<z.output<ReturnSchema>>(shard, details.event_name, data, schema);
   }
@@ -286,10 +238,10 @@ export class ShardedIpcClient extends BaseClient {
     return this.send_to_shard<T>(shard.value, event, data, schema);
   }
 
-  async send_shard<T extends keyof typeof FUNCS>(
+  async send_shard<T extends keyof typeof TYPED_EVENTS>(
     guild_id: string,
     schema: T,
-    data: z.input<(typeof FUNCS)[T]['expected_data']>,
+    data: z.input<(typeof TYPED_EVENTS)[T]['expected_data']>,
   ) {
     const shard = await this.get_shard_from_guild_id(guild_id);
     if (shard.isErr()) return err(shard.error);

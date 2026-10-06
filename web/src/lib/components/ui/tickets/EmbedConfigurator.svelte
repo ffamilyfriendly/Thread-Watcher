@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { DISCORD_EMBED_DESCRIPTION_MAX_LEN, type Embed, type EmbedField } from '@watcher/shared';
-	import EditableAttribute from './EditableAttribute.svelte';
+	import EditableAttribute from './modules/components/InlineTextEditor.svelte';
 	import TWMarkdown from '../Markdown/TWMarkdown.svelte';
 	import Toggle from '../Toggle.svelte';
 	import { Trash2 } from '@lucide/svelte';

@@ -1,12 +1,12 @@
 import { DiscordUser } from '@watcher/shared';
-import { Fetcher } from './typedef';
 import { client } from '@providers/client';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { map_err } from '#/utilities/error';
 import { ipc_client } from '@providers/ipc/shard_mgr_ipc_client';
+import { FetcherPusherType } from '../typedef';
 
 type FetcherInput = { user_ids: string | string[]; guild_id: string };
-export type UserFetcher = Fetcher<DiscordUser[], FetcherInput>;
+export type UserFetcher = FetcherPusherType<DiscordUser[], FetcherInput>;
 
 function normalise(data: FetcherInput): string[] {
   return Array.isArray(data.user_ids) ? data.user_ids : [data.user_ids];
@@ -14,7 +14,7 @@ function normalise(data: FetcherInput): string[] {
 
 // Required Guild Members intent. Remember to apply!
 // ^ nvm? Seems it DOES NOT which is amazing!
-export const fetch_bot_context: UserFetcher = async (data) => {
+export const fetch_users_bot_context: UserFetcher = async (data) => {
   const user_ids = normalise(data);
   const guild_res = await ResultAsync.fromPromise(client.guilds.fetch(data.guild_id), map_err);
   if (guild_res.isErr()) return err(guild_res.error);
@@ -32,7 +32,7 @@ export const fetch_bot_context: UserFetcher = async (data) => {
   );
 };
 
-export const fetch_index_context: UserFetcher = async (data) => {
+export const fetch_users_index_context: UserFetcher = async (data) => {
   const user_ids = normalise(data);
   const user_data = await ipc_client.send_shard(data.guild_id, 'fetch_users', {
     user_ids,

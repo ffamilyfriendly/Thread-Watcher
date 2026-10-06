@@ -107,6 +107,9 @@ export const TicketPanels = mysqlTable('ticketpanels', {
   resolve_embed: json('resolve_embed').notNull(),
   resolve_behaviour: text('resolve_behaviour').notNull(),
   pipeline: json('pipeline').notNull(),
+  ai_assist: boolean('ai_assist').default(false),
+  max_concurring_tickets: smallint('max_concurring_tickets').default(10),
+  ticket_cooldown_seconds: smallint('ticket_cooldown_seconds').default(0),
 });
 
 export const Ticket = mysqlTable('tickets', {

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { type TypedComponent } from '@watcher/shared';
 	import SelectWrapper from './SelectWrapper.svelte';
-	import EditableAttribute from '../../../EditableAttribute.svelte';
+	import EditableAttribute from '../../components/InlineTextEditor.svelte';
 	import { AtSign, Flag, User } from '@lucide/svelte';
 	import { s_tooltip } from '$lib/client/attachments/tooltip';
 

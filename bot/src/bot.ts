@@ -10,10 +10,10 @@ import Client from '@providers/client';
 import { commands } from '@providers/commands';
 import { ipc_client } from '@providers/ipc/bot_ipc_client';
 import { ticket_service } from '@providers/services/ticket_service';
-import { fetch_bot_context as fetch_user_bot_context } from '#/fetchers/user_fetcher';
 import { event_bus } from '@providers/event_bus';
 import { send_audit } from '#/utilities/send_audit_log';
 import { audit_service } from '@providers/services/audit_service';
+import { fetch_users_bot_context } from './events/IPC/shared/fetchers/user_fetcher';
 
 const config = Config.instance;
 const client = Client.instance;
@@ -24,7 +24,7 @@ const shard_id = client.shard?.ids.join(',') ?? '<unknown>';
 logger.settings.name = `(${shard_id}) bot`;
 
 // set provider strategies
-ticket_service.set_user_fetcher(fetch_user_bot_context);
+ticket_service.set_user_fetcher(fetch_users_bot_context);
 event_bus.set_on_emit((key, payload) => {
   audit_service.log_event(payload).then((r) => {
     if (r.isErr())

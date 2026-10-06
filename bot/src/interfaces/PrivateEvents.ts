@@ -1,5 +1,5 @@
+import { TYPED_EVENTS } from '#/events/IPC/shared/typed_events';
 import { Result } from 'neverthrow';
-import { FUNCS } from '#/utilities/ipc_clients';
 import z from 'zod';
 
 export interface BaseEvent {
@@ -26,23 +26,10 @@ export interface PrivateEvent<T = unknown> {
   event_callback: Callback<T>;
 }
 
-export interface SecurePrivateEvent<K extends keyof typeof FUNCS> {
+export interface SecurePrivateEvent<K extends keyof typeof TYPED_EVENTS> {
   event_name: K;
   event_callback: Callback<
-    z.output<(typeof FUNCS)[K]['expected_data']>,
-    z.output<(typeof FUNCS)[K]['return_schema']>
+    z.output<(typeof TYPED_EVENTS)[K]['expected_data']>,
+    z.output<(typeof TYPED_EVENTS)[K]['return_schema']>
   >;
-}
-
-export function define_secure_event<K extends keyof typeof FUNCS>(
-  event_name: K,
-  callback: Callback<
-    z.output<(typeof FUNCS)[K]['expected_data']>,
-    z.output<(typeof FUNCS)[K]['return_schema']>
-  >,
-): SecurePrivateEvent<K> {
-  return {
-    event_name,
-    event_callback: callback,
-  };
 }

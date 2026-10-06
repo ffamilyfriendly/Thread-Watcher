@@ -56,4 +56,9 @@ export const CAN_HOLD_THREADS = [
 	ChannelTypes.GUILD_FORUM
 ];
 
-export const CAN_HOLD_MESSAGES = [ChannelTypes.GUILD_TEXT, ChannelTypes.GUILD_ANNOUNCEMENT];
+export const CAN_HOLD_MESSAGES = [
+	ChannelTypes.GUILD_TEXT,
+	ChannelTypes.GUILD_ANNOUNCEMENT,
+	ChannelTypes.PUBLIC_THREAD,
+	ChannelTypes.PRIVATE_THREAD
+];

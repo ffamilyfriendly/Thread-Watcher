@@ -15,7 +15,7 @@
 		Mic,
 		Spool
 	} from '@lucide/svelte';
-	import EditableAttribute from '../../../EditableAttribute.svelte';
+	import EditableAttribute from '../../components/InlineTextEditor.svelte';
 	import { fly } from 'svelte/transition';
 	import { portal } from '$lib/client/attachments/portal';
 	import { click_outside } from '$lib/client/attachments/click_outside';

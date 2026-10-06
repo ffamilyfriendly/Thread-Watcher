@@ -118,6 +118,7 @@ router.delete(
   enforce_policy(Policies.user_has_elevated_ticket_perms),
   safe_route(async (req, _res: TWResponse<TicketLocals>) => {
     const attachment_id = req.params.attachment_id as string;
+
     return await attachment_service.set_flag(attachment_id, 'IS_QUARANTINED');
   }),
 );

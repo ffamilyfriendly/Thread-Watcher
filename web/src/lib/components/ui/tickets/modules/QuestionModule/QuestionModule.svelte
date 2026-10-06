@@ -13,11 +13,30 @@
 	import BaseModule from '../BaseModule.svelte';
 	import Toggle from '../../../Toggle.svelte';
 	import IDSelector from '../components/IDSelector.svelte';
-	import { Trash2 } from '@lucide/svelte';
+	import {
+		AtSign,
+		Factory,
+		File,
+		FormInput,
+		Hash,
+		ListFilter,
+		Paperclip,
+		PersonStanding,
+		Shield,
+		TextCursor,
+		TextSelect,
+		Trash2,
+		User2
+	} from '@lucide/svelte';
 	import { get_typed_component } from './configurators/configurator_registry';
-	import EditableAttribute from '../../EditableAttribute.svelte';
+	import EditableAttribute from '../components/InlineTextEditor.svelte';
 	import { s_tooltip } from '$lib/client/attachments/tooltip';
 	import style from '$lib/style/pipeline.module.scss';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Explainer from '$lib/components/ui/Explainer.svelte';
+	import VariableTextEditor from '../components/VariableTextEditor.svelte';
+	import type { Component } from 'svelte';
+	import Cheng from '../components/Cheng.svelte';
 
 	interface Props {
 		module: TypedPipelineModule<'MODAL_QUESTION'>;
@@ -52,56 +71,73 @@
 		}
 	}
 
-	const buttons: { label: string; type: ModalComponent['type'] }[] = [
-		{
+	const ModalComponentTypes: Record<ModalComponent['type'], { label: string; icon: Component }> = {
+		STRING_SELECT: {
 			label: 'String Select',
-			type: 'STRING_SELECT'
+			icon: ListFilter
 		},
-		{
+		TEXT_INPUT: {
 			label: 'Text Input',
-			type: 'TEXT_INPUT'
+			icon: FormInput
 		},
-		{
+		CHANNEL_SELECT: {
 			label: 'Channel Select',
-			type: 'CHANNEL_SELECT'
+			icon: Hash
 		},
-		{
+		USER_SELECT: {
 			label: 'User Select',
-			type: 'USER_SELECT'
+			icon: AtSign
 		},
-		{
+		ROLE_SELECT: {
 			label: 'Role Select',
-			type: 'ROLE_SELECT'
+			icon: Shield
 		},
-		{
+		FILE_UPLOAD: {
 			label: 'File Select',
-			type: 'FILE_UPLOAD'
+			icon: Paperclip
 		}
-	];
+	};
+
+	const buttons: { label: string; type: ModalComponent['type']; icon: Component }[] = Object.keys(
+		ModalComponentTypes
+	).map((key) => ({
+		type: key as ModalComponent['type'],
+		...ModalComponentTypes[key as ModalComponent['type']]
+	}));
 
 	const can_add_more_labels = $derived(module.labels.length < DISCORD_MAX_LABELS_IN_MODAL);
 </script>
 
 <BaseModule title="Question" bind:module>
 	{#snippet description()}
-		Asks the user one or more questions before the ticket is created. Supports free text, dropdowns, channel/user/role pickets, and file uploads. Answers are stored as variables and can be referenced in later modules
+		Asks the user one or more questions before the ticket is created. Supports free text, dropdowns,
+		channel/user/role pickets, and file uploads. Answers are stored as variables and can be
+		referenced in later modules
 	{/snippet}
 
 	<div class="labels-grid">
 		{#each module.labels as label, index (label.uid)}
 			{@const Comp = get_typed_component(label.component.type)}
-			<div class="grid-row">
-				<div class="col-delete">
-					<button
-						class="delete-btn"
-						onclick={() => (module.labels = module.labels.filter((l) => l.uid != label.uid))}
-						title="Remove Label"
-					>
-						<Trash2 size={18} />
-					</button>
+			{@const ComponentMeta = ModalComponentTypes[label.component.type]}
+			{@const ComponentIcon = ComponentMeta.icon}
+
+			<div class="editor">
+				<div class="head">
+					<span> <ComponentIcon size={'1rem'} /> {ComponentMeta.label}</span>
+
+					<div>
+						<IDSelector bind:id={label.component.custom_id} max_len={100} />
+						<button
+							class="delete-btn"
+							onclick={() => (module.labels = module.labels.filter((l) => l.uid != label.uid))}
+							title="Remove Label"
+						>
+							<Trash2 size={16} />
+						</button>
+					</div>
 				</div>
 
-				<div class="col-info">
+				<div class="content">
 					<div class="attribute-group">
 						<EditableAttribute bind:value={label.label}>
 							{#snippet display(v)}
@@ -115,20 +151,15 @@
 							{/snippet}
 						</EditableAttribute>
 					</div>
-					<IDSelector bind:id={label.component.custom_id} max_len={100} />
-				</div>
 
-				<div
-					{@attach s_tooltip('Wheter or not this component requires an answer')}
-					class="col-required"
-				>
-					<Toggle bind:value={label.component.required} />
-				</div>
+					<Comp bind:data={module.labels[index].component} this_uid={module.uid} />
 
-				<div class="col-component">
-					<div class="component-wrapper">
-						<Comp bind:data={module.labels[index].component} this_uid={module.uid} />
-					</div>
+					<Cheng
+						title="Require Answer"
+						description="Should the user be forced to answer this component?"
+					>
+						<Toggle bind:value={label.component.required} />
+					</Cheng>
 				</div>
 			</div>
 		{/each}
@@ -155,6 +186,33 @@
 </BaseModule>
 
 <style lang="scss">
+	.editor {
+		--border_clr: color-mix(in srgb, var(--background-500) 80%, white);
+		border: 1px solid var(--border_clr);
+		border-radius: 0.25rem;
+		overflow: hidden;
+
+		.head {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			background-color: color-mix(in srgb, var(--background-500) 30%, transparent);
+			padding: 0.5rem 0.5rem;
+			border-bottom: 1px solid var(--border_clr);
+
+			div {
+				display: flex;
+				align-items: center;
+			}
+		}
+
+		.content {
+			padding: 0.5rem 0.5rem;
+		}
+
+		margin-bottom: 0.5rem;
+	}
+
 	.buttons {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, 20ch);
@@ -180,24 +238,6 @@
 		max-width: 100%;
 	}
 
-	.grid-row {
-		display: grid;
-		grid-template-columns: 20px 1fr 30px 400px;
-		gap: 1.5rem;
-		align-items: center;
-		padding: 0.75rem 1rem;
-	}
-
-	.grid-row {
-		border-radius: 8px;
-		border: 1px solid transparent;
-		transition: border-color 0.2s;
-
-		&:hover {
-			background-color: color-mix(in srgb, var(--clr) 90%, white);
-		}
-	}
-
 	.attribute-group {
 		display: flex;
 		flex-direction: column;
@@ -213,27 +253,17 @@
 		}
 	}
 
-	.col-delete {
-		display: flex;
-		justify-content: center;
+	.delete-btn {
+		background: none;
+		border: none;
+		color: var(--error-500);
+		cursor: pointer;
+		padding: 4px;
+		border-radius: 4px;
 
-		.delete-btn {
-			background: none;
-			border: none;
-			color: var(--error-500);
-			cursor: pointer;
-			padding: 4px;
-			border-radius: 4px;
-
-			&:hover {
-				color: var(--error-700);
-			}
+		&:hover {
+			color: var(--error-700);
 		}
-	}
-
-	.col-required {
-		display: flex;
-		justify-content: center;
 	}
 
 	.component-wrapper {

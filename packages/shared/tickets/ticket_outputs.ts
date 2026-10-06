@@ -54,14 +54,12 @@ export enum ModuleCategory {
 export interface ModuleObject<T extends PipelineModule = PipelineModule> {
   properties: (mod: T, panel: TicketPanelMeta) => ModuleProperty[];
   name: string;
+  description?: string;
   is_meta_module?: boolean;
   category?: ModuleCategory;
   schema?: z.ZodType<T>;
+  type: PipelineModule["type"];
 }
-
-type CategoryNames = {
-  [K in ModuleCategory]: string;
-};
 
 type ModuleRegistry = {
   [K in PipelineModule["type"]]: ModuleObject<any>;
@@ -79,17 +77,21 @@ const generate_string_select = (name = "selection", is_array_of = false) =>
 const ASSIGN_ROLE: ModuleObject = {
   properties: () => [generate_role("selected")],
   name: "Assign Role",
+  description: "Adds a new assigned role",
   category: ModuleCategory.ASSIGNMENT,
   schema: ZAssignRole,
+  type: "ASSIGN_ROLE",
 };
 
 const NARROW_ISSUE: ModuleObject = {
   name: "Define Issue",
+  description: "Levrage AI to clarify what your user is asking",
   properties: () => [
     { name: "issue", value: "string", description: "The narrowed down issue" },
   ],
   category: ModuleCategory.AI,
   schema: ZAIIssueNarrower,
+  type: "NARROW_ISSUE",
 };
 
 const ROOT_ENV_MODULE: ModuleObject = {
@@ -117,22 +119,27 @@ const ROOT_ENV_MODULE: ModuleObject = {
     return props;
   },
   is_meta_module: true,
+  type: "ROOT_ENV_MODULE",
 };
 
 const ASSIGN_CHANNEL: ModuleObject = {
   name: "Assign Channel",
+  description: "Change what channel the ticket is created in",
   category: ModuleCategory.ASSIGNMENT,
   properties: (_self) => [from_contract("channel", "CHANNEL")],
   schema: ZAssignChannel,
+  type: "ASSIGN_CHANNEL",
 };
 
 const ASSIGN_NAME: ModuleObject = {
   name: "Assign Name",
+  description: "Change the name of the ticket",
   category: ModuleCategory.ASSIGNMENT,
   properties: (_self) => {
     return [];
   },
   schema: ZAssignName,
+  type: "ASSIGN_NAME",
 };
 
 const OPEN_TICKET: ModuleObject = {
@@ -140,17 +147,21 @@ const OPEN_TICKET: ModuleObject = {
   category: ModuleCategory.RESOLVERS,
   properties: () => [],
   schema: ZOpenTicket,
+  type: "OPEN_TICKET",
 };
 
 const SILENT_RESOLVE: ModuleObject = {
   name: "Silently Resolve",
+  description: "End the ticket flow. This will not create a thread",
   category: ModuleCategory.RESOLVERS,
   properties: () => [],
   schema: ZSilentlyResolve,
+  type: "SILENT_RESOLVE",
 };
 
 const MODAL_QUESTION: ModuleObject<QuestionModal> = {
   name: "Modal Question",
+  description: "Gather information from the user",
   category: ModuleCategory.INPUTS,
   schema: ZQuestionModal,
   properties: (self) => {
@@ -188,6 +199,7 @@ const MODAL_QUESTION: ModuleObject<QuestionModal> = {
       };
     });
   },
+  type: "MODAL_QUESTION",
 };
 
 export const MODULE_OUTPUTS: ModuleRegistry = {
@@ -199,6 +211,10 @@ export const MODULE_OUTPUTS: ModuleRegistry = {
   OPEN_TICKET,
   SILENT_RESOLVE,
   MODAL_QUESTION,
+};
+
+type CategoryNames = {
+  [K in ModuleCategory]: string;
 };
 
 export const CATEGORY_NAMES: CategoryNames = {

@@ -1,11 +1,11 @@
 import { client } from '@providers/client';
 import { ticket_service } from '@providers/services/ticket_service';
-import { define_secure_event } from '#/interfaces/PrivateEvents';
 import { do_resolved_actions } from '#/modules/ticket/_actions/mark_resolved';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { map_err } from '#/utilities/error';
+import { define_typed_event } from '../../shared/typed_events';
 
-export default define_secure_event('mark_ticket_resolved', async ({ ticket_id, user_id }) => {
+export default define_typed_event('mark_ticket_resolved', async ({ ticket_id, user_id }) => {
   const ticket_obj = await ticket_service.get_ticket(ticket_id);
   if (ticket_obj.isErr()) return err(ticket_obj.error);
   const thread = await ResultAsync.fromPromise(

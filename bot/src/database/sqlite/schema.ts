@@ -76,6 +76,9 @@ export const TicketPanels = sqliteTable('ticketpanels', {
   resolve_embed: text('resolve_embed', { mode: 'json' }).notNull(),
   resolve_behaviour: text('resolve_behaviour').notNull(),
   pipeline: text('pipeline', { mode: 'json' }).notNull(),
+  ai_assist: integer('ai_assist', { mode: 'boolean' }).default(false),
+  max_concurring_tickets: integer('max_concurring_tickets').default(10),
+  ticket_cooldown_seconds: integer('ticket_cooldown_seconds').default(0),
 });
 
 export const Ticket = sqliteTable('tickets', {

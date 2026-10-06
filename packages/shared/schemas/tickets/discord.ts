@@ -161,3 +161,19 @@ export const ZDJSGuild = z.object({
   ownerId: z.string(),
 });
 export type DJSGuild = z.output<typeof ZDJSGuild>;
+
+export const ZDiscordMessage = z.object({
+  id: z.string(),
+  guildId: z.string().nullish(),
+  pinned: z.boolean(),
+  system: z.boolean(),
+  embeds: z.array(ZNativeDiscordEmbed),
+  editable: z.boolean(),
+  deletable: z.boolean(),
+  createdAt: z.coerce.date(),
+  content: z.string(),
+  channelId: z.string(),
+  author: ZDiscordUser,
+});
+
+export type DiscordMessage = z.output<typeof ZDiscordMessage>;

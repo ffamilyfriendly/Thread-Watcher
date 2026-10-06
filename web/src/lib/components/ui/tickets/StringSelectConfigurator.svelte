@@ -1,12 +1,13 @@
 <script lang="ts">
 	import type { ButtonStart, SelectionStart, StringSelectOption } from '@watcher/shared';
-	import EditableAttribute from './EditableAttribute.svelte';
+	import EditableAttribute from './modules/components/InlineTextEditor.svelte';
 	import { ChevronDown, ChevronUp, Trash2 } from '@lucide/svelte';
 	import { fly } from 'svelte/transition';
+	import { portal } from '$lib/client/attachments/portal';
 
 	interface Props {
-		placeholder: string,
-		options: StringSelectOption[]
+		placeholder: string;
+		options: StringSelectOption[];
 	}
 
 	let { options = $bindable(), placeholder = $bindable() }: Props = $props();
@@ -29,9 +30,11 @@
 	function remove_option(opt_id: string) {
 		options = options.filter((v) => v.option_id !== opt_id).filter(Boolean);
 	}
+
+	let object_ref = $state<HTMLDivElement>();
 </script>
 
-<div class="container">
+<div bind:this={object_ref} class="container">
 	<div class="select">
 		<EditableAttribute max={150} bind:value={placeholder}>
 			{#snippet display(v)}
@@ -75,7 +78,11 @@
 	{/snippet}
 
 	{#if is_expanded}
-		<div transition:fly={{ duration: 400, y: -30, opacity: 0.2 }} class="options">
+		<div
+			{@attach portal(object_ref, { force_anchor_width: true })}
+			transition:fly={{ duration: 400, y: -30, opacity: 0.2 }}
+			class="options"
+		>
 			{#each options as opt (opt.option_id)}
 				{@render option_field(opt)}
 			{/each}

@@ -12,9 +12,9 @@ import { database } from '@providers/database';
 import { config } from '@providers/config';
 import { redis } from '@providers/redis';
 import { ticket_service } from '@providers/services/ticket_service';
-import { fetch_index_context as fetch_users_index_context } from '#/fetchers/user_fetcher';
 import { event_bus } from '@providers/event_bus';
 import { start_reconsile_payments } from './routines/reconsile_payment';
+import { fetch_users_index_context } from './events/IPC/shared/fetchers/user_fetcher';
 
 const logger = Logger.child('Shard');
 

@@ -1,43 +1,50 @@
 <script lang="ts">
 	import { tooltip } from '$lib/client/attachments/tooltip';
 	import { get_contrast_colour, str_to_vibrant_clr } from '$lib/client/colour';
-	import {
-		ArrowDown,
-		ArrowUp,
-		Grip,
-	} from '@lucide/svelte';
+	import { use_pipeline } from '$lib/stores/panel.svelte';
+	import { Bell, Grip, Sparkle, Vault, type IconProps } from '@lucide/svelte';
 	import {
 		CATEGORY_NAMES,
 		MODULE_OUTPUTS,
 		ModuleCategory,
-		type ModuleObject
+		type ModuleObject,
+		type PipelineModule
 	} from '@watcher/shared';
-	import { slide } from 'svelte/transition';
+	import Modal from '../Modal.svelte';
+	import type { Component } from 'svelte';
+	import { get_module_icon } from './modules/module_registry';
+
+	const MODULE_CATEGORY_ICONS: Record<ModuleCategory, Component<IconProps, {}, ''> | null> = {
+		[ModuleCategory.AI]: Sparkle,
+		[ModuleCategory.ASSIGNMENT]: Vault,
+		[ModuleCategory.INPUTS]: Bell,
+		[ModuleCategory.RESOLVERS]: null,
+		[ModuleCategory.UNASSIGNED]: null
+	};
 
 	interface Props {
 		on_click: (module_type: string) => void;
 	}
 
+	let panel_state = use_pipeline();
+
 	const { on_click }: Props = $props();
 
-	type ModuleWithType = ModuleObject & { type: string };
-	const mapped = $state<Map<ModuleCategory, ModuleWithType[]>>(new Map());
+	const mapped = $state<Map<ModuleCategory, ModuleObject[]>>(new Map());
 
 	Object.entries(MODULE_OUTPUTS).forEach(([type, mod]) => {
 		if (mod.is_meta_module) return;
-		const mod_with_type = mod as ModuleWithType;
-		mod_with_type.category = mod.category ?? ModuleCategory.UNASSIGNED;
-		mod_with_type.type = type;
 
-		const arr = mapped.get(mod_with_type.category) ?? [];
-		arr.push(mod_with_type);
-		mapped.set(mod_with_type.category, arr);
+		const module_category_w_fallback = mod.category ?? ModuleCategory.UNASSIGNED;
+
+		const arr = mapped.get(module_category_w_fallback) ?? [];
+		arr.push(mod);
+		mapped.set(module_category_w_fallback, arr);
 	});
 
-
-	function create_ghost_pill(mod: ModuleWithType): HTMLDivElement {
+	function create_ghost_pill(mod: ModuleObject): HTMLDivElement {
 		const elem = document.createElement('div');
-		const accent_colour = str_to_vibrant_clr(mod.type)
+		const accent_colour = str_to_vibrant_clr(mod.type);
 		elem.innerText = mod.name;
 		elem.style.backgroundColor = accent_colour;
 		elem.style.height = '25px';
@@ -57,7 +64,7 @@
 		return elem;
 	}
 
-	function handle_drag_start(e: DragEvent, mod: ModuleWithType) {
+	function handle_drag_start(e: DragEvent, mod: ModuleObject) {
 		e.dataTransfer?.setData('optype', 'create');
 		e.dataTransfer?.setData('module_type', mod.type);
 
@@ -70,73 +77,64 @@
 		);
 	}
 
-	let show_module_drawer = $state(false);
-	let ref_container = $state<HTMLElement>()
+	function on_module_click_wrapper(mod_type: string) {
+		panel_state.module_picker_open = false;
+		on_click(mod_type);
+	}
 </script>
 
-{#snippet module(mod: ModuleWithType)}
-{@const accent_colour = str_to_vibrant_clr(mod.type)}
+{#snippet module(mod: ModuleObject)}
+	{@const accent_colour = str_to_vibrant_clr(mod.type)}
+	{@const ModuleIcon = get_module_icon(mod.type)}
 	<button
 		class="stop_a11y_complaints"
 		onclick={() => {
-			on_click(mod.type);
+			on_module_click_wrapper(mod.type);
 		}}
 	>
 		<div
 			{@attach tooltip({
-				content: 'Click to insert or drag to position',
+				content: mod.description ?? mod.name,
 				followCursor: 'horizontal'
 			})}
 			role="region"
 			draggable="true"
 			ondragstart={(e) => handle_drag_start(e, mod)}
 			class="module"
-			style="--accent: {accent_colour}"
 		>
-			<p class="module_name" style:color={get_contrast_colour(accent_colour)}>{mod.name}</p>
-
-			<div class="grip">
-				<Grip />
-			</div>
+			<span class="module_icon" style="--box: {accent_colour}">
+				<ModuleIcon size="1.2rem" color="black" />
+			</span>
+			{mod.name}
 		</div>
 	</button>
 {/snippet}
 
-<div bind:this={ref_container} class="drawer_container">
-	<div class="btn_container">
-		<button
-	{@attach tooltip({
-		content: show_module_drawer ? 'Hide Modules' : 'Show Modules',
-		placement: 'right'
-	})}
-	class:active={show_module_drawer}
-	onclick={() => (show_module_drawer = !show_module_drawer)}
-	class="drawer_btn"
->
-	{#if show_module_drawer}
-		<ArrowDown size={24} />
-	{:else}
-		<ArrowUp size={24} />
-	{/if}
-</button>
-	</div>
+{#if panel_state.module_picker_open}
+	<Modal title="Insert New Module" bind:set_open={panel_state.module_picker_open}>
+		<div class="category_lists">
+			{#each mapped.entries() as [cat_type, modules], idx}
+				{@const cat_name = CATEGORY_NAMES[cat_type]}
+				{@const Icon = MODULE_CATEGORY_ICONS[cat_type]}
 
-	{#if show_module_drawer}
-	<div class="drawer" transition:slide={{ duration: 300 }}>
-		{#each mapped.entries() as [cat_type, modules], idx}
-			{@const cat_name = CATEGORY_NAMES[cat_type]}
-			<div class="section">
-				<b>{cat_name}</b>
-				<div class="list">
-					{#each modules as mod}
-						{@render module(mod)}
-					{/each}
+				<div class="section">
+					<div class="header">
+						{#if Icon}
+							<Icon size={16} />
+						{/if}
+						<b>{cat_name}</b>
+					</div>
+
+					<div class="list">
+						{#each modules as mod}
+							{@render module(mod)}
+						{/each}
+					</div>
 				</div>
-			</div>
-		{/each}
-	</div>
+			{/each}
+		</div>
+	</Modal>
 {/if}
-</div>
 
 <style lang="scss">
 	:root {
@@ -144,31 +142,10 @@
 		--clr: var(var(--clr), #121212);
 	}
 
-	.drawer_btn {
-		background-color: color-mix(in srgb, var(--clr) 95%, white);
-		border: 2px solid rgba(255, 255, 255, 0.09);
-		margin: 1rem;
-		padding: 0.5rem;
-		border-radius: 0.15rem;
-		color: white;
-		cursor: pointer;
-		transition: 0.2s ease-in-out;
-		opacity: 0.2;
-
-		&:hover,
-		&.active {
-			opacity: 1;
-		}
-	}
-
-	.module_name {
-		color: black;
-	}
-
-	.drawer_container {
-		position: absolute;
-		bottom: 0;
-		left: 0;
+	.header {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
 	}
 
 	.stop_a11y_complaints {
@@ -179,39 +156,37 @@
 	.module {
 		cursor: pointer;
 		position: relative;
+		border-radius: 0.15rem;
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		background-color: var(--accent);
-		border-radius: 0.15rem;
-		padding: 0.25rem;
+		color: inherit;
+		transition: 0.3s;
+		padding: 0.5rem;
+		transform: translateX(-0.5rem);
 
-		.grip {
-			display: contents;
-			cursor: grab;
+		&:hover {
+			background-color: color-mix(in srgb, var(--clr) 97%, white);
+		}
+
+		.module_icon {
+			margin-right: 0.25rem;
+			background-color: var(--box);
+			border-radius: 0.25rem;
+			padding: 0.15rem;
+			height: 1.5rem;
+			width: 1.5rem;
 		}
 	}
 
-	.drawer {
-		background-color: color-mix(in srgb, var(--clr) 80%, transparent);
-		backdrop-filter: blur(5px);
-		border: 2px solid rgba(255, 255, 255, 0.09);
-		border-left: none;
-		border-bottom: none;
-		border-radius: 0 0.25rem 0 0;
-		padding: 0.5rem;
-		width: 100%;
-
+	.category_lists {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 1rem;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.5rem;
 	}
 
 	.section {
 		.list {
-			padding: 0.5rem 0.25rem;
-			background-color: color-mix(in srgb, var(--clr) 97%, white);
-			border-radius: 0.15rem;
+			padding: 0.5rem 0rem;
 		}
 	}
 </style>

@@ -1,19 +1,3 @@
-import { client } from '@providers/client';
-import { PrivateEvent } from '#/interfaces/PrivateEvents';
-import { err, ok, ResultAsync } from 'neverthrow';
-import { map_err } from '#/utilities/error';
-
-const event: PrivateEvent<{
-  channel_id: string;
-}> = {
-  event_name: 'fetch_channel',
-  async event_callback({ channel_id }) {
-    const channel = await ResultAsync.fromPromise(client.channels.fetch(channel_id), map_err);
-
-    if (channel.isErr()) return err(channel.error);
-
-    return ok(channel.value?.toJSON());
-  },
-};
-
-export default event;
+import { fetch_channel_bot_context } from '#/events/IPC/shared/fetchers/channel_fetcher';
+import { define_typed_event } from '../shared/typed_events';
+export default define_typed_event('fetch_channel', fetch_channel_bot_context);

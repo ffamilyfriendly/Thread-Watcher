@@ -17,7 +17,6 @@ import {
   ZTicketPanel,
 } from '@watcher/shared';
 import { Message } from 'discord.js';
-import { UserFetcher } from '#/fetchers/user_fetcher';
 import { Database, TicketInsertion } from '#/interfaces/Database';
 import Redis from 'ioredis';
 import { err, ok, Result } from 'neverthrow';
@@ -28,10 +27,13 @@ import RedisWrapper from '#/utilities/redis';
 import z from 'zod';
 import { AuditMeta } from './AuditService';
 import { event_bus } from '@providers/event_bus';
+import { UserFetcher } from '#/events/IPC/shared/fetchers/user_fetcher';
+import { MessageFetcher } from '#/events/IPC/shared/fetchers/message_fetcher';
 
 export default class TicketService {
   static readonly CACHE_TTL_SECONDS = 900;
   private fetch_users?: UserFetcher;
+  private fetch_message?: MessageFetcher;
   private l = logger.getSubLogger({ name: 'TicketService' });
   private r: RedisWrapper;
   constructor(
@@ -45,6 +47,10 @@ export default class TicketService {
     this.fetch_users = fetcher;
   }
 
+  public set_message_fetcher(fetcher: MessageFetcher) {
+    this.fetch_message = fetcher;
+  }
+
   async get_panel(panel_id: string): Promise<Result<TicketPanel, Error>> {
     const cached = await this.r.get(['panel', panel_id], ZTicketPanel);
     if (cached.isOk() && cached.value) return ok(cached.value);
@@ -55,6 +61,22 @@ export default class TicketService {
 
     this.r.set(['panel', panel_id], db_res.value, ZTicketPanel);
     return ok(db_res.value);
+  }
+
+  async get_panel_message(panel_id: string) {
+    const panel = await this.get_panel(panel_id);
+    if (panel.isErr()) return err(panel.error);
+    if (!panel.value.discord_message_id) return ok(null);
+    if (!this.fetch_message) return err(new Error('no message fetcher set for service'));
+
+    // Previous behaviour of TW automatically posted the deployment in the `initial_channel_id` and did not properly store the message_channel_id. This is pretty much a backfill to not destroy previously working panels
+    const channel_id = panel.value.discord_message_channel_id ?? panel.value.initial_channel_id;
+
+    return this.fetch_message({
+      guild_id: panel.value.guild_id,
+      message_id: panel.value.discord_message_id,
+      channel_id: channel_id,
+    });
   }
 
   async insert_panel(panel_data: TicketPanel, meta: AuditMeta) {

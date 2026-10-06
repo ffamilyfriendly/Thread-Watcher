@@ -4,7 +4,7 @@ import { Event } from '#/interfaces/ClientEvent';
 import { PrivateEvent } from '#/interfaces/PrivateEvents';
 import { Client, Collection } from 'discord.js';
 import { Logger } from 'tslog';
-import { BotIpcClient } from './ipc_clients';
+import { BotIpcClient } from '../events/IPC/shared/ipc_clients';
 import { logger } from '@providers/logger';
 
 export async function load_events(client: Client, refresh_events = false) {

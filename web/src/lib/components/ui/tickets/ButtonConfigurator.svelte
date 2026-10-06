@@ -1,12 +1,12 @@
 <script lang="ts">
 	import type { ButtonStart } from '@watcher/shared';
-	import EditableAttribute from './EditableAttribute.svelte';
+	import EditableAttribute from './modules/components/InlineTextEditor.svelte';
 
 	interface Props {
 		value: ButtonStart;
 	}
 
-	const { value = $bindable() }: Props = $props();
+	const { value = $bindable({ type: 'BUTTON', button_text: 'Open Ticket' }) }: Props = $props();
 </script>
 
 <div class="discord_btn">

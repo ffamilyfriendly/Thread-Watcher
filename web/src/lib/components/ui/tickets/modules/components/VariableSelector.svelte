@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { click_outside } from '$lib/client/attachments/click_outside';
 	import { portal } from '$lib/client/attachments/portal';
-	import { use_pipeline } from '$lib/stores/pipeline.svelte';
+	import { use_pipeline } from '$lib/stores/panel.svelte';
 	import {
 		ArrowRightFromLine,
 		Info,

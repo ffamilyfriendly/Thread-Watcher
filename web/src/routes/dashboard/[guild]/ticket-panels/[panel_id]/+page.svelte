@@ -2,7 +2,7 @@
 	import Pipeline from '$lib/components/ui/tickets/Pipeline.svelte';
 	import type { ButtonStart, SelectionStart } from '@watcher/shared';
 	import type { PageProps } from './$types.js';
-	import { init_pipeline_state } from '$lib/stores/pipeline.svelte.js';
+	import { init_pipeline_state } from '$lib/stores/panel.svelte.js';
 	import RolePicker from '$lib/components/ui/settings/RolePicker.svelte';
 	import ChannelPicker from '$lib/components/ui/settings/ChannelPicker.svelte';
 	import { CAN_HOLD_MESSAGES, CAN_HOLD_THREADS } from '$lib/types/discord.js';
@@ -13,8 +13,8 @@
 	import { Clipboard } from '@lucide/svelte';
 	import Toggle from '$lib/components/ui/Toggle.svelte';
 	import EmbedConfigurator from '$lib/components/ui/tickets/EmbedConfigurator.svelte';
-	import EditableAttribute from '$lib/components/ui/tickets/EditableAttribute.svelte';
-	import TabbedView from '$lib/components/ui/TabbedView.svelte';
+	import EditableAttribute from '$lib/components/ui/tickets/modules/components/InlineTextEditor.svelte';
+	import TabbedView from '$lib/components/ui/TabbedView/TabbedView.svelte';
 	import ButtonConfigurator from '$lib/components/ui/tickets/ButtonConfigurator.svelte';
 	import StringSelectConfigurator from '$lib/components/ui/tickets/StringSelectConfigurator.svelte';
 	import { fetch_as_json } from '$lib/client/fetch.js';
@@ -79,7 +79,7 @@
 			`/api/guild/${panel_validation_result.data.guild_id}/panels/${panel_validation_result.data.panel_id}`,
 			{
 				body: JSON.stringify(panel_validation_result.data),
-				method: "PUT"
+				method: 'PUT'
 			},
 			z.object({ panel_id: z.string().default(pipeline_state.panel.panel_id) })
 		);
@@ -89,7 +89,6 @@
 		}
 
 		add_toast({ type: 'success', message: 'updated panel!', timeout: 1500 });
-		
 	}
 
 	async function update_message() {
@@ -108,31 +107,35 @@
 		if (res.isErr()) return add_toast_from_error(res.error);
 	}
 
-	const [ can_update, reason_cant_update ] = $derived.by(() => {
-		const mods = pipeline_state.safe_modules()
-		if(mods.length === 0) {
-			return [false, "Your pipeline has no actions. Add at least one module to save changes!"]
+	const [can_update, reason_cant_update] = $derived.by(() => {
+		const mods = pipeline_state.safe_modules();
+		if (mods.length === 0) {
+			return [false, 'Your pipeline has no actions. Add at least one module to save changes!'];
 		}
 
-		if(!mods.find(m => ["OPEN_TICKET", "SILENT_RESOLVE"].includes(m.type))) {
-			return [false, "Your pipeline is missing a resolution step. Add an 'Open Ticket' or 'Silent Resolve' module to complete the workflow."]
+		if (!mods.find((m) => ['OPEN_TICKET', 'SILENT_RESOLVE'].includes(m.type))) {
+			return [
+				false,
+				"Your pipeline is missing a resolution step. Add an 'Open Ticket' or 'Silent Resolve' module to complete the workflow."
+			];
 		}
 
-		return [true, ""]
-	})
+		return [true, ''];
+	});
 
-	const [ can_deploy, reason_cant_deploy ] = $derived.by(() => {
-
-		const channel = guild_state.get_channel_sync(pipeline_state.panel.initial_channel_id)
-		if(channel && !CAN_HOLD_MESSAGES.includes(channel.type)) {
-			return [false, "The 'Assigned Channel' cannot hold messages. To deploy the panel, set 'Assigned Channel' to a channel that can hold messages."]
+	const [can_deploy, reason_cant_deploy] = $derived.by(() => {
+		const channel = guild_state.get_channel_sync(pipeline_state.panel.initial_channel_id);
+		if (channel && !CAN_HOLD_MESSAGES.includes(channel.type)) {
+			return [
+				false,
+				"The 'Assigned Channel' cannot hold messages. To deploy the panel, set 'Assigned Channel' to a channel that can hold messages."
+			];
 		}
-		
 
-		return [true, ""]
-	})
+		return [true, ''];
+	});
 
-	const reason = $derived(reason_cant_update || reason_cant_deploy)
+	const reason = $derived(reason_cant_update || reason_cant_deploy);
 </script>
 
 <Subpage>
@@ -160,31 +163,6 @@
 	<div class="pipeline">
 		<h2>Panel Embed</h2>
 		<EmbedConfigurator bind:value={pipeline_state.panel.commencement_embed} />
-
-		{#snippet btn_conf()}
-			<ButtonConfigurator bind:value={init_w_btn_state} />
-		{/snippet}
-		{#snippet select_conf()}
-			<StringSelectConfigurator
-				bind:options={init_w_select_state.options}
-				bind:placeholder={init_w_select_state.placeholder}
-			/>
-		{/snippet}
-
-		<TabbedView
-			inverted={true}
-			on_change={handle_tab_change}
-			tabs={[
-				{
-					label: 'Button',
-					content: btn_conf
-				},
-				{
-					label: 'Select',
-					content: select_conf
-				}
-			]}
-		/>
 
 		<h2>Resolve Embed</h2>
 		<EmbedConfigurator bind:value={pipeline_state.panel.resolve_embed} use_variable_picker={true} />
@@ -225,22 +203,25 @@
 		</div>
 		<div class="option">
 			<h3>Close Method</h3>
-			<StringPicker bind:value={pipeline_state.panel.resolve_behaviour} options={[
-				{
-					name: "Delete Thread",
-					description: "Deletes the ticket thread",
-					id: "DELETE_THREAD"
-				},
-				{
-					name: "Lock Thread",
-					description: "Locks the ticket thread",
-					id: "LOCK_THREAD"
-				},
-				{
-					name: "Nothing",
-					id: "NOTHING"
-				}
-			]} />
+			<StringPicker
+				bind:value={pipeline_state.panel.resolve_behaviour}
+				options={[
+					{
+						name: 'Delete Thread',
+						description: 'Deletes the ticket thread',
+						id: 'DELETE_THREAD'
+					},
+					{
+						name: 'Lock Thread',
+						description: 'Locks the ticket thread',
+						id: 'LOCK_THREAD'
+					},
+					{
+						name: 'Nothing',
+						id: 'NOTHING'
+					}
+				]}
+			/>
 		</div>
 
 		<div class={[common.row, common.gap_medium]}>
@@ -248,9 +229,7 @@
 				Deploy Panel
 			</Button>
 
-			<Button disabled={!can_update} variant="primary" load_with={create_ticket}>
-				Update
-			</Button>
+			<Button disabled={!can_update} variant="primary" load_with={create_ticket}>Update</Button>
 		</div>
 		{#if !can_update || !can_deploy}
 			<small style:color="var(--error-500)">{reason}</small>

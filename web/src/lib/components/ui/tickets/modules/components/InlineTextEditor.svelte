@@ -2,7 +2,7 @@
 	import { Check, Pencil } from '@lucide/svelte';
 	import { tick, type Snippet } from 'svelte';
 	import type { HTMLInputAttributes, HTMLTextareaAttributes } from 'svelte/elements';
-	import VariableSelector from './modules/components/VariableSelector.svelte';
+	import VariableSelector from './VariableSelector.svelte';
 	import { tooltip } from '$lib/client/attachments/tooltip';
 
 	type TextAreaProps = {
@@ -93,7 +93,7 @@
 	}
 
 	function focus(node: HTMLInputElement | HTMLTextAreaElement) {
-		if(node instanceof HTMLTextAreaElement) resize(node)
+		if (node instanceof HTMLTextAreaElement) resize(node);
 		node.focus();
 		node.select();
 	}

@@ -5,7 +5,7 @@
 
 	interface Props {
 		on_click?: () => void;
-		variant?: 'primary' | 'error' | 'tetriary' | 'premium';
+		variant?: 'primary' | 'error' | 'tetriary' | 'premium' | 'none';
 		shape?: 'rect' | 'circle';
 		load_with?: () => Promise<unknown>;
 		children: Snippet;
@@ -129,6 +129,14 @@
 	.error {
 		--bg: var(--error-500);
 		--text: white;
+	}
+
+	.none {
+		--bg: transparent;
+		--text: white;
+		padding: 0 !important;
+		border: 0 !important;
+		outline: none !important;
 	}
 
 	.large {

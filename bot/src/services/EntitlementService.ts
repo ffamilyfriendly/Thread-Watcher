@@ -6,7 +6,7 @@ import { Database, EntitlementFilters, EntitlementInsertion } from '#/interfaces
 import Redis from 'ioredis';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { map_err, mapped_err } from '#/utilities/error';
-import { ShardedIpcClient } from '#/utilities/ipc_clients';
+import { ShardedIpcClient } from '#/events/IPC/shared/ipc_clients';
 import RedisWrapper from '#/utilities/redis';
 import z from 'zod';
 import { GuildEntitlement, ZTopggWebhookSchema } from '@watcher/shared';

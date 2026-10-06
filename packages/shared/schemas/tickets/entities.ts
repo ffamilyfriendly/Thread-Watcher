@@ -27,6 +27,7 @@ export const ZTicketPanel = ZTicketPanelMeta.extend({
   should_watch_ticket: z.coerce.boolean(),
   should_GPT_summarize_ticket: z.coerce.boolean(),
   discord_message_id: z.string().nullish(), // The message ID of the panel. Used to edit updated panels / check if we've sent the panel message
+  discord_message_channel_id: z.string().nullish(),
   initial_assigned_roles: z.array(z.string()), // The roles that will be assigned to the ticket (if pipeline does not alter)
   initial_channel_id: z.string(), // The channel the ticket will open in (if pipeline does not alter)
   commencement_embed: ZEmbed,
@@ -35,8 +36,8 @@ export const ZTicketPanel = ZTicketPanelMeta.extend({
   resolve_behaviour: z.enum(["DELETE_THREAD", "LOCK_THREAD", "NOTHING"]),
   pipeline: ZPipeline,
   ai_assist: z.coerce.boolean().nullish().default(false),
-  max_concurring_tickets: z.number().nullish(),
-  ticket_cooldown_seconds: z.number().nullish(),
+  max_concurring_tickets: z.number().nullish().default(-1),
+  ticket_cooldown_seconds: z.number().nullish().default(0),
 });
 
 export const ZEditTicketPanel = ZTicketPanel.partial();

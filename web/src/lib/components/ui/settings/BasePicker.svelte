@@ -33,16 +33,16 @@
 
 	let fetched_items = $state<T[]>([]);
 
-	const item_lookup = $derived(new Map([...items, ...fetched_items].map(i => [i.id, i])))
+	const item_lookup = $derived(new Map([...items, ...fetched_items].map((i) => [i.id, i])));
 
 	const active_items_data = $derived(
-		selected_ids.map(id => item_lookup.get(id)).filter((i): i is T => !!i)
+		selected_ids.map((id) => item_lookup.get(id)).filter((i): i is T => !!i)
 	);
 
 	let show_item_picker = $state(false);
 
 	function toggle_item(id: string) {
-		custom_item_id = ""
+		custom_item_id = '';
 		if (multiple) {
 			const current = Array.isArray(value) ? [...value] : value ? [value] : [];
 			if (current.includes(id)) {
@@ -56,22 +56,23 @@
 		}
 	}
 
-	let custom_item_id = $state<string>()
+	let custom_item_id = $state<string>();
 
 	async function handle_custom_submit() {
-		if(!custom_item_id || !fetcher) return
-		if (!/^\d{17,21}$/.test(custom_item_id)) return console.error(`'custom_item_id' is not a valid snowflake.`, { got: custom_item_id })
+		if (!custom_item_id || !fetcher) return;
+		if (!/^\d{17,21}$/.test(custom_item_id))
+			return console.error(`'custom_item_id' is not a valid snowflake.`, { got: custom_item_id });
 
 		// If we've already got the item there's no need to fetch it again, just cuz the user asked nicely.
 		// just toggle the item in that case.
-		if([...fetched_items, ...items].map(i => i.id).includes(custom_item_id)) {
-			return toggle_item(custom_item_id)
+		if ([...fetched_items, ...items].map((i) => i.id).includes(custom_item_id)) {
+			return toggle_item(custom_item_id);
 		}
 
-		const item_res = await fetcher(custom_item_id)
-		if(item_res.isErr()) return add_toast_from_error(item_res.error)
+		const item_res = await fetcher(custom_item_id);
+		if (item_res.isErr()) return add_toast_from_error(item_res.error);
 
-		fetched_items = [...fetched_items, item_res.value]
+		fetched_items = [...fetched_items, item_res.value];
 
 		if (/^\d{17,21}$/.test(custom_item_id)) {
 			toggle_item(custom_item_id);
@@ -149,7 +150,7 @@
 	{#if show_item_picker}
 		<div
 			{@attach portal(container, { force_anchor_width: true })}
-			{@attach click_outside(() => show_item_picker = false)}
+			{@attach click_outside(() => (show_item_picker = false))}
 			class="options"
 			in:fly={{ duration: 200, opacity: 0, y: -8 }}
 			out:fly={{ duration: 200, opacity: 0, y: -8 }}
@@ -175,7 +176,12 @@
 			{#if fetcher}
 				<hr />
 				<div class="custom_id">
-					<input bind:value={custom_item_id} pattern={'\\d{17,21}'} placeholder="ID (Snowflake)" name="custom_item_id" />
+					<input
+						bind:value={custom_item_id}
+						pattern={'\\d{17,21}'}
+						placeholder="ID (Snowflake)"
+						name="custom_item_id"
+					/>
 					<Button load_with={handle_custom_submit}>Add</Button>
 				</div>
 			{/if}
@@ -201,7 +207,7 @@
 		align-items: center;
 		padding: 0.1rem;
 		margin: 0.5rem 0rem;
-		outline: 1px solid rgba(128, 128, 128, 0.33);
+		border: 1px solid rgba(128, 128, 128, 0.33);
 		border-radius: 0.5rem;
 
 		.chevron_btn {

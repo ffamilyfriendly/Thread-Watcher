@@ -110,5 +110,7 @@
 	main {
 		flex-grow: 1;
 		padding: var(--main_padding);
+		/* TODO: CHECK THIS BEFORE DEPLOYING ANYTHING BUCKO 👹👹👹👹👹👹👹👹 */
+		overflow: hidden;
 	}
 </style>

@@ -17,6 +17,9 @@ export const DEFAULT_TICKET_PANEL: (s: string) => TicketPanel = (
   initial_assigned_roles: [],
   initial_channel_id: "",
   resolve_behaviour: "LOCK_THREAD",
+  ai_assist: false,
+  ticket_cooldown_seconds: 0,
+  max_concurring_tickets: 10,
   commencement_embed: {
     title: "Open Ticket",
     colour: "#1c2d69",
