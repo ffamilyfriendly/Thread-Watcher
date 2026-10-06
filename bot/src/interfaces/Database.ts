@@ -25,6 +25,7 @@ import {
   TicketListSearch,
   GuildWithEntitlement,
   GuildEntitlement,
+  PanelDeploymentStatistics,
 } from '@watcher/shared';
 import { DatabaseError } from '#/utilities/error/def';
 
@@ -161,6 +162,9 @@ interface Tickets {
   ) => DBResult<IntermediaryTicketView>;
   get_relevant_tickets: (guild_id: string, user_id: string) => DBResult<TicketListData[]>;
   get_panel_count: (guild_id?: string) => DBResult<number>;
+  get_panel_statistics: (
+    params?: { guild_id: string } | { panel_id: string },
+  ) => DBResult<PanelDeploymentStatistics>;
 
   // Ticket Notes
   insert_ticket_note: (data: InsertTicketNote) => DBResult<string>;

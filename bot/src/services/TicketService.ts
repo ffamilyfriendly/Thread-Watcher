@@ -13,6 +13,7 @@ import {
   TicketListSearch,
   TicketPanel,
   TicketView,
+  ZPanelDeploymentStatistics,
   ZTicket,
   ZTicketPanel,
 } from '@watcher/shared';
@@ -76,6 +77,15 @@ export default class TicketService {
       guild_id: panel.value.guild_id,
       message_id: panel.value.discord_message_id,
       channel_id: channel_id,
+    });
+  }
+
+  async get_panel_stats(params?: { guild_id: string } | { panel_id: string }) {
+    const [redis_key] = params ? Object.values(params) : 'global';
+    return this.r.get_cached_or(['stats', redis_key], ZPanelDeploymentStatistics, async () => {
+      const res = await this.db.get_panel_statistics(params);
+      if (res.isErr()) return mapped_err(res.error);
+      return ok(res.value);
     });
   }
 

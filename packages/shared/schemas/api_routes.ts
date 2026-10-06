@@ -39,3 +39,13 @@ export const ZGuildOverview = z.object({
 });
 
 export type GuildOverview = z.output<typeof ZGuildOverview>;
+
+export const ZPanelDeploymentStatistics = z.object({
+  avg_resolution_seconds: z.number(),
+  active_tickets: z.number(),
+  total_created: z.number(),
+});
+
+export type PanelDeploymentStatistics = z.output<
+  typeof ZPanelDeploymentStatistics
+>;

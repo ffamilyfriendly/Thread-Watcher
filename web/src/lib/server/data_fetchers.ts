@@ -19,6 +19,7 @@ import {
 	ZHydratedThreadData,
 	ZLandingPageData,
 	ZMonitor,
+	ZPanelDeploymentStatistics,
 	ZThreadData,
 	ZTicketPanel,
 	ZTicketPanelMeta,
@@ -164,6 +165,17 @@ export function fetch_role(guild_id: string, user_id: string, role_id: string) {
 		500
 	);
 }
+
+export const _fetch_panel_stats = (guild_id: string, panel_id: string, user_id: string) =>
+	json_fetch(`/guild/${guild_id}/panel/${panel_id}/stats`, { user_id }, ZPanelDeploymentStatistics);
+
+export const fetch_panel_stats = (guild_id: string, panel_id: string, user_id: string) =>
+	get_cached_or(
+		`ticketservice:panel:${panel_id}:stats`,
+		ZPanelDeploymentStatistics,
+		() => _fetch_panel_stats(guild_id, panel_id, user_id),
+		60
+	);
 
 export const _fetch_ticket_panel = (guild_id: string, panel_id: string, user_id: string) =>
 	json_fetch(`/guild/${guild_id}/panel/${panel_id}`, { user_id }, ZTicketPanel);

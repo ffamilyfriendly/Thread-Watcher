@@ -12,6 +12,7 @@
 		disabled?: boolean;
 		class?: string;
 		href?: string;
+		target?: '_blank' | '_self' | '_parent' | '_top';
 		confirmation?: {
 			title: string;
 			body: string;
@@ -31,6 +32,7 @@
 		href,
 		confirmation,
 		shape = 'rect',
+		target = '_self',
 		size
 	}: Props = $props();
 
@@ -84,6 +86,7 @@
 		aria-disabled={is_disabled}
 		class:disabled
 		class="{variant} {className} {shape} {size} button"
+		{target}
 		{href}
 	>
 		{@render children()}

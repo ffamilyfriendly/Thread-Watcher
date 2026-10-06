@@ -1,11 +1,17 @@
+<script lang="ts" module>
+	export interface UserComponentProps {
+		style?: 'full' | 'inline';
+	}
+</script>
+
 <script lang="ts">
 	import type { DiscordUser } from '@watcher/shared';
 
-	interface Props {
+	interface Props extends UserComponentProps {
 		user: DiscordUser;
 	}
 
-	const { user }: Props = $props();
+	const { user, style = 'full' }: Props = $props();
 
 	let user_pfp = $derived.by(() => {
 		if (!user) return 'https://cdn.discordapp.com/embed/avatars/3.png';
@@ -13,31 +19,59 @@
 		return user.defaultAvatarURL;
 	});
 
-	let username = $derived(user.globalName ?? user.username);
+	let displayname = $derived(user.globalName ?? user.username);
 </script>
 
-<div class="user">
-	<img src={user_pfp} alt="Avatar of {username}" />
+<div class="user {style}">
+	<img src={user_pfp} alt="Avatar of {displayname}" />
 	<div>
-		<p>{username}</p>
-		<small>{user.id}</small>
+		<p class="displayname">{displayname}</p>
+		<p class="username">{user.username}</p>
+		<small class="user_id">{user.id}</small>
 	</div>
 </div>
 
 <style lang="scss">
 	.user {
-		display: flex;
-		font-size: 1.1rem;
-		align-items: center;
-		gap: 0.5rem;
-
 		img {
-			height: 2rem;
 			border-radius: 50%;
 		}
 
-		small {
-			opacity: 0.7;
+		&.full {
+			display: flex;
+			font-size: 1.1rem;
+			align-items: center;
+			gap: 0.5rem;
+
+			img {
+				height: 2rem;
+			}
+
+			small {
+				opacity: 0.7;
+			}
+
+			.username {
+				display: none;
+			}
+		}
+
+		&.inline {
+			display: inline-flex;
+			align-items: center;
+			vertical-align: middle;
+			gap: 0.25rem;
+
+			img {
+				height: 1rem;
+			}
+
+			.user_id {
+				display: none;
+			}
+			.displayname {
+				display: none;
+			}
 		}
 	}
 </style>

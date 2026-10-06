@@ -18,7 +18,6 @@ import { CallbackResponse } from '#/interfaces/PrivateEvents';
 import { err, ok, ResultAsync } from 'neverthrow';
 import { map_err } from '#/utilities/error';
 import { define_typed_event } from '../../shared/typed_events';
-import { fetch_channel_bot_context } from '../../shared/fetchers/channel_fetcher';
 
 function field_thing(data: Embed['fields']): APIEmbedField[] {
   const fields: APIEmbedField[] = [];

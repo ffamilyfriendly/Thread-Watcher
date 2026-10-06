@@ -43,6 +43,7 @@ import {
   ZGuildWithEntitlement,
   GuildEntitlement,
   ZGuildEntitlement,
+  ZPanelDeploymentStatistics,
 } from '@watcher/shared';
 
 import * as schema from './schema';
@@ -102,6 +103,32 @@ export default class MySql implements Database {
     });
 
     this._config = config;
+  }
+
+  @with_error_handling
+  async get_panel_statistics(params?: { guild_id: string } | { panel_id: string }) {
+    const where_clause = params
+      ? 'guild_id' in params
+        ? eq(schema.Ticket.guild_id, params.guild_id)
+        : eq(schema.Ticket.panel_id, params.panel_id)
+      : undefined;
+
+    const [stats] = await this.drizzle
+      .select({
+        total_created: sql`COUNT(*)`.mapWith(Number),
+        avg_resolution_seconds:
+          sql`COALESCE(AVG(TIMESTAMPDIFF(SECOND, ${schema.Ticket.created_at}, ${schema.Ticket.closed_at})), 0)`.mapWith(
+            Number,
+          ),
+        active_tickets:
+          sql`COUNT(CASE WHEN ${schema.Ticket.closed_at} IS NULL AND ${schema.Ticket.status} = 'OPEN' THEN 1 END)`.mapWith(
+            Number,
+          ),
+      })
+      .from(schema.Ticket)
+      .where(where_clause);
+
+    return with_schema(stats, ZPanelDeploymentStatistics);
   }
 
   @with_error_handling

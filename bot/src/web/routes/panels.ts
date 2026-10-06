@@ -103,15 +103,11 @@ router.get(
 );
 
 router.get(
-  '/:guild_id/panel/:panel_id/deployment',
+  '/:guild_id/panel/:panel_id/stats',
   enforce_policy(Policies.Common.bot_master_or_guild_master),
   safe_route(async (req, _res) => {
     const panel_id = req.params.panel_id as string;
-
-    const panel_info = await ticket_service.get_panel(panel_id);
-    if (panel_info.isErr()) return err(panel_info.error);
-
-    return ok(true);
+    return ticket_service.get_panel_stats({ panel_id });
   }),
 );
 

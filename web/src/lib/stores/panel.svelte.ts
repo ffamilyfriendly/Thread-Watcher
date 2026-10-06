@@ -35,17 +35,21 @@ export class PipelineState {
 		this.panel.pipeline = v;
 	}
 
+	// This function exists to strip away values that does not need to influence our "is_dirty" check such as the deployed message id or deployed channel id
+	private static panel_sans_stuff(panel: TicketPanel) {
+		const { discord_message_channel_id, discord_message_id, ...panel_data } = panel;
+		return panel_data;
+	}
+
 	init_guild_state(panel: TicketPanel) {
 		this.panel = structuredClone(panel);
 		this.is_initialized = true;
-		this.stringified_initial_state = JSON.stringify(this.panel);
+		this.stringified_initial_state = JSON.stringify(PipelineState.panel_sans_stuff(this.panel));
 	}
 
 	// The reason this is a function and not a getter is cuz JSON.stringify can throw and in my eyes a getter should never ever throw
 	is_dirty() {
-		const stringified_current_state = JSON.stringify(this.panel);
-		console.log(stringified_current_state);
-		console.log(this.stringified_initial_state);
+		const stringified_current_state = JSON.stringify(PipelineState.panel_sans_stuff(this.panel));
 		return stringified_current_state !== this.stringified_initial_state;
 	}
 
@@ -174,9 +178,32 @@ export class PipelineState {
 			z.object({ panel_id: z.string().default(this.panel.panel_id) })
 		);
 
-		if (res.isOk()) this.stringified_initial_state = JSON.stringify(this.panel);
+		if (res.isOk())
+			this.stringified_initial_state = JSON.stringify(PipelineState.panel_sans_stuff(this.panel));
 
 		return res;
+	}
+
+	async deploy_to_channel(channel_id: string) {
+		const res = await fetch_as_json(
+			`/api/panel/${this.panel.panel_id}/send_message`,
+			{
+				method: 'POST',
+				body: JSON.stringify({
+					channel_id: channel_id,
+					guild_id: this.panel.guild_id,
+					panel_id: this.panel.panel_id
+				})
+			},
+			z.object({ message_id: z.string() })
+		);
+
+		if (res.isErr()) return err(res.error);
+
+		this.panel.discord_message_id = res.value.message_id;
+		this.panel.discord_message_channel_id = channel_id;
+
+		return ok(res.value);
 	}
 
 	revert_changes() {
