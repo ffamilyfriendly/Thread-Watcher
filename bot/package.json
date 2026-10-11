@@ -8,7 +8,7 @@
     "@types/express": "^5.0.3",
     "better-sqlite3": "^12.2.0",
     "body-parser": "^2.2.1",
-    "discord.js": "^14.23.2",
+    "discord.js": "^14.27.0",
     "drizzle-kit": "^0.31.9",
     "drizzle-orm": "^0.45.1",
     "express": "^5.1.0",
