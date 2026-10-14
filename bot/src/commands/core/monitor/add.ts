@@ -11,7 +11,7 @@ import { err, ok, Result } from 'neverthrow';
 import { Vacuum } from '#/services/ComponentService';
 import { make_advanced_embed, State } from '#/commands/core/_shared/advanced_view';
 import { map_err } from '#/utilities/error';
-import { get_target } from '../_shared/check_channel_values';
+import { get_targetted_channel } from '../_shared/check_channel_values';
 import { channel_service } from '@providers/services/channel_service';
 import { CommandError } from '#/utilities/error/def';
 import { safe_defer, safe_delete, safe_reply } from '#/utilities/interaction_helpers';
@@ -49,7 +49,7 @@ async function run(
   interaction: GuildChatInteraction,
   ctx: CommandContext,
 ): Promise<Result<void, CommandError>> {
-  const parent = await get_target(interaction, true);
+  const parent = await get_targetted_channel(interaction, true);
 
   const advanced = !!interaction.options.getBoolean('advanced');
 

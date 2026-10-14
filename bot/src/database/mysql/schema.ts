@@ -1,5 +1,5 @@
-import { DISCORD_SNOWFLAKE_MAX_LEN, UUID_LEN } from '@watcher/shared';
-import { index } from 'drizzle-orm/mysql-core';
+import { DISCORD_SNOWFLAKE_MAX_LEN, SHA_256_LEN, UUID_LEN } from '@watcher/shared';
+import { index, uniqueIndex } from 'drizzle-orm/mysql-core';
 import {
   boolean,
   datetime,
@@ -217,4 +217,43 @@ export const Entitlements = mysqlTable('entitlements', {
   updated_at: datetime('updated_at').$defaultFn(date_now),
   external_id: varchar('external_id', { length: 255 }).unique(),
   raw: json('raw'),
+});
+
+export const LibraryEntry = mysqlTable(
+  'library_entries',
+  {
+    file_id: varchar('file_id', { length: UUID_LEN }).primaryKey().$defaultFn(random_id),
+    guild_id: varchar('guild_id', { length: DISCORD_SNOWFLAKE_MAX_LEN })
+      .notNull()
+      .references(() => Guilds.guild_id, { onDelete: 'cascade' }),
+    uploader_discord_id: text('uploader_discord_id').notNull(),
+    filename: text('filename').notNull(),
+    filetype: text('filetype').notNull(),
+    status: text('status').notNull().default('processing'),
+    error_reason: text('error_reason'),
+    created_at: datetime('created_at').$defaultFn(date_now),
+    content_hash: varchar('content_hash', { length: SHA_256_LEN }).notNull(),
+    upload_type: text('upload_type').notNull(),
+    upload_src: text('upload_src'),
+    last_index: datetime('last_index'),
+  },
+  (t) => [
+    uniqueIndex('uq_library_guild_hash').on(t.guild_id, t.content_hash),
+    index('idx_library_guild_created').on(t.guild_id, t.created_at),
+  ],
+);
+
+export const LibraryEntryChunk = mysqlTable('library_chunk', {
+  chunk_id: varchar('chunk_id', { length: UUID_LEN }).primaryKey().$defaultFn(random_id),
+  file_id: varchar('file_id', { length: UUID_LEN })
+    .notNull()
+    .references(() => LibraryEntry.file_id, { onDelete: 'cascade' }),
+  guild_id: varchar('guild_id', { length: DISCORD_SNOWFLAKE_MAX_LEN })
+    .notNull()
+    .references(() => Guilds.guild_id, { onDelete: 'cascade' }),
+  chunk_idx: int('chunk_idx').notNull(),
+  content: text('content').notNull(),
+  embedding_model: text('embedding_model').notNull(),
+  token_count: int('token_count').notNull(),
+  vector: json('vector').notNull(),
 });

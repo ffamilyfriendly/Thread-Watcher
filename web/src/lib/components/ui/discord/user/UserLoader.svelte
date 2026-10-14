@@ -27,5 +27,5 @@
 {#if user}
 	<User {...{ user, ...rest }} />
 {:else if is_loading}
-	<div class="skeleton"></div>
+	<p class="skeleton"></p>
 {/if}

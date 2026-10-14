@@ -59,6 +59,8 @@ export const guildRelations = relations(schema.Guilds, ({ many }) => ({
   threads: many(schema.Threads),
   settings: many(schema.Settings),
   audit: many(schema.Audit),
+  library: many(schema.LibraryEntry),
+  library_chunks: many(schema.LibraryEntryChunk),
 }));
 
 export const entitlementRelations = relations(schema.Entitlements, ({ one }) => ({
@@ -78,6 +80,20 @@ export const monitorRelations = relations(schema.Monitors, ({ one }) => ({
 export const threadRelations = relations(schema.Threads, ({ one }) => ({
   guild: one(schema.Guilds, {
     fields: [schema.Threads.guild_id],
+    references: [schema.Guilds.guild_id],
+  }),
+}));
+
+export const libraryEntryRelations = relations(schema.LibraryEntry, ({ one }) => ({
+  guild: one(schema.Guilds, {
+    fields: [schema.LibraryEntry.guild_id],
+    references: [schema.Guilds.guild_id],
+  }),
+}));
+
+export const libraryEntryChunkRelations = relations(schema.LibraryEntryChunk, ({ one }) => ({
+  guild: one(schema.Guilds, {
+    fields: [schema.LibraryEntryChunk.guild_id],
     references: [schema.Guilds.guild_id],
   }),
 }));

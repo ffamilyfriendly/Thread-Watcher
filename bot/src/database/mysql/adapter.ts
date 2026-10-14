@@ -9,6 +9,9 @@ import {
   DBResult,
   EntitlementFilters,
   EntitlementInsertion,
+  LibraryEntryInsertion,
+  LibraryEntryUpdate,
+  LibraryFileChunkInsertion,
   TicketInsertion,
 } from '#/interfaces/Database';
 import { MySql2Database, drizzle } from 'drizzle-orm/mysql2';
@@ -44,6 +47,10 @@ import {
   GuildEntitlement,
   ZGuildEntitlement,
   ZPanelDeploymentStatistics,
+  FileChunk,
+  LibraryEntry,
+  ZLibraryEntry,
+  ZFileChunk,
 } from '@watcher/shared';
 
 import * as schema from './schema';
@@ -66,8 +73,9 @@ import {
   isNull,
   or,
   SQL,
+  gte,
 } from 'drizzle-orm';
-import { DatabaseError, TicketNotFound } from '#/utilities/error/def';
+import { TicketNotFound } from '#/utilities/error/def';
 import mysql from 'mysql2/promise';
 import { logger } from '@providers/logger';
 import { map_err } from '#/utilities/error';
@@ -103,6 +111,86 @@ export default class MySql implements Database {
     });
 
     this._config = config;
+  }
+
+  @with_error_handling
+  async create_library_entry(data: LibraryEntryInsertion) {
+    const file_id = crypto.randomUUID();
+    await this.drizzle.insert(schema.LibraryEntry).values({ file_id, ...data });
+    return ok({ file_id });
+  }
+
+  @with_error_handling
+  async update_library_entry(file_id: string, guild_id: string, data: LibraryEntryUpdate) {
+    await this.drizzle
+      .update(schema.LibraryEntry)
+      .set(data)
+      .where(
+        and(eq(schema.LibraryEntry.file_id, file_id), eq(schema.LibraryEntry.guild_id, guild_id)),
+      );
+    return ok();
+  }
+
+  @with_error_handling
+  async get_library_entries(guild_id: string) {
+    const library_entries = await this.drizzle.query.LibraryEntry.findMany({
+      where: eq(schema.LibraryEntry.guild_id, guild_id),
+    });
+    return with_schema(library_entries, z.array(ZLibraryEntry));
+  }
+
+  @with_error_handling
+  async count_library_chunks(guild_id: string) {
+    const lib_count = await this.drizzle
+      .select({ count: count() })
+      .from(schema.LibraryEntryChunk)
+      .where(eq(schema.LibraryEntryChunk.guild_id, guild_id));
+    return ok(lib_count[0].count);
+  }
+
+  @with_error_handling
+  async delete_library_entry(file_id: string, guild_id: string) {
+    await this.drizzle
+      .delete(schema.LibraryEntry)
+      .where(
+        and(eq(schema.LibraryEntry.file_id, file_id), eq(schema.LibraryEntry.guild_id, guild_id)),
+      );
+    return ok();
+  }
+
+  @with_error_handling
+  async get_library_chunks(guild_id: string) {
+    const chunks = await this.drizzle.query.LibraryEntryChunk.findMany({
+      where: eq(schema.LibraryEntryChunk.guild_id, guild_id),
+    });
+
+    // We're not running zod validation here as vector data is quite big
+    return ok(chunks as FileChunk[]);
+  }
+
+  @with_error_handling
+  async fail_state_library_entries(older_than: Date) {
+    await this.drizzle
+      .update(schema.LibraryEntry)
+      .set({ status: 'error' })
+      .where(
+        and(
+          lte(schema.LibraryEntry.created_at, older_than),
+          eq(schema.LibraryEntry.status, 'processing'),
+        ),
+      );
+    return ok();
+  }
+
+  @with_error_handling
+  async create_library_chunks(data: LibraryFileChunkInsertion[]) {
+    // Why are we doing this on the database adapter layer?
+    const identified_chunks: FileChunk[] = data.map((d) => ({
+      chunk_id: crypto.randomUUID(),
+      ...d,
+    }));
+    await this.drizzle.insert(schema.LibraryEntryChunk).values(identified_chunks);
+    return ok(identified_chunks);
   }
 
   @with_error_handling
@@ -710,7 +798,7 @@ export default class MySql implements Database {
     guild_id: string,
     setting_id: string,
     setting_value: string,
-  ): Promise<Result<string, DatabaseError>> {
+  ): Promise<Result<string, Error>> {
     await this.ensure_guild(guild_id);
 
     const existing = await this.drizzle.query.Settings.findFirst({

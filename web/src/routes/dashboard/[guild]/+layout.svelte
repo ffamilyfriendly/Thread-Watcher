@@ -6,6 +6,7 @@
 		Eye,
 		House,
 		LayoutPanelLeft,
+		Library,
 		Logs,
 		Settings,
 		Spool,
@@ -15,11 +16,11 @@
 	let { children, data } = $props();
 
 	// svelte-ignore state_referenced_locally
-	const gs = init_guild_state(data.base.guild.guild_id)
+	const gs = init_guild_state(data.base.guild.guild_id);
 
 	$effect(() => {
-		gs.init(data.base)
-	})
+		gs.init(data.base);
+	});
 </script>
 
 <NavSection
@@ -54,6 +55,7 @@
 		name: 'Tickets',
 		base: `/dashboard/${gs.guild_id}`,
 		items: [
+			{ name: 'Library', href: '/library', icon: Library },
 			{ name: 'Panels', href: `/ticket-panels`, icon: LayoutPanelLeft },
 			{ name: 'Tickets', href: `/tickets`, icon: Ticket }
 		]

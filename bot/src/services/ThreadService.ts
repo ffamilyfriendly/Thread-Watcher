@@ -279,11 +279,24 @@ export default class ThreadService {
       thread_guild.value.members.fetch(thread.ownerId),
       map_err,
     );
-    if (thread_owner.isErr()) return err(thread_owner.error);
 
-    const author_has_role = !!thread_owner.value.roles.cache.find((r) =>
-      filters.role_whitelist?.includes(r.id),
-    );
+    if (thread_owner.isErr()) {
+      logger.warn('should_be_watched could not get member', {
+        member_id: thread.ownerId,
+        error: thread_owner.error,
+        guild: thread.guildId,
+      });
+
+      // if role_whitelist is set AND we failed to get the member, we should'nt keep the thread watched.
+      // a banned/deleted user explicitly can't have a role and therefore a ROLE WHITELIST should still apply
+      if (filters.role_whitelist && filters.role_whitelist.length > 0) return ok(false);
+    }
+
+    const should_check_whitelist =
+      filters.role_whitelist && filters.role_whitelist.length > 0 && thread_owner.isOk();
+    const author_has_role = should_check_whitelist
+      ? thread_owner.value.roles.cache.find((r) => filters.role_whitelist?.includes(r.id))
+      : true;
 
     const tag_list_as_ids = thread.appliedTags?.map((r) => r);
     const thread_has_tag = !!tag_list_as_ids.find((t) => filters.tags?.includes(t));

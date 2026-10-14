@@ -23,7 +23,7 @@ import { create_channel_link } from './list';
 import ThreadService from '#/services/ThreadService';
 import { async_from, map_err, mapped_err } from '#/utilities/error';
 import { AuditMeta } from '#/services/AuditService';
-import { get_target } from './_shared/check_channel_values';
+import { get_targetted_channel } from './_shared/check_channel_values';
 import { client } from '@providers/client';
 import { thread_service } from '@providers/services/thread_service';
 import { channel_service } from '@providers/services/channel_service';
@@ -266,7 +266,7 @@ async function run(
   interaction: GuildChatInteraction,
   ctx: CommandContext,
 ): Promise<Result<void, CommandError>> {
-  const parent = await get_target(interaction);
+  const parent = await get_targetted_channel(interaction);
   if (parent.isErr()) {
     return err(parent.error);
   }

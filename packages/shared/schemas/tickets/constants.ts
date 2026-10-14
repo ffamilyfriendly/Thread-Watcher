@@ -28,3 +28,4 @@ export const TW_TICKET_LIMIT_MAX = 100;
 
 // GENERIC
 export const UUID_LEN = 36;
+export const SHA_256_LEN = 64;

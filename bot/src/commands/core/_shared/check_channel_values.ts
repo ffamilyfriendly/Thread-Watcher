@@ -22,7 +22,10 @@ export function check_channel_is_valid(
   return (ALLOWED_CHANNEL_TYPES as readonly ChannelType[]).includes(channel.type);
 }
 
-export async function get_target(interaction: GuildChatInteraction, allow_topgg_vote = false) {
+export async function get_targetted_channel(
+  interaction: GuildChatInteraction,
+  allow_topgg_vote = false,
+) {
   let parent = interaction.options.getChannel('parent') || interaction.channel;
   const global = interaction.options.getBoolean('global');
 

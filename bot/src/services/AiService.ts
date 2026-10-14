@@ -46,7 +46,7 @@ export type AiModelName = keyof typeof AiModels;
 
 export default class AiService {
   private logger = logger.getSubLogger({ name: 'AiService' });
-
+  readonly embedding_model = 'mistral-embed';
   constructor(
     public client: Mistral,
     private guild_service: GuildService,
@@ -377,6 +377,22 @@ export default class AiService {
       end_message_id: messages[messages.length - 1].message_id,
       is_master_summary: true,
     });
+  }
+
+  // Embedding is so cheap I don't see a reason to deduct it as a cost from a server. Keep an eye on this, future me
+  async embed_text(text: string[]) {
+    const embedding_resp = await ResultAsync.fromPromise(
+      this.client.embeddings.create({
+        model: this.embedding_model,
+        inputs: text,
+      }),
+      map_err,
+    );
+
+    if (embedding_resp.isErr()) return err(embedding_resp.error);
+    const { value } = embedding_resp;
+
+    return ok({ data: value.data, usage: value.usage });
   }
 
   async wrap_promise<T extends { usage: UsageInfo }>(

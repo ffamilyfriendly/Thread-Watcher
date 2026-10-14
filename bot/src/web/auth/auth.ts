@@ -38,17 +38,29 @@ export function enforce_policy(policy: AuthedSecurityPolicy) {
 
     const policy_result = await policy(req as RequestWithUser, res);
 
+    const is_owner = config.owners.includes(req.user_id);
+
     if (policy_result.isErr()) {
       res.locals.logger.error(`Failed to run policy '${policy.name}'`, policy_result.error);
-      return global_error_handler(policy_result.error, req, res, next);
+
+      if (!is_owner) return global_error_handler(policy_result.error, req, res, next);
+      else {
+        res.locals.logger.warn(`Req initiated by owner, ignoring failed policies`, {
+          user_id: req.user_id,
+        });
+      }
     }
 
     // We run this check after the policy as some policies have required side-effects
     // such as fetching ticket information.
-    const is_owner = config.owners.includes(req.user_id);
     if (is_owner) {
       return next();
     }
+
+    // This should never run, it's a sideeffect of the cursed code above.
+    // Block on L43 will ALWAYS return if there's an error UNLESS the request initiator is an owner (me)
+    // if the user is an admin and we had a policy error, we'd ALWAYS return on L57
+    if (policy_result.isErr()) return global_error_handler(policy_result.error, req, res, next);
 
     const policy_r = policy_result.value;
 

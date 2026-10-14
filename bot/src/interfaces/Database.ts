@@ -26,14 +26,15 @@ import {
   GuildWithEntitlement,
   GuildEntitlement,
   PanelDeploymentStatistics,
+  LibraryEntry,
+  FileChunk,
 } from '@watcher/shared';
-import { DatabaseError } from '#/utilities/error/def';
 
 interface InsertThreadData extends Omit<ThreadData, 'is_watched' | 'due_archive'> {
   due_archive: Date;
 }
 
-export type DBResult<T = void> = Promise<Result<T, DatabaseError>>;
+export type DBResult<T = void, TErr extends Error = Error> = Promise<Result<T, TErr>>;
 
 interface CoreUtils {
   create_backup_file: (base_dir?: string) => DBResult<{ full_path: string; file_name: string }>;
@@ -140,6 +141,12 @@ interface Entitlements {
 
 export type TicketInsertion = Omit<Ticket, 'closed_at' | 'status' | 'created_at'>;
 
+export type LibraryEntryInsertion = Omit<LibraryEntry, 'file_id' | 'created_at' | 'last_index'>;
+export type LibraryEntryUpdate = Partial<
+  Omit<LibraryEntry, 'file_id' | 'created_at' | 'uploader_discord_id' | 'guild_id'>
+>;
+export type LibraryFileChunkInsertion = Omit<FileChunk, 'chunk_id'>;
+
 interface Tickets {
   insert_ticket_panel: (
     guild_id: string,
@@ -185,6 +192,15 @@ interface Tickets {
   get_attachments: (ticket_id: string) => DBResult<TicketMessageAttachment[]>;
   update_attachment: (attachment_id: string, data: Partial<TicketMessageAttachment>) => DBResult;
   delete_attachment: (attachment_id: string) => DBResult;
+  // Library
+  create_library_entry: (data: LibraryEntryInsertion) => DBResult<{ file_id: string }>;
+  update_library_entry: (file_id: string, guild_id: string, data: LibraryEntryUpdate) => DBResult;
+  get_library_entries: (guild_id: string) => DBResult<LibraryEntry[]>;
+  count_library_chunks: (guild_id: string) => DBResult<number>;
+  delete_library_entry: (file_id: string, guild_id: string) => DBResult;
+  create_library_chunks: (data: LibraryFileChunkInsertion[]) => DBResult<FileChunk[]>;
+  get_library_chunks: (guild_id: string) => DBResult<FileChunk[]>;
+  fail_state_library_entries: (older_than: Date) => DBResult;
 }
 
 export interface Database extends Core, GuildSettings, Audit, Guilds, Tickets, Entitlements {}

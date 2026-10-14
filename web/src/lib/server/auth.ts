@@ -7,6 +7,7 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 		Discord({
 			clientId: DISCORD_CLIENT_ID,
 			clientSecret: DISCORD_CLIENT_SECRET,
+			issuer: 'https://discord.com',
 			authorization: {
 				params: {
 					scope: 'identify guilds'

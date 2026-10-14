@@ -8,6 +8,7 @@
 		variant?: 'primary' | 'error' | 'tetriary' | 'premium' | 'none';
 		shape?: 'rect' | 'circle';
 		load_with?: () => Promise<unknown>;
+		force_loading?: boolean
 		children: Snippet;
 		disabled?: boolean;
 		class?: string;
@@ -32,6 +33,7 @@
 		href,
 		confirmation,
 		shape = 'rect',
+		force_loading,
 		target = '_self',
 		size
 	}: Props = $props();
@@ -57,7 +59,8 @@
 		}
 	}
 
-	const is_disabled = $derived(disabled || is_loading);
+	const should_show_loading = $derived(is_loading || force_loading)
+	const is_disabled = $derived(disabled || should_show_loading);
 </script>
 
 {#if show_confirmation_modal && confirmation}
@@ -97,7 +100,7 @@
 		disabled={is_disabled}
 		onclick={handle_on_click}
 	>
-		{#if is_loading}
+		{#if should_show_loading}
 			<div class="loader">
 				<Loader size={16} class="ICON" />
 			</div>

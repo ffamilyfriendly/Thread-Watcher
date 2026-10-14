@@ -94,6 +94,8 @@ const ZAi = z.object({
   monthly_tokens_premium: z.number(),
   initial_free_tokens: z.number(),
   vote_reward_tokens: z.number(),
+  free_tier_library_chunks: z.number(),
+  premium_tier_library_chunks: z.number(),
   mistral_key: z.string(),
   agents: z.object({
     regex_agent: z.string(),
