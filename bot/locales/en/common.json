@@ -118,7 +118,11 @@
       "required_assigned_roles_body": "This action requires one of the roles assigned to this ticket\n{{assigned_roles}}",
       "required_assigned_roles_body_or_ownership": "This action requires one of the roles assigned to this ticket or that you created the ticket\n{{assigned_roles}}",
       "pipeline_failed_title": "Pipeline failed!",
-      "pipeline_failed_desc": "Panel ran into an error on module `{{module_id}}` and cannot continue.\n-# Original error below`"
+      "pipeline_failed_desc": "Panel ran into an error on module `{{module_id}}` and cannot continue.\n-# Original error below`",
+      "ticket_too_many_open_title": "You've too many open tickets!",
+      "ticket_too_many_open_desc": "Server configuration does not allow more than `{{limit}}` open tickets at the same time!\n\n### Active tickets owned by you:\n{{ticket_list}}",
+      "ticket_too_recent_title": "You've opened a ticket too recently!",
+      "ticket_too_recent_body": "Please try again {{timestamp}}"
     },
     "thread_punished": {
       "title": "{{punished_threads_count}} threads are NOT being bumped!",

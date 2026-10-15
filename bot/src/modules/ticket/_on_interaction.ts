@@ -8,6 +8,7 @@ import { start_pipeline } from './_pipeline';
 import mark_ticket_as_resolved from './_actions/mark_resolved';
 import add_note_action from './_actions/add_note';
 import claim_ticket_action from './_actions/claim_ticket';
+import { TicketTimeoutError, TicketTooManyOpenError } from '#/utilities/error/def';
 
 function get_panel_id(id: string) {
   if (!id.startsWith('start:')) return null;
@@ -27,10 +28,68 @@ async function handle_panel_interaction(
 ) {
   if (!interaction.isButton() && !interaction.isStringSelectMenu()) return ok();
 
-  const panel = await ticket_service.get_panel(panel_id);
-  if (panel.isErr()) return err(map_err(panel.error));
+  const panel_res = await ticket_service.get_panel(panel_id);
+  if (panel_res.isErr()) return err(map_err(panel_res.error));
+  const panel = panel_res.value;
 
-  start_pipeline(panel.value, interaction, l);
+  // Calls to Redis are cheap, but there's no need to check when the last ticket creation was if the cooldown is 0 seconds :D
+  // found this song today, goes pretty hard! https://open.spotify.com/track/0XscHzL82HATPWGyiE6No0
+  // thx4reading :) // 2026/10/15 John
+  if (panel.ticket_cooldown_seconds && panel.ticket_cooldown_seconds !== 0) {
+    const last_ticket_created = await ticket_service.user_last_opened_ticket(
+      interaction.guildId!,
+      panel_res.value.panel_id,
+      interaction.user.id,
+    );
+    if (last_ticket_created.isErr()) {
+      l.error('handle_panel_interaction failed to get last ticket insertion by user', {
+        user_id: interaction.user.id,
+        interaction_id: interaction.id,
+        guild_id: interaction.guildId,
+        error: last_ticket_created.error,
+      });
+    } else if (last_ticket_created.value) {
+      const diff = Date.now() - last_ticket_created.value.getTime();
+      const diff_in_seconds = diff / 1000;
+
+      if (panel.ticket_cooldown_seconds > diff_in_seconds) {
+        return err(
+          new TicketTimeoutError(last_ticket_created.value, panel.ticket_cooldown_seconds),
+        );
+      }
+    }
+  }
+
+  if (panel.max_concurring_tickets) {
+    const amount_to_fetch = Math.min(panel.max_concurring_tickets, 50);
+    const open_tickets = await ticket_service.get_tickets({
+      ticket_owner: interaction.user.id,
+      offset: 0,
+      status: 'OPEN',
+      limit: amount_to_fetch,
+    });
+    if (open_tickets.isErr()) {
+      l.error('handle_panel_interaction failed to get active tickets', {
+        user_id: interaction.user.id,
+        interaction_id: interaction.id,
+        guild_id: interaction.guildId,
+        error: open_tickets.error,
+        fetch_limit: amount_to_fetch,
+      });
+    } else {
+      if (open_tickets.value.length >= panel.max_concurring_tickets) {
+        return err(
+          new TicketTooManyOpenError(
+            open_tickets.value.length,
+            panel.max_concurring_tickets,
+            open_tickets.value,
+          ),
+        );
+      }
+    }
+  }
+
+  start_pipeline(panel, interaction, l);
 
   return ok();
 }

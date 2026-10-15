@@ -105,6 +105,10 @@ export default class TicketService {
     return db_res;
   }
 
+  user_last_opened_ticket(guild_id: string, panel_id: string, user_id: string) {
+    return this.r.get([guild_id, panel_id, user_id, 'last_ticket_opened'], z.coerce.date());
+  }
+
   async insert_ticket(ticket_data: TicketInsertion, meta: AuditMeta) {
     const db_res = await this.db.insert_ticket(ticket_data);
 
@@ -117,6 +121,24 @@ export default class TicketService {
           ticket_id: ticket_data.ticket_id,
         },
       });
+
+      // This'll ALWAYS be true, as the only case where a panel_id can be null is if a panel has been deleted which would not let the ticket get so far as insertion
+      if (ticket_data.panel_id)
+        await this.r
+          .set(
+            [ticket_data.guild_id, ticket_data.panel_id, ticket_data.owner, 'last_ticket_opened'],
+            new Date(),
+            z.coerce.date(),
+          )
+          .then((r) => {
+            if (r.isErr())
+              this.l.warn("failed to set 'last_ticket_opened'", {
+                error: r.error,
+                guild_id: ticket_data.guild_id,
+                panel_id: ticket_data.panel_id,
+                user_id: ticket_data.owner,
+              });
+          });
     }
 
     return db_res;
