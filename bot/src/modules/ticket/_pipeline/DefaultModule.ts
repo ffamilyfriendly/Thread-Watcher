@@ -305,6 +305,7 @@ export interface IPipeline {
   exports: ValueContainer;
   readonly data: TicketPanel;
 
+  hotswap_panel(other_panel: TicketPanel): Result<void, Error>;
   get_property(id: string): ContractLeafValue;
   start_ticket_silently(): void;
   start_ticket_with_thread(

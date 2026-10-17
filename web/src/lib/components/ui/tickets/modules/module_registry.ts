@@ -11,13 +11,17 @@ import {
 	AppWindow,
 	Bot,
 	Box,
+	Circle,
 	Ghost,
 	Hash,
 	Shield,
+	Sparkle,
 	TextCursor,
 	TicketPlus,
 	type IconProps
 } from '@lucide/svelte';
+import AITryResolve from './AITryResolve.svelte';
+import Portal from './Portal.svelte';
 
 export type RenderableModuleTypes = Exclude<PipelineModule['type'], 'ROOT_ENV_MODULE'>;
 
@@ -36,7 +40,9 @@ export const MODULE_COMPONENTS: ModuleRegistry = {
 	ASSIGN_NAME: SetName,
 	OPEN_TICKET: OpenTicket,
 	SILENT_RESOLVE: SilentResolve,
-	MODAL_QUESTION: QuestionModule
+	MODAL_QUESTION: QuestionModule,
+	AI_TRY_RESOLVE: AITryResolve,
+	PORTAL: Portal
 };
 
 export const MODULE_ICONS: Partial<ModuleIcons> = {
@@ -46,7 +52,9 @@ export const MODULE_ICONS: Partial<ModuleIcons> = {
 	ASSIGN_NAME: TextCursor,
 	OPEN_TICKET: TicketPlus,
 	SILENT_RESOLVE: Ghost,
-	MODAL_QUESTION: AppWindow
+	MODAL_QUESTION: AppWindow,
+	PORTAL: Circle,
+	AI_TRY_RESOLVE: Sparkle
 };
 
 export function get_module_icon(module_name: PipelineModule['type']): Component<IconProps> {

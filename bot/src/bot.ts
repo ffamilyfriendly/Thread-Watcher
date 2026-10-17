@@ -17,6 +17,7 @@ import { fetch_users_bot_context } from './events/IPC/shared/fetchers/user_fetch
 
 const config = Config.instance;
 const client = Client.instance;
+
 const database = Database.instance;
 const redis = Redis.instance;
 

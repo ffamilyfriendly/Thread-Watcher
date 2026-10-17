@@ -8,6 +8,8 @@ import ModalQuestion from '../modules/ModalQuestion';
 import OpenTicket from '../modules/OpenTicket';
 import AssignName from '../modules/AssignName';
 import SilentResolve from '../modules/ResolveSilently';
+import Portal from '../modules/Portal';
+import AiTryResolve from '../modules/AiTryResolve';
 
 type ModuleConstructor = new (self: any, pipeline: IPipeline) => DefaultModule<any>;
 
@@ -22,6 +24,8 @@ const MODULE_REGISTRY: Omit<
   OPEN_TICKET: OpenTicket,
   ASSIGN_NAME: AssignName,
   SILENT_RESOLVE: SilentResolve,
+  PORTAL: Portal,
+  AI_TRY_RESOLVE: AiTryResolve,
 };
 
 export function create_module(

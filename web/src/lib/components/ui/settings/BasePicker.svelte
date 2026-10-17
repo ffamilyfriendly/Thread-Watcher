@@ -16,6 +16,8 @@
 		placeholder: string;
 		fetcher?: (id: string) => Promise<Result<T, Error>> | Result<never, Error>;
 		render_item: Snippet<[T]>;
+		render_selected_item?: Snippet<[T]>;
+		allow_remove?: boolean;
 		disabled?: boolean;
 	}
 
@@ -25,7 +27,9 @@
 		multiple = false,
 		fetcher,
 		render_item,
+		render_selected_item,
 		placeholder,
+		allow_remove,
 		disabled = false
 	}: Props = $props();
 
@@ -110,6 +114,8 @@
 			});
 		}
 	});
+
+	const render_in_selection = $derived(render_selected_item ?? render_item);
 </script>
 
 <div bind:this={container} class="picker">
@@ -117,7 +123,7 @@
 		<div class="selected_list">
 			{#each active_items_data as item}
 				<div class="item_chip">
-					{@render render_item(item)}
+					{@render render_in_selection(item)}
 					{#if multiple}
 						<button class="remove_btn" onclick={() => toggle_item(item.id)}>×</button>
 					{/if}
@@ -127,7 +133,7 @@
 			{/each}
 		</div>
 
-		{#if value}
+		{#if value && allow_remove}
 			<button onclick={() => (value = '')} class="remove_button">
 				<Delete />
 			</button>

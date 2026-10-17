@@ -72,6 +72,16 @@ export const TYPED_EVENTS = {
     }),
     return_schema: ZDJSGuild,
   },
+  proxy_dm: {
+    event_name: 'proxy_dm',
+    expected_data: z.object({
+      content: z.string(),
+      channel_id: z.string(),
+      user_id: z.string(),
+      message_id: z.string(),
+    }),
+    return_schema: z.void(),
+  },
 } satisfies Record<string, EnsuredSchemaCall<z.ZodType, z.ZodType>>;
 
 export function define_typed_event<K extends keyof typeof TYPED_EVENTS>(

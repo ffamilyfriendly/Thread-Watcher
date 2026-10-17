@@ -1,11 +1,16 @@
-import { Client, GatewayIntentBits, Options } from 'discord.js';
+import { Client, GatewayIntentBits, Options, Partials } from 'discord.js';
 import { create_singleton } from './singleton';
 
 const singleton = create_singleton(
   () =>
     new Client({
       // TODO: Add MessageContent back when Discord grants the intent.
-      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+      intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.DirectMessages,
+      ],
+      partials: [Partials.Message, Partials.Channel, Partials.User],
 
       sweepers: {
         ...Options.DefaultSweeperSettings,
@@ -19,7 +24,7 @@ const singleton = create_singleton(
         ...Options.DefaultMakeCacheSettings,
         AutoModerationRuleManager: 0,
         BaseGuildEmojiManager: 0,
-        DMMessageManager: 0,
+        DMMessageManager: 10,
         GuildBanManager: 0,
         GuildEmojiManager: 0,
         MessageManager: 0,

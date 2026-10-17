@@ -15,6 +15,8 @@ import { ticket_service } from '@providers/services/ticket_service';
 import { event_bus } from '@providers/event_bus';
 import { start_reconsile_payments } from './routines/reconsile_payment';
 import { fetch_users_index_context } from './events/IPC/shared/fetchers/user_fetcher';
+import { lib_service } from '@providers/services/library_service';
+import { ai_service } from '@providers/services/ai_service';
 
 const logger = Logger.child('Shard');
 
@@ -23,6 +25,7 @@ ticket_service.set_user_fetcher(fetch_users_index_context);
 event_bus.set_on_emit((key, payload) => {
   ipc_client.send_shard(payload.guild_id, 'bus_event', { event_key: key, ...payload });
 });
+lib_service.ai = ai_service;
 
 async function load_events() {
   return load_module_as_and<PrivateEvent>('./src/events/IPC/manager', (events_array) => {

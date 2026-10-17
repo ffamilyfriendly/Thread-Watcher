@@ -48,6 +48,7 @@ export class Pipeline implements IPipeline {
   assigned_channel: string;
   exports: ValueContainer;
   readonly ticket_id = crypto.randomUUID();
+  private has_visited = new Set();
   name = 'Ticket-{{env.user.id}}';
   logger: Logger<unknown>;
   private is_resolved = false;
@@ -133,6 +134,7 @@ export class Pipeline implements IPipeline {
     });
     this.logger.attachTransport((log_obj) => this.append_log(log_obj));
     this.exports = new ValueContainer({}, 'ENV_ROOT');
+    this.has_visited.add(data.panel_id);
   }
 
   async populate_value_container(int: Interaction) {
@@ -267,6 +269,38 @@ export class Pipeline implements IPipeline {
 
   get_all_properties(): Record<string, ContractLeafValue | Record<string, unknown> | unknown[]> {
     return this.exports.all();
+  }
+
+  hotswap_panel(other_panel: TicketPanel): Result<void, Error> {
+    if (this.has_visited.has(other_panel.panel_id))
+      return err(
+        new Error(
+          `Panel '${other_panel.panel_id}' has already been loaded once! (loop prevention)`,
+        ),
+      );
+
+    this.modules.clear();
+
+    this.assigned_channel = other_panel.initial_channel_id;
+    this.assigned_roles = other_panel.initial_assigned_roles;
+    this.data.panel_id = other_panel.panel_id;
+
+    for (const module_data of other_panel.pipeline) {
+      const module_instance = create_module(module_data, this);
+
+      if (module_instance.isErr()) {
+        logger.warn(module_instance.error);
+        continue;
+      }
+
+      module_instance.value.exports.is_activated = false;
+
+      this.exports.set(module_instance.value.id, module_instance.value.exports);
+      this.modules.set(module_instance.value.id, module_instance.value);
+    }
+
+    this.has_visited.add(other_panel.panel_id);
+    return ok();
   }
 
   static from(data: TicketPanel): Pipeline {

@@ -15,8 +15,14 @@
 	let {
 		default_tab,
 		children,
-		active_tab = $bindable(default_tab)
-	}: { default_tab: string; children: Snippet; active_tab?: string } = $props();
+		active_tab = $bindable(default_tab),
+		on_switch
+	}: {
+		default_tab: string;
+		children: Snippet;
+		active_tab?: string;
+		on_switch?: (active_tab: string) => void;
+	} = $props();
 
 	let tabs = $state<{ id: string; label: string }[]>([]);
 
@@ -30,13 +36,18 @@
 			}
 		}
 	});
+
+	function do_switch(tab_id: string) {
+		active_tab = tab_id;
+		if (on_switch) on_switch(tab_id);
+	}
 </script>
 
 <div class="container">
 	<nav>
 		{#each tabs as tab (tab.id)}
 			{@const is_active = active_tab === tab.id}
-			<button class:active={is_active} onclick={() => (active_tab = tab.id)}>
+			<button class:active={is_active} onclick={() => do_switch(tab.id)}>
 				{tab.label}
 			</button>
 		{/each}

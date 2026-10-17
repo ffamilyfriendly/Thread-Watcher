@@ -1,5 +1,5 @@
 import logger from '@providers/logger';
-import { ActivityOptions, ActivityType, Client } from 'discord.js';
+import { ActivityOptions, ActivityType, Client, Partials } from 'discord.js';
 import { Event } from '#/interfaces/ClientEvent';
 import { start_bumper_loop } from '#/routines/bump_threads';
 import { thread_service } from '@providers/services/thread_service';

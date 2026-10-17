@@ -1,12 +1,12 @@
 import { Mistral } from '@mistralai/mistralai';
-import GuildService from './GuildService';
+import GuildService from '../GuildService';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { AgentsCompletionRequest, UsageInfo } from '@mistralai/mistralai/models/components';
 import { config } from '@providers/config';
 import { map_err } from '#/utilities/error';
-import { IntermediaryMessage, TicketSummarySegment, ZAiRegexResponse } from '@watcher/shared';
+import { IntermediaryMessage, ZAiRegexResponse } from '@watcher/shared';
 import { logger } from '@providers/logger';
-import EntitlementService from './EntitlementService';
+import EntitlementService from '../EntitlementService';
 import { IssueNarrower } from './AIWrappers/IssueNarrower';
 import { ValueContainer } from '#/modules/ticket/_pipeline/ValueContainter';
 import { database } from '@providers/database';
@@ -20,22 +20,34 @@ export interface AIModel {
 }
 
 export const AiModels = {
-  'mistral-tiny-latest': {
+  'ministral-8b-latest': {
     model_name: 'mistral-tiny_latest',
     eur_per_1m_token_output: 0.13,
     eur_per_1m_tokens_input: 0.13,
   },
+  'ministral-14b-latest': {
+    model_name: 'ministral-14b-latest',
+    eur_per_1m_token_output: 0.17,
+    eur_per_1m_tokens_input: 0.17,
+  },
+
+  // Idk why the medium model was bumped so heavily in price. Switching over to medium I guess?
   'mistral-medium-latest': {
     model_name: 'mistral-medium-latest',
-    eur_per_1m_token_output: 1.7,
-    eur_per_1m_tokens_input: 0.34,
+    eur_per_1m_token_output: 6.89,
+    eur_per_1m_tokens_input: 2.3,
   },
   'mistral-small-latest': {
     model_name: 'mistral-small-latest',
     eur_per_1m_token_output: 0.51,
     eur_per_1m_tokens_input: 0.13,
   },
-};
+  'mistral-large-latest': {
+    model_name: 'mistral-large-latest',
+    eur_per_1m_token_output: 1.28,
+    eur_per_1m_tokens_input: 0.43,
+  },
+} as const satisfies Record<string, AIModel>;
 
 const ZSummaryResult = z.object({
   summary: z.string(),
@@ -168,9 +180,11 @@ export default class AiService {
     return this.guild_service.deduct_ai_tokens(guild_id, cost_of_operation);
   }
 
+  // TODO: this model is so cheap... its petty deducting any credits for it.
+  // look over if this just aint something we can provide for free to everyone (like embedding)
   async get_regex(prompt: string, guild_id: string) {
     const allowed_run_function = (
-      await this.preflight(guild_id, 'mistral-tiny-latest', 300, 200)
+      await this.preflight(guild_id, 'ministral-8b-latest', 300, 200)
     ).match(
       (v) => v,
       (error) => {
@@ -197,7 +211,7 @@ export default class AiService {
     const { promptTokens, completionTokens } = ai_res.value.usage;
     if (!promptTokens || !completionTokens) return err(new Error('could not get usage tokens'));
 
-    this.deduct_quota(guild_id, 'mistral-tiny-latest', promptTokens, completionTokens).then((r) => {
+    this.deduct_quota(guild_id, 'ministral-8b-latest', promptTokens, completionTokens).then((r) => {
       if (r.isErr()) this.logger.error(`Could not deduct points for '${guild_id}'`, r.error);
     });
 

@@ -188,6 +188,27 @@ export const ZQuestionModal = ZModule.extend({
 });
 export type QuestionModal = z.output<typeof ZQuestionModal>;
 
+export const ZAITryResolve = ZModule.extend({
+  type: z.literal("AI_TRY_RESOLVE").default("AI_TRY_RESOLVE"),
+  max_rounds: z.number().min(0).max(30).default(7),
+  persona: z
+    .string()
+    .max(TW_AI_PERSONA_MAX_LEN)
+    .default("A helpful support assistant"),
+  rules: z
+    .string()
+    .max(TW_AI_RULES_MAX_LEN)
+    .default(
+      "If the user is reporting someone make sure the user ID is present",
+    ),
+});
+
+// Open another pipeline
+export const ZPortalResolve = ZModule.extend({
+  type: z.literal("PORTAL").default("PORTAL"),
+  panel_id: z.string().default(""),
+});
+
 export const ZPipelineModule = z.discriminatedUnion("type", [
   ZAssignRole,
   ZAIIssueNarrower,
@@ -197,7 +218,10 @@ export const ZPipelineModule = z.discriminatedUnion("type", [
   ZOpenTicket,
   ZSilentlyResolve,
   ZQuestionModal,
+  ZAITryResolve,
+  ZPortalResolve,
 ]);
+
 export type PipelineModule = z.output<typeof ZPipelineModule>;
 export type TypedPipelineModule<T extends PipelineModule["type"]> = Extract<
   PipelineModule,

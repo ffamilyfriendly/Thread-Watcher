@@ -9,6 +9,7 @@ const event: Event<Message> = {
   event_name: 'messageCreate',
   async event_callback(msg) {
     const l = logger.getSubLogger({ name: 'messageCreate' });
+    l.info('got message!', { msg_id: msg.id, channel_id: msg.channelId });
     if (config.limited_mode) return ok();
     for (const mod of await modules) {
       mod.on_message_create?.(msg, l).then((r) => {

@@ -17,6 +17,18 @@
 	const guild_state = use_guild_state();
 
 	let pipeline_state = use_pipeline();
+
+	function handle_switch(_id: string) {
+		if (pipeline_state.panel.commencement_method.type === 'BUTTON') {
+			pipeline_state.panel.commencement_method = { type: 'BUTTON', button_text: 'Open Ticket' };
+		} else {
+			pipeline_state.panel.commencement_method = {
+				type: 'SELECTION',
+				placeholder: 'Select an option',
+				options: []
+			};
+		}
+	}
 </script>
 
 <section class={style.section}>
@@ -65,6 +77,7 @@
 		<TabbedView
 			bind:active_tab={pipeline_state.panel.commencement_method.type}
 			default_tab="button"
+			on_switch={handle_switch}
 		>
 			<Tab id="BUTTON" label="button">
 				{#if pipeline_state.panel.commencement_method.type === 'BUTTON'}
@@ -144,10 +157,6 @@
 		{/snippet}
 
 		<Toggle bind:value={pipeline_state.panel.should_watch_ticket} />
-	</Explainer>
-
-	<Explainer title="AI Assist" description="asd">
-		<Toggle bind:value={pipeline_state.panel.ai_assist} />
 	</Explainer>
 </section>
 

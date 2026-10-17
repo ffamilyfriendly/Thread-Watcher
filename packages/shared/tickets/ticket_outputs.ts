@@ -10,6 +10,8 @@ import {
   ZSilentlyResolve,
   ZQuestionModal,
   type QuestionModal,
+  ZAITryResolve,
+  ZPortalResolve,
 } from "../schemas/tickets/ticket";
 import { type AllowedTypes, CONTRACTS, type ContractType } from "./contracts";
 
@@ -159,6 +161,27 @@ const SILENT_RESOLVE: ModuleObject = {
   type: "SILENT_RESOLVE",
 };
 
+const AI_TRY_RESOLVE: ModuleObject = {
+  name: "AI Assist",
+  description: "Let AI try to resolve the issue",
+  category: ModuleCategory.AI,
+  schema: ZAITryResolve,
+  type: "AI_TRY_RESOLVE",
+  properties: () => [
+    { name: "exit_state", value: "string" },
+    { name: "brief", value: "string?" },
+  ],
+};
+
+const PORTAL: ModuleObject = {
+  name: "Portal Resolve",
+  description: "Jump to another ticket flow",
+  category: ModuleCategory.RESOLVERS,
+  schema: ZPortalResolve,
+  type: "PORTAL",
+  properties: () => [],
+};
+
 const MODAL_QUESTION: ModuleObject<QuestionModal> = {
   name: "Modal Question",
   description: "Gather information from the user",
@@ -211,6 +234,8 @@ export const MODULE_OUTPUTS: ModuleRegistry = {
   OPEN_TICKET,
   SILENT_RESOLVE,
   MODAL_QUESTION,
+  AI_TRY_RESOLVE,
+  PORTAL,
 };
 
 type CategoryNames = {

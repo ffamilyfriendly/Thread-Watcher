@@ -6,7 +6,7 @@ import z from 'zod';
 import { err, ok } from 'neverthrow';
 import { FileChunk, LibraryEntry } from '@watcher/shared';
 import { get_safe_error } from '#/utilities/error/escape_sensitive_data';
-import EntitlementService from './EntitlementService';
+import EntitlementService from '../EntitlementService';
 import { config } from '@providers/config';
 
 function euclidean_distance(v1: number[], v2: number[]) {
@@ -20,15 +20,19 @@ interface SimFileChunk extends FileChunk {
 
 export default class LibraryService {
   static readonly CACHE_TTL_SECONDS = 90;
+  private _ai?: AiService;
 
   private r: RedisWrapper;
   constructor(
-    private ai: AiService,
     private db: Database,
     redis: Redis,
     private entitlements: EntitlementService,
   ) {
     this.r = new RedisWrapper(redis, LibraryService.CACHE_TTL_SECONDS, 'library');
+  }
+
+  set ai(service: AiService) {
+    this._ai = service;
   }
 
   async get_library_files(guild_id: string) {
@@ -100,8 +104,9 @@ export default class LibraryService {
     const can_create_file = await this.can_create_file(guild_id);
     if (can_create_file.isErr()) return can_create_file;
     if (!can_create_file.value) return err(new Error('This guild has too many chunks!'));
+    if (!this._ai) return err(new Error('no AiService provided to LibraryService!'));
 
-    return ok(new FileUploader(this.db, guild_id, this.ai, this));
+    return ok(new FileUploader(this.db, guild_id, this._ai, this));
   }
 
   async clear_cache(guild_id: string) {
